@@ -27,6 +27,7 @@
 #include <mex/mex.h>
 #include <mex/mex-grilo-feed.h>
 #include <mex/mex-plugin-manager.h>
+#include <mex/mex-mmkeys.h>
 #include <clutter-gst/clutter-gst.h>
 #include <gio/gdesktopappinfo.h>
 #include <string.h>
