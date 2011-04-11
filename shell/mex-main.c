@@ -86,6 +86,8 @@ typedef struct
   guint   last_explorer_depth;
 
   gint busy_count;
+
+  MexMMkeys *mmkeys;
 } MexData;
 
 static void mex_show_actor (MexData *data, ClutterActor *actor);
@@ -1275,18 +1277,46 @@ mex_captured_event_cb (ClutterActor *actor,
       return TRUE;
 
     case CLUTTER_KEY_AudioRaiseVolume :
-      mex_show_volume_control (data);
       mex_volume_control_volume_up (MEX_VOLUME_CONTROL (data->volume_control));
+      mex_show_volume_control (data);
       return TRUE;
 
     case CLUTTER_KEY_AudioLowerVolume :
-      mex_show_volume_control (data);
       mex_volume_control_volume_down (MEX_VOLUME_CONTROL (data->volume_control));
+      mex_show_volume_control (data);
       return TRUE;
 
     case CLUTTER_KEY_AudioMute :
-      mex_show_volume_control (data);
       mex_volume_control_volume_mute (MEX_VOLUME_CONTROL (data->volume_control));
+      mex_show_volume_control (data);
+      return TRUE;
+
+    case CLUTTER_KEY_AudioPlay:
+      mex_player_play (MEX_PLAYER (data->player));
+      return TRUE;
+
+    case CLUTTER_KEY_AudioPause:
+      mex_player_pause (MEX_PLAYER (data->player));
+      return TRUE;
+
+    case CLUTTER_KEY_AudioStop:
+      mex_player_stop (MEX_PLAYER (data->player));
+      return TRUE;
+
+    case CLUTTER_KEY_AudioRewind:
+      mex_player_rewind (MEX_PLAYER (data->player));
+      return TRUE;
+
+    case CLUTTER_KEY_AudioForward:
+      mex_player_forward (MEX_PLAYER (data->player));
+      return TRUE;
+
+    case CLUTTER_KEY_AudioNext:
+      mex_player_next (MEX_PLAYER (data->player));
+      return TRUE;
+
+    case CLUTTER_KEY_AudioPrev:
+      mex_player_previous (MEX_PLAYER (data->player));
       return TRUE;
 
     case CLUTTER_KEY_F11 :
@@ -1294,9 +1324,15 @@ mex_captured_event_cb (ClutterActor *actor,
       fullscreen = !mx_window_get_fullscreen (data->window);
       mx_window_set_fullscreen (data->window, fullscreen);
       if (fullscreen)
-        clutter_stage_hide_cursor (data->stage);
+        {
+          mex_mmkeys_grab_keys (data->mmkeys);
+          clutter_stage_hide_cursor (data->stage);
+        }
       else
-        clutter_stage_show_cursor (data->stage);
+        {
+          mex_mmkeys_ungrab_keys (data->mmkeys);
+          clutter_stage_show_cursor (data->stage);
+        }
       return TRUE;
     }
 
@@ -2067,6 +2103,9 @@ main (int argc, char **argv)
   /* A stack is the top level actor in the window */
   data.stack = mx_stack_new ();
 
+  data.mmkeys = mex_mmkeys_new ();
+
+  mex_mmkeys_set_stage (data.mmkeys, CLUTTER_ACTOR (data.stage));
 
   /* It's possible that MexPlayer does not provide an actor that will display
    * the video. This happens on STB hardware when the video is displayed in
