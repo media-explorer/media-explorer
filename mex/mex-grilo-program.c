@@ -201,6 +201,7 @@ typedef struct
 
 static void
 mex_grilo_program_get_stream_cb (GrlMediaSource *source,
+                                 guint           operation_id,
                                  GrlMedia       *media,
                                  gpointer        userdata,
                                  const GError   *error)
@@ -239,7 +240,6 @@ mex_grilo_program_get_stream (MexProgram        *program,
   GList *keys;
   GrlMediaSource *source;
   MexGriloProgramClosure *closure;
-
   MexGriloProgram *self = MEX_GRILO_PROGRAM (program);
   MexGriloProgramPrivate *priv = self->priv;
 

@@ -407,7 +407,8 @@ mex_grilo_feed_stop_op (MexGriloFeed *feed)
   if (!priv->op->op_id)
     return;
 
-  grl_media_source_cancel (priv->source, priv->op->op_id);
+  grl_metadata_source_cancel (GRL_METADATA_SOURCE (priv->source),
+                              priv->op->op_id);
   priv->op->op_id = 0;
 
   if (priv->completed) {
