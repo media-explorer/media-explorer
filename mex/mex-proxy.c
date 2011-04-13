@@ -476,6 +476,14 @@ mex_proxy_add_content (MexProxy   *proxy,
   mex_proxy_add_content_no_defer (proxy, content);
 }
 
+static gint
+_insert_position (gconstpointer a,
+                  gconstpointer b,
+                  gpointer user_data)
+{
+  return GPOINTER_TO_INT (a) < GPOINTER_TO_INT (b);
+}
+
 static void
 mex_proxy_controller_changed_cb (GController          *controller,
                                  GControllerAction     action,
@@ -502,13 +510,48 @@ mex_proxy_controller_changed_cb (GController          *controller,
       break;
 
     case G_CONTROLLER_REMOVE:
-      for (i = 0; i < n_indices; i++)
-        {
-          gint content_index = g_controller_reference_get_index_uint (ref, i);
+      {
+        gint length, fillin = 0, start_fillin;
+        GList *positions = NULL, *position;
 
-          content = mex_model_get_content (priv->model, content_index);
-          mex_proxy_remove_content (proxy, content);
-        }
+        for (i = 0; i < n_indices; i++)
+          {
+            gint content_index = g_controller_reference_get_index_uint (ref, i);
+            if (content_index >= priv->limit)
+              positions = g_list_insert_sorted_with_data (positions,
+                                                          GINT_TO_POINTER (content_index),
+                                                          _insert_position,
+                                                          NULL);
+            else
+              fillin++;
+            content = mex_model_get_content (priv->model, content_index);
+            mex_proxy_remove_content (proxy, content);
+          }
+
+        position = positions;
+        length = mex_model_get_length (priv->model);
+        start_fillin = priv->limit;
+        for (i = 0;
+             i < MIN (fillin, (length - (gint) priv->limit));
+             i++)
+          {
+            if ((position != NULL) &&
+                (start_fillin == GPOINTER_TO_INT (position->data)))
+              {
+                while ((position != NULL) &&
+                       (start_fillin == GPOINTER_TO_INT (position->data)))
+                  {
+                    start_fillin++;
+                    if (start_fillin > GPOINTER_TO_INT (position->data))
+                      position = position->next;
+                  }
+              }
+            content = mex_model_get_content (priv->model, start_fillin);
+            mex_proxy_add_content (proxy, content);
+            start_fillin++;
+          }
+        g_list_free (positions);
+      }
       break;
 
     case G_CONTROLLER_UPDATE:
