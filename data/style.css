@@ -764,3 +764,10 @@ MexVolumeControl > MxButton.volume-10
 {
   -mx-content-image: url("volume-control/volume-10.png");
 }
+
+/* MexGrid style */
+
+MexScrollView.Grid
+{
+  border-image: url("grid-content-bg.png") 0;
+}

@@ -875,6 +875,7 @@ mex_explorer_push_model (MexExplorer *explorer,
       ClutterActor *scroll_view, *grid;
 
       scroll_view = mex_scroll_view_new ();
+      mx_stylable_set_style_class (MX_STYLABLE (scroll_view), "Grid");
       grid = mex_grid_new ();
       clutter_container_add_actor (CLUTTER_CONTAINER (scroll_view), grid);
 

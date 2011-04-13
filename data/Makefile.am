@@ -22,6 +22,7 @@ styledir = $(pkgdatadir)/common/style
 dist_style_DATA = \
 		  style/details-actions-separator.png \
 		  style/details-bg.png \
+		  style/grid-content-bg.png \
 		  style/harderror-bg.png \
 		  style/highlight-bg.png \
 		  style/item-title-bg.png \
