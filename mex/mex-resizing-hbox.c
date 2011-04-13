@@ -18,6 +18,7 @@
 
 
 #include "mex-resizing-hbox.h"
+#include "mex-utils.h"
 #include <math.h>
 
 static void clutter_container_iface_init (ClutterContainerIface *iface);
@@ -1466,73 +1467,6 @@ mex_resizing_hbox_timeline_completed_cb (ClutterTimeline *timeline,
   clutter_actor_queue_relayout (box);
 }
 
-/* Copied from MxWidget, but TRUE/FALSE swapped round to make sense */
-static gboolean
-mx_border_image_equal (MxBorderImage *v1,
-                       MxBorderImage *v2)
-{
-  if (v1 == v2)
-    return TRUE;
-
-  if (!v1 && v2)
-    return FALSE;
-
-  if (!v2 && v1)
-    return FALSE;
-
-  if (g_strcmp0 (v1->uri, v2->uri))
-    return FALSE;
-
-  if (v1->top != v2->top)
-    return FALSE;
-
-  if (v1->right != v2->right)
-    return FALSE;
-
-  if (v1->bottom != v2->bottom)
-    return FALSE;
-
-  if (v1->left != v2->left)
-    return FALSE;
-
-  return TRUE;
-}
-
-static void
-mex_resizing_hbox_replace_border_image (CoglHandle     *texture_p,
-                                        MxBorderImage  *image,
-                                        MxBorderImage **image_p,
-                                        CoglHandle     *material_p)
-{
-  MxTextureCache *cache = mx_texture_cache_get_default ();
-
-  if (!mx_border_image_equal (image, *image_p))
-    {
-      if (*image_p)
-        g_boxed_free (MX_TYPE_BORDER_IMAGE, *image_p);
-
-      if (*texture_p)
-        {
-          cogl_handle_unref (*texture_p);
-          *texture_p = NULL;
-        }
-
-      *image_p = image;
-      if (image)
-        {
-          *texture_p = mx_texture_cache_get_cogl_texture (cache, image->uri);
-          if (!*material_p)
-            *material_p = cogl_material_new ();
-          cogl_material_set_layer (*material_p, 0, *texture_p);
-        }
-      else
-        {
-          cogl_handle_unref (*material_p);
-          *material_p = NULL;
-        }
-    }
-}
-
 static void
 mex_resizing_hbox_style_changed_cb (MxStylable          *self,
                                     MxStyleChangedFlags  flags)
@@ -1547,18 +1481,18 @@ mex_resizing_hbox_style_changed_cb (MxStylable          *self,
                    "x-mex-border", &border,
                    NULL);
 
-  mex_resizing_hbox_replace_border_image (&priv->highlight,
-                                          highlight,
-                                          &priv->highlight_image,
-                                          &priv->highlight_material);
-  mex_resizing_hbox_replace_border_image (&priv->shadow,
-                                          shadow,
-                                          &priv->shadow_image,
-                                          &priv->shadow_material);
-  mex_resizing_hbox_replace_border_image (&priv->border,
-                                          border,
-                                          &priv->border_image,
-                                          &priv->border_material);
+  mex_replace_border_image (&priv->highlight,
+                            highlight,
+                            &priv->highlight_image,
+                            &priv->highlight_material);
+  mex_replace_border_image (&priv->shadow,
+                            shadow,
+                            &priv->shadow_image,
+                            &priv->shadow_material);
+  mex_replace_border_image (&priv->border,
+                            border,
+                            &priv->border_image,
+                            &priv->border_material);
 
   clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
 }

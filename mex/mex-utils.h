@@ -107,4 +107,9 @@ extern const gchar *mex_shader_box_blur;
 
 GQuark mex_tile_shadow_quark ();
 
+void mex_replace_border_image (CoglHandle     *texture_p,
+                               MxBorderImage  *image,
+                               MxBorderImage **image_p,
+                               CoglHandle     *material_p);
+
 #endif /* _MEX_UTILS_H */

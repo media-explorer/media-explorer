@@ -608,3 +608,71 @@ mex_screensaver_uninhibit (guint32 cookie)
     }
   g_object_unref (proxy);
 }
+
+/* Copied from MxWidget, but TRUE/FALSE swapped round to make sense */
+static gboolean
+mx_border_image_equal (MxBorderImage *v1,
+                       MxBorderImage *v2)
+{
+  if (v1 == v2)
+    return TRUE;
+
+  if (!v1 && v2)
+    return FALSE;
+
+  if (!v2 && v1)
+    return FALSE;
+
+  if (g_strcmp0 (v1->uri, v2->uri))
+    return FALSE;
+
+  if (v1->top != v2->top)
+    return FALSE;
+
+  if (v1->right != v2->right)
+    return FALSE;
+
+  if (v1->bottom != v2->bottom)
+    return FALSE;
+
+  if (v1->left != v2->left)
+    return FALSE;
+
+  return TRUE;
+}
+
+void
+mex_replace_border_image (CoglHandle     *texture_p,
+                          MxBorderImage  *image,
+                          MxBorderImage **image_p,
+                          CoglHandle     *material_p)
+{
+  MxTextureCache *cache = mx_texture_cache_get_default ();
+
+  if (!mx_border_image_equal (image, *image_p))
+    {
+      if (*image_p)
+        g_boxed_free (MX_TYPE_BORDER_IMAGE, *image_p);
+
+      if (*texture_p)
+        {
+          cogl_handle_unref (*texture_p);
+          *texture_p = NULL;
+        }
+
+      *image_p = image;
+      if (image)
+        {
+          *texture_p = mx_texture_cache_get_cogl_texture (cache, image->uri);
+          if (!*material_p)
+            *material_p = cogl_material_new ();
+          cogl_material_set_layer (*material_p, 0, *texture_p);
+        }
+      else
+        {
+          cogl_handle_unref (*material_p);
+          *material_p = NULL;
+        }
+    }
+}
+

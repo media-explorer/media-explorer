@@ -83,6 +83,10 @@ struct _MexGridPrivate
 
   gint             first_visible;
   gint             last_visible;
+
+  CoglHandle       highlight;
+  CoglHandle       highlight_material;
+  MxBorderImage   *highlight_image;
 };
 
 enum
@@ -520,18 +524,16 @@ mx_stylable_iface_init (MxStylableIface *iface)
 
   if (G_UNLIKELY (!is_initialized))
     {
-      /*GParamSpec *pspec;*/
+      GParamSpec *pspec;
 
       is_initialized = TRUE;
 
-      /*
-      pspec = g_param_spec_int ("x-mx-overlap",
-                                "Overlap",
-                                "Overlap between buttons.",
-                                0, G_MAXINT, 0,
-                                G_PARAM_READWRITE);
+      pspec = g_param_spec_boxed ("x-mex-highlight",
+                                  "Highlight",
+                                  "Image to use for the highlight.",
+                                  MX_TYPE_BORDER_IMAGE,
+                                  G_PARAM_READWRITE);
       mx_stylable_iface_install_property (iface, MEX_TYPE_GRID, pspec);
-      */
     }
 }
 
@@ -641,6 +643,14 @@ mex_grid_dispose (GObject *object)
       priv->timeline = NULL;
     }
 
+  if (priv->highlight)
+    {
+      cogl_handle_unref (priv->highlight);
+      cogl_handle_unref (priv->highlight_material);
+      priv->highlight = NULL;
+      priv->highlight_material = NULL;
+    }
+
   G_OBJECT_CLASS (mex_grid_parent_class)->dispose (object);
 }
 
@@ -671,6 +681,12 @@ mex_grid_finalize (GObject *object)
     {
       g_array_unref (priv->boxes);
       priv->boxes = NULL;
+    }
+
+  if (priv->highlight_image)
+    {
+      g_boxed_free (MX_TYPE_BORDER_IMAGE, priv->highlight_image);
+      priv->highlight_image = NULL;
     }
 
   G_OBJECT_CLASS (mex_grid_parent_class)->finalize (object);
@@ -1314,6 +1330,29 @@ mex_grid_paint (ClutterActor *actor)
         }
     }
 
+  /* Draw the highlight */
+  if (priv->highlight_material)
+    {
+      cogl_material_set_color4ub (priv->highlight_material,
+                                  paint_opacity, paint_opacity, paint_opacity,
+                                  paint_opacity);
+      cogl_set_source (priv->highlight_material);
+
+      if (/*highlight_left*/0)
+        cogl_rectangle_with_texture_coords (
+          box.x1, box.y1 + y,
+          box.x1 + cogl_texture_get_width (priv->highlight),
+          box.y2 + y,
+          0, 0, 1, 1);
+
+      if (/*highlight_right*/1)
+        cogl_rectangle_with_texture_coords (
+          box.x2, box.y1 + y,
+          box.x2 - cogl_texture_get_width (priv->highlight),
+          box.y2 + y,
+          0, 0, 1, 1);
+    }
+
   /* Unset the clip around the actor */
   cogl_clip_pop ();
 }
@@ -1527,13 +1566,26 @@ mex_grid_style_changed_cb (MxStylable          *stylable,
                            MxStyleChangedFlags  flags,
                            MexGrid             *self)
 {
+  MxBorderImage *highlight;
+
   MexGridPrivate *priv = self->priv;
+
+  mx_stylable_get (stylable,
+                   "x-mex-highlight", &highlight,
+                   NULL);
+
+  mex_replace_border_image (&priv->highlight,
+                            highlight,
+                            &priv->highlight_image,
+                            &priv->highlight_material);
 
   /* This is a hack to get around style-changed iterating over
    * all our children. As we may have hundreds, or even thousands
    * of children, we need to intercept this.
    */
   priv->next_foreach_is_style_changed = TRUE;
+
+  clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
 }
 
 static void

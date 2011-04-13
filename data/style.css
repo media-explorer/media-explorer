@@ -771,3 +771,8 @@ MexScrollView.Grid
 {
   border-image: url("grid-content-bg.png") 0;
 }
+
+MexGrid
+{
+  x-mex-highlight: url('panel-highlight.png') 0;
+}
