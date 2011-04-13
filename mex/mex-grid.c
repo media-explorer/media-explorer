@@ -388,8 +388,11 @@ mex_grid_move_focus (MxFocusable      *focusable,
                 break;
             }
 
-          /* If we're on the row before last, we want to focus the last item */
-          if ((direction == MX_FOCUS_DIRECTION_DOWN) &&
+          /* If we're on the row before last, we possibly want to focus
+           * the last item
+           */
+          if (!focusable &&
+              (direction == MX_FOCUS_DIRECTION_DOWN) &&
               ((index / priv->real_stride) ==
                ((priv->children->len - 1) / priv->real_stride) - 1))
             {
