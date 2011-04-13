@@ -1,0 +1,65 @@
+
+/* This padding is temporary until we have real widgets to add this space */
+
+MexColumn > MxBoxLayout.Header MxIcon
+{
+  -mx-icon-size: 26;
+}
+
+MexExplorer#main-explorer > MexScrollView
+{
+  padding: 25 100 0;
+}
+
+*#tool-area
+{
+  background-color: #0000001a;
+  padding: 100 0 0;
+}
+
+*#main-layout
+{
+  border-image: url('main-bg.png') 0;
+}
+
+*#grid-page
+{
+  padding: 48 48 0;
+}
+
+*#grid-page > *#content
+{
+  padding: 8 0 0;
+}
+
+MxBoxLayout.Header#menu-header
+{
+  padding: 12;
+  -mx-spacing: 12;
+}
+
+MxBoxLayout.Header#menu-header > MxLabel
+{
+  font-size: 22;
+}
+
+MxLabel.Title
+{
+  color: white;
+  padding: 18 12;
+}
+
+MxSpinner#main-spinner
+{
+  padding: 12;
+}
+
+MxIcon.Usb
+{
+  -mx-icon-name: "icon-panelheader-usb";
+}
+
+MxIcon.Local
+{
+  -mx-icon-name: "icon-panelheader-computer";
+}

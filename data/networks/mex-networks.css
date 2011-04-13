@@ -1,0 +1,117 @@
+MxLabel#mtn-app-title {
+  font-size: 26;
+}
+
+MxBoxLayout#mtn-background {
+  border-image: url('background.png');
+}
+
+MxBoxLayout#mtn-content-box {
+  padding: 90px 100px 90px 100px;
+  border-image: url('content-box.png') 60 60 0 60;
+}
+
+MxBoxLayout#mtn-notebook-box {
+  padding: 50px 30px 50px 30px;
+}
+
+MexScrollView#mtn-scroll-view {
+  border-image: url('service-list.png') 2;
+}
+
+MtnServiceTile {
+  border-image: none;
+  padding: 15 30 15 10;
+}
+
+MtnServiceTile:focus {
+  padding: 15 30 15 10;
+}
+
+MtnServiceTile:hover {
+  padding: 15 30 15 10;
+}
+
+MtnServiceTile:focus MxLabel {
+  color: black;
+}
+
+MxFrame#mtn-no-services-frame {
+  padding: 35;
+}
+
+MxSpinner.mtn-connecting-spinner {
+  padding: 0 5;
+}
+
+MxIcon.mtn-connection-ok {
+  padding: 0 5;
+  -mx-content-image: url('icon-tick.png');
+}
+
+MxIcon.mtn-connection-failed {
+  padding: 0 5;
+  -mx-content-image: url('icon-info.png');
+}
+
+MxIcon.mtn-info {
+  padding: 0 5;
+  -mx-content-image: url('icon-info.png');
+}
+
+MxIcon.mtn-service-connected {
+  -mx-content-image: url('icon-tick.png');
+}
+:focus MxIcon.mtn-service-connected {
+  -mx-content-image: url('icon-tick-focus.png');
+}
+
+MxIcon.mtn-service-idle {
+  -mx-content-image: none;
+}
+
+MxIcon.mtn-service-type-generic-0 {
+  -mx-content-image: url('icon-wifi-0.png');
+}
+:focus MxIcon.mtn-service-type-generic-0 {
+  -mx-content-image: url('icon-wifi-0-focus.png');
+}
+
+MxIcon.mtn-service-type-generic-1 {
+  -mx-content-image: url('icon-wifi-1.png');
+}
+:focus MxIcon.mtn-service-type-generic-1 {
+  -mx-content-image: url('icon-wifi-1-focus.png');
+}
+
+MxIcon.mtn-service-type-generic-2 {
+  -mx-content-image: url('icon-wifi-2.png');
+}
+:focus MxIcon.mtn-service-type-generic-2 {
+  -mx-content-image: url('icon-wifi-2-focus.png');
+}
+
+MxIcon.mtn-service-type-generic-3 {
+  -mx-content-image: url('icon-wifi-3.png');
+}
+:focus MxIcon.mtn-service-type-generic-3 {
+  -mx-content-image: url('icon-wifi-3-focus.png');
+}
+
+MxIcon.mtn-service-type-wired {
+  -mx-content-image: url('icon-wired.png');
+}
+:focus MxIcon.mtn-service-type-wired {
+  -mx-content-image: url('icon-wired-focus.png');
+}
+
+MxIcon.mtn-service-security-secure {
+  -mx-content-image: url('icon-lock.png');
+}
+:focus MxIcon.mtn-service-security-secure {
+  -mx-content-image: url('icon-lock-focus.png');
+}
+
+MxIcon.mtn-service-security-none {
+  -mx-content-image: none;
+}

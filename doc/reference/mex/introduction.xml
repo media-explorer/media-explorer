@@ -1,0 +1,41 @@
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+]>
+
+<chapter id="introduction">
+  <title>Introduction</title>
+
+  <para>Media Explorer is media centre library and reference
+  application for Linux (including MeeGo).</para>
+
+  <para>It leverages
+  <link linkend="developers-architecture-integration">existing
+  libraries</link> (GUPnP, Grilo, Tracker, GStreamer)
+  to find, index and play local and remote media. The application
+  (interface coded in Mx and Clutter) enables browsing, searching, and
+  viewing of found media.</para>
+
+  <para><emphasis>Features</emphasis></para>
+
+  <itemizedlist>
+    <listitem>
+      <para>Smooth, intuitive animated interface for media
+      browse, search and playback.</para>
+    </listitem>
+
+    <listitem>
+      <para>Support for media discovery and streaming on local
+      filesystem and connected USB drives.</para>
+    </listitem>
+
+    <listitem>
+      <para>Support for media discovery and streaming from UPnP
+      sources.</para>
+    </listitem>
+
+    <listitem>
+      <para>Configurable key binding, enabling use with
+      standard remote control units.</para>
+    </listitem>
+  </itemizedlist>
+</chapter>

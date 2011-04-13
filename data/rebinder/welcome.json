@@ -1,0 +1,110 @@
+{
+  "type": "MxBoxLayout",
+  "id": "pane",
+  "orientation": "vertical",
+  "style-class": "Pane",
+  "children": [
+    {
+      "type": "MxLabel",
+      "text": "Welcome",
+      "style-class": "PaneTitle",
+      "child::expand": false
+    },
+    {
+      "type": "MxLabel",
+      "text": "Hey there, this our pre-alpha prototype. It's not for the feint of heart, but it's a start we wanted to share with you.",
+      "line-wrap": true,
+      "style-class": "Para",
+      "child::expand": false
+    },
+    {
+      "type": "MxLabel",
+      "text": "This release focuses on three things:",
+      "line-wrap": true,
+      "style-class": "Para",
+      "child::expand": false,
+      "child::y-fill": false
+    },
+    {
+      "type": "MxTable",
+      "child::expand": false,
+      "child::y-fill": false,
+      "children": [
+        {
+          "type": "MxLabel",
+          "text": "1) ",
+          "child::row": 0,
+          "child::column": 0,
+          "child::x-expand": false,
+          "child::y-expand": false,
+          "child::x-fill": false,
+          "child::y-fill": false
+        },
+        {
+          "type": "MxLabel",
+          "text": "Surfacing fresh content on your home network,",
+          "line-wrap": true,
+          "y-align": "middle",
+          "child::row": 0,
+          "child::column": 1,
+          "child::y-align": "middle"
+        },
+        {
+          "type": "MxLabel",
+          "text": "2) ",
+          "child::row": 1,
+          "child::column": 0,
+          "child::x-expand": false,
+          "child::y-expand": false,
+          "child::x-fill": false,
+          "child::y-fill": false
+        }
+        {
+          "type": "MxLabel",
+          "text": "Audiovisual playback (videos & photos),",
+          "line-wrap": true,
+          "y-align": "middle",
+          "child::row": 1,
+          "child::column": 1,
+          "child::y-align": "middle"
+        },
+        {
+          "type": "MxLabel",
+          "text": "3) ",
+          "child::row": 2,
+          "child::column": 0,
+          "child::x-expand": false,
+          "child::y-expand": false,
+          "child::x-fill": false,
+          "child::y-fill": false,
+          "child::y-align": "middle"
+        },
+        {
+          "type": "MxLabel",
+          "text": "Building a basic playlist.",
+          "line-wrap": true,
+          "y-align": "middle",
+          "child::row": 2,
+          "child::column": 1,
+          "child::y-align": "middle"
+        }
+      ]
+    },
+    {
+      "type": "MxLabel",
+      "text": "We look forward to your comments, suggestions and code contributions!",
+      "line-wrap": true,
+      "style-class": "BigPaddedPara",
+      "child::expand": false
+    },
+    {
+      "type": "MxButton",
+      "id": "next",
+      "style-class": "Next",
+      "label": "Next",
+      "child::expand": false,
+      "child::x-fill": false,
+      "child::x-align": "end"
+    }
+  ]
+}

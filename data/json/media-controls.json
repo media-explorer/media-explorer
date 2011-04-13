@@ -1,0 +1,116 @@
+[
+  {
+    "type" : "MxAction",
+    "id" : "play-pause-action",
+    "icon" : "media-playback-start"
+  },
+  {
+    "type" : "MxAction",
+    "id" : "stop-action",
+    "icon" : "media-playback-stop"
+  },
+  {
+    "type" : "MxAction",
+    "id" : "add-to-queue-action",
+    "display-name" : "Add to queue"
+  },
+  {
+    "type" : "MexScrollView",
+    "id" : "media-controls",
+    "indicators-hidden" : true,
+    "height" : 150,
+    "children" : [
+      {
+        "type" : "MxBoxLayout",
+        "orientation" : "vertical",
+        "spacing" : 21,
+        "children" : [
+          {
+            "type" : "MxBoxLayout",
+            "id" : "media-controls-box",
+            "orientation" : "vertical",
+            "child::x-fill" : false,
+            "children" : [
+              {
+                "type" : "MxBoxLayout",
+                "style-class" : "MexMediaControlsTitle",
+                "width" : 980,
+                "height" : 48,
+                "child::expand" : false,
+                "spacing" : 16,
+                "children" : [
+                  {
+                    "type" : "MxLabel",
+                    "id" : "title-label",
+                    "text" : "Content Title",
+                    "y-align" : "middle",
+                    "width" : 440
+                  },
+                  {
+                    "type" : "MxButton",
+                    "id" : "play-pause-button",
+                    "style-class" : "MediaPlay",
+                    "action" : "play-pause-action",
+                    "label-visible" : false,
+                    "child::x-fill" : false,
+                    "child::y-fill" : false
+                  },
+                  {
+                    "type" : "MxButton",
+                    "style-class" : "MediaStop",
+                    "action" : "stop-action",
+                    "label-visible" : false,
+                    "child::x-fill" : false,
+                    "child::y-fill" : false
+                  },
+                  {
+                    "type" : "MexQueueButton",
+                    "name" : "add-to-queue-button",
+                    "id" : "add-to-queue-button",
+                    "min-width" : 240.0,
+                    "child::expand" : true,
+                    "child::x-align" : "end",
+                    "child::x-fill" : false
+                  }
+                ]
+              },
+              {
+                "type" : "MxBoxLayout",
+                "style-class" : "MexMediaTimeline",
+                "spacing" : 8,
+                "width" : 980,
+                "child::expand" : false,
+                "children" : [
+                  {
+                    "type" : "MxSlider",
+                    "id" : "slider",
+                    "child::expand" : true
+                  },
+                  {
+                    "type" : "MxLabel",
+                    "id" : "progress-label",
+                    "text" : "00:00 / 00:00"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type" : "MexScrollView",
+            "indicators-hidden" : true,
+            "children" : [
+              {
+                "type" : "MxBoxLayout",
+                "id" : "related-box",
+                "style-class" : "MexTimeline",
+                "spacing" : 44,
+                "scroll-to-focused" : false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
+

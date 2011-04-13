@@ -1,0 +1,248 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+               "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+<!ENTITY version "@VERSION@">
+]>
+
+<book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
+  <bookinfo>
+    <title>Mex Reference Manual</title>
+    <releaseinfo>for Mex &version;</releaseinfo>
+
+    <copyright>
+      <year>2010</year>
+      <holder>Intel Corporation</holder>
+    </copyright>
+
+    <legalnotice>
+      <para>
+        Permission is granted to copy, distribute and/or modify this
+        document under the terms of the <citetitle>GNU Free
+        Documentation License</citetitle>, Version 1.1 or any later
+        version published by the Free Software Foundation with no
+        Invariant Sections, no Front-Cover Texts, and no Back-Cover
+        Texts. You may obtain a copy of the <citetitle>GNU Free
+        Documentation License</citetitle> from the Free Software
+        Foundation by visiting <ulink type="http"
+        url="http://www.fsf.org">their Web site</ulink> or by writing
+        to:
+
+        <address>
+          The Free Software Foundation, Inc.,
+          <street>59 Temple Place</street> - Suite 330,
+          <city>Boston</city>, <state>MA</state> <postcode>02111-1307</postcode>,
+          <country>USA</country>
+        </address>
+      </para>
+    </legalnotice>
+  </bookinfo>
+
+  <part id="mex-overview">
+    <title>Mex Overview</title>
+
+    <xi:include href="introduction.xml"/>
+    <xi:include href="users.xml"/>
+    <xi:include href="developers.xml"/>
+  </part>
+
+  <part id="mex-base">
+    <title>Mex Core Reference</title>
+
+    <chapter>
+      <title>Abstract classes and interfaces</title>
+
+      <xi:include href="xml/mex-applet.xml"/>
+      <xi:include href="xml/mex-content.xml"/>
+      <xi:include href="xml/mex-content-view.xml"/>
+      <xi:include href="xml/mex-generic-content.xml"/>
+      <xi:include href="xml/mex-generic-model.xml"/>
+      <xi:include href="xml/mex-generic-proxy.xml"/>
+      <xi:include href="xml/mex-media-player-ginterface.xml"/>
+      <xi:include href="xml/mex-model.xml"/>
+      <xi:include href="xml/mex-proxy.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Plugin-specific interfaces</title>
+
+      <xi:include href="xml/mex-action-provider.xml"/>
+      <xi:include href="xml/mex-applet-provider.xml"/>
+      <xi:include href="xml/mex-logo-provider.xml"/>
+      <xi:include href="xml/mex-model-provider.xml"/>
+      <xi:include href="xml/mex-tool-provider.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Managers</title>
+
+      <xi:include href="xml/mex-action-manager.xml"/>
+      <xi:include href="xml/mex-applet-manager.xml"/>
+      <xi:include href="xml/mex-plugin-manager.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Model classes</title>
+
+      <xi:include href="xml/mex-aggregate-model.xml"/>
+      <xi:include href="xml/mex-feed.xml"/>
+      <xi:include href="xml/mex-grilo-feed.xml"/>
+      <xi:include href="xml/mex-grilo-program.xml"/>
+      <xi:include href="xml/mex-grilo-tracker-feed.xml"/>
+      <xi:include href="xml/mex-model-manager.xml"/>
+      <xi:include href="xml/mex-program.xml"/>
+      <xi:include href="xml/mex-queue-model.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Container widgets</title>
+
+      <xi:include href="xml/mex-aspect-frame.xml"/>
+      <xi:include href="xml/mex-column.xml"/>
+      <xi:include href="xml/mex-expander-box.xml"/>
+      <xi:include href="xml/mex-explorer.xml"/>
+      <xi:include href="xml/mex-grid.xml"/>
+      <xi:include href="xml/mex-notification-area.xml"/>
+      <xi:include href="xml/mex-resizing-hbox.xml"/>
+      <xi:include href="xml/mex-scroll-view.xml"/>
+      <xi:include href="xml/mex-shell.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Basic widgets</title>
+
+      <xi:include href="xml/mex-action-button.xml"/>
+      <xi:include href="xml/mex-clock-bin.xml"/>
+      <xi:include href="xml/mex-content-box.xml"/>
+      <xi:include href="xml/mex-content-tile.xml"/>
+      <xi:include href="xml/mex-content-button.xml"/>
+      <xi:include href="xml/mex-info-bar.xml"/>
+      <xi:include href="xml/mex-info-panel.xml"/>
+      <xi:include href="xml/mex-media-controls.xml"/>
+      <xi:include href="xml/mex-menu.xml"/>
+      <xi:include href="xml/mex-queue-button.xml"/>
+      <xi:include href="xml/mex-scroll-indicator.xml"/>
+      <xi:include href="xml/mex-shadow.xml"/>
+      <xi:include href="xml/mex-slide-show.xml"/>
+      <xi:include href="xml/mex-tile.xml"/>
+      <xi:include href="xml/mex-volume-control.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Widget feeders</title>
+
+      <xi:include href="xml/mex-content-proxy.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Media playback</title>
+
+      <xi:include href="xml/mex-player.xml"/>
+      <xi:include href="xml/mex-player-client.xml"/>
+      <xi:include href="xml/mex-media-dbus-bridge.xml"/>
+      <xi:include href="xml/mex-surface-player.xml"/>
+      <xi:include href="xml/mex-media-player-bindings.xml"/>
+      <xi:include href="xml/mex-player-common.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Notifications</title>
+
+      <xi:include href="xml/mex-notification-source.xml"/>
+      <xi:include href="xml/mex-dummy-notification-source.xml"/>
+      <xi:include href="xml/mex-gio-notification-source.xml"/>
+      <xi:include href="xml/mex-network-notification-source.xml"/>
+      <xi:include href="xml/mex-online.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Utility classes</title>
+
+      <xi:include href="xml/mex-application.xml"/>
+      <xi:include href="xml/mex-application-category.xml"/>
+      <xi:include href="xml/mex-download-queue.xml"/>
+      <xi:include href="xml/mex-settings.xml"/>
+    </chapter>
+
+    <chapter>
+      <title>Utility functions</title>
+
+      <xi:include href="xml/mex-metadata-utils.xml"/>
+      <xi:include href="xml/mex-thumbnailer.xml"/>
+      <xi:include href="xml/mex-utils.xml"/>
+    </chapter>
+
+  </part>
+
+  <part id="mex-objects">
+    <title>Mex actors and objects</title>
+
+    <chapter id="mex-objecthierarchy">
+      <title>Object hierarchy</title>
+
+      <xi:include href="xml/tree_index.sgml"><xi:fallback /></xi:include>
+    </chapter>
+
+    <chapter id="mex-objectindex">
+      <title>Object index</title>
+
+      <xi:include href="xml/object_index.sgml"><xi:fallback /></xi:include>
+    </chapter>
+  </part>
+
+  <part id="mex-glossary">
+    <title>Glossaries</title>
+
+    <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
+  </part>
+
+  <index>
+    <title>Index of all symbols</title>
+    <xi:include href="xml/api-index-full.xml"><xi:fallback /></xi:include>
+  </index>
+
+  <!-- none yet
+  <index role="deprecated">
+    <title>Index of deprecated symbols</title>
+    <xi:include href="xml/api-index-deprecated.xml"><xi:fallback /></xi:include>
+  </index> -->
+
+  <index role="0.2">
+    <title>Index of new symbols in 0.2</title>
+    <xi:include href="xml/api-index-0.2.xml"><xi:fallback /></xi:include>
+  </index>
+
+  <appendix id="license">
+    <title>License</title>
+
+    <para>
+      This library is free software; you can redistribute it and/or
+      modify it under the terms of the <citetitle>GNU Library General
+      Public License</citetitle> as published by the Free Software
+      Foundation; either version 2 of the License, or (at your option)
+      any later version.
+    </para>
+
+    <para>
+      This library is distributed in the hope that it will be useful,
+      but WITHOUT ANY WARRANTY; without even the implied warranty of
+      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+      <citetitle>GNU Library General Public License</citetitle> for
+      more details.
+    </para>
+
+    <para>
+      You may obtain a copy of the <citetitle>GNU Library General
+      Public License</citetitle> from the Free Software Foundation by
+      visiting <ulink type="http" url="http://www.fsf.org">their Web
+      site</ulink> or by writing to:
+
+      <address>
+        Free Software Foundation, Inc.
+        <street>59 Temple Place</street> - Suite 330
+        <city>Boston</city>, <state>MA</state> <postcode>02111-1307</postcode>
+        <country>USA</country>
+      </address>
+    </para>
+  </appendix>
+
+</book>

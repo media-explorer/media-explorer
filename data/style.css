@@ -1,0 +1,766 @@
+/* Some handy style-classes */
+
+*
+{
+  font-family: "Droid Sans";
+}
+
+MxSpinner
+{
+  -mx-spinner-image: url('spinner.png');
+  -mx-spinner-frames: 16;
+}
+
+/* MxDialog styling */
+
+MxDialog > MxFrame.MxDialogBackground
+{
+  padding: 100;
+  border-image: url('harderror-bg.png') 0;
+}
+
+MxDialog.MexErrorDialog > MxLabel
+{
+  font-size: 18;
+  color: white;
+}
+
+/* MxLabel styling */
+
+MxLabel,
+MxButton
+{
+  font-size: 18;
+  color: white;
+}
+
+MxButton:hover,
+MxButton:focus,
+MxButton:active,
+MxButton:hover MxLabel,
+MxButton:focus MxLabel,
+MxButton:active MxLabel,
+MexTile:active > MxTable.MexTile > MxLabel,
+MexTile.Important:focus > MxTable.MexTile > MxLabel
+{
+  color: #464541;
+}
+
+MexTile.Important > MxTable.MexTile > MxLabel
+{
+  color: white;
+}
+
+MxLabel.Header
+{
+  border-image: url("panel-header-bg.png") 1 0;
+  padding: 12;
+}
+
+/* MxButton styling */
+
+MxButton,
+MxButton:checked
+{
+  padding: 5 13;
+  font-size: 18;
+  border-image: url("item-title-bg.png") 1 0 0;
+}
+
+MxButton:hover,
+MxButton:focus,
+MxButton:active,
+MxButton.ListItem:hover,
+MxButton.ListItem:focus,
+MxButton.ListItem:active
+{
+  padding: 5 13;
+  border-image: url("highlight-bg.png") 0;
+}
+
+MxButton.ListItem:checked
+{
+  border-image: url("item-title-bg.png") 1 0 0;
+}
+
+/* MxEntry styling */
+
+MxEntry
+{
+  font-size: 18;
+  border-image: url("label-bg.png") 1 0;
+}
+
+/* Action-list, MexMenu and MexContentButton styling */
+/* Further MexMenu styling later */
+
+MxBoxLayout.ActionList > MxButton,
+MxBoxLayout.Menu > MxButton,
+MexContentButton
+{
+  padding: 11 15;
+  border-image: url("details-actions-separator.png") 0 15 1;
+}
+
+MxBoxLayout.ActionList > MxButton:hover,
+MxBoxLayout.ActionList > MxButton:focus,
+MxBoxLayout.ActionList > MxButton:active,
+MxBoxLayout.Menu > MxButton:hover,
+MxBoxLayout.Menu > MxButton:focus,
+MxBoxLayout.Menu > MxButton:focus:checked,
+MxBoxLayout.Menu > MxButton:active,
+MexContentButton:hover,
+MexContentButton:focus,
+MexContentButton:active
+{
+  border-image: url("highlight-bg.png") 0;
+}
+
+MxBoxLayout.ActionList > MxButton:hover MxLabel,
+MxBoxLayout.ActionList > MxButton:focus MxLabel,
+MxBoxLayout.ActionList > MxButton:active MxLabel
+{
+  color: #464541;
+}
+
+MexContentButton MxLabel
+{
+  color: #d0d0cc;
+}
+
+MexContentButton:focus MxLabel
+{
+  color: #464541;
+}
+
+MexContentButton MxLabel.Secondary
+{
+  color: #9c9c97;
+}
+
+/* MxIcon styling */
+
+MxIcon,
+MxButton
+{
+  -mx-icon-size: 26;
+}
+
+MxButton:hover MxIcon,
+MxButton:focus MxIcon,
+MxButton.MexSearchBoxOpen MxIcon
+{
+  -mx-icon-suffix: "-highlight";
+}
+
+
+MxIcon.Clear
+{
+  -mx-icon-name: "edit-clear-mex";
+}
+
+MxIcon.Document,
+MxIcon.Video,
+MxIcon.Image
+{
+  -mx-icon-name: "video-x-generic-mex";
+}
+
+MxIcon.Audio
+{
+  -mx-icon-name: "audio-x-generic-mex";
+}
+
+MxIcon.Folder
+{
+  -mx-icon-name: "folder-mex";
+}
+
+MxIcon.Info
+{
+  -mx-icon-name: "icon-info-highlight";
+  -mx-icon-size: 22;
+}
+
+/* MexTile styling */
+
+MexTile
+{
+  -mx-border-image-transition-duration: 400;
+}
+
+MxTable.MexTile
+{
+  padding: 13 10 13 15;
+  -mx-column-spacing: 4;
+  -mx-border-image-transition-duration: 150;
+}
+
+MexTile.Important MxTable.MexTile
+{
+  border-image: url("item-title-bg.png") 1 0 0;
+}
+
+
+/* Search column styling */
+MexColumn.Search MexTile.Important MxTable.MexTile
+{
+  border-image: none;
+}
+
+MexColumn.Search MexTile.Important:focus MxTable.MexTile
+{
+  -mx-border-image-transition-duration: 0;
+  border-image: url("highlight-bg.png") 0;
+}
+
+MexTile:focus > MxTable.MexTile,
+MexTile.Important:focus > MxTable.MexTile
+{
+  -mx-border-image-transition-duration: 0;
+  border-image: url("highlight-bg.png") 0;
+}
+
+MexTile > MxButton,
+MexTile > MxButton:active,
+MexTile > MxButton:hover,
+MexTile > MxButton:focus
+{
+  padding: 0;
+  border-image: none;
+}
+
+/* MexContentBox styling */
+
+MexContentBox.Important
+{
+  border-image: url("details-bg.png") 0;
+}
+
+
+MexColumn.Search > MexContentBox.Important
+{
+  border-image: none;
+}
+
+
+/* MexColumn styling */
+
+MxBoxLayout.Header
+{
+  border-image: url("panel-header-bg.png") 1 0;
+}
+
+MexColumn > MxBoxLayout.Header > MxButton
+{
+  padding: 15 15 16 15;
+  border-image: none;
+}
+
+MexColumn > MxBoxLayout.Header > MxButton:hover,
+MexColumn > MxBoxLayout.Header > MxButton:focus
+{
+  border-image: url("highlight-bg.png") 0;
+}
+
+MexColumn > MxBoxLayout.Header > MxButton MxLabel
+{
+  font-size: 22;
+}
+
+MexColumn > .placeholder-label
+{
+  padding: 12;
+  border-image: url('thumb-noContent.png') 0;
+}
+
+/* MexSearchBox styling */
+
+MxButton.MexSearchBox
+{
+  border-image: none;
+}
+
+MxButton.MexSearchBox MxIcon,
+MxButton.MexSearchBoxOpen MxIcon
+{
+  -mx-icon-size: 48;
+}
+
+MxButton.MexSearchBoxOpen
+{
+  border-image: url("label-bg.png") 1 0;
+}
+
+/* MexSearchColumn styling */
+
+MexSearchColumn MxIcon
+{
+  -mx-icon-size: 48;
+}
+
+MexSearchColumn MxBoxLayout.Search
+{
+  background-color: #14020080;
+}
+
+/* MexKeyboard styling */
+
+MexKeyboard
+{
+  border-image: url("keyboard-background.png") 1 0;
+}
+
+MexKeyboard > MxButton
+{
+  padding: 0;
+  border-image: none;
+}
+
+MexKeyboard > MxButton:hover,
+MexKeyboard > MxButton:focus,
+MexKeyboard > MxButton:checked
+{
+  border-image: url("highlight-bg.png") 0;
+}
+
+/* MexScrollView styling */
+
+MexScrollIndicator
+{
+  border-image: url("scroll-bg.png") 8;
+  x-mex-scroll-handle-image: url("scroll-bar.png") 8;
+}
+
+/* MexMenu styling */
+
+MexMenu MxLabel.Detail
+{
+  font-size: 14;
+}
+
+MexMenu MxButton.Item MxIcon
+{
+  padding: 0 0 0 24;
+}
+
+MexMenu MxButton.Item MxIcon.Left
+{
+  -mx-icon-name: "stock_left-mex";
+}
+
+MexMenu MxButton.Item MxIcon.Right
+{
+  -mx-icon-name: "stock_right-mex";
+}
+
+MexMenu MxButton.Item MxIcon.Toggle
+{
+  -mx-icon-name: "icon-checkbox-off";
+}
+
+MexMenu MxButton.Item MxIcon.Toggle:checked
+{
+  -mx-icon-name: "icon-checkbox-on";
+}
+
+/* MexClockBin styling */
+
+MexClockBin
+{
+  padding: 8;
+}
+
+MxBoxLayout.MexClockBin > MxLabel
+{
+  font-size: 22;
+  color: #d0d0cc;
+}
+
+MxBoxLaout.MexClockBin > MxIcon
+{
+  -mx-icon-size: 16;
+  /*-mx-icon-name: "avatar-default-mex";*/
+}
+
+/* MexMediaControls styling */
+
+MexMediaControls, *#MexSlideShowControls
+{
+  padding: 16;
+  border-image: url('video-controls/main-bg.png') 0;
+}
+
+#MexPhotoControls
+{
+  -mx-spacing: 16;
+}
+
+MxBoxLayout.MexMediaControlsTitle,
+MxBoxLayout.MexSlideShowControlsTitle
+{
+  -mx-spacing: 16;
+  border-image: url('item-title-bg.png') 1 0 0;
+}
+
+MexMediaControls MxBoxLayout.MexMediaControlsTitle
+{
+  padding: 0 0 0 16;
+}
+
+MexSlideShow MxBoxLayout.MexMediaControlsTitle
+{
+  padding: 0 16;
+}
+
+MxBoxLayout.MexMediaTimeline
+{
+  -mx-spacing: 16;
+  padding: 15 18;
+  border-image: url('video-controls/panel-bg.png') 0;
+}
+
+MxButton.MediaPlay
+{
+  -mx-content-image: url("video-controls/icon-play.png");
+}
+
+MxButton.MediaPlay:focus
+{
+  -mx-content-image: url("video-controls/icon-play-highlight.png");
+}
+
+MxButton.MediaPause
+{
+  -mx-content-image: url("video-controls/icon-pause.png");
+}
+
+MxButton.MediaPause:focus
+{
+  -mx-content-image: url("video-controls/icon-pause-highlight.png");
+}
+
+MxButton.MediaStop
+{
+  -mx-content-image: url("video-controls/icon-stop.png");
+}
+
+MxButton.MediaStop:focus
+{
+  -mx-content-image: url("video-controls/icon-stop-highlight.png");
+}
+
+MexMediaControls MxSlider
+{
+  -mx-trough-height: 10;
+}
+
+MexMediaControls MxSlider > #trough-background
+{
+  border-image: url("video-controls/timeline-bg.png") 4 5;
+}
+
+MexMediaControls MxSlider > #fill
+{
+  border-image: url("video-controls/timeline-highlight-white.png") 4 5;
+}
+
+MexMediaControls MxSlider:focus > #fill
+{
+  border-image: url("video-controls/timeline-highlight.png") 4 5;
+}
+
+MexMediaControls MxSlider > #buffer
+{
+  border-image: url("video-controls/timeline-buffer.png") 4 5;
+}
+
+MexMediaControls MxSlider > #handle
+{
+  -mx-content-image: none;
+  border-image: none;
+}
+
+MexMediaControls MxSlider:focus > #handle
+{
+  -mx-content-image: url("video-controls/timeline-playhead.png");
+}
+
+MexMediaControls MexContentTile,
+MexSlideShow MexContentTile
+{
+  padding: 4;
+}
+
+MexSlideShow MexContentTile.Important:active
+{
+  border-image: url("slide-show/highlight-bg-white.png") 4;
+}
+
+MexMediaControls MexContentTile.Important:focus,
+MexSlideShow MexContentTile.Important:focus
+{
+  border-image: url("highlight-bg.png") 4;
+}
+
+MexMediaControls MexTile.Important:focus > MxTable.MexTile
+{
+  border-image: url("item-title-bg.png") 1 0 0;
+}
+
+MexMediaControls MexTile.Important:focus > MxTable.MexTile > MxLabel
+{
+  color: white;
+}
+
+/* Queue button */
+MexQueueButton MxIcon
+{
+  -mx-icon-name: "media-addtoqueue-mex";
+}
+
+MexQueueButton:checked MxIcon
+{
+  -mx-icon-name: "media-removefromqueue-mex";
+}
+
+MexQueueButton MxSpinner,
+{
+  -mx-spinner-image: url('queue-spinner.png');
+  -mx-spinner-frames: 16;
+  -mx-spinner-duration: 4000;
+}
+
+
+MexQueueButton:focus MxSpinner,
+{
+  -mx-spinner-image: url('queue-spinner-highlight.png');
+  -mx-spinner-frames: 16;
+  -mx-spinner-duration: 4000;
+}
+
+MexMediaControls MexQueueButton,
+MexMediaControls MexQueueButton:checked
+{
+  border-image: url("video-controls/header-vr.png") 0 0 0 2;
+}
+
+MexQueueButton:checked:focus
+{
+  border-image: url("highlight-bg.png") 0;
+}
+
+
+/* Slide show widgets */
+MxButton#fit-to-screen-button
+{
+  -mx-content-image: url("slide-show/icon-fullscreen.png");
+}
+
+MxButton#fit-to-screen-button:focus
+{
+  -mx-content-image: url("slide-show/icon-fullscreen-highlight.png");
+}
+
+MxButton#fit-to-screen-button:checked
+{
+  -mx-content-image: url("slide-show/icon-actualsize.png");
+}
+
+MxButton#fit-to-screen-button:checked:focus
+{
+  -mx-content-image: url("slide-show/icon-actualsize-highlight.png");
+}
+
+MxButton#rotate-button
+{
+  -mx-content-image: url("slide-show/icon-rotate.png");
+}
+
+MxButton#rotate-button:focus
+{
+  -mx-content-image: url("slide-show/icon-rotate-highlight.png");
+}
+
+/* MexResizingHBox styling */
+
+MexResizingHBox
+{
+  x-mex-highlight: url('panel-highlight.png') 0;
+  x-mex-shadow: url('panel-shadow.png') 0;
+}
+
+/* MexInfoPanel styling */
+
+MexInfoPanel
+{
+  padding: 16;
+}
+
+MexInfoPanel.Full
+{
+  border-image: url('video-controls/main-bg.png') 0;
+}
+
+MexInfoPanel.Full MxBoxLayout.MexInfoPanelButtons
+{
+  border-image: url('details-bg.png') 0;
+}
+
+MxButton.Watch
+{
+  -mx-icon-name: "media-watch-mex";
+}
+
+MxButton.WatchFromBeginning
+{
+  -mx-icon-name: "media-watch-from-beginning-mex";
+}
+
+MxButton.Watch:hover,
+MxButton.Watch:focus
+{
+  -mx-icon-name: "media-watch-mex-highlight";
+}
+
+MexInfoPanel.Full MxBoxLayout.MexInfoPanelButtons > MxButton
+{
+  border-image: url("details-actions-separator.png") 0 15 1;
+}
+
+MexInfoPanel.Full MxBoxLayout.MexInfoPanelButtons > MxButton:focus
+{
+  border-image: url("highlight-bg.png") 0;
+}
+
+MexInfoPanel.Full MxBoxLayout.MexInfoPanelTitle
+{
+  -mx-spacing: 16;
+  border-image: url('item-title-bg.png') 1 0 0;
+  padding: 0 16;
+}
+
+MexInfoPanel.Full MxBoxLayout.MexInfoPanelMeta
+{
+  padding: 5 8 6 8;
+  border-image: url('details-bg.png') 0;
+}
+
+/* Slide Show */
+
+MexSlideShow
+{
+  background-color: black;
+}
+
+/* Info Bar */
+MexInfoBar
+{
+  padding: 10 45 0 39;
+}
+
+MxButton.Power
+{
+  -mx-icon-name: "icon-power";
+  border-image: none;
+  padding: 4;
+}
+
+MxButton.Power:focus
+{
+  -mx-icon-name: "icon-power";
+  border-image: url("highlight-bg.png") 0;
+}
+
+MxButton.Settings
+{
+  -mx-icon-name: "icon-settings";
+  border-image: none;
+  padding: 4;
+}
+
+MxButton.Settings:focus
+{
+  -mx-icon-name: "icon-settings";
+  border-image: url("highlight-bg.png") 0;
+}
+
+
+MxDialog.MexInfoBarDialog MxLabel.DialogHeader
+{
+  font-size: 20;
+  color: white;
+}
+
+MxDialog.MexInfoBarDialog MxButton
+{
+  padding: 5 20 5 20;
+}
+
+/* MexNotificationArea */
+
+MexNotificationArea MxLabel
+{
+  padding: 0 16 0 16;
+}
+
+/* MexVolumeControl style */
+MexVolumeControl
+{
+  padding: 16 0 0 0;
+}
+
+MexVolumeControl > MxButton.volume-0
+{
+  -mx-content-image: url("volume-control/volume-0.png");
+}
+
+MexVolumeControl > MxButton.volume-1
+{
+  -mx-content-image: url("volume-control/volume-1.png");
+}
+
+MexVolumeControl > MxButton.volume-2
+{
+  -mx-content-image: url("volume-control/volume-2.png");
+}
+
+MexVolumeControl > MxButton.volume-3
+{
+  -mx-content-image: url("volume-control/volume-3.png");
+}
+
+MexVolumeControl > MxButton.volume-4
+{
+  -mx-content-image: url("volume-control/volume-4.png");
+}
+
+MexVolumeControl > MxButton.volume-5
+{
+  -mx-content-image: url("volume-control/volume-5.png");
+}
+
+MexVolumeControl > MxButton.volume-6
+{
+  -mx-content-image: url("volume-control/volume-6.png");
+}
+
+MexVolumeControl > MxButton.volume-7
+{
+  -mx-content-image: url("volume-control/volume-7.png");
+}
+
+MexVolumeControl > MxButton.volume-8
+{
+  -mx-content-image: url("volume-control/volume-8.png");
+}
+
+MexVolumeControl > MxButton.volume-9
+{
+  -mx-content-image: url("volume-control/volume-9.png");
+}
+
+MexVolumeControl > MxButton.volume-10
+{
+  -mx-content-image: url("volume-control/volume-10.png");
+}

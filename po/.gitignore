@@ -1,0 +1,3 @@
+*.pot
+Makefile.in.in
+POTFILES

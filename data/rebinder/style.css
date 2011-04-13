@@ -1,0 +1,118 @@
+MxLabel
+{
+  color: white;
+  font-size: 16;
+}
+
+MxLabel.Para
+{
+  padding: 0 0 12 0;
+}
+
+MxLabel.BigPaddedPara
+{
+  padding: 12 0 36 0;
+}
+
+MxButton,
+MxButton:checked
+{
+  padding: 18 100 18 100;
+  border-image: url("button-bg.png") 1 0 0;
+  color: white;
+  font-size: 16;
+}
+
+MxButton:hover,
+MxButton:focus,
+MxButton:active
+{
+  padding: 18 100 18 100;
+  border-image: url("button-bg-highlight.png") 0;
+  color: #303030;
+}
+
+MxLabel.PaneTitle
+{
+  font-size: 24;
+  padding: 0 0 50 0;
+}
+
+MxBoxLayout.Pane
+{
+  border-image: url("frame-bg.png") 4;
+  padding: 70 90 70 90;
+}
+
+/* welcome */
+
+MxIcon.Back
+{
+  -mx-content-image: url('icon-back.png');
+  padding: 16;
+}
+
+MxIcon.Home
+{
+  -mx-content-image: url('icon-home.png');
+  padding: 16;
+}
+
+MxIcon.Info
+{
+  -mx-content-image: url('icon-info.png');
+  padding: 16;
+}
+
+/*
+ * binding panes (back/home/info)
+ */
+
+MxTable.Binding MxLabel.Action
+{
+  padding: 0 0 40 0;
+}
+
+/* This is the text greyed out at the start and get that class removed when
+ * it's time to do the corresponding action */
+MxLabel.Inactive
+{
+  color: #303030;
+}
+
+MxFrame.Remote
+{
+  padding: 0 0 40 10;
+}
+
+/*
+ * Done
+ */
+
+MxIcon.Remote
+{
+  -mx-content-image: url('remote.png');
+  padding: 0 0 40 10;
+}
+
+/*
+ * Errors
+ */
+
+MxIcon.ErrorBack
+{
+  -mx-content-image: url('remote-back-error.png');
+  padding: 0 0 40 10;
+}
+
+MxIcon.ErrorHome
+{
+  -mx-content-image: url('remote-home-error.png');
+  padding: 0 0 40 10;
+}
+
+MxIcon.ErrorInfo
+{
+  -mx-content-image: url('remote-info-error.png');
+  padding: 0 0 40 10;
+}

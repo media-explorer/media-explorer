@@ -1,0 +1,10 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Name[en_GB]=Turn off
+Exec=/usr/bin/dbus-send --dest=org.gnome.SessionManager /org/gnome/SessionManager org.gnome.SessionManager.RequestShutdown
+Comment[en_GB]=Turn off Media Explorer
+Name=Turn off
+Comment=Turn off Media Explorer

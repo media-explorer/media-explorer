@@ -1,0 +1,55 @@
+begin
+  prog = mex
+  button = KEY_UP
+  repeat = 1
+  delay = 5
+  config = up
+end
+
+begin
+  prog = mex
+  button = KEY_DOWN
+  repeat = 1
+  delay = 5
+  config = down
+end
+
+begin
+  prog = mex
+  button = KEY_LEFT
+  repeat = 1
+  delay = 5
+  config = left
+end
+
+begin
+  prog = mex
+  button = KEY_RIGHT
+  repeat = 1
+  delay = 5
+  config = right
+end
+
+begin
+  prog = mex
+  button = KEY_OK
+  config = enter
+end
+
+begin
+  prog = mex
+  button = KEY_ENTER
+  config = enter
+end
+
+begin
+  prog = mex
+  button = KEY_BACK
+  config = back
+end
+
+begin
+  prog = mex
+  button = KEY_HOME
+  config = home
+end

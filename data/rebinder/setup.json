@@ -1,0 +1,113 @@
+{
+  "type": "MxBoxLayout",
+  "id": "pane",
+  "orientation": "vertical",
+  "style-class": "Pane",
+  "children": [
+    {
+      "type": "MxLabel",
+      "text": "Setup",
+      "style-class": "PaneTitle",
+      "child::expand": false
+    },
+    {
+      "type": "MxLabel",
+ "text": "Moving around could not be easier. You can use your remote control or keyboard (also handy for those video searches).",
+
+      "line-wrap": true,
+      "style-class": "Para",
+      "child::expand": false
+    },
+    {
+      "type": "MxLabel",
+      "text": "Before we begin, there are a few things we need to get sorted:",
+      "line-wrap": true,
+      "style-class": "Para",
+      "child::expand": false,
+      "child::y-fill": false
+    },
+    {
+      "type": "MxTable",
+      "child::expand": false,
+      "child::y-fill": false,
+      "children": [
+        {
+          "type": "MxIcon",
+          "style-class": "Back",
+          "child::row": 0,
+          "child::column": 0,
+          "child::x-expand": false,
+          "child::y-expand": false,
+          "child::x-fill": false,
+          "child::y-fill": false,
+          "child::y-align": "middle"
+        },
+        {
+          "type": "MxLabel",
+          "text": "Back button allows you to retrace your steps returning you to the previous screen.",
+          "line-wrap": true,
+          "y-align": "middle",
+          "child::row": 0,
+          "child::column": 1,
+          "child::y-align": "middle"
+        },
+        {
+          "type": "MxIcon",
+          "style-class": "Home",
+          "child::row": 1,
+          "child::column": 0,
+          "child::x-expand": false,
+          "child::y-expand": false,
+          "child::x-fill": false,
+          "child::y-fill": false,
+          "child::y-align": "middle"
+        },
+        {
+          "type": "MxLabel",
+          "text": "Home button returns you to the homescreen.",
+          "line-wrap": true,
+          "y-align": "middle",
+          "child::row": 1,
+          "child::column": 1,
+          "child::y-align": "middle"
+        },
+        {
+          "type": "MxIcon",
+          "style-class": "Info",
+          "child::row": 2,
+          "child::column": 0,
+          "child::x-expand": false,
+          "child::y-expand": false,
+          "child::x-fill": false,
+          "child::y-fill": false,
+          "child::y-align": "middle"
+        },
+        {
+          "type": "MxLabel",
+          "text": "The info button displays an informational panel relating to that video plus additional actions.",
+          "line-wrap": true,
+          "y-align": "middle",
+          "child::row": 2,
+          "child::column": 1,
+          "child::y-align": "middle"
+        }
+      ]
+    },
+    {
+      "type": "MxLabel",
+      "text": "You can map these actions to either a remote control or keyboard.",
+      "line-wrap": true,
+      "style-class": "BigPaddedPara",
+      "child::expand": false
+    },
+    {
+      "type": "MxButton",
+      "id": "next",
+      "style-class": "Next",
+      "label": "Next",
+      "child::expand": false,
+      "child::x-fill": false,
+      "child::x-align": "end"
+    }
+  ]
+}

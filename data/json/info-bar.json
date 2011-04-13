@@ -1,0 +1,50 @@
+[
+  {
+    "type" : "MxStack",
+    "id" : "main-group",
+    "child::expand" : false,
+    "children" : [
+      {
+        "type" : "MxBoxLayout",
+        "id" : "buttons-area",
+        "orientation" : "horizontal",
+        "child::x-align" : "start",
+        "child::x-fill" : false,
+        "children" : [
+          {
+            "type" : "MxButton",
+            "id" : "power-button",
+            "icon-size" : 26,
+            "style-class" : "Power",
+            "label-visible" : false,
+            "child::x-fill" : false,
+            "child::y-fill" : false
+          },
+          {
+            "type" : "MxButton",
+            "id" : "settings-button",
+            "icon-size" : 26,
+            "style-class" : "Settings",
+            "label-visible" : false,
+            "child::x-fill" : false,
+            "child::y-fill" : false
+          }
+        ]
+      },
+      {
+        "type" : "MexNotificationArea",
+        "id" : "notification-area",
+        "child::x-align" : "middle",
+        "child::y-align" : "middle"
+      },
+      {
+        "type" : "MexClockBin",
+        "id" : "clock",
+        "child::x-fill" : false,
+        "child::y-fill" : false,
+        "child::x-align" : "end"
+      }
+    ]
+  }
+]
+

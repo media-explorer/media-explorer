@@ -1,0 +1,1159 @@
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+]>
+
+<chapter id="developers">
+  <title>Media Explorer for developers</title>
+
+  <section id="developers-architecture">
+    <title>Media Explorer architecture</title>
+
+    <warning>
+      <para>Due to the fact that libmex
+      is changing daily, is incomplete, and has no stable releases,
+      this document is similarly unpolished and very much a
+      work in progress.</para>
+    </warning>
+
+    <para>Media Explorer is a single project, but it is composed of
+    several interrelated libraries and applications. The points
+    below explain these parts and where they live in the source
+    tree:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para><emphasis>libmex</emphasis> is a library
+        containing the <link linked="developers-works-mvc">MVC
+        framework</link>, plugin framework, generic widgets, and other
+        components used by the UX.</para>
+
+        <para>It lives in the <filename>mex</filename> directory.</para>
+      </listitem>
+
+      <listitem>
+        <para><emphasis>Media Explorer</emphasis> is the application,
+        built with the libmex library. Note that the libmex
+        classes could be used to build alternative UXs: see
+        <link linkend="developers-works-classes">this diagram</link>
+        for a (very) high-level overview of the classes available.</para>
+
+        <para>It lives in the <filename>shell</filename> directory.</para>
+      </listitem>
+
+      <listitem>
+        <para>The <emphasis>player</emphasis> (in a directory with the
+        same name) exposes the Media Explorer player over DBus. The
+        core functionality is documented in
+        <link linkend="MexMediaDBUSBridge"><type>MexMediaDBUSBridge</type></link>.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>The <filename>plugins</filename> directory (in the
+        source code) contains various Media Explorer plugins, which
+        extend the functionality of the basic libmex library.</para>
+
+        <para>This is where the
+        <link linkend="developers-works-content">Media Explorer Tracker
+        plugin</link> lives (in the <filename>tracker</filename>
+        directory).</para>
+
+        <para>Search and queue are also implemented as plugins, also
+        in this directory.</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>Media Explorer also integrates with various other libraries
+    and services, as described in
+    <link linkend="developers-architecture-integration">this
+    section</link>.</para>
+
+    <section id="developers-architecture-integration">
+      <title>Integration points with other libraries and services</title>
+
+      <para>Media Explorer was designed to integrate smoothly with
+      the rest of the MeeGo software stack. Consequently, there are
+      a number of points where Media Explorer integrates with
+      other libraries and services; see
+      <link linkend="developers-architecture-integration-diagram">the
+      diagram</link> for an overview (as seen by
+      <command>jhbuild dot</command>).</para>
+
+      <mediaobject id="developers-architecture-integration-diagram">
+        <imageobject>
+          <imagedata format="PNG"
+                     fileref="dependencies.png" />
+        </imageobject>
+        <alt>
+          <para>Library dependencies for Media Explorer</para>
+        </alt>
+      </mediaobject>
+
+      <itemizedlist>
+
+        <listitem>
+          <formalpara>
+            <title><ulink url="http://gupnp.org/">GUPnP</ulink></title>
+
+            <para>This is part of the standard MeeGo UPnP stack. It is a
+            low-level implementation that provides the raw UPnP protocol,
+            not APIs to higher-level specifications such as MediaServer:1.</para>
+          </formalpara>
+
+          <para><ulink url="http://live.gnome.org/Rygel">Rygel</ulink> (also part
+          of MeeGo) is available as a ContentDirectory implementation for
+          sharing media to other devices. However, this is not used at
+          present.</para>
+        </listitem>
+
+        <listitem>
+          <formalpara>
+            <title><ulink url="http://projects.gnome.org/tracker/">Tracker</ulink></title>
+
+            <para>This is Media Explorer's metadata store. It holds
+            metadata for both local and removable media, as well
+            as caching data about any UPnP servers discovered. Local
+            and removable media is indexed using standard Tracker
+            methods.</para>
+          </formalpara>
+        </listitem>
+
+        <listitem>
+          <formalpara>
+            <title><ulink url="http://live.gnome.org/Grilo">Grilo</ulink></title>
+
+            <para>This is a media discovery and metadata aggregation
+            library which abstracts content browsing and searching. By
+            default, Media Explorer uses Grilo to enable browsing and
+            searching of local files and content on UPnP
+            servers.</para>
+          </formalpara>
+
+          <para>Configuring other Grilo plugins can enable access to further
+          content sources: see <link linkend="users-configuring">the section
+          about configuring Grilo plugins</link> for more details.</para>
+        </listitem>
+
+        <listitem>
+          <formalpara>
+            <title><ulink url="http://gstreamer.freedesktop.org/">GStreamer</ulink></title>
+
+            <para>The media player is a GStreamer-based daemon with a
+            DBus API. It uses the GStreamer <type>playbin2</type>
+            element for playback, so hardware acceleration is used if
+            suitable elements are installed.</para>
+          </formalpara>
+        </listitem>
+
+        <listitem>
+          <formalpara>
+            <title><ulink url="http://www.freedesktop.org/wiki/Software/dbus">DBus</ulink></title>
+
+            <para>The media player exposes a DBus API to other
+            applications.</para>
+          </formalpara>
+        </listitem>
+
+        <listitem>
+          <formalpara>
+            <title><ulink url="http://clutter-project.org">Clutter</ulink></title>
+
+            <para>Clutter is a low-level toolkit for applications which
+            uses OpenGL for drawing. Clutter doesn't mandate a particular
+            look and feel: this is provided by toolkits built on top of Clutter.</para>
+          </formalpara>
+        </listitem>
+
+        <listitem>
+          <formalpara>
+            <title><ulink url="http://git.clutter-project.org/mx/">Mx</ulink></title>
+
+            <para>Mx is a high-level toolkit built on top of Clutter.
+            It provides an application model and a variety of widgets
+            such as buttons, dialogs and toolbars.</para>
+          </formalpara>
+        </listitem>
+
+      </itemizedlist>
+
+      <note>
+        <para>While Media Explorer was designed with MeeGo in mind,
+        it is perfectly possible to build and run it on other
+        distributions (e.g. Fedora). However, bear in mind that it
+        uses some libraries which may either be unavailable for
+        your distro (e.g. Mx, Grilo) or at versions which are too old
+        (e.g. DBus, Tracker).</para>
+      </note>
+
+    </section>
+
+    <section id="developers-ux">
+      <title>User experience design</title>
+
+      <section id="developers-ux-input">
+        <title>Input device</title>
+
+        <para>The input device is expected to have a 5-way d-pad
+        (up/down/left/right/activate), back, information and home. These
+        are the primary navigation keys, and are all that is required to
+        use the majority of the UX. The remote is also expected to
+        have a full alphanumeric keyboard, used for searching and in the
+        web browser.</para>
+
+        <para>Because the UX doesn't support a mouse pointer,
+        UX elements are activated by navigating to the element and
+        pressing the activate button.</para>
+
+        <para>On a netbook, the inputs are mapped onto the keyboard
+        as follows (by default):</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>up/down/left/right = cursor keys</para>
+          </listitem>
+          <listitem>
+            <para>activate (a.k.a. ok) = return key</para>
+          </listitem>
+          <listitem>
+            <para>back = <keycap>Esc</keycap> key</para>
+          </listitem>
+          <listitem>
+            <para>information = right-click key
+            (on my keyboard, it looks like a context menu)</para>
+          </listitem>
+          <listitem>
+            <para>home = the "Windows" key</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+
+      <section>
+        <title>Output device</title>
+
+        <para>720p is the only supported video mode. The display will be
+        configured for the best mode approximating 720p, and if this
+        isn't possible an error message will be displayed.</para>
+      </section>
+
+      <section>
+        <title>Views</title>
+
+        <para>The majority of the UX is based around two styles of view:
+        panel or grid.</para>
+
+        <para><emphasis>A panel view</emphasis> displays a number of
+        panels (as columns across the screen); each has a header which
+        can be activated to "drill down" from the summary to a more
+        detailed view (another panel view or a grid view) showing a
+        limited number of items (generally 8). Typically these items are
+        the most relevant or recent. The remaining items are accessed by
+        activating the panel heading, which changes the UX to show a grid
+        view. When an item is activated, relevant metadata for the item
+        and actions associated with it are displayed.</para>
+
+        <para><emphasis>A grid view</emphasis> fills the screen with
+        items and can be scrolled vertically. All of the items are
+        included, there is no implicit filtering.</para>
+      </section>
+
+      <section>
+        <title>Home screen</title>
+
+        <para>The home screen is a panel view, with columns for
+        <guilabel>Search</guilabel>, <guilabel>Video</guilabel>,
+        <guilabel>Photo</guilabel>, and <guilabel>Queue</guilabel>.</para>
+
+        <itemizedlist>
+          <listitem>
+            <formalpara>
+              <title><guilabel>Search</guilabel></title>
+              <para>This is used to search all available media,
+              i.e. local files, UPnP servers, Vimeo
+              and so on.</para>
+            </formalpara>
+
+            <para>Search history is stored and presented to
+            the user if available. Search results are presented in
+            panels, organised by source; a user can drill down from
+            any panel to a grid view of relevant results.</para>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title><guilabel>Video</guilabel></title>
+              <para>This displays available video content.</para>
+            </formalpara>
+
+            <para>Drilling down from the home screen will take you to the
+            source view, where each source is another panel showing
+            the 8 most recent videos from that source. Drilling
+            down from the source panel will open the grid view,
+            where all the content items from that source are visually
+            presented as thumbnails. Any folder hierarchy is flattened
+            and the content can be sorted in various ways.</para>
+
+            <para>If there is only one source, drilling down from the
+            home screen will go directly to the grid view.</para>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title><guilabel>Photos</guilabel></title>
+
+              <para>Very similar to <guilabel>Video</guilabel>, but
+              for still images. There are different controls available
+              when viewing images, for example starting a slideshow or
+              rotating the image.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title><guilabel>Queue</guilabel></title>
+
+              <para>A queue of content to be played can be created by
+              activating the items and selecting <guilabel>Add to
+              Queue</guilabel>.</para>
+            </formalpara>
+
+            <para>If the item is already in a queue, this action
+            becomes <guilabel>Remove from Queue</guilabel>.</para>
+          </listitem>
+        </itemizedlist>
+
+      </section>
+
+      <section>
+        <title>Playback</title>
+
+        <para>When playing back media, the metaphor is that the controls
+        and information are "below" the screen. These are arranged in
+        rows; a user can navigate between the rows with the up
+        and down keys. Specific controls in each row are
+        traversed by using the left and right keys.</para>
+
+        <para>For videos, pressing the down key will slide up the pause
+        and stop controls; pressing down again will slide up the seek
+        bar; and again will bring up the <guilabel>Related Content</guilabel>
+        list.</para>
+
+        <para>The <guilabel>Related Content</guilabel> row lists
+        content that is related to the current content. If the media is
+        from a directory, it lists media in the same directory; if from
+        a search, the other results; and so on. In the future this
+        is where recommended content from the service provider and
+        even advertising could appear.</para>
+
+        <para>For photos the controls are different (rotate buttons,
+        no seek bar, etc). Pressing up will slide these off the screen,
+        finally resulting in just the content being visible.</para>
+      </section>
+
+
+      <section>
+        <title>Media informations</title>
+
+        <para>At any time in the Media Explorer, you can get
+        informations about the current displayed media or the
+        currently selected media by pressing the info key.</para>
+      </section>
+
+    </section>
+
+  </section>
+
+  <section id="developers-works">
+    <title>How it works</title>
+
+    <para>This section contains various nitty gritty explanations
+    about how Media Explorer is put together.</para>
+
+    <section id="developers-works-mvc">
+      <title>MVC</title>
+
+      <para>Media Explorer is broadly based on a Model-View-Controller
+      architecture.</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Model: Media Explorer has a single <emphasis>root model</emphasis>
+          (an instance of <type>MexAggregateModel</type>). A plugin loaded
+          by Media Explorer's plugin manager can push models, each associated
+          with a category (via <type>MexModelInfo</type>), into the root
+          model. A model pushed by a plugin can be a simple
+          <type>MexModel</type> or another <type>MexAggregateModel</type>.</para>
+        </listitem>
+
+        <listitem>
+          <para>View: The top-level view element is an <type>MexExplorer</type>
+          instance. This is a horizontally-expanding, single-row
+          <type>MexResizingHBox</type>, filled with <type>MexColumns</type>;
+          a new column is added each time a new model is added to the explorer;
+          the column title is set to the model's category. Focus moves
+          between columns in response to UI events (e.g. key presses).</para>
+
+          <para>The columns are populated via the controller classes
+          (see below).</para>
+        </listitem>
+
+        <listitem>
+          <para>Controller: An <type>MexContentProxy</type> instance
+          (an implementation of <type>MexProxy</type>) is responsible
+          for generating UI elements for each model. Each time a new
+          model is added to the explorer, a new column is created, and
+          an <type>MxWidget</type> generated and added to the column
+          for each <type>MexContent</type> item in the model (currently
+          hard-coded to a maximum of 10 items per column).</para>
+
+          <para>The default behaviour is for each content item to be
+          represented by an <type>MexContentBox</type>. This is an
+          expanding widget which displays one line of the content item's
+          title, expanding on click to display the full title.</para>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>The <link linkend="developers-works-classes-diagram">class
+      hierarchy diagram</link>in the next section should help you
+      identify how the classes mentioned above relate to each other; the
+      API reference gives more detail about the specific methods
+      supported by each class/interface.</para>
+
+    </section>
+
+    <section id="developers-works-classes">
+      <title>Class hierarchy</title>
+
+      <para>The <link linkend="developers-works-classes-diagram">diagram
+      below</link> shows libmex's class hierarchy.</para>
+
+      <mediaobject id="developers-works-classes-diagram">
+        <imageobject>
+          <imagedata format="PNG"
+                     fileref="classes.png" />
+        </imageobject>
+        <alt>
+          <para>The libmex class hierarchy</para>
+        </alt>
+      </mediaobject>
+    </section>
+
+    <section id="developers-works-content">
+      <title>Content discovery</title>
+
+      <para>Media Explorer enables browsing, discovery and playback of
+      media content; to do this, it needs to have media sources available.
+      The Grilo framework for media discovery and browsing is used to provide
+      those media sources.</para>
+
+      <para>Grilo provides a uniform API for accessing content
+      and its metadata. Several Grilo plugins exist for adapting media
+      for well-known sources (Vimeo, Flickr, YouTube etc.) so they can be
+      presented via the Grilo API.</para>
+
+      <para>However, due to various licensing issues, these plugins are not
+      enabled by default in Media Explorer. The only plugin which
+      is enabled is <emphasis>grilo-tracker</emphasis>. This uses
+      a Tracker service, running in the same environment as
+      Media Explorer, to make media indexed by Tracker
+      available through the Grilo API.</para>
+
+      <para>Tracker itself a collection of data mining and indexing
+      services, typically used for searching the local filesystem. By
+      default Tracker comes with several indexing services called
+      <emphasis>miners</emphasis>. The most widely used miner is the
+      filesystem miner which is responsible to index local files.
+      Media Explorer makes use of the <emphasis>UPnP</emphasis> miner,
+      if available, which additionally indexes <ulink
+      url="http://en.wikipedia.org/wiki/Universal_Plug_and_Play">UPnP</ulink>
+      servers.</para>
+
+      <para>The diagram below gives a high-level overview of the
+      components involved:</para>
+
+      <mediaobject>
+        <imageobject>
+          <imagedata format="PNG"
+                     fileref="content-discovery.png" />
+        </imageobject>
+        <alt>
+          <para>Content discovery components in Media Explorer</para>
+        </alt>
+      </mediaobject>
+
+      <para>The arrows between the nodes in the diagram represent
+      media data from UPnP servers and the local filesystem being
+      scanned, indexed and presented by higher-level components.</para>
+
+      <section>
+        <title>Debugging content discovery</title>
+
+        <para>This section gives a few tips about how to check that
+        everything is working properly in the content discovery stack.</para>
+
+        <itemizedlist>
+          <listitem>
+            <formalpara>
+              <title>Check tracker is indexing</title>
+
+              <para>You can follow the status of Tracker and its miners
+              from the command line with:</para>
+            </formalpara>
+
+            <informalexample>
+              <screen>
+<prompt>$</prompt> <command>tracker-control -FS</command>
+              </screen>
+            </informalexample>
+
+            <para>The output should look something like this:</para>
+
+            <informalexample>
+              <screen>
+Store:
+06 Apr 2011, 14:54:52:  ✓     Idle
+
+Miners:
+06 Apr 2011, 14:54:52:  ✓     UPnP                  - Idle (ESMITH5-MOBL1: esmith5:)
+06 Apr 2011, 14:54:52:  ✓     File System           - Idle
+06 Apr 2011, 14:54:52:  ✓     Applications          - Idle
+Press Ctrl+C to end follow of Tracker state
+              </screen>
+            </informalexample>
+
+            <para>Note that the UPnP miner is reporting the ID
+            of a Windows laptop running Windows Media Center (which
+            is UPnP compatible).</para>
+
+            <para>If a miner has a cross against it, there may
+            be something wrong with Tracker's configuration.</para>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>Check Tracker is indexing the right directories</title>
+
+              <para>If your local media aren't showing up in
+              Media Explorer, it may be that they aren't being indexed
+              by Tracker.</para>
+            </formalpara>
+
+            <para>Check that Tracker is indexing directories
+            where some media exists: see
+            <link linkend="users-configuring">these instructions</link>
+            on configuring Tracker.</para>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>Check Grilo can browse your media</title>
+
+              <para>Tracker's directory settings look right,
+              but media is still not appearing in Media Explorer.
+              In this case, ensure that Tracker has actually indexed your
+              media using the <command>grilo-test-ui</command>
+              command. This runs a basic Grilo media browsing
+              interface:</para>
+            </formalpara>
+
+            <screenshot>
+              <mediaobject>
+                <imageobject>
+                  <imagedata format="PNG"
+                             fileref="grilo-test-ui-screenshot.png" />
+                </imageobject>
+                <alt>
+                  <para><command>grilo-test-ui</command> showing
+                  local media available through Grilo</para>
+                </alt>
+              </mediaobject>
+            </screenshot>
+
+            <para>If your media files have been indexed, they should
+            show up in this interface. If not, Grilo is probably
+            failing to communicate with Tracker correctly.</para>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>Check detailed logs for Tracker, Grilo and GUPnP</title>
+
+              <para>If you haven't identified the issue by following
+              the above steps, you can enable more verbose logging
+              for the various Media Explorer components as follows:</para>
+            </formalpara>
+
+            <itemizedlist>
+              <listitem>
+                <formalpara>
+                  <title>Tracker</title>
+                  <para>Set this environment variable:</para>
+                </formalpara>
+
+                <para><code>TRACKER_VERBOSITY=3</code></para>
+
+                <para>This turns on all debug messages.</para>
+              </listitem>
+
+              <listitem>
+                <formalpara>
+                  <title>Grilo</title>
+
+                  <para>Set this environment variable:</para>
+                </formalpara>
+
+                <para><code>GRL_DEBUG=*:debug</code></para>
+
+                <para>NB this produces <emphasis>a lot</emphasis> of
+                messages; other less verbose debug levels are available
+                (see the Grilo API docs).</para>
+              </listitem>
+
+              <listitem>
+                <formalpara>
+                  <title>GUPnP</title>
+
+                  <para>Set this environment variable:</para>
+                </formalpara>
+
+                <para><code>GUPNP_DEBUG=true</code></para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+        </itemizedlist>
+      </section>
+
+    </section>
+
+    <section id="developers-works-events">
+      <title>Binding key events to Media Explorer actions</title>
+
+      <para>Media Explorer is designed to function as a netbook application
+      or as a UX for a dedicated media centre distribution. This means
+      that the UX is entirely usable without a mouse. However, it also
+      means that it may be used with input devices other than a keyboard
+      (such as a TV remote control). On top of this, the application
+      may also run in environments where a full X environment is not
+      available (for example, where the application is on a different
+      GDL plane from the X server, as might happen when running
+      on a processor like
+      <ulink url="http://download.intel.com/design/celect/downloads/ce3100-product-brief.pdf">Intel's
+      CE3100</ulink>).</para>
+
+      <para>To this end, a small daemon called <emphasis>rebinder</emphasis>
+      was designed to enable keys from a variety of input devices
+      to be mapped consistently to the UX. The technical details of
+      how this works are outlined below.</para>
+
+      <section>
+        <title>Terminology and definitions</title>
+
+        <itemizedlist>
+          <listitem>
+            <formalpara>
+              <title>evdev</title>
+              <para>The "protocol" which reports events from the
+              kernel to userspace. At its core, this "protocol" is
+              reading a well-defined structure from a file descriptor
+              obtained by opening a <filename>/dev/input/event/*</filename>
+              file.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>xorg-input-evdev</title>
+              <para>The Xorg input driver to feed X with evdev
+              events.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>lirc</title>
+              <para>Since the 2.6.36 kernel, lirc, a set of
+              InfraRed device drivers, has been integrated into the
+              mainline and lirc devices are exposed as evdev devices.
+              This means that the issue of handling infra-red controls
+              is now reduced to the issue of handling evdev devices
+              (previously binding key events would have involved
+              handling IR devices and evdev devices separately).</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>key code (keycode)</title>
+              <para>A number assigned to the physical key. These days,
+              on linux, these are defined in &lt;linux/input.h&gt;
+              and are part of evdev key event structures.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>key symbol (keysym)</title>
+              <para>The logical symbol associated with the keycode.
+              For instance, 'a' is associated with the keycode 38. On
+              standard linux desktops, Xorg is responsible for the
+              mapping between keycodes and keysyms.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>libxkbcommon</title>
+              <para>This library provides control over the keyboard, extending
+              the basic facilities available in X. The project has a
+              <ulink url="http://cgit.freedesktop.org/xorg/lib/libxkbcommon">public
+              git repo</ulink>.
+              </para>
+            </formalpara>
+          </listitem>
+        </itemizedlist>
+
+      </section>
+
+      <section>
+        <title>The trouble with input device keys</title>
+
+        <para>Because Media Explorer is a media browser and player, it
+        may be used in contexts outside the traditional netbook or laptop.
+        This in turn means that users may want to control it with
+        input devices beyond the standard mouse and keyboard, such as
+        TV remote controls, for example:</para>
+
+        <orderedlist>
+          <listitem>
+            <para>keyboards, even ones with all those fancy "Internet
+            keys"</para>
+          </listitem>
+
+          <listitem>
+            <para>remotes that are seen as USB HID devices</para>
+          </listitem>
+
+          <listitem>
+            <para>IR remotes exposed as evdev devices via in-kernel lirc</para>
+          </listitem>
+        </orderedlist>
+
+        <para>However, given the variety of input devices, a couple of
+        issues arise:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Some Media Explorer actions (show more info. about
+            some content, select some content etc.) naturally map to a
+            a user's experience with modern TVs, DVD players,
+            CD players, portable music players etc. In turn, a user
+            can map those actions onto typical remote control keys
+            (in the above case, onto <guilabel>Info</guilabel> and
+            <guilabel>OK</guilabel> respectively).</para>
+
+            <para>However, these keys don't always have natural equivalents
+            on a standard computer keyboard; but a user with a standard
+            keyboard should still be able to control Media Explorer. So
+            there needs to be some way to map actions (and their
+            keys on a remote control) onto standard keyboard keys.</para>
+          </listitem>
+
+          <listitem>
+            <para>While remote controls are familiar to users, they
+            bring a different set of issues when applied to a UX in
+            a traditional Linux environment. Some of the keys on a TV
+            remote, when pressed, produce events with keycodes greater
+            than 255; however, these events are ignored by X, the
+            window manager likely to be used on Linux. In some
+            cases, remote control keys even produce keycodes which don't
+            have <emphasis>any</emphasis> keysym under X.</para>
+
+            <para>In this case, these exotic keycodes need to be mapped
+            onto keysyms which X does recognise.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>rebinder solves these issues by:</para>
+
+        <itemizedlist>
+          <listitem id="developers-works-events-natural-map">
+            <para>Ensuring that a key press on an "exotic" key produces
+            the same sort of event as its natural equivalent on a
+            standard keyboard (where a natural equivalent exists).
+            For example, rebinder makes a press on
+            an <guilabel>OK</guilabel> key on a remote control appear
+            to the application as a press on the Return key on
+            a standard keyboard; similarly, the up/down/left/right
+            keys on a remote are mapped to the keysyms for cursor keys on
+            a standard keyboard.</para>
+          </listitem>
+
+          <listitem>
+            <para>Providing a configuration tool for mapping keys on
+            an input device (keyboard, remote control) to actions
+            in the application (info, home, back), where those actions
+            don't have a "natural" key common to both remote controls and
+            standard keyboards.</para>
+          </listitem>
+        </itemizedlist>
+
+        <note>
+          <title>A "proper" fix may soon supersede rebinder</title>
+
+          <para>Redhat is working within the kernel/xorg-input-evdev/xorg to
+          solve the whole remote issue in a better way. See
+          <ulink url="https://bugzilla.redhat.com/show_bug.cgi?id=671574">this
+          bug</ulink> for details.</para>
+        </note>
+
+      </section>
+
+      <section>
+        <title>How rebinder works</title>
+
+        <para>rebinder opens the evdev devices and listens
+        directly to the kernel for events. Depending on the keycode
+        associated with an event, rebinder has two ways of
+        dealing with it:</para>
+
+        <orderedlist>
+          <listitem>
+            <para>Key events with a keycode &lt; 255 are passed through
+            to the standard X mechanism for handling.</para>
+          </listitem>
+
+          <listitem>
+            <para>For events with a keycode &gt; 255, a new keysym
+            for the event is determined by following one of two
+            branches:</para>
+
+            <orderedlist>
+              <listitem>
+                <para>If the key has a natural mapping to a standard
+                keyboard key (see
+                <link linkend="developers-works-events-natural-map">above</link>),
+                the keysym associated with that standard key is used.</para>
+
+                <para>For a list of these natural mappings, see
+                <filename>$SOURCE/applets/rebinder/rebinder-evdev-keymap.c</filename>
+                in the libmex source.</para>
+              </listitem>
+
+              <listitem>
+                <para>If there is no natural mapping for the key,
+                a keysym to keycode binding from rebinder's configuration
+                file is used instead (see
+                <link linkend="developers-works-events-rebinder-configuration">below</link>).
+                </para>
+              </listitem>
+            </orderedlist>
+
+            <para>Note that the resulting keysym is actually a Clutter
+            keysym (though these are orthogonal to X keysyms): for
+            example, <constant>CLUTTER_KEY_Up</constant>.</para>
+
+            <para>Once a new "rebound" keysym has been determined, it is sent
+            to the X server via <command>Xtest</command>.</para>
+          </listitem>
+
+        </orderedlist>
+
+        <tip>
+          <para>To ensure consistency when working on the Media Explorer
+          code, use the <constant>MEX_KEY_*</constant> defines to
+          refer to the <link linkend="developers-ux-input">primary
+          navigation keys</link> (up/down/left/right/ok/back/info/home);
+          see <filename>mex-main.h</filename> for a full list of the
+          available defines. For all other keys, use
+          <constant>CLUTTER_KEY_*</constant> defines.</para>
+        </tip>
+
+      </section>
+
+      <section id="developers-works-events-rebinder-configuration">
+        <title>rebinder configuration</title>
+
+        <para>To launch the wizard to configure the
+        <guilabel>Back</guilabel>, <guilabel>Home</guilabel> and
+        <guilabel>Info</guilabel> buttons:</para>
+
+        <informalexample>
+          <screen>
+<prompt>$</prompt> <command>mex-rebinder --configure</command>
+          </screen>
+        </informalexample>
+
+        <para>The bindings configuration file
+        (<filename>$HOME/.config/mex/rebinder.conf</filename>) is
+        a list of <code>Keysym=Keycode</code> key-value pairs like
+        this:</para>
+
+        <informalexample>
+          <programlisting>
+[bindings]
+Escape=9
+Super_L=133
+Menu=105
+          </programlisting>
+        </informalexample>
+
+        <para>The configuration defines mappings from keycodes to
+        keysyms for back (<keysym>Escape</keysym>), home
+        (<keysym>Super_L</keysym>) and info (<keysym>Menu</keysym>).
+        So, in the example above, a press on the key with keycode
+        <keycode>9</keycode> will act like a press on the
+        <keycap>Esc</keycap> key, sending an <keysym>Escape</keysym>
+        keysym to X.</para>
+
+      </section>
+
+      <section>
+        <title>Debugging rebinder</title>
+
+        <para>The <command>mex-rebinder</command> daemon handles
+        some of the events that X does not. To show debug messages
+        for this daemon, set the <envar>REBINDER_DEBUG</envar>
+        environment variable to <literal>all</literal>. Note that
+        you should restart <command>mex-rebinder</command> after
+        changing this environment variable, as it is a single-instance
+        daemon.</para>
+
+        <para>When working with rebinder, you often also need to debug low-level
+        events. The following tools can help with this:</para>
+
+        <itemizedlist>
+          <listitem>
+            <formalpara>
+              <title><command>evtest</command></title>
+
+              <para>This outputs raw events from the evdev drivers,
+              which can be useful for working out if userland receives
+              events from the kernel.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title><command>dmesg</command></title>
+
+              <para>Use this to see if an LIRC remote has been detected
+              by the kernel. If it has, there should be new
+              <filename>/dev/input/event%d</filename> devices and
+              some new raw events visible via <command>evtest</command>.</para>
+            </formalpara>
+
+            <para>Note that it's likely that in-kernel LIRC devices aren't
+            supported on MeeGo (needs to be verified).</para>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title><command>xev</command></title>
+
+              <para>This can be used to watch events received by X.</para>
+            </formalpara>
+          </listitem>
+        </itemizedlist>
+
+      </section>
+
+    </section>
+
+    <section id="developers-works-plugins">
+      <title>Plugin management and configuration</title>
+
+      <para>Media Explorer plugins are packaged as standard shared-object
+      libraries or modules. They are then installed into one of the plugin
+      directories for Media Explorer, namely:</para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            <filename>$INSTALL_PREFIX/lib/mex/plugins</filename>
+          </para>
+
+          <para>This is the main directory where most plugins are
+          installed.</para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <filename>$USER_CONFIG_DIR/mex/plugins</filename>
+          </para>
+
+          <para><filename>$USER_CONFIG_DIR</filename> defaults
+          to <filename>$HOME/.config</filename> on freedesktop.org
+          compliant distros (like MeeGo).</para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <filename>$CURRENT_WORKING_DIRECTORY/plugins</filename>
+          </para>
+
+          <para><filename>$CURRENT_WORKING_DIRECTORY</filename> is
+          the directory from where <command>mex</command> is
+          being run.</para>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>Responsibility for finding and loading plugins lies with the
+      <type>MexPluginManager</type>, one of the member variables of the
+      Media Explorer application. Plugin loading works like this:</para>
+
+      <orderedlist>
+        <listitem>
+          <para><command>mex</command> creates a plugin manager
+          (an instance of <type>MexPluginManager</type>).</para>
+        </listitem>
+
+        <listitem>
+          <para>The plugin manager looks for <filename>.so</filename> and
+          <filename>.la</filename> files in the <emphasis>plugin
+          directories</emphasis>. (See above for details of where they
+          are.)</para>
+
+          <para>For each matching plugin file in those directories, the plugin manager
+          does the following:</para>
+
+          <orderedlist>
+            <listitem>
+              <para>Loads the file via GModule.</para>
+            </listitem>
+            <listitem>
+              <para>Looks for a <function>mex_get_plugin_type</function>
+              symbol in the module's symbol table.</para>
+
+              <para>If the <function>mex_get_plugin_type</function> symbol
+              is found, the plugin manager creates an instance of the plugin
+              class and puts a reference to it into its plugin list. It
+              also emits a <constant>plugin-loaded</constant> signal.</para>
+            </listitem>
+          </orderedlist>
+
+        </listitem>
+
+        <listitem>
+          <para>Media Explorer responds to the plugin load (through a handler
+          attached to the <constant>plugin-loaded</constant> signal)
+          according to the type of plugin:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>ModelProvider: The models provided by the plugin are
+              added into Media Explorer's root model.</para>
+            </listitem>
+
+            <listitem>
+              <para>ToolProvider: The tool is added to the tool area
+              of the interface; when the tool is activated, e.g. by a
+              key press, the <type>ClutterActor</type> associated with
+              the tool is presented. This actor can replace some or all
+              of the Media Explorer UI with its own "sub-interface".</para>
+
+              <para>For example, the Media Explorer search plugin is
+              a ToolProvider: when activated, it presents a "search page", with
+              a text entry widget for entering a search string and
+              an auto-suggest column. The search page replaces the other
+              panels in the user interface.</para>
+            </listitem>
+
+            <listitem>
+              <para>ActionProvider: The actions provided by the plugin
+              are added to Media Explorer's <type>MexActionManager</type>.</para>
+
+              <para>Actions are "things you can do to a piece of content".
+              Media Explorer displays the actions for a piece of content
+              when you press the information key while it is highlighted.
+              For example, <command>Watch</command> or <command>Add to
+              queue</command> for a video, and <command>View</command>
+              for a picture.</para>
+
+              <para>An ActionProvider plugin can add new actions to
+              particular pieces of content. Each action is defined by an
+              <type>MexActionInfo</type> object returned by the provider;
+              this specifies the MIME types for which an action is
+              applicable, as well as the action (an instance
+              of <type>MxAction</type>) itself.</para>
+            </listitem>
+
+          </itemizedlist>
+        </listitem>
+      </orderedlist>
+
+      <para>See <link linkend="developers-extending">the section
+      about extending Media Explorer</link> for more information on plugin
+      development.</para>
+
+    </section>
+  </section>
+
+  <section id="developers-extending">
+    <title>Extending Media Explorer</title>
+
+    <para>This section explains how to add your own extensions and
+    customisations to Media Explorer.</para>
+
+    <section id="developers-extending-need-to-know">
+      <title>What you need to know</title>
+
+      <para>What you need to know to extend Media Explorer can be
+      summarised as "be a GNOME developer": most of the technologies
+      you need to know are used by the GNOME project.</para>
+
+      <para>But, more specifically, you need to know:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>How to use autotools (to put together a plugin
+          project)</para>
+        </listitem>
+        <listitem>
+          <para>How to code in C (to be able to write in a language which
+          integrates with the Media Explorer app)</para>
+        </listitem>
+        <listitem>
+          <para>How to use GObject (to be able to subclass libmex
+          classes to slot into the TV explorer)</para>
+        </listitem>
+        <listitem>
+          <para>How to write applications using Clutter+Mx (optional and
+          not vital for this tutorial: to provide custom widgets for your plugin)</para>
+        </listitem>
+      </itemizedlist>
+
+    </section>
+
+    <section id="developers-extending-environment">
+      <title>Setting up a Media Explorer development environment</title>
+
+      <para>You will need a MeeGo development environment. The easiest
+      way to get to this point is to use a MeeGo SDK chroot. Instructions
+      for MeeGo 1.2 are in preparation, pending stable packages: you
+      can see the old instructions, which should work for the latest
+      MeeGo images,
+      <ulink url="http://wiki.meego.com/SDK/Docs/1.1/Building_a_MeeGo_chroot_on_Linux">on
+      the MeeGo wiki</ulink>.</para>
+
+      <para>You will then work on your plugin code from inside
+      a chroot'ed MeeGo SDK environment (as Media Explorer is written
+      in C, you can't work on it with Qt Creator the same way you can
+      for some MeeGo applications).</para>
+
+      <para><command>turbine</command> is a useful tool for creating
+      plugin GObject classes. You can get it from
+      <ulink url="http://git.gnome.org/browse/turbine/">GNOME git</ulink>.</para>
+    </section>
+
+    <section id="developers-extending-building">
+      <title>Building Media Explorer from source</title>
+
+      <para>TODO</para>
+    </section>
+
+  </section>
+
+</chapter>

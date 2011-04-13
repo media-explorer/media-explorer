@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=Network Settings
+GenericName=Network Settings
+Comment=Setup your network!
+Exec=mex-networks
+Icon=mex-networks
+StartupNotify=false
+Terminal=false
+Type=Application
+

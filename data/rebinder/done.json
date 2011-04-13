@@ -1,0 +1,54 @@
+{
+  "type": "MxBoxLayout",
+  "id": "pane",
+  "orientation": "vertical",
+  "style-class": "Pane",
+  "children": [
+    {
+      "type": "MxLabel",
+      "text": "Remote control mapping is now complete",
+      "style-class": "PaneTitle",
+      "child::expand": false
+    },
+    {
+      "type": "MxBoxLayout",
+      "children": [
+        {
+          "type": "MxLabel",
+          "id": "quirk-ellipsize",
+          "text": "If you're not happy with the mapping you can always do it again",
+          "child::expand": true
+        },
+        {
+          "type": "MxIcon",
+          "style-class": "Remote",
+          "child::expand": false,
+          "child::x-fill": false,
+          "child::x-align": "end"
+        }
+      ]
+    },
+    {
+      "type": "MxBoxLayout",
+      "child::x-fill": true,
+      "children": [
+        {
+          "type": "MxButton",
+          "id": "restart",
+          "label": "Back",
+          "child::expand": true,
+          "child::x-fill": false,
+          "child::x-align": "middle"
+        },
+        {
+          "type": "MxButton",
+          "id": "close",
+          "label": "Continue",
+          "child::expand": true,
+          "child::x-fill": false,
+          "child::x-align": "middle"
+        }
+      ]
+    }
+  ]
+}

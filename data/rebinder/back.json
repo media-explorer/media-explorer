@@ -1,0 +1,76 @@
+{
+  "type": "MxBoxLayout",
+  "id": "pane",
+  "orientation": "vertical",
+  "style-class": "Pane",
+  "children": [
+    {
+      "type": "MxLabel",
+      "text": "Select Back button",
+      "style-class": "PaneTitle",
+      "child::expand": false
+    },
+    {
+      "type": "MxBoxLayout",
+      "children": [
+        {
+          "type": "MxTable",
+          "child::y-fill": false,
+          "child::y-align": "start",
+          "style-class": "Binding",
+          "children": [
+            {
+              "type": "MxLabel",
+              "text": "1)   ",
+              "child::row": 0,
+              "child::column": 0
+            },
+            {
+              "type": "MxLabel",
+              "text": "Press the button you wish to map to Back",
+              "style-class": "Action",
+              "line-wrap": true,
+              "child::row": 0,
+              "child::column": 1
+            },
+            {
+              "type": "MxLabel",
+              "id": "inactive-1",
+              "text": "2)   ",
+              "style-class": "Inactive",
+              "line-wrap": true,
+              "child::row": 1,
+              "child::column": 0
+            },
+            {
+              "type": "MxLabel",
+              "id": "inactive-2",
+              "text": "Press again to confirm",
+              "style-class": "Inactive",
+              "line-wrap": true,
+              "child::row": 1,
+              "child::column": 1
+            }
+          ]
+        },
+        {
+          "type": "MxFrame",
+          "style-class": "Remote",
+          "children": [
+            {
+              "type": "ClutterTexture",
+              "id": "remote"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "MxButton",
+      "id": "next",
+      "label": "Next",
+      "child::x-fill": false,
+      "child::x-align": "end"
+    }
+  ]
+}

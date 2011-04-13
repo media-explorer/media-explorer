@@ -1,0 +1,53 @@
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+]>
+
+<chapter id="users">
+  <title>Media Explorer for users</title>
+
+  <section id="users-installing">
+    <title>Installing Media Explorer</title>
+
+    <para>Packages for MeeGo 1.2 should be available shortly. TODO</para>
+  </section>
+
+  <section id="users-running">
+    <title>Running Media Explorer</title>
+
+    <para>Once the namespace has been clarified, instructions
+    about running the application will be here. TODO</para>
+  </section>
+
+  <section id="users-configuring">
+    <title>Configuring Media Explorer media sources</title>
+
+    <para>If the Media Explorer user has the standard GNOME home directory
+    layout (i.e. <filename>$HOME/Downloads</filename>,
+    <filename>$HOME/Videos</filename>, <filename>$HOME/Pictures</filename>),
+    Media Explorer should automatically "see" any content added to
+    those directories and present it to the user.</para>
+
+    <para>However, when using a non-standard directory layout, or if
+    you want to access files outside the default directories,
+    the user needs to configure <emphasis>Tracker</emphasis> (which provides
+    the content indexing service) from the command line with:</para>
+
+    <informalexample>
+      <screen>
+<prompt>$</prompt> <command>tracker-preferences</command>
+      </screen>
+    </informalexample>
+
+    <para>Under the <guilabel>Locations</guilabel> tab, add
+    the appropriate directories to the
+    <guilabel>Recursively Indexed</guilabel> directory list.</para>
+
+    <para>Now Tracker should find and index content in those
+    directories, making them accessible via Media Explorer.</para>
+
+    <para>To find out, see <link linkend="developers-works-content">this
+    section about how Media Explorer discovers content</link>.</para>
+
+  </section>
+
+</chapter>

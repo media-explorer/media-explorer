@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<node name="/Media_Player_Iface"
+      xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
+      xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+
+      <interface name="com.meego.mex.MediaPlayer">
+
+        <method name="SetAudioVolume" tp:name-for-bindings="Set_Audio_Volume">
+          <arg name="volume" type="d" direction="in" />
+        </method>
+
+        <method name="GetAudioVolume" tp:name-for-bindings="Get_Audio_Volume">
+          <arg name="volume" type="d" direction="out" />
+        </method>
+
+        <signal name="AudioVolumeChanged" tp:name-for-bindings="Audio_Volume_Changed">
+          <arg name="volume" type="d" direction="out" />
+        </signal>
+
+        <method name="SetUri" tp:name-for-bindings="Set_Uri">
+          <arg name="uri" type="s" direction="in" />
+        </method>
+
+        <method name="GetUri" tp:name-for-bindings="Get_Uri">
+          <arg name="uri" type="s" direction="out" />
+        </method>
+
+        <method name="SetPlaying" tp:name-for-bindings="Set_Playing">
+          <arg name="playing" type="b" direction="in" />
+        </method>
+
+        <method name="GetPlaying" tp:name-for-bindings="Get_Playing">
+          <arg name="playing" type="b" direction="out" />
+        </method>
+
+        <signal name="PlayingChanged" tp:name-for-bindings="Playing_Changed">
+          <arg name="playing" type="b" direction="out" />
+        </signal>
+
+        <method name="SetProgress" tp:name-for-bindings="Set_Progress">
+          <arg name="progress" type="d" direction="in" />
+        </method>
+
+        <method name="GetProgress" tp:name-for-bindings="Get_Progress">
+          <arg name="progress" type="d" direction="out" />
+        </method>
+
+        <signal name="ProgressChanged" tp:name-for-bindings="Progress_Changed">
+          <arg name="progress" type="d" />
+        </signal>
+
+        <method name="GetDuration" tp:name-for-bindings="Get_Duration">
+          <arg name="duration" type="d" direction="out" />
+        </method>
+
+        <signal name="DurationChanged" tp:name-for-bindings="Duration_Changed">
+          <arg name="duration" type="d" />
+        </signal>
+
+        <method name="GetCanSeek" tp:name-for-bindings="Get_Can_Seek">
+          <arg name="seekable" type="b" direction="out"/>
+        </method>
+
+        <signal name="Error" tp:name-for-bindings="Error">
+          <arg name="error" type="s" />
+        </signal>
+
+        <signal name="BufferFillChanged" tp:name-for-bindings="Buffer_Fill_Changed">
+          <arg name="buffer" type="d" />
+        </signal>
+
+        <signal name="CanSeekChanged" tp:name-for-bindings="Can_Seek_Changed">
+          <arg name="seekable" type="b" direction="out"/>
+        </signal>
+
+        <signal name="EOS" tp:name-for-bindings="EOS"/>
+      </interface>
+</node>

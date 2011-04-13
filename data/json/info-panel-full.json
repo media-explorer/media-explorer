@@ -1,0 +1,114 @@
+[
+  {
+    "id" : "info-panel-container",
+    "type" : "MxTable",
+    "style-class" : "MexInfoPanelContainer",
+    "height" : 145,
+    "width" : 980,
+    "children" : [
+      {
+        "id" : "row-container",
+        "type" : "MxBoxLayout",
+        "orientation" : "vertical",
+        "child::x-expand" : true,
+        "child::x-fill" : true,
+        "child::y-expand" : true,
+        "child::y-fill" : true,
+        "child::row" : 0,
+        "child::column" : 0,
+        "children" : [
+          {
+            "id" : "title-row",
+            "type" : "MxBoxLayout",
+            "style-class" : "MexInfoPanelTitle",
+            "orientation" : "horizontal",
+            "height" : 48,
+            "children" : [
+              {
+                "id" : "content-title",
+                "type" : "MxLabel",
+                "y-align" : "middle",
+                "child::expand" : true
+              }
+            ]
+          },
+          {
+            "id" : "metadata-row",
+            "type" : "MxBoxLayout",
+            "orientation" : "horizontal",
+            "style-class" : "MexInfoPanelMeta",
+            "child::expand" : true,
+            "spacing" : 6,
+            "children" : [
+              {
+                "id" : "thumbnail",
+                "type" : "MexContentTile",
+                "important" : true,
+                "disabled" : true,
+                "header-visible" : false,
+                "thumb-width" : 152
+              },
+              {
+                "type" : "MxTable",
+                "id" : "metadata-table",
+                "row-spacing" : 8,
+                "children" : [
+                  {
+                    "id" : "row1-metadata",
+                    "type" : "MxLabel",
+                    "height" : 20,
+                    "line-wrap" : true,
+                    "child::row" : 0,
+                    "child::column" : 0,
+                    "child::y-expand" : false
+                  },
+                  {
+                    "id" : "row2-metadata",
+                    "type" : "MxLabel",
+                    "y-align" : "top",
+                    "line-wrap" : true,
+                    "child::row" : 1,
+                    "child::column" : 0,
+                    "child::y-expand" : true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "child::x-expand" : false,
+        "child::y-expand" : true,
+        "child::y-fill" : true,
+        "child::row" : 0,
+        "child::column" : 1,
+        "height" : 48,
+        "style-class" : "MexInfoPanelButtons",
+        "id" : "buttons",
+        "type" : "MxBoxLayout",
+        "orientation" : "vertical",
+        "children" : [
+          {
+            "id" : "watch-button",
+            "type" : "MexActionButton",
+            "style-class" : "Watch",
+            "label" : "Watch",
+            "visible" : false,
+            "child::x-fill" : true,
+            "x-align" : "start"
+          },
+          {
+            "id" : "add-to-queue-button",
+            "type" : "MexQueueButton",
+            "height" : 48,
+            "child::x-fill" : true,
+            "x-align" : "start"
+          }
+        ]
+      }
+    ]
+  }
+]
+
+

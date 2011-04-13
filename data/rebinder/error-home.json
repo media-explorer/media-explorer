@@ -1,0 +1,39 @@
+{
+  "type": "MxBoxLayout",
+  "id": "pane",
+  "orientation": "vertical",
+  "style-class": "Pane",
+  "children": [
+    {
+      "type": "MxLabel",
+      "text": "Select Home button",
+      "style-class": "PaneTitle",
+      "child::expand": false
+    },
+    {
+      "type": "MxBoxLayout",
+      "children": [
+        {
+          "type": "MxLabel",
+          "id": "quirk-ellipsize",
+          "text": "Sorry the two button entries did not match.",
+          "child::expand": true
+        },
+        {
+          "type": "MxIcon",
+          "style-class": "ErrorHome",
+          "child::expand": false,
+          "child::x-fill": false,
+          "child::x-align": "end"
+        }
+      ]
+    },
+    {
+      "type": "MxButton",
+      "id": "error",
+      "label": "Try again",
+      "child::x-fill": false,
+      "child::x-align": "end"
+    }
+  ]
+}

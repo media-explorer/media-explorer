@@ -1,0 +1,29 @@
+/*** BEGIN file-header ***/
+#if !defined(__GLIB_CONTROLLER_H_INSIDE__) && !defined(GLIB_CONTROLLER_COMPILATION)
+#error "Only <glib-controller/glib-controller.h> can be included directly."
+#endif
+
+#ifndef __G_CONTROLLER_ENUM_TYPES_H__
+#define __G_CONTROLLER_ENUM_TYPES_H__
+
+#include <glib-object.h>
+
+G_BEGIN_DECLS
+
+/*** END file-header ***/
+
+/*** BEGIN file-production ***/
+/* enumerations from "@filename@" */
+/*** END file-production ***/
+
+/*** BEGIN file-tail ***/
+G_END_DECLS
+
+#endif /* !__G_CONTROLLER_ENUM_TYPES_H__ */
+/*** END file-tail ***/
+
+/*** BEGIN value-header ***/
+GType @enum_name@_get_type (void) G_GNUC_CONST;
+#define G_TYPE_@ENUMSHORT@ (@enum_name@_get_type())
+
+/*** END value-header ***/

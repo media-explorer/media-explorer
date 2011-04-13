@@ -1,0 +1,77 @@
+
+#search-page
+{
+  padding: 78 0 0 39;
+
+  /* TODO: Replace this with a dedicated background, or set the background
+   * differently in the main app so that it shows underneath here.
+   */
+  border-image: url('../../shell/style/main-bg.png') 0;
+}
+
+MxBoxLayout#search-suggestions
+{
+  padding: 10;
+}
+
+MxTable#search-entry-frame
+{
+  border-image: url('textInput-bg.png') 10;
+  padding: 2 7;
+}
+
+MxTable#search-entry-frame MxEntry
+{
+  caret-color: black;
+  selection-background-color: #d0d0cc;
+  border-image: none;
+}
+
+MxTable#search-entry-frame MxSpinner
+{
+  -mx-spinner-image: url('../../common/style/queue-spinner-highlight.png');
+  -mx-spinner-frames: 16;
+  -mx-spinner-duration: 4000;
+}
+
+
+/* search header */
+MxBoxLayout#search-header
+{
+  padding: 11 15;
+  border-image: url("../../common/style/panel-header-bg.png") 1 0;
+}
+
+MxBoxLayout#search-header:focus
+{
+  border-image: url('../../common/style/highlight-bg.png') 0;
+}
+
+MxBoxLayout#search-header > MxIcon.Search
+{
+  -mx-icon-name: "icon-panelheader-search";
+}
+
+MxBoxLayout#search-header:focus > MxIcon.Search
+{
+  -mx-icon-suffix: "-highlight";
+}
+
+/* suggest column */
+MxBoxLayout#suggest-column
+{
+  border-image: url('../../common/style/panel-highlight.png') 1;
+}
+
+MxBoxLayout#suggest-column > MxButton
+{
+  border-image: none;
+  color: white;
+  padding: 13 15;
+}
+
+MxBoxLayout#suggest-column > MxButton:focus
+{
+  border-image: url('../../common/style/highlight-bg.png') 0;
+  color: #464541;
+}

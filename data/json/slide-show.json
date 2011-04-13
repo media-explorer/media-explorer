@@ -1,0 +1,177 @@
+[
+  {
+    "type" : "MxAction",
+    "id" : "play-pause-action",
+    "icon" : "media-playback-start"
+  },
+  {
+    "type" : "MxAction",
+    "id" : "stop-action",
+    "icon" : "media-playback-stop"
+  },
+  {
+    "type" : "MxStack",
+    "id" : "slide-show",
+    "children" : [
+      {
+        "type" : "MxFrame",
+        "y-fill" : true,
+        "x-fill" : true,
+        "children" : [
+          {
+            "type" : "MxImage",
+            "scale-mode" : "fit",
+            "load-async" : true,
+            "scale-width-threshold" : 256,
+            "scale-height-threshold" : 256,
+            "transition-duration": 1000,
+            "id" : "viewer"
+          }
+        ]
+      },
+      {
+        "type" : "MxBoxLayout",
+        "id" : "controls",
+        "child::y-align" : "end",
+        "child::y-fill" : false,
+        "orientation" : "vertical",
+        "spacing" : 21,
+        "name" : "MexSlideShowControls",
+        "children" : [
+          {
+            "type" : "MxBoxLayout",
+            "orientation" : "vertical",
+            "child::x-fill" : false,
+            "children" : [
+              {
+                "type" : "MxBoxLayout",
+                "style-class" : "MexMediaControlsTitle",
+                "width" : 980,
+                "height" : 48,
+                "child::expand" : false,
+                "spacing" : 16,
+                "children" : [
+                  {
+                    "type" : "MxLabel",
+                    "id" : "title-label",
+                    "text" : "Content Title",
+                    "y-align" : "middle",
+                    "width" : 440
+                  },
+                  {
+                    "type" : "MxButton",
+                    "id" : "play-pause-button",
+                    "style-class" : "MediaPlay",
+                    "action" : "play-pause-action",
+                    "child::x-fill" : false,
+                    "child::y-fill" : false
+                  },
+                  {
+                    "type" : "MxButton",
+                    "style-class" : "MediaStop",
+                    "action" : "stop-action",
+                    "child::x-fill" : false,
+                    "child::y-fill" : false
+                  },
+                  {
+                    "type" : "MxButton",
+                    "id" : "fit-to-screen-button",
+                    "name" : "fit-to-screen-button",
+                    "is-toggle" : true,
+                    "child::expand" : true,
+                    "child::x-align" : "end",
+                    "child::x-fill" : false,
+                    "child::y-fill" : false
+                  },
+                  {
+                    "type" : "MxButton",
+                    "id" : "rotate-button",
+                    "name" : "rotate-button",
+                    "child::x-align" : "end",
+                    "child::x-fill" : false,
+                    "child::y-fill" : false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type" : "MexScrollView",
+            "indicators-hidden" : true,
+            "scroll-gravity" : "center",
+            "effects" : [
+              {
+                "type" : "MxFadeEffect",
+                "border-left" : 136,
+                "border-right" : 136
+              }
+            ],
+            "children" : [
+              {
+                "type" : "MxBoxLayout",
+                "id" : "photo-strip",
+                "spacing" : 42,
+                "scroll-to-focused" : false,
+                "horizontal-adjustment" : {
+                  "type" : "MxAdjustment",
+                  "clamp-value" : false
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type" : "MexInfoPanel",
+        "id" : "info-panel",
+        "child::y-align" : "end",
+        "child::y-fill" : false,
+        "opacity" : 0,
+        "visible" : false
+      }
+    ]
+  },
+  {
+    "type" : "ClutterState",
+    "id" : "state",
+    "duration" : 250,
+    "transitions" : [
+      {
+        "source" : null,
+        "target" : "controls",
+
+        "keys" : [
+          [ "controls", "opacity", "ease-in-sine", 255 ],
+          [ "controls", "visible", "linear", true, -1.0, 0.0 ],
+          [ "controls", "anchor-y", "ease-in-sine", 0 ],
+          [ "info-panel", "opacity", "ease-in-sine", 0 ],
+          [ "info-panel", "visible", "linear", false, 1.0, 0.0 ]
+        ]
+      },
+      {
+        "source" : null,
+        "target" : "info",
+
+        "keys" : [
+          [ "controls", "opacity", "ease-in-sine", 0 ],
+          [ "controls", "visible", "linear", false, 1.0, 0.0 ],
+          [ "controls", "anchor-y", "ease-in-sine", -200 ],
+          [ "info-panel", "opacity", "ease-in-sine", 255 ],
+          [ "info-panel", "visible", "linear", true, -1.0, 0.0 ]
+        ]
+      },
+      {
+        "source" : null,
+        "target" : "slideshow",
+
+        "keys" : [
+          [ "controls", "opacity", "ease-in-sine", 0 ],
+          [ "controls", "visible", "linear", false, 1.0, 0.0 ],
+          [ "controls", "anchor-y", "ease-in-sine", -200 ],
+          [ "info-panel", "opacity", "ease-in-sine", 0 ],
+          [ "info-panel", "visible", "linear", false, 1.0, 0.0 ]
+        ]
+      }
+    ]
+  }
+]

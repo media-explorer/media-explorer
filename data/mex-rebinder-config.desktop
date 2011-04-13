@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Media Explorer Rebinder Configuration
+Exec=mex-rebinder --configure
+Icon=tv
+Categories=AudioVideo;Video;TV;Player;
+Terminal=false
+StartupNotify=true
+

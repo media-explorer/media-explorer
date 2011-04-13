@@ -1,0 +1,30 @@
+digraph content_discovery {
+   tracker_miner_fs [label="Tracker filesystem miner",fillcolor=lightgrey,shape=box,style="rounded,filled"];
+   tracker_miner_upnp [label="Tracker UPnP miner",fillcolor=lightgrey,shape=box,style="rounded,filled"];
+   tracker_store [label="Tracker store",fillcolor=lightgrey,shape=box,style="rounded,filled"];
+   tracker_extract [label="Tracker extractor",fillcolor=lightgrey,shape=box,style="rounded,filled"];
+
+
+   sqlitedb [label="SQLite DB",fillcolor=lightgoldenrod,shape=box,style=filled];
+
+   grilo [label="<1>Grilo framework|<2>tracker plugin|<3>local metadata plugin",shape=Mrecord];
+
+   mex [shape=Mrecord,label="<1>Media Explorer|<2>tracker plugin",fillcolor=lightblue,style=filled];
+
+   filesystem [label="Filesystem",shape=folder,fillcolor=lightyellow,style=filled];
+   upnp [label="UPnP servers",shape=folder,fillcolor=lightyellow,style=filled];
+
+   upnp -> tracker_miner_upnp
+   filesystem -> tracker_miner_fs
+
+   tracker_miner_fs -> tracker_extract
+   tracker_miner_fs -> tracker_store
+   tracker_miner_upnp -> tracker_store
+   tracker_store -> sqlitedb
+
+   grilo:2 -> tracker_store
+   grilo:2 -> sqlitedb
+
+   mex:2 -> grilo:1;
+   grilo:1 -> mex:2;
+}

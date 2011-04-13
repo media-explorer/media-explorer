@@ -1,0 +1,27 @@
+[
+  {
+    "type" : "MxTable",
+    "id" : "info-panel-container",
+    "row-spacing" : 8,
+    "children" : [
+      {
+        "id" : "row1-metadata",
+        "type" : "MxLabel",
+        "height" : 20,
+        "child::row" : 0,
+        "child::column" : 0,
+        "child::y-expand" : false
+      },
+      {
+        "id" : "row2-metadata",
+        "type" : "MxLabel",
+        "y-align" : "top",
+        "child::row" : 1,
+        "child::column" : 0,
+        "child::y-expand" : true
+      }
+    ]
+  }
+]
+
+

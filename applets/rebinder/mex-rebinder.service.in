@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=com.meego.rebinder
+Exec=@dir@/mex-rebinder

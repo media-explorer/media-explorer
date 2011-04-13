@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Media Explorer Display Configuration
+Exec=mex-displayconf
+Icon=tv
+Categories=AudioVideo;Video;TV;Player;
+Terminal=false
+StartupNotify=true
+X-MeeGo-Priority=high
