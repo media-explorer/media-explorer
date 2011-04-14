@@ -79,9 +79,9 @@ modules="glib-2.0 >= 2.26          \
          grilo-0.1 = 0.1.14"
 
 PKG_CHECK_EXISTS(libsoup-gnome-2.4,
-                 [modules = "$modules libsoup-gnome-2.4"
+                 [modules="$modules libsoup-gnome-2.4"
                  AC_DEFINE([HAVE_LIBSOUP_GNOME], [1], ["Defined if libsoup-gnome is available"])],
-                 modules = "$modules libsoup-2.4")
+                 modules="$modules libsoup-2.4")
 
 PKG_CHECK_MODULES(MEX, $modules)
 
