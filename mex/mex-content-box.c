@@ -544,7 +544,13 @@ mex_content_box_notify_key_focus_cb (ClutterStage  *stage,
       gboolean show_info;
 
       if (mex_content_get_metadata (priv->content,
-                                    MEX_CONTENT_METADATA_SYNOPSIS))
+                                    MEX_CONTENT_METADATA_SYNOPSIS) ||
+          mex_content_get_metadata (priv->content,
+                                    MEX_CONTENT_METADATA_DATE) ||
+          mex_content_get_metadata (priv->content,
+                                    MEX_CONTENT_METADATA_CREATION_DATE) ||
+          mex_content_get_metadata (priv->content,
+                                    MEX_CONTENT_METADATA_DURATION))
         show_info = TRUE;
       else
         {
