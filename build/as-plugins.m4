@@ -37,12 +37,11 @@ AC_DEFUN([AS_MEX_PLUGIN],
     AC_HELP_STRING([--disable-[$1]], [disable dependency-less $1 plugin]),
     [
       case "${enableval}" in
-        yes) [gst_use_]pname_def=yes ;;
-        no) [gst_use_]pname_def=no ;;
+        yes) [mex_use_]pname_def=yes ;;
+        no) [mex_use_]pname_def=no ;;
         *) AC_MSG_ERROR([bad value ${enableval} for --enable-$1]) ;;
        esac
-    ],
-    [[gst_use_]pname_def=yes]) dnl Default value
+    ])
 
   if test x$[mex_use_]pname_def = xyes; then
     AC_MSG_NOTICE(enabling dependency-less plugin $1)
