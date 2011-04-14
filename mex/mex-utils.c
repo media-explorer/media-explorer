@@ -521,8 +521,8 @@ mex_tile_shadow_quark ()
   return shadow_quark;
 }
 
-static
-DBusGProxy *connect_gnome_screensaverd ()
+static DBusGProxy *
+connect_gnome_screensaverd ()
 {
 
  DBusGConnection *dbus_connection;
@@ -531,10 +531,14 @@ DBusGProxy *connect_gnome_screensaverd ()
 
  dbus_connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 
- if (dbus_connection == NULL || error)
+ if (dbus_connection == NULL)
    {
-     g_warning ("Failed to connect to dbus %s\n", error->message);
-     g_error_free (error);
+     g_warning ("Failed to connect to dbus %s\n",
+                (error) ? error->message : "");
+     if (error)
+       g_error_free (error);
+
+     return NULL;
    }
 
  proxy = dbus_g_proxy_new_for_name (dbus_connection,
@@ -547,7 +551,8 @@ DBusGProxy *connect_gnome_screensaverd ()
  return proxy;
 }
 
-guint32 mex_screensaver_inhibit ()
+guint32
+mex_screensaver_inhibit ()
 {
   DBusGProxy *proxy;
   GError *error = NULL;
@@ -555,7 +560,8 @@ guint32 mex_screensaver_inhibit ()
 
   proxy = connect_gnome_screensaverd ();
 
-  g_return_val_if_fail (proxy, 0);
+  if (!proxy)
+    return 0;
 
   if (dbus_g_proxy_call (proxy, "Inhibit", &error,
                          G_TYPE_STRING, "Media Explorer",
