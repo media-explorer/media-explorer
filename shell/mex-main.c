@@ -28,7 +28,6 @@
 #include <mex/mex-grilo-feed.h>
 #include <mex/mex-plugin-manager.h>
 #include <clutter-gst/clutter-gst.h>
-#include <clutter/x11/clutter-x11.h>
 #include <gio/gdesktopappinfo.h>
 #include <string.h>
 #include <stdlib.h>
@@ -37,7 +36,10 @@
 #include <glib/gi18n.h>
 
 #include "mex-version.h"
+#if HAVE_REBINDER
 #include "rebinder.h"
+#include <clutter/x11/clutter-x11.h>
+#endif
 
 #define ALPHA CLUTTER_EASE_OUT_QUAD
 #define DURATION 400
@@ -1817,6 +1819,7 @@ request_dbus_name (const gchar *name)
 static void
 rebinder_configure_run (MxWindow *window)
 {
+#if HAVE_REBINDER
   const gchar dbus_name[] = "com.meego.rebinderConfigure";
   Rebinder the_rebinder;
 
@@ -1837,6 +1840,7 @@ rebinder_configure_run (MxWindow *window)
   clutter_main ();
 
   rebinder_configure_free (the_rebinder.config);
+#endif /* HAVE_REBINDER */
 }
 
 static void
@@ -1969,7 +1973,9 @@ main (int argc, char **argv)
   grl_plugin_registry_load_all (registry, /* TODO: GError */ NULL);
 
   /* Auto start the rebinder */
+#if HAVE_REBINDER
   auto_start_dbus_service ("com.meego.rebinder");
+#endif /* HAVE_REBINDER */
 
   /* Create application */
   app = mx_application_new (&argc, &argv, "Media Explorer",

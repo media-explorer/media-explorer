@@ -264,7 +264,8 @@ AC_ARG_ENABLE([rebinder],
               [enable_rebinder=yes])
 
 AS_IF([test "x$enable_rebinder" = "xyes"],
-      [PKG_CHECK_MODULES(REBINDER, [mx-1.0 dbus-glib-1 glib-2.0 gio-2.0 gudev-1.0 x11 xtst])],
+      [PKG_CHECK_MODULES(REBINDER, [mx-1.0 dbus-glib-1 glib-2.0 gio-2.0 gudev-1.0 x11 xtst])
+      AC_DEFINE(HAVE_REBINDER, [1], [Defined if the rebinder is available])],
       [])
 AM_CONDITIONAL(ENABLE_REBINDER, test "x$enable_rebinder" = "xyes")
 

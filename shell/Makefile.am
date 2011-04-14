@@ -28,7 +28,10 @@ mex_SOURCES   =		\
 
 mex_LDADD     =							\
 	$(top_builddir)/mex/libmex-@MEX_API_VERSION@.la		\
-	$(top_builddir)/applets/rebinder/libmex-rebinder.la	\
 	$(MEX_LIBS)						\
 	$(REBINDER_LIBS)					\
 	$(NULL)
+
+if ENABLE_REBINDER
+mex_LDADD += $(top_builddir)/applets/rebinder/libmex-rebinder.la
+endif
