@@ -135,24 +135,40 @@ mex_library_plugin_init (MexLibraryPlugin *self)
   plugin = grl_plugin_registry_lookup_source (registry, "grl-filesystem");
   if (plugin)
     {
-      GList *keys;
+      GList *query_keys;
       MexFeed *feed;
       GrlMedia *box;
       const gchar *path;
       MexModelInfo *video_info, *photo_info;
 
-      keys = mex_grilo_program_get_default_keys ();
+      query_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                              GRL_METADATA_KEY_TITLE,
+                                              GRL_METADATA_KEY_MIME,
+                                              GRL_METADATA_KEY_URL,
+                                              GRL_METADATA_KEY_DATE,
+                                              NULL);
 
       /* Add the videos model */
       path = g_get_user_special_dir (G_USER_DIRECTORY_VIDEOS);
       box = mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
-                                                 keys, path);
+                                                 query_keys, path);
 
       if (box)
         {
-          feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin), box);
+          GList *metadata_keys =
+            grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                       GRL_METADATA_KEY_DESCRIPTION,
+                                       GRL_METADATA_KEY_DURATION,
+                                       GRL_METADATA_KEY_THUMBNAIL,
+                                       GRL_METADATA_KEY_WIDTH,
+                                       GRL_METADATA_KEY_HEIGHT,
+                                       NULL);
+
+          feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                                     query_keys, metadata_keys, box);
           g_object_set (feed, "icon-name", "icon-library",
                         "placeholder-text", "No videos found", NULL);
+
 
           mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
 
@@ -160,16 +176,26 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                                            "videos", 0);
           priv->models = g_list_append (priv->models, video_info);
           g_object_unref (feed);
+          g_list_free (metadata_keys);
         }
 
       /* Add the photos model */
       path = g_get_user_special_dir (G_USER_DIRECTORY_PICTURES);
       box = mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
-                                                 keys, path);
+                                                 query_keys, path);
 
       if (box)
         {
-          feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin), box);
+          GList *metadata_keys =
+            grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                       GRL_METADATA_KEY_DESCRIPTION,
+                                       GRL_METADATA_KEY_THUMBNAIL,
+                                       GRL_METADATA_KEY_WIDTH,
+                                       GRL_METADATA_KEY_HEIGHT,
+                                       NULL);
+
+          feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                                     query_keys, metadata_keys, box);
           g_object_set (feed, "icon-name", "icon-library",
                         "placeholder-text", "No pictures found", NULL);
 
@@ -179,7 +205,10 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                                            "pictures", 0);
           priv->models = g_list_append (priv->models, photo_info);
           g_object_unref (feed);
+          g_list_free (metadata_keys);
         }
+
+      g_list_free (query_keys);
     }
   else
     g_warning ("Filesystem plugin not found");
