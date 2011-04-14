@@ -946,7 +946,6 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
   for (c = priv->children; c; c = c->next)
     {
       gchar signal_name[32+16];
-      ClutterActor *sub_box, *tile;
       ClutterActor *child = c->data;
 
       if (child == focused_cell)
@@ -959,16 +958,12 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
       g_snprintf (signal_name, G_N_ELEMENTS (signal_name),
                   "marker-reached::%p", child);
 
-      /* FIXME: Write a function, mex_content_box_get_tile, and
-       *        use that here...
-       */
-      sub_box = mex_expander_box_get_primary_child (MEX_EXPANDER_BOX (child));
-      if (MEX_IS_EXPANDER_BOX (sub_box))
-        tile = mex_expander_box_get_primary_child (MEX_EXPANDER_BOX (sub_box));
-      else
-        tile = NULL;
-      if (MEX_IS_TILE (tile))
-        mex_tile_set_important (MEX_TILE (tile), priv->has_focus);
+      if (MEX_IS_CONTENT_BOX (child))
+        {
+          ClutterActor *tile =
+            mex_content_box_get_tile (MEX_CONTENT_BOX (child));
+          mex_tile_set_important (MEX_TILE (tile), priv->has_focus);
+        }
 
       if (!open)
         {
