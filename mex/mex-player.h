@@ -81,6 +81,14 @@ void mex_player_set_sort_func (MexPlayer        *player,
 MexActorSortFunc mex_player_get_sort_func (MexPlayer *player,
                                            gpointer  *userdata);
 
+void mex_player_stop (MexPlayer *player);
+void mex_player_play (MexPlayer *player);
+void mex_player_pause (MexPlayer *player);
+void mex_player_forward (MexPlayer *player);
+void mex_player_rewind (MexPlayer *player);
+void mex_player_next (MexPlayer *player);
+void mex_player_previous (MexPlayer *player);
+
 G_END_DECLS
 
 #endif /* __MEX_PLAYER_H__ */

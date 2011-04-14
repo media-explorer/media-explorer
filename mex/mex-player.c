@@ -895,3 +895,116 @@ mex_player_set_sort_func (MexPlayer        *player,
   mex_media_controls_set_sort_func (MEX_MEDIA_CONTROLS (player->priv->controls),
                                     func, userdata);
 }
+
+void
+mex_player_stop (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  if (priv->idle_mode)
+    return;
+
+  clutter_media_set_playing (priv->media, FALSE);
+  g_signal_emit (player, signals[CLOSE_REQUEST], 0);
+}
+
+void
+mex_player_pause (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  if (priv->idle_mode)
+    return;
+
+  clutter_media_set_playing (priv->media, FALSE);
+}
+
+void
+mex_player_play (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  /* The play button often is a a play/pause button
+   * there is no way of telling which it is so for
+   * now I'm going to assume every play button is a
+   * play pause.
+   */
+
+  if (priv->idle_mode)
+    return;
+
+  if (clutter_media_get_playing (priv->media))
+    clutter_media_set_playing (priv->media, FALSE);
+  else
+    clutter_media_set_playing (priv->media, TRUE);
+}
+
+static void
+player_forward_rewind (MexPlayer *player, gboolean increment)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  gdouble duration;
+  gfloat progress;
+
+  duration = clutter_media_get_duration (priv->media);
+  progress = clutter_media_get_progress (priv->media);
+
+  /* If/when clutter gst supports trickmode we could implement
+   *  that here instead
+   * http://bugzilla.clutter-project.org/show_bug.cgi?id=2634
+   */
+
+  if (increment)
+    progress = MIN (1.0, ((duration * progress) + 10) / duration);
+  else
+    progress = MAX (0.0, ((duration * progress) - 10) / duration);
+
+  mex_player_set_controls_visible (player, TRUE);
+
+  clutter_media_set_progress (priv->media, progress);
+}
+
+void
+mex_player_forward (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  if (priv->idle_mode)
+    return;
+
+  player_forward_rewind (player, TRUE);
+}
+
+void
+mex_player_rewind (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  if (priv->idle_mode)
+    return;
+
+  player_forward_rewind (player, FALSE);
+}
+
+void
+mex_player_next (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  if (priv->idle_mode)
+    return;
+
+  clutter_media_set_progress (priv->media, 1.0);
+}
+
+void
+mex_player_previous (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  if (priv->idle_mode)
+    return;
+
+  clutter_media_set_progress (priv->media, 0.0);
+}
