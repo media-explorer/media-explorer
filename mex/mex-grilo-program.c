@@ -114,6 +114,8 @@ _setup_grl_mex_mapping (void)
                         MEX_CONTENT_METADATA_EXPOSURE_TIME);
   _insert_grl_mex_link (GRL_METADATA_KEY_ISO_SPEED,
                         MEX_CONTENT_METADATA_ISO_SPEED);
+  _insert_grl_mex_link (GRL_METADATA_KEY_CREATION_DATE,
+                        MEX_CONTENT_METADATA_CREATION_DATE);
 }
 
 static GrlKeyID
@@ -494,6 +496,7 @@ set_metadatas_from_media (MexProgram *program,
   set_metadata_from_media (program, media, MEX_CONTENT_METADATA_FLASH_USED);
   set_metadata_from_media (program, media, MEX_CONTENT_METADATA_EXPOSURE_TIME);
   set_metadata_from_media (program, media, MEX_CONTENT_METADATA_ISO_SPEED);
+  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_CREATION_DATE);
 }
 
 static void

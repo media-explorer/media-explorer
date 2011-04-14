@@ -272,6 +272,7 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                 GRL_METADATA_KEY_ISO_SPEED,
                                                 GRL_METADATA_KEY_FLASH_USED,
                                                 GRL_METADATA_KEY_ORIENTATION,
+                                                GRL_METADATA_KEY_CREATION_DATE,
                                                 NULL);
 
   priv->video_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
