@@ -105,6 +105,10 @@ _make_notification_actor (MexNotification *notification)
       clutter_actor_set_size (icon, 26, 26);
       mx_icon_set_icon_name (MX_ICON (icon), notification->icon);
       clutter_container_add_actor (CLUTTER_CONTAINER (box), icon);
+
+      mx_box_layout_child_set_y_align (MX_BOX_LAYOUT (box),
+                                       icon,
+                                       MX_ALIGN_MIDDLE);
     }
 
   label = mx_label_new_with_text (notification->message);

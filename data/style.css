@@ -701,7 +701,7 @@ MxDialog.MexInfoBarDialog MxButton
 
 MexNotificationArea MxLabel
 {
-  padding: 0 16 0 16;
+  padding: 0 14 0 14;
 }
 
 /* MexVolumeControl style */
