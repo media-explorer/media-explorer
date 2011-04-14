@@ -44,7 +44,11 @@ AC_DEFUN([AS_MEX_PLUGIN],
     ],
     [[gst_use_]pname_def=yes]) dnl Default value
 
-  if test x$[gst_use_]pname_def = xno; then
+  if test x$[mex_use_]pname_def = xyes; then
+    AC_MSG_NOTICE(enabling dependency-less plugin $1)
+    WITH_PLUGINS="$WITH_PLUGINS [$1]"
+  fi
+  if test x$[mex_use_]pname_def = xno; then
     AC_MSG_NOTICE(disabling dependency-less plugin $1)
     WITHOUT_PLUGINS="$WITHOUT_PLUGINS [$1]"
   fi
