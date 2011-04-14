@@ -13,6 +13,5 @@ mex/mex-utils.c
 plugins/applications/mex-applications-plugin.c
 plugins/queue/mex-queue-plugin.c
 plugins/search/mex-search-plugin.c
-plugins/test-applet/mex-test-applet.c
 plugins/tracker/mex-tracker-plugin.c
 shell/mex-main.c
