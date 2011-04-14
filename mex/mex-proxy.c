@@ -299,7 +299,7 @@ mex_proxy_class_init (MexProxyClass *klass)
   signals[OBJECT_CREATED] =
     g_signal_new ("object-created",
                   G_TYPE_FROM_CLASS (klass),
-                  G_SIGNAL_RUN_FIRST,
+                  G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (MexProxyClass,
                                    object_created),
                   NULL, NULL,

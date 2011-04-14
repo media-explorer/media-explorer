@@ -54,6 +54,10 @@ struct _MexContentProxyPrivate {
 #define GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), MEX_TYPE_CONTENT_PROXY, MexContentProxyPrivate))
 G_DEFINE_TYPE (MexContentProxy, mex_content_proxy, MEX_TYPE_PROXY);
 
+static void mex_content_proxy_object_created_cb (MexProxy   *proxy,
+                                                 MexContent *content,
+                                                 GObject    *object);
+
 static void
 mex_content_proxy_finalize (GObject *object)
 {
@@ -134,12 +138,15 @@ static void
 mex_content_proxy_class_init (MexContentProxyClass *klass)
 {
   GObjectClass *o_class = (GObjectClass *) klass;
+  MexProxyClass *class = (MexProxyClass *) klass;
   GParamSpec *pspec;
 
   o_class->dispose = mex_content_proxy_dispose;
   o_class->finalize = mex_content_proxy_finalize;
   o_class->set_property = mex_content_proxy_set_property;
   o_class->get_property = mex_content_proxy_get_property;
+
+  class->object_created = mex_content_proxy_object_created_cb;
 
   g_type_class_add_private (klass, sizeof (MexContentProxyPrivate));
 
@@ -151,13 +158,13 @@ mex_content_proxy_class_init (MexContentProxyClass *klass)
 }
 
 static void
-mex_content_proxy_object_created_cb (MexProxy       *proxy,
-                                     MexContent     *content,
-                                     MexContentView *content_view,
-                                     gpointer        userdata)
+mex_content_proxy_object_created_cb (MexProxy   *proxy,
+                                     MexContent *content,
+                                     GObject    *object)
 {
   ClutterStage *stage;
 
+  MexContentView *content_view = (MexContentView *) object;
   MexContentProxy *content_proxy = (MexContentProxy *) proxy;
   MexContentProxyPrivate *priv = content_proxy->priv;
 
@@ -220,9 +227,6 @@ mex_content_proxy_init (MexContentProxy *self)
 
   self->priv = priv;
 
-  g_signal_connect_after (self, "object-created",
-                          G_CALLBACK (mex_content_proxy_object_created_cb),
-                          NULL);
   g_signal_connect_after (self, "object-removed",
                           G_CALLBACK (mex_content_proxy_object_removed_cb),
                           NULL);

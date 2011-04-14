@@ -608,7 +608,7 @@ tile_created_cb (MexProxy *proxy,
 
   if (g_strcmp0 (mime_type, "x-grl/box") == 0)
     {
-      clutter_actor_destroy (CLUTTER_ACTOR (object));
+      g_signal_stop_emission_by_name (proxy, "object-created");
       return;
     }
 
@@ -715,9 +715,8 @@ mex_media_controls_init (MexMediaControls *self)
   priv->proxy = mex_content_proxy_new (NULL, CLUTTER_CONTAINER (related_box),
                                        MEX_TYPE_CONTENT_TILE);
 
-  g_signal_connect_after (priv->proxy, "object-created",
-                          G_CALLBACK (tile_created_cb),
-                          self);
+  g_signal_connect (priv->proxy, "object-created", G_CALLBACK (tile_created_cb),
+                    self);
 
 }
 

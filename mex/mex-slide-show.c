@@ -889,7 +889,7 @@ tile_created_cb (MexProxy *proxy,
   /* remove any content from the slide show that is not an image */
   if (!allowed_content (MEX_CONTENT (content)))
     {
-      clutter_actor_destroy (CLUTTER_ACTOR (object));
+      g_signal_stop_emission_by_name (proxy, "object-created");
       return;
     }
 
@@ -940,9 +940,8 @@ mex_slide_show_set_model (MexContentView *view,
 
       priv->proxy = mex_content_proxy_new (priv->model, container,
                                            MEX_TYPE_CONTENT_TILE);
-      g_signal_connect_after (priv->proxy, "object-created",
-                              G_CALLBACK (tile_created_cb),
-                              view);
+      g_signal_connect (priv->proxy, "object-created",
+                        G_CALLBACK (tile_created_cb), view);
 
       mex_proxy_start (priv->proxy);
     }

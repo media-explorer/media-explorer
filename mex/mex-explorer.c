@@ -475,7 +475,7 @@ mex_explorer_column_object_created_cb (MexProxy     *proxy,
 
   if (g_strcmp0 (mime_type, "x-grl/box") == 0)
     {
-      clutter_actor_destroy (object);
+      g_signal_stop_emission_by_name (proxy, "object-created");
       return;
     }
 
