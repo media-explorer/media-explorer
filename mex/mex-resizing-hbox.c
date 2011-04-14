@@ -1314,15 +1314,7 @@ mex_resizing_hbox_notify_focused_cb (MxFocusManager  *manager,
     }
 
   if (priv->has_focus)
-    {
-      if (priv->fade && priv->current_focus)
-        clutter_actor_animate (priv->current_focus,
-                               CLUTTER_EASE_OUT_QUAD, 250,
-                               "opacity", INACTIVE_OPACITY,
-                               NULL);
-
-      priv->has_focus = FALSE;
-    }
+    priv->has_focus = FALSE;
 
   mex_resizing_hbox_start_animation (self);
 }

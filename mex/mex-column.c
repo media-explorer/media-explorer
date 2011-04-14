@@ -873,7 +873,8 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
   GList *c;
   guint offset, increment;
   ClutterActor *focused, *focused_cell;
-  gboolean cell_has_focus, has_focus, open, set_tile_important;
+  gboolean cell_has_focus, has_focus, open, set_tile_important,
+    focus_out_of_resizing_hbox;
 
   MexColumnPrivate *priv = self->priv;
 
@@ -883,9 +884,11 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
   focused_cell = NULL;
   set_tile_important = FALSE;
   cell_has_focus = has_focus = FALSE;
+  focus_out_of_resizing_hbox = FALSE;
 
   if (focused)
     {
+      gboolean contains_column = FALSE;
       ClutterActor *parent = clutter_actor_get_parent (focused);
       while (parent)
         {
@@ -907,10 +910,17 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
 
               break;
             }
+          else if (MEX_IS_COLUMN (parent))
+            {
+              contains_column = TRUE;
+            }
 
           focused = parent;
           parent = clutter_actor_get_parent (focused);
         }
+
+      if (!contains_column)
+        has_focus = TRUE;
     }
 
   if (!has_focus && priv->has_focus)
