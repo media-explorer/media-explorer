@@ -26,9 +26,13 @@ G_DEFINE_TYPE (MexUpnpPlugin, mex_upnp_plugin, G_TYPE_OBJECT)
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_UPNP_PLUGIN, MexUpnpPluginPrivate))
 
 struct _MexUpnpPluginPrivate {
-    MexModelManager *manager;
-    GHashTable *video_models;
-    GHashTable *image_models;
+  MexModelManager *manager;
+  GHashTable *video_models;
+  GHashTable *image_models;
+
+  GList *query_keys;
+  GList *video_keys;
+  GList *image_keys;
 };
 
 typedef enum {
@@ -50,6 +54,24 @@ mex_upnp_plugin_finalize (GObject *gobject)
 {
   MexUpnpPlugin *self = MEX_UPNP_PLUGIN (gobject);
   MexUpnpPluginPrivate *priv = self->priv;
+
+  if (priv->query_keys)
+    {
+      g_list_free (priv->query_keys);
+      priv->query_keys = NULL;
+    }
+
+  if (priv->video_keys)
+    {
+      g_list_free (priv->video_keys);
+      priv->video_keys = NULL;
+    }
+
+  if (priv->image_keys)
+    {
+      g_list_free (priv->image_keys);
+      priv->image_keys = NULL;
+    }
 
   if (priv->video_models)
     {
@@ -83,6 +105,7 @@ add_model (MexUpnpPlugin *self,
            GrlMediaPlugin *plugin,
            MexUpnpCategory category)
 {
+  GList *metadata_keys;
   MexFeed *feed;
   GrlMedia *box;
   MexModelInfo *info;
@@ -96,6 +119,7 @@ add_model (MexUpnpPlugin *self,
       query = "(upnp:class derivedfrom \"object.item.imageItem\")";
       models = self->priv->image_models;
       placeholder = "No pictures found";
+      metadata_keys = self->priv->image_keys;
       box = grl_media_image_new ();
       break;
     case MEX_UPNP_CATEGORY_VIDEO:
@@ -103,12 +127,15 @@ add_model (MexUpnpPlugin *self,
       query = "(upnp:class derivedfrom \"object.item.videoItem\")";
       models = self->priv->video_models;
       placeholder = "No videos found";
+      metadata_keys = self->priv->video_keys;
       box = grl_media_video_new ();
       break;
     }
 
   grl_media_set_id (GRL_MEDIA (box), NULL);
-  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin), box);
+  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                             self->priv->query_keys,
+                             metadata_keys, box);
   g_object_set (feed, "icon-name", "icon-panelheader-computer",
                 "placeholder-text", placeholder,
                 NULL);
@@ -200,6 +227,28 @@ mex_upnp_plugin_init (MexUpnpPlugin  *self)
                                                    NULL, NULL);
   priv->video_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
                                                    NULL, NULL);
+
+  priv->query_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                GRL_METADATA_KEY_TITLE,
+                                                GRL_METADATA_KEY_MIME,
+                                                GRL_METADATA_KEY_URL,
+                                                GRL_METADATA_KEY_DATE,
+                                                NULL);
+
+  priv->image_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                GRL_METADATA_KEY_DESCRIPTION,
+                                                GRL_METADATA_KEY_THUMBNAIL,
+                                                GRL_METADATA_KEY_WIDTH,
+                                                GRL_METADATA_KEY_HEIGHT,
+                                                NULL);
+
+  priv->video_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                GRL_METADATA_KEY_DESCRIPTION,
+                                                GRL_METADATA_KEY_DURATION,
+                                                GRL_METADATA_KEY_THUMBNAIL,
+                                                GRL_METADATA_KEY_WIDTH,
+                                                GRL_METADATA_KEY_HEIGHT,
+                                                NULL);
 
   priv->manager = mex_model_manager_get_default ();
 

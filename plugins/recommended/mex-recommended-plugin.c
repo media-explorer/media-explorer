@@ -156,7 +156,7 @@ mex_recommended_plugin_init (MexRecommendedPlugin *self)
   plugin = grl_plugin_registry_lookup_source (registry, "grl-apple-trailers");
   if (plugin)
     {
-      MexFeed *feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin), NULL);
+      MexFeed *feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin), NULL, NULL, NULL);
       GController *controller = mex_model_get_controller (MEX_MODEL (feed));
       g_object_set (feed, "icon-name", "icon-recommended", NULL);
 
