@@ -252,21 +252,22 @@ _image_metadata (MexInfoPanel *self)
 {
   MexInfoPanelPrivate *priv = self->priv = INFO_PANEL_PRIVATE (self);
 
-  const gchar *date, *model, *width, *height =  NULL;
+  const gchar *date, *creation_date, *model;
   gchar *row1, *row2, *human_date;
 
   date = mex_content_get_metadata (priv->content,
                                    MEX_CONTENT_METADATA_DATE);
+  creation_date = mex_content_get_metadata (priv->content,
+                                            MEX_CONTENT_METADATA_CREATION_DATE);
   model = mex_content_get_metadata (priv->content,
                                     MEX_CONTENT_METADATA_CAMERA_MODEL);
-  width = mex_content_get_metadata (priv->content,
-                                    MEX_CONTENT_METADATA_WIDTH);
-  height = mex_content_get_metadata (priv->content,
-                                     MEX_CONTENT_METADATA_HEIGHT);
 
-  human_date = mex_metadata_humanise_date (date);
+  if (creation_date)
+    human_date = mex_metadata_humanise_date (creation_date);
+  else
+    human_date = mex_metadata_humanise_date (date);
 
-  if (!human_date && !height && !width && !model)
+  if (!human_date && !model)
     {
       mx_label_set_text (priv->metadata_row1,
                          _("No additional information available"));
@@ -274,13 +275,9 @@ _image_metadata (MexInfoPanel *self)
   else
     {
       /* Date: human_date | heightxwidth */
-      row1 = g_strdup_printf ("%s %s %s %s%s%s",
+      row1 = g_strdup_printf ("%s %s",
                               (human_date) ? _("Date:") : "",
-                              (human_date) ? human_date : "",
-                              (height || width) ? "|" : "",
-                              (width) ? width : "",
-                              (height && width) ? "x" : "",
-                              (height) ? height : "");
+                              (human_date) ? human_date : "");
       g_free (human_date);
 
       mx_label_set_text (priv->metadata_row1, row1);
