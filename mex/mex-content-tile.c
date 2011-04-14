@@ -53,7 +53,8 @@ struct _MexContentTilePrivate
 
   gpointer download_id;
 
-  gboolean thumbnail_loaded;
+  guint thumbnail_loaded : 1;
+  guint image_set        : 1;
 };
 
 enum
@@ -102,8 +103,6 @@ download_queue_completed (MexDownloadQueue *queue,
                           const GError     *error,
                           gpointer          user_data)
 {
-  gint thumb_width, thumb_height;
-
   MexContentTile *tile = MEX_CONTENT_TILE (user_data);
   MexContentTilePrivate *priv = tile->priv;
   GError *suberror = NULL;
@@ -117,15 +116,12 @@ download_queue_completed (MexDownloadQueue *queue,
       return;
     }
 
-  thumb_width = priv->thumb_width ? priv->thumb_width : -1;
-  thumb_height = priv->thumb_height ? priv->thumb_height : -1;
-
   /* TODO: Find a way of not having to do a g_memdup here */
   if (!mx_image_set_from_buffer_at_size (MX_IMAGE (priv->image),
                                          g_memdup (buffer, count), count,
                                          (GDestroyNotify)g_free,
-                                         thumb_width,
-                                         thumb_height,
+                                         priv->thumb_width,
+                                         priv->thumb_height,
                                          &suberror))
     {
       g_warning ("Error loading %s: %s", uri, suberror->message);
@@ -135,6 +131,10 @@ download_queue_completed (MexDownloadQueue *queue,
 
       return;
     }
+
+  priv->image_set = TRUE;
+  clutter_actor_set_size (priv->image,
+                          priv->thumb_width, priv->thumb_height);
 }
 
 static void
@@ -168,6 +168,8 @@ _update_thumbnail_from_image (MexContentTile *tile,
 
       return;
     }
+
+  priv->image_set = TRUE;
 }
 
 static void
@@ -185,6 +187,8 @@ _reset_thumbnail (MexContentTile *tile)
       mex_download_queue_cancel (queue, priv->download_id);
       priv->download_id = NULL;
     }
+
+  priv->thumbnail_loaded = FALSE;
 
   /* Load placeholder image */
   if (priv->content)
@@ -205,9 +209,20 @@ _reset_thumbnail (MexContentTile *tile)
       _update_thumbnail_from_image (tile, PKGDATADIR "/folder-tile.png");
     }
   else
-    mx_image_clear (MX_IMAGE (priv->image));
+    {
+      mx_image_clear (MX_IMAGE (priv->image));
 
-  priv->thumbnail_loaded = FALSE;
+      /* Reset the height - really, we ought to reset the width and height,
+       * but for all our use-cases, we want to keep the set width.
+       */
+      clutter_actor_set_height (priv->image, -1);
+      priv->image_set = FALSE;
+
+      return;
+    }
+
+  clutter_actor_set_size (priv->image,
+                          priv->thumb_width, priv->thumb_height);
 }
 
 static void
@@ -379,12 +394,17 @@ mex_content_tile_set_property (GObject      *object,
     {
     case PROP_THUMB_WIDTH:
       priv->thumb_width = g_value_get_int (value);
+
+      /* Ideally we'd use the image_set variable to determine if we set this,
+       * but for all our use-cases, we always want the set thumbnail width.
+       */
       clutter_actor_set_width (priv->image, priv->thumb_width);
       break;
 
     case PROP_THUMB_HEIGHT:
       priv->thumb_height = g_value_get_int (value);
-      clutter_actor_set_height (priv->image, priv->thumb_height);
+      if (priv->image_set)
+        clutter_actor_set_height (priv->image, priv->thumb_height);
       break;
 
 
@@ -461,7 +481,7 @@ mex_content_tile_class_init (MexContentTileClass *klass)
   pspec = g_param_spec_int ("thumb-width",
                             "Thumbnail width",
                             "Scale the width of the thumbnail while loading.",
-                            0, G_MAXINT, 0,
+                            -1, G_MAXINT, -1,
                             G_PARAM_READWRITE |
                             G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_THUMB_WIDTH, pspec);
@@ -469,7 +489,7 @@ mex_content_tile_class_init (MexContentTileClass *klass)
   pspec = g_param_spec_int ("thumb-height",
                             "Thumbnail height",
                             "Scale the height of the thumbnail while loading.",
-                            0, G_MAXINT, 0,
+                            -1, G_MAXINT, -1,
                             G_PARAM_READWRITE |
                             G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_THUMB_HEIGHT, pspec);
@@ -501,6 +521,9 @@ mex_content_tile_init (MexContentTile *self)
   MexContentTilePrivate *priv;
 
   self->priv = priv = CONTENT_TILE_PRIVATE (self);
+
+  priv->thumb_width = -1;
+  priv->thumb_height = -1;
 
   priv->image = mx_image_new ();
   mx_image_set_load_async (MX_IMAGE (priv->image), TRUE);
