@@ -101,6 +101,7 @@ static void mex_remove_notify_grilo_feed_completed (gpointer  userdata,
 
 static gboolean opt_fullscreen = FALSE;
 static gboolean opt_no_version = FALSE;
+static gboolean opt_ignore_res = FALSE;
 
 static void
 mex_header_activated_cb (MexExplorer *explorer,
@@ -1911,12 +1912,67 @@ out_of_box (MxWindow *window)
   g_free (out_box_done);
 }
 
+static void
+_close_screen_dialog_cb (MxAction *action, gpointer user_data)
+{
+  clutter_main_quit ();
+}
+
+/*
+ * Check the screen resolution and issue a warning if we're running in a mode
+ * with less than 720 pixels of height available.
+ */
+static void
+check_resolution (MexData *data)
+{
+  Screen *screen;
+  ClutterActor *dialog, *layout, *title, *label;
+  MxAction *action;
+
+  /*
+   * We're making the big assumption here that we're running fullscreen on the
+   * default screen of the default display.  Anything else is a world of pain...
+   */
+  screen = ScreenOfDisplay (clutter_x11_get_default_display (),
+                            clutter_x11_get_default_screen ());
+
+  /* Issue a warning if we've not got 720 pixels of height to play with */
+  if (HeightOfScreen (screen) >= 720)
+    return;
+
+  dialog = mx_dialog_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (dialog), "MtvInfoBarDialog");
+
+  layout = mx_table_new ();
+  mx_table_set_column_spacing (MX_TABLE (layout), 10);
+  mx_table_set_row_spacing (MX_TABLE (layout), 30);
+  mx_bin_set_child (MX_BIN (dialog), layout);
+
+  title = mx_label_new_with_text ("Screen Too Small");
+  mx_stylable_set_style_class (MX_STYLABLE (title), "DialogHeader");
+  mx_table_add_actor (MX_TABLE (layout), CLUTTER_ACTOR (title), 0, 0);
+
+  label = mx_label_new_with_text (_("This application requires at least 720 vertical pixels."));
+  mx_table_add_actor (MX_TABLE (layout), CLUTTER_ACTOR (label), 1, 0);
+
+  action = mx_action_new_full ("close", _("Close"),
+                               G_CALLBACK (_close_screen_dialog_cb),
+                               NULL);
+  mx_dialog_add_action (MX_DIALOG (dialog), action);
+
+  clutter_actor_show (dialog);
+  mx_dialog_set_transient_parent (MX_DIALOG (dialog), CLUTTER_ACTOR (data->stage));
+  mex_push_focus (MX_FOCUSABLE (dialog));
+}
+
 static GOptionEntry entries[] =
 {
   { "full-screen", 'f', 0, G_OPTION_ARG_NONE, &opt_fullscreen,
     "Start full screen", NULL },
   { "no-version", 0, 0, G_OPTION_ARG_NONE, &opt_no_version,
     "Do not dispay the version", NULL },
+  { "igore-resolution", 'r', 0, G_OPTION_ARG_NONE, &opt_ignore_res,
+    "Don't warn if the screen size isn't sufficient", NULL },
   { NULL }
 };
 
@@ -2278,6 +2334,9 @@ main (int argc, char **argv)
 
   /* Present interface */
   mex_show_home_screen (&data);
+
+  if (!opt_ignore_res)
+    check_resolution (&data);
 
   mx_application_run (app);
 
