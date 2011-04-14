@@ -825,7 +825,7 @@ mex_grid_get_preferred_height (ClutterActor *actor,
   if (nat_height_p)
     *nat_height_p = 0;
 
-  if (priv->has_focus)
+  if (priv->has_focus && priv->current_focus)
     clutter_actor_get_preferred_height (priv->current_focus,
                                         -1,
                                         &min_height,
