@@ -59,6 +59,9 @@ static Binding evdev_keymap [] =
   BINDING (KEY_NUMERIC_STAR, CLUTTER_KEY_asterisk),
   BINDING (KEY_NUMERIC_POUND, CLUTTER_KEY_numbersign),
 
+  BINDING (KEY_PREVIOUS, CLUTTER_KEY_AudioPrev),
+  BINDING (KEY_NEXT, CLUTTER_KEY_AudioNext),
+
   /* This is the last KEY_ define in the input.h I was looking at (and we
    * don't want to use it) */
 #ifndef KEY_WPS_BUTTON
