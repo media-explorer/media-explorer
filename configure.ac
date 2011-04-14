@@ -67,17 +67,23 @@ AM_PATH_GLIB_2_0
 # check for headers
 AC_HEADER_STDC
 
-PKG_CHECK_MODULES(MEX,                      \
-                  glib-2.0 >= 2.26          \
-                  gio-2.0                   \
-                  gio-unix-2.0              \
-                  gdk-pixbuf-2.0            \
-                  libsoup-gnome-2.4         \
-                  mx-1.0 >= 1.1.11          \
-                  clutter-gst-1.0 >= 1.3.8  \
-                  rest-0.7                  \
-                  dbus-glib-1               \
-		  grilo-0.1 = 0.1.14)
+modules="glib-2.0 >= 2.26          \
+         gio-2.0                   \
+         gio-unix-2.0              \
+         gdk-pixbuf-2.0            \
+         libsoup-2.4         \
+         mx-1.0 >= 1.1.11          \
+         clutter-gst-1.0 >= 1.3.8  \
+         rest-0.7                  \
+         dbus-glib-1               \
+         grilo-0.1 = 0.1.14"
+
+PKG_CHECK_EXISTS(libsoup-gnome-2.4,
+                 [modules = "$modules libsoup-gnome-2.4"
+                 AC_DEFINE([HAVE_LIBSOUP_GNOME], [1], ["Defined if libsoup-gnome is available"])],
+                 modules = "$modules libsoup-2.4")
+
+PKG_CHECK_MODULES(MEX, $modules)
 
 PKG_CHECK_MODULES(GCONTROLLER, [gobject-2.0 >= 2.20])
 

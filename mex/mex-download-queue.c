@@ -16,10 +16,18 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+
+#include <config.h>
+
 #include <gio/gio.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
+#ifdef HAVE_LIBSOUP_GNOME
 #include <libsoup/soup-gnome.h>
+#else
+#include <libsoup/soup.h>
+#endif
+
 
 #include <mex-download-queue.h>
 
@@ -675,7 +683,9 @@ mex_download_queue_init (MexDownloadQueue *self)
   priv->max_transfers = 3;
 
   priv->session = soup_session_async_new_with_options (
+#ifdef HAVE_LIBSOUP_GNOME
     SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_GNOME_FEATURES_2_26,
+#endif
     SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_CONTENT_DECODER,
     SOUP_SESSION_ADD_FEATURE_BY_TYPE, SOUP_TYPE_COOKIE_JAR,
     SOUP_SESSION_ACCEPT_LANGUAGE_AUTO, TRUE,
