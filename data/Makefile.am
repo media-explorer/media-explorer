@@ -42,6 +42,7 @@ shellstyledir = $(pkgdatadir)/shell/style
 dist_shellstyle_DATA =		\
 	shell/style.css		\
 	shell/main-bg.png	\
+	shell/panel-header-grid-bg.png \
 	$(NULL)
 
 videocontrolsstyledir = $(pkgdatadir)/common/style/video-controls

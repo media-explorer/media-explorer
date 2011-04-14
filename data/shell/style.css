@@ -32,6 +32,11 @@ MexExplorer#main-explorer > MexScrollView
   padding: 8 0 0;
 }
 
+*#grid-page MxLabel.Header
+{
+  border-image: url('panel-header-grid-bg.png') 0 55 1 0;
+}
+
 MxBoxLayout.Header#menu-header
 {
   padding: 12;
