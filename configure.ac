@@ -77,7 +77,7 @@ PKG_CHECK_MODULES(MEX,                      \
                   clutter-gst-1.0 >= 1.3.8  \
                   rest-0.7                  \
                   dbus-glib-1               \
-		  grilo-0.1 = 0.1.13)
+		  grilo-0.1 = 0.1.14)
 
 PKG_CHECK_MODULES(GCONTROLLER, [gobject-2.0 >= 2.20])
 
