@@ -576,7 +576,8 @@ mex_explorer_show_maybe_focus (ClutterActor *column,
           MxFocusManager *manager =
             mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
           mx_focus_manager_move_focus (manager, MX_FOCUS_DIRECTION_OUT);
-          mx_focus_manager_push_focus (manager, MX_FOCUSABLE (self));
+          mx_focus_manager_push_focus_with_hint (manager, MX_FOCUSABLE (self),
+                                                 MX_FOCUS_HINT_PRIOR);
         }
     }
 }
@@ -924,6 +925,13 @@ mex_explorer_push_model (MexExplorer *explorer,
         mex_shell_present (MEX_SHELL (explorer),
                            page,
                            MEX_SHELL_DIRECTION_RIGHT);
+
+      /* If the page is a grid, push the focus on the container - we don't do
+       * this on the non-grid container, as it may not accept focus right
+       * away - grid always accepts focus.
+       */
+      if (MEX_IS_GRID (container))
+        mex_push_focus (MX_FOCUSABLE (container));
 
       g_object_notify (G_OBJECT (explorer), "model");
       g_object_notify (G_OBJECT (explorer), "depth");

@@ -823,7 +823,9 @@ mex_shell_present (MexShell          *shell,
       if (manager)
         {
           if (MX_IS_FOCUSABLE (actor))
-            mx_focus_manager_push_focus (manager, MX_FOCUSABLE (shell));
+            mx_focus_manager_push_focus_with_hint (manager,
+                                                   MX_FOCUSABLE (shell),
+                                                   MX_FOCUS_HINT_PRIOR);
           else
             mx_focus_manager_move_focus (manager, MX_FOCUS_DIRECTION_OUT);
         }
