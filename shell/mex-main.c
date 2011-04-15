@@ -82,9 +82,6 @@ typedef struct
 
   guint hide_volume_source;
 
-  GQueue *menu_stack;
-  guint   last_explorer_depth;
-
   MexContent *folder_content;
   gboolean    folder_opened;
 
@@ -501,13 +498,15 @@ static void
 mex_order_menu_cb (MxAction *action,
                    MexData  *data)
 {
+  MexMenu *menu;
   ClutterActor *label;
   MxBoxLayout *menu_layout;
   const MexModelInfo *info;
-  MexMenu *menu;
+
+  MexModel *model = mex_explorer_get_model (MEX_EXPLORER (data->explorer));
 
   /* Push a new menu level */
-  menu = MEX_MENU (g_queue_peek_head (data->menu_stack));
+  menu = g_object_get_data (G_OBJECT (model), "menu");
   mex_menu_push (menu);
 
   /* Add header */
@@ -523,7 +522,6 @@ mex_order_menu_cb (MxAction *action,
   if ((info = mex_get_toplevel_model_info (data, NULL)))
     {
       GList *i;
-      MexModel *model = mex_explorer_get_model (MEX_EXPLORER (data->explorer));
 
       for (i = info->sort_infos; i; i = i->next)
         {
@@ -836,7 +834,7 @@ mex_page_created_cb (MexExplorer   *explorer,
 
       /* Create the menu */
       menu = MEX_MENU (mex_menu_new ());
-      g_queue_push_head (data->menu_stack, menu);
+      g_object_set_data (G_OBJECT (model), "menu", menu);
       mex_resizing_hbox_set_resizing_enabled (MEX_RESIZING_HBOX (menu),
                                               FALSE);
 
@@ -1081,11 +1079,6 @@ mex_notify_depth_cb (MexExplorer *explorer,
       data->toplevel_plugin_model = NULL;
       data->using_alt = FALSE;
     }
-
-  if (depth < data->last_explorer_depth)
-    g_queue_pop_head (data->menu_stack);
-
-  data->last_explorer_depth = depth;
 
   /* Set the sort function for non-grid containers */
   model = mex_explorer_get_model (explorer);
@@ -2182,10 +2175,6 @@ main (int argc, char **argv)
   clutter_actor_set_name (data.spinner, "main-spinner");
   mx_spinner_set_animating (MX_SPINNER (data.spinner), FALSE);
   clutter_actor_set_opacity (data.spinner, 0x00);
-
-  /* Setup grid's menus stack */
-  data.menu_stack = g_queue_new ();
-  data.last_explorer_depth = 0;
 
   /* Hook onto the download-queue length property notification to
    * indicate we're busy
