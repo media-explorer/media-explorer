@@ -264,18 +264,19 @@ mex_tile_allocate (ClutterActor           *actor,
     {
       gboolean x_fill, y_fill;
       MxAlign x_align, y_align;
-      gfloat child_width, full_height;
+      gfloat child_width, full_width, full_height;
 
-      clutter_actor_get_preferred_height (child, available_width,
-                                          NULL, &full_height);
-      if (full_height < box_height)
-        full_height = box_height;
+      clutter_actor_get_preferred_size (child, NULL, NULL,
+                                        &full_width, &full_height);
 
       child_box.y1 = padding.top;
 
       if (clutter_alpha_get_alpha (priv->important_alpha) < 0.5)
         {
-          child_width = available_width * (available_height / full_height);
+          child_width = full_width * (available_height / full_height);
+          if (child_width > available_width)
+            child_width = available_width;
+
           child_box.y2 = child_box.y1 + available_height;
 
           /* When we're in unimportant state, make sure the label
