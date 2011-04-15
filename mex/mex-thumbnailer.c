@@ -64,7 +64,7 @@ mex_thumbnailer_init (void)
   DBusGConnection *connection;
 
   if (thumb_proxy)
-    return;
+    return TRUE;
 
   pending = g_hash_table_new (NULL, NULL);
 
