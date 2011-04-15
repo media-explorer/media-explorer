@@ -32,6 +32,7 @@
 
 #include "rebinder.h"
 #include "rebinder-debug.h"
+#include "mex-rebinder.h"
 
 static Rebinder the_rebinder;
 
@@ -355,6 +356,7 @@ main(int argc, char *argv[])
   if (!g_option_context_parse (context, &argc, &argv, &error))
     {
       g_print ("Failed to parse options: %s\n", error->message);
+      g_error_free (error);
       return EXIT_FAILURE;
     }
 
@@ -389,11 +391,23 @@ main(int argc, char *argv[])
   else
     {
       /* launched in daemon mode */
+      MexRebinder *rebinder;
+      gboolean registered;
 
-      if (request_dbus_name ("com.meego.rebinder") == FALSE)
+      rebinder = mex_rebinder_new ();
+      registered = mex_rebinder_register (rebinder,
+                                          "com.meego.rebinder",
+                                          &error);
+      if (registered == FALSE)
         {
-          g_message ("Could not request DBus name");
-          return EXIT_SUCCESS;
+          const gchar prefix[] = "Could not request DBus name";
+
+          if (error)
+            g_message ("%s: %s", prefix, error->message);
+          else
+            g_message ("%s", prefix);
+
+          return EXIT_FAILURE;
         }
 
       the_rebinder.dpy = XOpenDisplay (NULL);

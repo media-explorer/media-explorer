@@ -10,6 +10,8 @@ AM_CFLAGS =						\
 rebinder_common_sources =		\
 	fakekey.c			\
 	fakekey.h			\
+	mex-rebinder.h			\
+	mex-rebinder.c			\
 	rebinder.h			\
 	rebinder-configure.c		\
 	rebinder-debug.c		\
