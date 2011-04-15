@@ -1,3 +1,5 @@
+SUBDIRS = appicons
+
 extradir = $(pkgdatadir)/common
 dist_extra_DATA = \
 	folder-tile.png \

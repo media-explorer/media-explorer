@@ -331,6 +331,7 @@ AC_CONFIG_FILES([
   mex/glib-controller/Makefile
   player/Makefile
   data/Makefile
+  data/appicons/Makefile
   examples/Makefile
   doc/Makefile
   doc/reference/Makefile
