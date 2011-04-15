@@ -1117,7 +1117,7 @@ Menu=105
         </listitem>
         <listitem>
           <para>How to use GObject (to be able to subclass libmex
-          classes to slot into the TV explorer)</para>
+          classes to slot into Media Explorer)</para>
         </listitem>
         <listitem>
           <para>How to write applications using Clutter+Mx (optional and
