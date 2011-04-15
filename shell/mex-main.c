@@ -1075,18 +1075,18 @@ mex_notify_depth_cb (MexExplorer *explorer,
 
   if (data->toplevel_plugin_model &&
       (mex_explorer_get_depth (explorer) <= data->toplevel_plugin_model_depth))
-    {
-      data->toplevel_plugin_model = NULL;
-      data->using_alt = FALSE;
-    }
+    data->toplevel_plugin_model = NULL;
 
   /* Set the sort function for non-grid containers */
   model = mex_explorer_get_model (explorer);
   container = mex_explorer_get_container_for_model (explorer, model);
 
   if (container && !MEX_IS_GRID (container))
-    mex_model_set_sort_func (model, mex_model_sort_time_cb,
-                             GINT_TO_POINTER (FALSE));
+    {
+      data->using_alt = FALSE;
+      mex_model_set_sort_func (model, mex_model_sort_time_cb,
+                               GINT_TO_POINTER (FALSE));
+    }
 }
 
 static void
