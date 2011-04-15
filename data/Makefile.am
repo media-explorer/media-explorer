@@ -41,6 +41,7 @@ dist_style_DATA = \
 shellstyledir = $(pkgdatadir)/shell/style
 dist_shellstyle_DATA =		\
 	shell/style.css		\
+	shell/folder-tile-up.png \
 	shell/main-bg.png	\
 	shell/panel-header-grid-bg.png \
 	$(NULL)

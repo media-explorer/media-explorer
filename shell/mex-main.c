@@ -85,6 +85,9 @@ typedef struct
   GQueue *menu_stack;
   guint   last_explorer_depth;
 
+  MexContent *folder_content;
+  gboolean    folder_opened;
+
   gint busy_count;
 
   MexMMkeys *mmkeys;
@@ -353,6 +356,8 @@ mex_grilo_open_folder_cb (MxAction *action,
     g_object_unref (source);
   if (filter)
     g_free (filter);
+
+  data->folder_opened = TRUE;
 
   mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
   mex_header_activated_cb (MEX_EXPLORER (data->explorer),
@@ -784,6 +789,50 @@ mex_page_created_cb (MexExplorer   *explorer,
       MexMenu *menu;
 
       gchar *text = NULL;
+
+      /* Add the 'Back' tile for folders */
+      if (data->folder_opened)
+        {
+          /* FIXME: Most of this copied from MexExplorer... Maybe all
+           *        of this function (including the menu bits) should
+           *        be there...
+           */
+          MexShadow *shadow;
+
+          ClutterContainer *container =
+            mex_explorer_get_container_for_model (explorer, model);
+          ClutterActor *box = mex_content_box_new ();
+          ClutterActor *tile = mex_content_box_get_tile (MEX_CONTENT_BOX (box));
+
+          /* Set the content on the newly created box */
+          mex_content_view_set_content (MEX_CONTENT_VIEW (box),
+                                        data->folder_content);
+
+          /* Set it as important */
+          mex_expander_box_set_important (MEX_EXPANDER_BOX (box), TRUE);
+          mex_tile_set_important (MEX_TILE (tile), TRUE);
+
+          /* Make sure it stays correctly sized */
+          g_object_bind_property (container, "tile-width",
+                                  box, "thumb-width",
+                                  G_BINDING_SYNC_CREATE);
+          g_object_bind_property (container, "tile-height",
+                                  box, "thumb-height",
+                                  G_BINDING_SYNC_CREATE);
+
+          /* Add a shadow */
+          shadow = mex_shadow_new (box);
+          mex_shadow_set_radius_y (shadow, 24);
+          mex_shadow_set_paint_flags (shadow,
+                                      MEX_TEXTURE_FRAME_TOP |
+                                      MEX_TEXTURE_FRAME_BOTTOM);
+
+          /* Add to the grid  */
+          clutter_container_add_actor (container, box);
+
+          /* Reset the 'folder-opened' boolean */
+          data->folder_opened = FALSE;
+        }
 
       /* Create the menu */
       menu = MEX_MENU (mex_menu_new ());
@@ -1965,6 +2014,14 @@ check_resolution (MexData *data)
   mex_push_focus (MX_FOCUSABLE (dialog));
 }
 
+static void
+mex_go_back_cb (MxAction *action,
+                MexData  *data)
+{
+  mex_go_back (data);
+}
+
+
 static GOptionEntry entries[] =
 {
   { "full-screen", 'f', 0, G_OPTION_ARG_NONE, &opt_fullscreen,
@@ -1979,6 +2036,7 @@ static GOptionEntry entries[] =
 static const gchar *play_action_mimetypes[] = { "video/", "x-mex/media", NULL };
 static const gchar *folder_action_mimetypes[] = { "x-grl/box", NULL };
 static const gchar *show_action_mimetypes[] = { "image/", NULL };
+static const gchar *back_action_mimetypes[] = { "x-mex/back", NULL };
 
 
 int
@@ -2002,6 +2060,7 @@ main (int argc, char **argv)
   MexActionInfo play_from_begin = { 0, };
   MexActionInfo open_folder = { 0, };
   MexActionInfo show = { 0, };
+  MexActionInfo back = { 0, };
 
   /* FIXME: Replace this with a configuration file */
   MexModelCategoryInfo search = { "search", _("Search"), "icon-panelheader-search", 0, "" };
@@ -2253,55 +2312,69 @@ main (int argc, char **argv)
   /* Create model->provider mapping hash-table */
   data.model_to_provider = g_hash_table_new (NULL, NULL);
 
+  /* Create the 'Up folder' shortcut content */
+  data.folder_content =
+    g_object_ref_sink (MEX_CONTENT (mex_program_new (NULL)));
+  mex_program_set_metadata (MEX_PROGRAM (data.folder_content),
+                            MEX_CONTENT_METADATA_TITLE,
+                            _("Back"));
+  mex_program_set_metadata (MEX_PROGRAM (data.folder_content),
+                            MEX_CONTENT_METADATA_MIMETYPE,
+                            "x-mex/back");
+  mex_program_set_metadata (MEX_PROGRAM (data.folder_content),
+                            MEX_CONTENT_METADATA_STILL,
+                            "file://" PKGDATADIR "/style/folder-tile-up.png");
+
   /* Add the actions */
+
+  /* Play actions */
   play_from_last.action =
-          mx_action_new_full ("play-from-last", _("Resume"),
-                              G_CALLBACK (mex_play_from_last_cb),
-                              &data);
+    mx_action_new_full ("play-from-last", _("Resume"),
+                        G_CALLBACK (mex_play_from_last_cb), &data);
   mx_action_set_icon (play_from_last.action, "media-watch-mex");
   play_from_last.mime_types = (gchar **)play_action_mimetypes;
+
   /* This is the default action for this mime-type, so it should have the
-   * highest priority */
+   * highest priority. Play from beginning / Watch have slightly lower
+   * priority.
+   */
   play_from_last.priority = G_MAXINT;
 
   play.action =
     mx_action_new_full ("play", _("Watch"),
-                        G_CALLBACK (mex_play_from_begin_cb),
-                        &data);
+                        G_CALLBACK (mex_play_from_begin_cb), &data);
   mx_action_set_icon (play.action, "media-watch-mex");
   play.mime_types = (gchar **)play_action_mimetypes;
-
   play.priority = G_MAXINT - 1;
-  /* This is the default action for this mime-type, so it should have the
-   * highest priority */
+
   play_from_begin.action =
-          mx_action_new_full ("play-from-begin",
-                              _("Watch from start"),
-                              G_CALLBACK (mex_play_from_begin_cb),
-                              &data);
+    mx_action_new_full ("play-from-begin", _("Watch from start"),
+                        G_CALLBACK (mex_play_from_begin_cb), &data);
   mx_action_set_icon (play_from_begin.action, "media-watch-from-beginning-mex");
   play_from_begin.mime_types = (gchar **)play_action_mimetypes;
-  /* This is the default action for this mime-type, so it should have the
-   * highest priority */
   play_from_begin.priority = G_MAXINT - 1;
 
-  show.action = mx_action_new_full ("show", "View",
-                                    G_CALLBACK (mex_show_cb),
-                                    &data);
+  /* View action (for pictures) */
+  show.action = mx_action_new_full ("show", _("View"),
+                                    G_CALLBACK (mex_show_cb), &data);
   mx_action_set_icon (show.action, "media-watch-mex");
   show.mime_types = (gchar **)show_action_mimetypes;
-  /* This is the default action for this mime-type, so it should have the
-   * highest priority */
   show.priority = G_MAXINT;
 
+  /* Open folder action */
   open_folder.action =
-    mx_action_new_full ("open_grilo_folder", "Open folder",
+    mx_action_new_full ("open-grilo-folder", _("Open folder"),
                         G_CALLBACK (mex_grilo_open_folder_cb), &data);
   mx_action_set_icon (open_folder.action, "user-home-highlight-mex");
   open_folder.mime_types = (gchar **)folder_action_mimetypes;
-  /* This is the default action for this mime-type, so it should have the
-   * highest priority */
   open_folder.priority = G_MAXINT;
+
+  /* Go back action */
+  back.action =
+    mx_action_new_full ("go-back", _("Go back"),
+                        G_CALLBACK (mex_go_back_cb), &data);
+  back.mime_types = (gchar **)back_action_mimetypes;
+  back.priority = G_MAXINT;
 
   amanager = mex_action_manager_get_default ();
   mex_action_manager_add_action (amanager, &play_from_last);
@@ -2309,6 +2382,7 @@ main (int argc, char **argv)
   mex_action_manager_add_action (amanager, &play);
   mex_action_manager_add_action (amanager, &show);
   mex_action_manager_add_action (amanager, &open_folder);
+  mex_action_manager_add_action (amanager, &back);
 
   /* Add the default categories to the model manager */
   mmanager = mex_model_manager_get_default ();
