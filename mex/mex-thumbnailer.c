@@ -58,7 +58,7 @@ on_error (DBusGProxy *proxy, guint handle, char **failed_uris, int error_code, c
   g_free (data);
 }
 
-static void
+static gboolean
 mex_thumbnailer_init (void)
 {
   DBusGConnection *connection;
@@ -69,7 +69,8 @@ mex_thumbnailer_init (void)
   pending = g_hash_table_new (NULL, NULL);
 
   connection = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
-  g_assert (connection); /* TODO: error */
+  if (!connection)
+    return FALSE;
 
   thumb_proxy = dbus_g_proxy_new_for_name (connection,
                                      "org.freedesktop.thumbnails.Thumbnailer1",
@@ -102,6 +103,8 @@ mex_thumbnailer_init (void)
 
   dbus_g_proxy_connect_signal (thumb_proxy, "Ready", G_CALLBACK (on_ready), NULL, NULL);
   dbus_g_proxy_connect_signal (thumb_proxy, "Error", G_CALLBACK (on_error), NULL, NULL);
+
+  return TRUE;
 }
 
 static char *
@@ -166,7 +169,8 @@ mex_thumbnailer_generate (const char *url, MexThumbnailCallback callback, gpoint
 
   /* TODO: internal queue? */
 
-  mex_thumbnailer_init ();
+  if (!mex_thumbnailer_init ())
+    return;
 
   /* We can assign @url because DBusGProxy will copy, so just free mimes[0]
      later */
