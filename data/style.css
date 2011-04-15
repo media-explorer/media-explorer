@@ -15,7 +15,7 @@ MxSpinner
 
 MxDialog > MxFrame.MxDialogBackground
 {
-  padding: 100;
+  padding: 90;
   border-image: url('harderror-bg.png') 0;
 }
 
@@ -685,16 +685,25 @@ MxButton.Settings:focus
   border-image: url("highlight-bg.png") 0;
 }
 
+MxDialog.MexInfoBarDialog
+{
+  padding: 28 0 0 0;
+}
 
 MxDialog.MexInfoBarDialog MxLabel.DialogHeader
 {
-  font-size: 20;
+  font-size: 22;
   color: white;
 }
 
 MxDialog.MexInfoBarDialog MxButton
 {
   padding: 5 20 5 20;
+}
+
+MxDialog.MexInfoBarDialog MexTile > MxButton
+{
+  padding: 0;
 }
 
 /* MexNotificationArea */
