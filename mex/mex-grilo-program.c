@@ -76,6 +76,8 @@ _setup_grl_mex_mapping (void)
 
   _insert_grl_mex_link (GRL_METADATA_KEY_SHOW,
                         MEX_CONTENT_METADATA_SERIES_NAME);
+  _insert_grl_mex_link (GRL_METADATA_KEY_DESCRIPTION,
+                        MEX_CONTENT_METADATA_SYNOPSIS);
   _insert_grl_mex_link (GRL_METADATA_KEY_TITLE,
                         MEX_CONTENT_METADATA_TITLE);
   _insert_grl_mex_link (GRL_METADATA_KEY_SEASON,
