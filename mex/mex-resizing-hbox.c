@@ -192,6 +192,7 @@ mex_resizing_hbox_remove (ClutterContainer *container,
           CLUTTER_ACTOR_IS_REALIZED (actor) && CLUTTER_ACTOR_IS_VISIBLE (actor))
         {
           gdouble progress;
+          CoglHandle texture;
           ClutterActor *clone;
           ClutterActorBox box;
           gfloat current_width, current_height;
@@ -205,6 +206,17 @@ mex_resizing_hbox_remove (ClutterContainer *container,
           mx_offscreen_set_child (MX_OFFSCREEN (clone), actor);
           mx_offscreen_set_auto_update (MX_OFFSCREEN (clone), FALSE);
           mx_offscreen_update (MX_OFFSCREEN (clone));
+
+          /* Save the texture and replace the offscreen with a texture */
+          texture = clutter_texture_get_cogl_texture (CLUTTER_TEXTURE (clone));
+          cogl_handle_ref (texture);
+
+          g_object_ref_sink (clone);
+          g_object_unref (clone);
+
+          clone = clutter_texture_new ();
+          clutter_texture_set_cogl_texture (CLUTTER_TEXTURE (clone), texture);
+          cogl_handle_unref (texture);
 
           /* Set the child properties to animate away */
           data->child = clone;
