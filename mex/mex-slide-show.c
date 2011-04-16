@@ -347,31 +347,55 @@ mex_slide_show_class_init (MexSlideShowClass *klass)
                                          G_TYPE_NONE, 0);
 }
 
+static gint
+get_content_rotation (MexContent *content, gboolean *is_unset)
+{
+  gint angle;
+
+  angle = GPOINTER_TO_INT (g_object_get_qdata (G_OBJECT (content),
+                                               image_rotation_quark ()));
+
+  if (angle == 0) {
+    if (is_unset)
+      *is_unset = TRUE;
+    return 0;
+  }
+
+  if (is_unset)
+    *is_unset = FALSE;
+
+  return angle - 1;
+}
+
+static void
+set_content_rotation (MexContent *content, gint angle)
+{
+  g_object_set_qdata (G_OBJECT (content),
+                      image_rotation_quark (),
+                      GINT_TO_POINTER (angle + 1));
+}
+
 static void
 rotate_clicked_cb (ClutterActor *button,
                    MexSlideShow *self)
 {
   MexSlideShowPrivate *priv = self->priv;
-  gfloat angle;
+  gint angle;
 
-  angle = GPOINTER_TO_INT (g_object_get_qdata (G_OBJECT (priv->content),
-                                               image_rotation_quark ()));
+  angle = get_content_rotation (priv->content, NULL);
 
   if (angle == 0)
     {
       angle = 360;
       mx_image_set_image_rotation (MX_IMAGE (priv->image), angle);
     }
-  else
-    angle -= 1;
 
   angle -= 90;
 
-  g_object_set_qdata (G_OBJECT (priv->content), image_rotation_quark (),
-                      GINT_TO_POINTER ((gint) (angle + 1)));
+  set_content_rotation (priv->content, angle);
 
   clutter_actor_animate (priv->image, CLUTTER_EASE_IN_SINE, 500,
-                         "image-rotation", angle, NULL);
+                         "image-rotation", (gfloat) angle, NULL);
 }
 
 static void play_pause_action_cb (MxAction *action, MexSlideShow *slide_show);
@@ -638,19 +662,21 @@ image_loaded (MxImage      *image,
   MexSlideShowPrivate *priv = show->priv;
   const gchar *orientation;
   gint angle;
-  gboolean fit;
+  gboolean fit, rotation_unset;
 
-  angle = GPOINTER_TO_INT (g_object_get_qdata (G_OBJECT (priv->content),
-                                               image_rotation_quark()));
+  angle = get_content_rotation (priv->content, &rotation_unset);
 
-  if (!angle)
+  if (rotation_unset)
     {
-      orientation = mex_content_get_metadata (priv->content, MEX_CONTENT_METADATA_ORIENTATION);
+      orientation = mex_content_get_metadata (priv->content,
+                                              MEX_CONTENT_METADATA_ORIENTATION);
       if (orientation)
-        mx_image_set_image_rotation (MX_IMAGE (priv->image), atoi (orientation));
+        angle = atoi (orientation);
     }
-  else
-    mx_image_set_image_rotation (MX_IMAGE (priv->image), angle - 1);
+
+  mx_image_set_image_rotation (MX_IMAGE (priv->image), angle);
+
+  set_content_rotation (priv->content, angle);
 
   fit = GPOINTER_TO_INT (g_object_get_qdata (G_OBJECT (priv->content),
                                              image_fit_quark ()));
