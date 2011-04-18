@@ -391,9 +391,6 @@ mex_search_plugin_search (MexSearchPlugin *self,
 
       /* only search upnp and tracker sources */
       source_id = grl_media_plugin_get_id (GRL_MEDIA_PLUGIN (meta_src));
-      if (!(g_str_equal (source_id, "grl-upnp")
-            || g_str_equal (source_id, "grl-tracker")))
-        continue;
 
       supported = grl_metadata_source_supported_operations (meta_src);
       if ((supported & GRL_OP_SEARCH) || (supported & GRL_OP_QUERY))
