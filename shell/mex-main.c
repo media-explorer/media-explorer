@@ -2094,19 +2094,7 @@ main (int argc, char **argv)
 
   clutter_set_font_flags (clutter_get_font_flags () & ~CLUTTER_FONT_MIPMAPPING);
 
-  /* Add configuration for various Grilo plugins */
-  /* FIXME: This should probably be done either in a special plugin,
-   *        or in each specific plugin, but due to deficiencies in our
-   *        own plugin system, and deficiencies in Grilo's plugin
-   *        configuration system, I'm doing this here.
-   */
   registry = grl_plugin_registry_get_default ();
-
-  settings = mex_settings_find_config_file (mex_settings_get_default (),
-                                            "grilo.conf");
-  if (settings)
-    grl_plugin_registry_add_config_from_file (registry, settings, NULL);
-  g_free (settings);
 
   settings = mex_settings_find_config_file (mex_settings_get_default (),
                                             "grilo-system.conf");
@@ -2114,8 +2102,69 @@ main (int argc, char **argv)
     grl_plugin_registry_add_config_from_file (registry, settings, NULL);
   g_free (settings);
 
-  /* Load all plugins */
-  grl_plugin_registry_load_all (registry, /* TODO: GError */ NULL);
+
+  settings = mex_settings_find_config_file (mex_settings_get_default (),
+                                            "mex.conf");
+  /* Load plugins */
+
+  if (settings)
+    {
+      GKeyFile *mex_conf;
+      gchar **enabled_plugins;
+
+      mex_conf = g_key_file_new ();
+
+      g_key_file_load_from_file (mex_conf,
+                                 settings,
+                                 G_KEY_FILE_NONE,
+                                 NULL);
+
+      enabled_plugins = g_key_file_get_string_list (mex_conf,
+                                                    "grilo-plugins",
+                                                    "enabled",
+                                                    NULL,
+                                                    NULL);
+      g_key_file_free (mex_conf);
+
+      if (enabled_plugins)
+        {
+          gint i;
+
+          for (i=0; enabled_plugins[i]; i++)
+            {
+              if (!grl_plugin_registry_load_by_id (registry,
+                                                   enabled_plugins[i],
+                                                   &error))
+                {
+                  g_warning ("Tried to load specified grilo plugin: %s but failed: %s",
+                             enabled_plugins[i],
+                             (error) ? error->message : "");
+
+                  if (error)
+                    g_clear_error (&error);
+                }
+              else
+                {
+                  g_message ("loaded: %s plugin", enabled_plugins[i]);
+                }
+            }
+          g_strfreev (enabled_plugins);
+        }
+      g_free (settings);
+    }
+  else
+    {
+      g_message ("No mex.conf found, loading default plugins");
+
+      /* Tracker is our first choice of plugin */
+      if (!grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL))
+        {
+          /* try and load the upnp and filesystem plugins instead */
+         if (grl_plugin_registry_load_by_id (registry, "grl-upnp", NULL) ||
+          grl_plugin_registry_load_by_id (registry, "grl-filesystem", NULL))
+           g_warning ("We had no config and all the fallback grilo-plugins can not be loaded, please check that grilo-plugins has been correctly installed");
+        }
+    }
 
   /* Auto start the rebinder */
 #if HAVE_REBINDER
@@ -2402,6 +2451,9 @@ main (int argc, char **argv)
     check_resolution (&data);
 
   mx_application_run (app);
+
+  if (error)
+    g_error_free (error);
 
   mex_deinit ();
 
