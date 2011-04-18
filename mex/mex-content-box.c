@@ -84,6 +84,8 @@ struct _MexContentBoxPrivate
 
 static guint signals[LAST_SIGNAL] = { 0, };
 
+static ClutterColor hline_color = { 255, 255, 255, 51 };
+
 /* MexContentViewIface */
 
 static struct _Bindings {
@@ -465,11 +467,18 @@ mex_content_box_key_press_event_cb (ClutterActor    *actor,
         {
           GList *a;
           ClutterActor *layout = priv->menu_layout;
+          ClutterActor *hline;
 
           /* Clear old menu contents */
           clutter_container_foreach (CLUTTER_CONTAINER (layout),
                                      (ClutterCallback)clutter_actor_destroy,
                                      NULL);
+
+
+          /* separator */
+          hline = clutter_rectangle_new_with_color (&hline_color);
+          clutter_actor_set_height (hline, 1);
+          clutter_container_add_actor (CLUTTER_CONTAINER (layout), hline);
 
           /* Fill in new menu contents */
           for (a = actions; a; a = a->next)
@@ -667,9 +676,20 @@ static void
 mex_content_box_init (MexContentBox *self)
 {
   MexContentBoxPrivate *priv = self->priv = CONTENT_BOX_PRIVATE (self);
+  ClutterActor *hline, *box;
+
 
   /* Create description panel */
+  box = mx_box_layout_new ();
+  mx_box_layout_set_orientation (MX_BOX_LAYOUT (box), MX_ORIENTATION_VERTICAL);
+
+  hline = clutter_rectangle_new_with_color (&hline_color);
+  clutter_actor_set_height (hline, 1);
+
   priv->panel = mex_info_panel_new (MEX_INFO_PANEL_MODE_SIMPLE);
+
+  clutter_container_add (CLUTTER_CONTAINER (box), hline, priv->panel, NULL);
+
 
   /* monitor key press events */
   g_signal_connect (self, "key-press-event",
@@ -688,7 +708,7 @@ mex_content_box_init (MexContentBox *self)
 
   /* Pack box and panel into self */
   mex_expander_box_set_primary_child (MEX_EXPANDER_BOX (self), priv->box);
-  mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (self), priv->panel);
+  mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (self), box);
 
   /* Create menu layout (but only reference, don't parent) */
   priv->menu_layout = g_object_ref_sink (mx_box_layout_new ());
