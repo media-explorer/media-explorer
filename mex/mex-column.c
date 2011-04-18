@@ -79,6 +79,38 @@ G_DEFINE_TYPE_WITH_CODE (MexColumn, mex_column, MX_TYPE_WIDGET,
 
 static guint32 signals[LAST_SIGNAL] = { 0, };
 
+static void
+expander_box_open_notify (MexExpanderBox *box,
+                          GParamSpec     *pspec,
+                          MexColumn      *column)
+{
+  MexColumnPrivate *priv = MEX_COLUMN (column)->priv;
+  GList *l;
+
+  if (mex_expander_box_get_open (box))
+    {
+      for (l = priv->children; l; l = l->next)
+        {
+          if (l->data != box)
+            clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
+                                   "opacity", 56, NULL);
+        }
+      clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
+                             "opacity", 56, NULL);
+    }
+  else
+    {
+      /* restore all children to full opacity */
+      for (l = priv->children; l; l = l->next)
+        {
+          clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
+                                 "opacity", 255, NULL);
+        }
+      clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
+                             "opacity", 255, NULL);
+    }
+}
+
 /* ClutterContainerIface */
 
 static void
@@ -103,6 +135,8 @@ mex_column_add (ClutterContainer *container,
     {
       mex_expander_box_set_important (MEX_EXPANDER_BOX (actor),
                                       priv->has_focus);
+      g_signal_connect (actor, "notify::open",
+                        G_CALLBACK (expander_box_open_notify), container);
 
       /* FIXME: Again, like further down in this file, this is liable to
        *        break and we really need to add a function to
