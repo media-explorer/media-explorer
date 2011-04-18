@@ -22,6 +22,7 @@
 #include "mex-expander-box.h"
 #include "mex-scroll-view.h"
 #include "mex-tile.h"
+#include "mex-shadow.h"
 
 enum
 {
@@ -79,6 +80,17 @@ G_DEFINE_TYPE_WITH_CODE (MexColumn, mex_column, MX_TYPE_WIDGET,
 
 static guint32 signals[LAST_SIGNAL] = { 0, };
 
+static GQuark
+_item_shadow_quark ()
+{
+  static GQuark quark = 0;
+
+  if (G_UNLIKELY (!quark))
+    quark = g_quark_from_static_string ("mex-column-item-shadow");
+
+  return quark;
+}
+
 static void
 expander_box_open_notify (MexExpanderBox *box,
                           GParamSpec     *pspec,
@@ -86,6 +98,8 @@ expander_box_open_notify (MexExpanderBox *box,
 {
   MexColumnPrivate *priv = MEX_COLUMN (column)->priv;
   GList *l;
+  MexShadow *shadow;
+  ClutterColor shadow_color = { 0, 0, 0, 128 };
 
   if (mex_expander_box_get_open (box))
     {
@@ -97,6 +111,14 @@ expander_box_open_notify (MexExpanderBox *box,
         }
       clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
                              "opacity", 56, NULL);
+
+      shadow = mex_shadow_new (CLUTTER_ACTOR (box));
+      mex_shadow_set_paint_flags (shadow,
+                                  MEX_TEXTURE_FRAME_TOP | MEX_TEXTURE_FRAME_BOTTOM);
+      mex_shadow_set_radius_y (shadow, 25);
+      mex_shadow_set_color (shadow, &shadow_color);
+
+      g_object_set_qdata (G_OBJECT (box), _item_shadow_quark (), shadow);
     }
   else
     {
@@ -108,6 +130,13 @@ expander_box_open_notify (MexExpanderBox *box,
         }
       clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
                              "opacity", 255, NULL);
+
+      shadow = g_object_get_qdata (G_OBJECT (box), _item_shadow_quark ());
+      if (shadow)
+        {
+          g_object_unref (shadow);
+          g_object_set_qdata (G_OBJECT (box), _item_shadow_quark (), NULL);
+        }
     }
 }
 
@@ -872,8 +901,19 @@ mex_column_paint (ClutterActor *actor)
   if (priv->n_items < 1 && priv->placeholder_actor)
     clutter_actor_paint (priv->placeholder_actor);
   else
-    for (c = priv->children; c; c = c->next)
-      clutter_actor_paint (c->data);
+    {
+      for (c = priv->children; c; c = c->next)
+        {
+          /* skip the current focus and paint it last*/
+          if (priv->current_focus != c->data)
+            clutter_actor_paint (c->data);
+        }
+
+      /* paint the current focused actor last to ensure any shadow is drawn
+       * on top of other items */
+      if (priv->current_focus)
+        clutter_actor_paint (priv->current_focus);
+    }
 
   clutter_actor_paint (priv->header);
 }
