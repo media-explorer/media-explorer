@@ -69,6 +69,7 @@ HTML_IMAGES= \
 	content-discovery.png \
 	dependencies.png \
 	grilo-test-ui-screenshot.png \
+	search-results.png \
 	$(NULL)
 
 # Extra SGML files that are included by $(DOC_MAIN_SGML_FILE).

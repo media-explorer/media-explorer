@@ -6,7 +6,7 @@
   <title>Media Explorer for developers</title>
 
   <section id="developers-architecture">
-    <title>Media Explorer architecture</title>
+    <title>Architecture</title>
 
     <warning>
       <para>Due to the fact that libmex
@@ -544,7 +544,7 @@ Press Ctrl+C to end follow of Tracker state
             on configuring Tracker.</para>
           </listitem>
 
-          <listitem>
+          <listitem id="developers-works-content-grilo-test-ui">
             <formalpara>
               <title>Check Grilo can browse your media</title>
 
@@ -627,7 +627,7 @@ Press Ctrl+C to end follow of Tracker state
     </section>
 
     <section id="developers-works-events">
-      <title>Binding key events to Media Explorer actions</title>
+      <title>Binding keys to actions</title>
 
       <para>Media Explorer is designed to function as a netbook application
       or as a UX for a dedicated media centre distribution. This means
@@ -1108,6 +1108,13 @@ Menu=105
 
       <itemizedlist>
         <listitem>
+          <para>How to use
+          <ulink url="https://live.gnome.org/Jhbuild">jhbuild</ulink>. This
+          is the easiest way to build a working development
+          environment for Media Explorer (see
+          <link linkend="developers-extending-environment">below</link>).</para>
+        </listitem>
+        <listitem>
           <para>How to use autotools (to put together a plugin
           project)</para>
         </listitem>
@@ -1128,30 +1135,290 @@ Menu=105
     </section>
 
     <section id="developers-extending-environment">
-      <title>Setting up a Media Explorer development environment</title>
+      <title>Setting up a development environment</title>
 
-      <para>You will need a MeeGo development environment. The easiest
-      way to get to this point is to use a MeeGo SDK chroot. Instructions
-      for MeeGo 1.2 are in preparation, pending stable packages: you
-      can see the old instructions, which should work for the latest
-      MeeGo images,
-      <ulink url="http://wiki.meego.com/SDK/Docs/1.1/Building_a_MeeGo_chroot_on_Linux">on
-      the MeeGo wiki</ulink>.</para>
+      <para>The easiest way to work on Media Explorer is to use
+      <emphasis>jhbuild-mex</emphasis>. This can build
+      all the correct dependencies for Media Explorer, providing
+      you are working on a relatively recent Linux distro (e.g. Debian
+      sid or Fedora 14). You can get it from ???TODO. Installation
+      and Media Explorer build instructions are included in that
+      project.</para>
 
-      <para>You will then work on your plugin code from inside
-      a chroot'ed MeeGo SDK environment (as Media Explorer is written
-      in C, you can't work on it with Qt Creator the same way you can
-      for some MeeGo applications).</para>
+      <para>Once you've installed jhbuild-mex and built
+      Media Explorer, you can make local modifications to the Media
+      Explorer source from inside a jhbuild-mex shell, e.g.</para>
 
-      <para><command>turbine</command> is a useful tool for creating
-      plugin GObject classes. You can get it from
+      <informalexample>
+        <screen>
+# work directly on the checked-out jhbuild source; see
+# <link linkend="developers-extending-environment-warning">below</link> for caveats
+<prompt>$</prompt> <command>cd $JHBUILD_MEX_SOURCE/media-explorer</command>
+<prompt>$</prompt> <command>git co -b my-shiny-new-branch</command>
+
+# ...edit source code and make local commits using your editor of choice...
+
+<prompt>$</prompt> <command>jhbuild-mex shell</command>
+<prompt>$</prompt> <command>make</command>
+
+# to install your version of mex over the stock version
+<prompt>$</prompt> <command>make install</command>
+        </screen>
+      </informalexample>
+
+      <para>You only need to be inside the jhbuild-mex shell when
+      you want to build the source; but it's often easiest to just stay
+      inside a shell all the time so you don't forget to
+      switch before building.</para>
+
+      <warning id="developers-extending-environment-warning">
+        <para>If you run <command>jhbuild-mex build</command> after
+        making modifications to the source, your branch will be used
+        as the basis for the build. So if you are working on your
+        own branch, you will need to merge any changes made
+        to mex master into your own branches yourself.</para>
+
+        <para>You should also be aware that if you choose to clear
+        the source directory during a <command>jhbuild-mex</command>
+        build (one of the options if a module fails to build), any
+        local changes you've made could be lost. So it's a good idea
+        to push your own branches to a remote git server as a backup.</para>
+      </warning>
+
+      <para>Another useful tool is <command>turbine</command>, which
+      provides a GUI for creating GObject classes. This can help a lot when
+      writing Media Explorer plugins (which are, naturally, GObject classes).
+      You can get turbine from
       <ulink url="http://git.gnome.org/browse/turbine/">GNOME git</ulink>.</para>
     </section>
 
     <section id="developers-extending-building">
-      <title>Building Media Explorer from source</title>
+      <title>Enabling and configuring content sources</title>
 
-      <para>TODO</para>
+      <para>The default jhbuild-mex configuration builds a minimal
+      version of the application and its support libraries, with most of
+      the Grilo plugins disabled (for various licensing reasons). This
+      means that you can't make use of Grilo to feed media from
+      other sources like Flickr, YouTube and Vimeo into Media
+      Explorer.</para>
+
+      <para>However, you can re-enable Grilo plugins by changing the
+      default configure options, then adding the plugins to the Media Explorer
+      search whitelist. Then, providing the user supplies the
+      necessary API keys, results from these extra sources should
+      appear in Media Explorer's search results display.</para>
+
+      <section id="developers-extending-building-enabling-grilo">
+        <title>Enabling Grilo plugins</title>
+
+        <para>The following Grilo plugins can provide search results
+        to Media Explorer:</para>
+
+        <itemizedlist id="developers-extending-building-enabling-grilo-list">
+          <listitem>
+            <formalpara>
+              <title>jamendo</title>
+              <para>For accessing free music from
+              <ulink url="http://www.jamendo.com/">Jamendo</ulink>.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>upnp</title>
+              <para>For accessing media on UPnP servers. Although
+              grilo-tracker + tracker-upnp (both enabled in
+              Media Explorer by default) provide access to UPnP
+              media, the Grilo UPnP plugin is an alternative way to
+              index UPnP media. It may be useful if you are using
+              Media Explorer on a system where Tracker isn't
+              available.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>vimeo</title>
+              <para>For accesing videos on
+              <ulink url="http://vimeo.com/">Vimeo</ulink>.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>youtube</title>
+              <para>For accessing videos on
+              <ulink url="http://youtube.com">YouTube</ulink>.</para>
+            </formalpara>
+          </listitem>
+
+          <listitem>
+            <formalpara>
+              <title>flickr</title>
+              <para>For accessing photos on
+              <ulink url="http://flickr.com/">Flickr</ulink>.</para>
+            </formalpara>
+          </listitem>
+
+          <!--listitem>
+            <formalpara>
+              <title>apple-trailers</title>
+              <para>this doesn't currently work due to an issue
+              with user agents</para>
+            </formalpara>
+          </listitem-->
+
+        </itemizedlist>
+
+        <note>
+          <para>Grilo has various other plugins, and doubtless more
+          will be added over time, but the ones listed above are the
+          only ones which affect the Media Explorer user interface.</para>
+        </note>
+
+        <para>You can set configure options for the build via jhbuild-mex
+        by editing the <filename>$HOME/.jhbuildrc-mex-custom</filename>
+        file. Add a line to customise the arguments passed to
+        <command>autogen.sh</command>; this in turn affects how
+        <command>configure</command> is invoked.</para>
+
+        <para>For example, to turn on the vimeo and youtube plugins, the line
+        would look like this:</para>
+
+        <informalexample>
+          <programlisting>
+module_autogenargs['grilo-plugins'] = '--enable-upnp --enable-vimeo'
+          </programlisting>
+        </informalexample>
+
+        <para>To enable another modules, append <code>--enable-$MODULE</code>
+        to the autogenargs string, where <code>$MODULE</code> is one
+        of the module names from
+        <link linkend="developers-extending-building-grilo-plugins">this
+        list</link>.</para>
+
+        <para>It's also possible to disable a plugin. You might want to
+        do this if a plugin is causing Media Explorer to crash, as the
+        YouTube plugin has done on occasion in the past. To do this,
+        just pass <code>--disable-$MODULE</code> as an autogen argument.
+        For example, to enable upnp and vimeo but disable youtube:</para>
+
+        <informalexample>
+          <programlisting>
+module_autogenargs['grilo-plugins'] = '--enable-upnp \
+                                       --enable-vimeo \
+                                       --disable-youtube'
+          </programlisting>
+        </informalexample>
+
+      </section>
+
+      <section id="developers-extending-building-whitelisting">
+        <title>Whitelisting Grilo plugins</title>
+
+        <para>Once a Grilo plugin has been enabled, the next step is
+        to allow Media Explorer to use it as a content source. Once
+        you've done this, any searches made through the Media Explorer
+        interface will also search content on the enabled content
+        sources (as well as the local filesystem and UPnP via the
+        grilo-tracker plugin).</para>
+
+        <para>To enable a Grilo plugin as a Media Explorer content
+        source, modify your <filename>$HOME/.config/mex/mex.conf</filename>
+        configuration file (create this file if it doesn't exist). Here's
+        an example:</para>
+
+        <informalexample>
+          <programlisting>
+[grilo-plugins]
+enabled=grl-tracker;grl-vimeo;grl-flickr;grl-jamendo
+          </programlisting>
+        </informalexample>
+
+        <para>Note that the plugin ID is a name shown in
+        <link linkend="developers-extending-building-enabling-grilo-list">the
+        previous list</link>, prefixed with <code>grl</code>. You
+        can enable more plugins by appending a semi-colon and a plugin
+        ID to the value for <varname>enabled</varname>.</para>
+
+        <note>
+          <para>Once you've enabled new plugins in Grilo and whitelisted
+          them, you may still need to configure them by following
+          <link linkend="users-content-sources">these
+          instructions</link>.</para>
+        </note>
+      </section>
+
+      <section id="developers-extending-building-checking">
+        <title>Checking which Grilo plugins are enabled</title>
+
+        <para>You can test which Grilo plugins are available
+        by running <command>mex</command> from inside a jhbuild-mex
+        shell, with Grilo registry debugging turned on. Use the
+        <envar>GRL_DEBUG</envar> environment variable to control
+        which messages Grilo displays, and at which log levels.
+        Full debugging for the plugin registry is enabled like this:</para>
+
+        <informalexample>
+          <screen>
+<prompt>$</prompt> <command>GRL_DEBUG=plugin-registry:debug mex</command>
+          </screen>
+        </informalexample>
+
+        <para>Plugins log a message like this if they load
+        successfully:</para>
+
+        <informalexample>
+          <screen>
+<![CDATA[
+(mex:31977): Grilo-DEBUG: [plugin-registry] grl-plugin-registry.c:173: Plugin rank 'grl-jamendo' : 0
+(mex:31977): Grilo-DEBUG: [plugin-registry] grl-plugin-registry.c:370: New source available: 'grl-jamendo'
+(mex:31977): Grilo-DEBUG: [plugin-registry] grl-plugin-registry.c:577: Loaded plugin 'grl-jamendo' from '/home/ell/mex/install/lib/grilo-0.1/libgrljamendo.so'
+]]>
+          </screen>
+        </informalexample>
+
+        <para>Make sure you have
+        <link linkend="users-grilo-configuration">configured the
+        plugins</link> first: any plugins which require configuration
+        but don't have it report a failure like this:</para>
+
+        <informalexample>
+          <screen>
+<![CDATA[
+(mex:31866): Grilo-DEBUG: [plugin-registry] grl-plugin-registry.c:173: \
+  Plugin rank 'grl-vimeo' : 0
+
+(mex:31866): Grilo-WARNING **: [vimeo] grl-vimeo.c:103: Missing configuration
+
+(mex:31866): Grilo-WARNING **: [plugin-registry] grl-plugin-registry.c:551: \
+  Failed to initialize plugin: './../lib/grilo-0.1/libgrlvimeo.so'
+]]>
+          </screen>
+        </informalexample>
+
+        <para>Finally, confirm that the Grilo plugin is supplying
+        content to Media Explorer by performing a search. Check that
+        the search results contain columns for the plugins you've enabled.
+        For example, <link linkend="">this screenshot</link> shows
+        results being returned from Jamendo, Flickr, Tracker (local
+        filesystem and UPnP), and Vimeo:</para>
+
+        <screenshot>
+          <mediaobject>
+            <imageobject>
+              <imagedata format="PNG"
+                         fileref="search-results.png" />
+            </imageobject>
+            <alt>
+              <para>Search showing results from Jamendo, Flickr,
+              Tracker (local filesystem and UPnP), and Vimeo</para>
+            </alt>
+          </mediaobject>
+        </screenshot>
+
+      </section>
+
     </section>
 
   </section>

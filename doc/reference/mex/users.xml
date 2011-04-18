@@ -19,7 +19,7 @@
   </section>
 
   <section id="users-configuring">
-    <title>Configuring Media Explorer media sources</title>
+    <title>Configuring the default content sources</title>
 
     <para>If the Media Explorer user has the standard GNOME home directory
     layout (i.e. <filename>$HOME/Downloads</filename>,
@@ -45,8 +45,140 @@
     <para>Now Tracker should find and index content in those
     directories, making them accessible via Media Explorer.</para>
 
-    <para>To find out, see <link linkend="developers-works-content">this
+    <para>To find out more, see <link linkend="developers-works-content">this
     section about how Media Explorer discovers content</link>.</para>
+  </section>
+
+  <section id="users-content-sources">
+    <title>Configuring extra content sources</title>
+
+    <para>Media Explorer allows you to search through metadata about
+    media from a variety of sources. By default, it has
+    access to media on your local filesystem and on UPnP devices
+    on your network.</para>
+
+    <para>However, Media Explorer can search beyond these if
+    you provide it with access to more sources, such as Flickr and
+    YouTube. Typically, this is done by supplying an API key (or keys)
+    in a Grilo configuration file. Media Explorer uses Grilo to
+    authenticate against content sources and to search/browse
+    their media and metadata.</para>
+
+    <warning>
+      <para>If you are using a version of Media Explorer
+      supplied with a MeeGo distribution, it may not be possible to
+      add extra content sources beyond the defaults.</para>
+
+      <para>If your version of Media Explorer is supplied by a 3rd
+      party (outside the official MeeGo distribution) or if you
+      have <link linkend="developers-extending-building">built
+      Media Explorer</link> yourself, extra content sources may be
+      available and this section may be applicable.</para>
+
+      <para>If you want to work out which Grilo plugins are available
+      in your version of Media Explorer, see
+      <link linkend="developers-extending-building-checking">this
+      section</link> for instructions.</para>
+    </warning>
+
+    <para>To configure content sources, use the Grilo configuration file,
+    typically located in
+    <filename>$HOME/.config/mex/grilo-system.conf</filename>.</para>
+
+    <para>If this file doesn't exist, create it in a standard text editor.
+    The file's content should look like this (obviously replacing the
+    <code>xxx...</code> strings with your real keys):</para>
+
+    <informalexample>
+      <programlisting>
+<![CDATA[
+[grl-vimeo]
+api-key=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+api-secret=xxxxxxxxxxxxxxxx
+
+[grl-youtube]
+api-key=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...
+
+[grl-flickr]
+api-key=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+api-secret=xxxxxxxxxxxxxxxx
+]]>
+      </programlisting>
+    </informalexample>
+
+    <para>Some plugins require configuration (for example,
+    vimeo and youtube, as shown here); others have defaults
+    which can be modified but don't <emphasis>require</emphasis>
+    configuration.</para>
+
+    <para>Note how the configuration for each plugin is inside a
+    section headed <code>[grl-$PLUGIN_NAME]</code>, corresponding
+    to the ID of a Grilo plugin.</para>
+
+    <para>The configuration options for some of the standard Grilo
+    plugins are covered below (NB whether they are available
+    or not depends on your version of Media Explorer):</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para><emphasis>jamendo</emphasis>: No configuration required.</para>
+      </listitem>
+
+      <listitem>
+        <para><emphasis>vimeo</emphasis>: Requires:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para><varname>api-key</varname></para>
+          </listitem>
+
+          <listitem>
+            <para><varname>api-secret</varname></para>
+          </listitem>
+        </itemizedlist>
+
+        <para>These can be acquired by registering your installation
+        of Media Explorer for a Consumer Key (<varname>api-key</varname>)
+        and Consumer Secret (<varname>api-secret</varname>)
+        <ulink url="http://vimeo.com/api/docs/oauth">here</ulink>.</para>
+      </listitem>
+
+      <listitem>
+        <para><emphasis>youtube</emphasis>: Requires:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para><varname>api-key</varname></para>
+          </listitem>
+
+        </itemizedlist>
+
+        <para>This can be acquired by getting a Google account
+        and signing up for a Developer Key (<varname>api-key</varname>)
+        <ulink url="http://code.google.com/apis/youtube/2.0/developers_guide_protocol.html#Developer_Key">here</ulink>.</para>
+      </listitem>
+
+      <listitem>
+        <para><emphasis>flickr</emphasis>: Requires:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para><varname>api-key</varname></para>
+          </listitem>
+
+          <listitem>
+            <para><varname>api-secret</varname></para>
+          </listitem>
+        </itemizedlist>
+
+        <para>These can be acquired by registering your installation
+        of Media Explorer for an API key (<varname>api-key</varname>)
+        and API secret (<varname>api-secret</varname>)
+        <ulink url="http://www.flickr.com/services/api/">here</ulink>.</para>
+      </listitem>
+
+    </itemizedlist>
 
   </section>
 
