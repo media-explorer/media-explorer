@@ -983,6 +983,11 @@ mex_slide_show_set_model (MexContentView *view,
       g_signal_connect (priv->proxy, "object-created",
                         G_CALLBACK (tile_created_cb), view);
 
+      /* FIXME: Set an arbitrary 200-item limit as we can't handle large
+       *        amounts of actors without massive slow-down.
+       */
+      mex_proxy_set_limit (priv->proxy, 200);
+
       mex_proxy_start (priv->proxy);
     }
 }
