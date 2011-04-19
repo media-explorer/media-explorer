@@ -1334,8 +1334,15 @@ mex_captured_event_cb (ClutterActor *actor,
       mex_show_volume_control (data);
       return TRUE;
 
+      /* The play button more often than not is a play/pause button, there is
+       * no way of telling which it is so for now so I'm going to say the play
+       * button is a play pause.
+       */
     case CLUTTER_KEY_AudioPlay:
-      mex_player_play (MEX_PLAYER (data->player));
+      if (clutter_media_get_playing (data->media))
+        mex_player_pause (MEX_PLAYER (data->player));
+      else
+        mex_player_play (MEX_PLAYER (data->player));
       return TRUE;
 
     case CLUTTER_KEY_AudioPause:
