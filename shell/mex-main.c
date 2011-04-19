@@ -640,7 +640,6 @@ mex_alt_model_cb (MxAction *action,
 typedef struct
 {
   MexGrid *grid;
-  MexMenu *menu;
   gfloat   width;
   gfloat   height;
   guint    source;
@@ -654,13 +653,6 @@ mex_free_grid_size_data (MexGridSizeData *data)
       g_object_remove_weak_pointer (G_OBJECT (data->grid),
                                     (gpointer *)&data->grid);
       data->grid = NULL;
-    }
-
-  if (data->menu)
-    {
-      g_object_remove_weak_pointer (G_OBJECT (data->menu),
-                                    (gpointer *)&data->menu);
-      data->menu = NULL;
     }
 
   if (data->source)
@@ -679,9 +671,6 @@ mex_set_page_width_cb (MexGridSizeData *data)
       mex_grid_set_tile_size (data->grid, data->width, data->height);
     }
 
-  if (data->menu)
-    mex_menu_set_min_width (data->menu, data->width);
-
   data->source = 0;
 
   mex_free_grid_size_data (data);
@@ -694,7 +683,7 @@ mex_notify_page_width_cb (ClutterActor *box,
                           GParamSpec   *pspec,
                           MexData      *data)
 {
-  gfloat width;
+  gfloat width, menu_width;
   GList *children;
   MxPadding padding;
 
@@ -710,16 +699,15 @@ mex_notify_page_width_cb (ClutterActor *box,
   mx_widget_get_padding (MX_WIDGET (box), &padding);
 
   children = clutter_container_get_children (CLUTTER_CONTAINER (box));
-  size_data.menu = MEX_MENU (children->data);
-  g_object_add_weak_pointer (G_OBJECT (size_data.menu),
-                             (gpointer *)&size_data.menu);
+  menu_width = clutter_actor_get_width (children->data);
   g_list_free (children);
 
   size_data.grid = MEX_GRID (g_object_get_data (G_OBJECT (box), "grid"));
   g_object_add_weak_pointer (G_OBJECT (size_data.grid),
                              (gpointer *)&size_data.grid);
 
-  size_data.width = (gint)((width - padding.left - padding.right) / 4.f);
+  size_data.width =
+    (gint)((width - padding.left - padding.right - menu_width) / 3.f);
   size_data.height = (gint)((size_data.width * 9.f) / 16.f);
 
   size_data.source =
@@ -834,6 +822,7 @@ mex_page_created_cb (MexExplorer   *explorer,
 
       /* Create the menu */
       menu = MEX_MENU (mex_menu_new ());
+      mex_menu_set_min_width (menu, 284);
       g_object_set_data (G_OBJECT (model), "menu", menu);
       mex_resizing_hbox_set_resizing_enabled (MEX_RESIZING_HBOX (menu),
                                               FALSE);
