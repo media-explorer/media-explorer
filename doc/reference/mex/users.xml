@@ -23,13 +23,13 @@
 
     <para>If the Media Explorer user has the standard GNOME home directory
     layout (i.e. <filename>$HOME/Downloads</filename>,
-    <filename>$HOME/Videos</filename>, <filename>$HOME/Pictures</filename>),
-    Media Explorer should automatically "see" any content added to
+    <filename>$HOME/Videos</filename>, <filename>$HOME/Pictures</filename>
+    etc.), Media Explorer should automatically "see" any content added to
     those directories and present it to the user.</para>
 
-    <para>However, when using a non-standard directory layout, or if
+    <para>However, if using a non-standard directory layout, or if
     you want to access files outside the default directories,
-    the user needs to configure <emphasis>Tracker</emphasis> (which provides
+    you need to configure <emphasis>Tracker</emphasis> (which provides
     the content indexing service) from the command line with:</para>
 
     <informalexample>
@@ -54,20 +54,21 @@
 
     <para>Media Explorer allows you to search through metadata about
     media from a variety of sources. By default, it has
-    access to media on your local filesystem and on UPnP devices
-    on your network.</para>
+    access to media on the local filesystem and on UPnP devices
+    on the network.</para>
 
     <para>However, Media Explorer can search beyond these if
-    you provide it with access to more sources, such as Flickr and
+    provided with access to more sources, such as Flickr and
     YouTube. Typically, this is done by supplying an API key (or keys)
-    in a Grilo configuration file. Media Explorer uses Grilo to
+    in a Grilo configuration file: Media Explorer uses Grilo to
     authenticate against content sources and to search/browse
     their media and metadata.</para>
 
     <warning>
       <para>If you are using a version of Media Explorer
       supplied with a MeeGo distribution, it may not be possible to
-      add extra content sources beyond the defaults.</para>
+      add extra content sources beyond the defaults (filesystem
+      and UPnP).</para>
 
       <para>If your version of Media Explorer is supplied by a 3rd
       party (outside the official MeeGo distribution) or if you
@@ -78,15 +79,14 @@
       <para>If you want to work out which Grilo plugins are available
       in your version of Media Explorer, see
       <link linkend="developers-extending-building-checking">this
-      section</link> for instructions.</para>
+      section</link> for instructions on how to find out.</para>
     </warning>
 
     <para>To configure content sources, use the Grilo configuration file,
     typically located in
-    <filename>$HOME/.config/mex/grilo-system.conf</filename>.</para>
-
-    <para>If this file doesn't exist, create it in a standard text editor.
-    The file's content should look like this (obviously replacing the
+    <filename>$HOME/.config/mex/grilo-system.conf</filename>. If this
+    file doesn't exist, create it in a standard text editor.
+    Its content should look like this (obviously replacing the
     <code>xxx...</code> strings with your real keys):</para>
 
     <informalexample>

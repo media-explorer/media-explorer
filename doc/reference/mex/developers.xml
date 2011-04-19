@@ -8,13 +8,6 @@
   <section id="developers-architecture">
     <title>Architecture</title>
 
-    <warning>
-      <para>Due to the fact that libmex
-      is changing daily, is incomplete, and has no stable releases,
-      this document is similarly unpolished and very much a
-      work in progress.</para>
-    </warning>
-
     <para>Media Explorer is a single project, but it is composed of
     several interrelated libraries and applications. The points
     below explain these parts and where they live in the source
@@ -72,10 +65,10 @@
       <title>Integration points with other libraries and services</title>
 
       <para>Media Explorer was designed to integrate smoothly with
-      the rest of the MeeGo software stack. Consequently, there are
+      the MeeGo software stack. Consequently, there are
       a number of points where Media Explorer integrates with
       other libraries and services; see
-      <link linkend="developers-architecture-integration-diagram">the
+      <link linkend="developers-architecture-integration-diagram">this
       diagram</link> for an overview (as seen by
       <command>jhbuild dot</command>).</para>
 
@@ -96,8 +89,8 @@
             <title><ulink url="http://gupnp.org/">GUPnP</ulink></title>
 
             <para>This is part of the standard MeeGo UPnP stack. It is a
-            low-level implementation that provides the raw UPnP protocol,
-            not APIs to higher-level specifications such as MediaServer:1.</para>
+            low-level implementation that provides the raw UPnP protocol:
+            it has no APIs for higher-level specifications such as MediaServer:1.</para>
           </formalpara>
 
           <para><ulink url="http://live.gnome.org/Rygel">Rygel</ulink> (also part
@@ -130,7 +123,7 @@
           </formalpara>
 
           <para>Configuring other Grilo plugins can enable access to further
-          content sources: see <link linkend="users-configuring">the section
+          content sources: see <link linkend="users-content-discovery">the section
           about configuring Grilo plugins</link> for more details.</para>
         </listitem>
 
@@ -158,9 +151,10 @@
           <formalpara>
             <title><ulink url="http://clutter-project.org">Clutter</ulink></title>
 
-            <para>Clutter is a low-level toolkit for applications which
-            uses OpenGL for drawing. Clutter doesn't mandate a particular
-            look and feel: this is provided by toolkits built on top of Clutter.</para>
+            <para>Clutter is a low-level drawing toolkit which abstracts and
+            simplifies the OpenGL API. Clutter doesn't mandate a particular
+            look and feel: this is provided by toolkits built on top of Clutter
+            (like Mx, see below).</para>
           </formalpara>
         </listitem>
 
@@ -182,7 +176,10 @@
         distributions (e.g. Fedora). However, bear in mind that it
         uses some libraries which may either be unavailable for
         your distro (e.g. Mx, Grilo) or at versions which are too old
-        (e.g. DBus, Tracker).</para>
+        (e.g. DBus, Tracker). If your distro is too outdated,
+        one solution is to build Media Explorer with jhbuild:
+        <link linkend="developers-extending-environment">this
+        section</link> explains how.</para>
       </note>
 
     </section>
@@ -194,7 +191,7 @@
         <title>Input device</title>
 
         <para>The input device is expected to have a 5-way d-pad
-        (up/down/left/right/activate), back, information and home. These
+        (up/down/left/right/activate), back, information and home keys. These
         are the primary navigation keys, and are all that is required to
         use the majority of the UX. The remote is also expected to
         have a full alphanumeric keyboard, used for searching and in the
@@ -225,6 +222,9 @@
             <para>home = the "Windows" key</para>
           </listitem>
         </itemizedlist>
+
+        <para>This configuration can be modified via the
+        <link linkend="developers-works-events">rebinder</link>.</para>
       </section>
 
       <section>
@@ -239,7 +239,7 @@
         <title>Views</title>
 
         <para>The majority of the UX is based around two styles of view:
-        panel or grid.</para>
+        <emphasis>panel</emphasis> and <emphasis>grid</emphasis>.</para>
 
         <para><emphasis>A panel view</emphasis> displays a number of
         panels (as columns across the screen); each has a header which
@@ -253,7 +253,7 @@
 
         <para><emphasis>A grid view</emphasis> fills the screen with
         items and can be scrolled vertically. All of the items are
-        included, there is no implicit filtering.</para>
+        included, and there is no implicit filtering.</para>
       </section>
 
       <section>
@@ -340,21 +340,20 @@
         <para>The <guilabel>Related Content</guilabel> row lists
         content that is related to the current content. If the media is
         from a directory, it lists media in the same directory; if from
-        a search, the other results; and so on. In the future this
-        is where recommended content from the service provider and
-        even advertising could appear.</para>
+        a search, the other results; and so on. This area could also
+        be used to show recommended content or advertising.</para>
 
-        <para>For photos the controls are different (rotate buttons,
+        <para>For photos, the controls are different (rotate buttons,
         no seek bar, etc). Pressing up will slide these off the screen,
-        finally resulting in just the content being visible.</para>
+        resulting in just the photo being visible.</para>
       </section>
 
 
       <section>
-        <title>Media informations</title>
+        <title>Media information</title>
 
         <para>At any time in the Media Explorer, you can get
-        informations about the current displayed media or the
+        information about the current displayed media or the
         currently selected media by pressing the info key.</para>
       </section>
 
@@ -397,7 +396,7 @@
         </listitem>
 
         <listitem>
-          <para>Controller: An <type>MexContentProxy</type> instance
+          <para>Controller: A <type>MexContentProxy</type> instance
           (an implementation of <type>MexProxy</type>) is responsible
           for generating UI elements for each model. Each time a new
           model is added to the explorer, a new column is created, and
@@ -406,7 +405,7 @@
           hard-coded to a maximum of 10 items per column).</para>
 
           <para>The default behaviour is for each content item to be
-          represented by an <type>MexContentBox</type>. This is an
+          represented by a <type>MexContentBox</type>. This is an
           expanding widget which displays one line of the content item's
           title, expanding on click to display the full title.</para>
         </listitem>
@@ -458,11 +457,11 @@
       Media Explorer, to make media indexed by Tracker
       available through the Grilo API.</para>
 
-      <para>Tracker itself a collection of data mining and indexing
+      <para>Tracker itself is a collection of data mining and indexing
       services, typically used for searching the local filesystem. By
       default Tracker comes with several indexing services called
       <emphasis>miners</emphasis>. The most widely used miner is the
-      filesystem miner which is responsible to index local files.
+      filesystem miner, responsible for indexing local files.
       Media Explorer makes use of the <emphasis>UPnP</emphasis> miner,
       if available, which additionally indexes <ulink
       url="http://en.wikipedia.org/wiki/Universal_Plug_and_Play">UPnP</ulink>
@@ -525,7 +524,7 @@ Press Ctrl+C to end follow of Tracker state
             of a Windows laptop running Windows Media Center (which
             is UPnP compatible).</para>
 
-            <para>If a miner has a cross against it, there may
+            <para>If a miner has an "X" against it, there may
             be something wrong with Tracker's configuration.</para>
           </listitem>
 
@@ -541,15 +540,15 @@ Press Ctrl+C to end follow of Tracker state
             <para>Check that Tracker is indexing directories
             where some media exists: see
             <link linkend="users-configuring">these instructions</link>
-            on configuring Tracker.</para>
+            for configuring Tracker.</para>
           </listitem>
 
           <listitem id="developers-works-content-grilo-test-ui">
             <formalpara>
               <title>Check Grilo can browse your media</title>
 
-              <para>Tracker's directory settings look right,
-              but media is still not appearing in Media Explorer.
+              <para>Tracker's directory settings might look right,
+              but media may still not appear in Media Explorer.
               In this case, ensure that Tracker has actually indexed your
               media using the <command>grilo-test-ui</command>
               command. This runs a basic Grilo media browsing
@@ -676,9 +675,9 @@ Press Ctrl+C to end follow of Tracker state
               InfraRed device drivers, has been integrated into the
               mainline and lirc devices are exposed as evdev devices.
               This means that the issue of handling infra-red controls
-              is now reduced to the issue of handling evdev devices
-              (previously binding key events would have involved
-              handling IR devices and evdev devices separately).</para>
+              is now reduced to the issue of handling evdev devices.
+              (Previously, binding key events would have involved
+              handling IR devices and evdev devices separately.)</para>
             </formalpara>
           </listitem>
 
@@ -707,8 +706,7 @@ Press Ctrl+C to end follow of Tracker state
               <para>This library provides control over the keyboard, extending
               the basic facilities available in X. The project has a
               <ulink url="http://cgit.freedesktop.org/xorg/lib/libxkbcommon">public
-              git repo</ulink>.
-              </para>
+              git repo</ulink>.</para>
             </formalpara>
           </listitem>
         </itemizedlist>
@@ -837,7 +835,7 @@ Press Ctrl+C to end follow of Tracker state
 
                 <para>For a list of these natural mappings, see
                 <filename>$SOURCE/applets/rebinder/rebinder-evdev-keymap.c</filename>
-                in the libmex source.</para>
+                in the Media Explorer source.</para>
               </listitem>
 
               <listitem>
@@ -985,7 +983,8 @@ Menu=105
 
           <para><filename>$USER_CONFIG_DIR</filename> defaults
           to <filename>$HOME/.config</filename> on freedesktop.org
-          compliant distros (like MeeGo).</para>
+          compliant distros (like MeeGo). Could be used for user-specific
+          plugins.</para>
         </listitem>
 
         <listitem>
@@ -1001,7 +1000,7 @@ Menu=105
       </itemizedlist>
 
       <para>Responsibility for finding and loading plugins lies with the
-      <type>MexPluginManager</type>, one of the member variables of the
+      <type>MexPluginManager</type>, assigned as a member variables of the
       Media Explorer application. Plugin loading works like this:</para>
 
       <orderedlist>
@@ -1023,6 +1022,7 @@ Menu=105
             <listitem>
               <para>Loads the file via GModule.</para>
             </listitem>
+
             <listitem>
               <para>Looks for a <function>mex_get_plugin_type</function>
               symbol in the module's symbol table.</para>
@@ -1067,17 +1067,17 @@ Menu=105
 
               <para>Actions are "things you can do to a piece of content".
               Media Explorer displays the actions for a piece of content
-              when you press the information key while it is highlighted.
-              For example, <command>Watch</command> or <command>Add to
-              queue</command> for a video, and <command>View</command>
-              for a picture.</para>
+              when you press the information key while that content
+              is highlighted. For example, <command>Watch</command> or
+              <command>Add to queue</command> for a video, and
+              <command>View</command> for a picture.</para>
 
               <para>An ActionProvider plugin can add new actions to
               particular pieces of content. Each action is defined by an
               <type>MexActionInfo</type> object returned by the provider;
-              this specifies the MIME types for which an action is
-              applicable, as well as the action (an instance
-              of <type>MxAction</type>) itself.</para>
+              this object specifies the MIME types for which an action is
+              applicable, as well as the action itself (an instance
+              of <type>MxAction</type>).</para>
             </listitem>
 
           </itemizedlist>
@@ -1102,7 +1102,7 @@ Menu=105
 
       <para>What you need to know to extend Media Explorer can be
       summarised as "be a GNOME developer": most of the technologies
-      you need to know are used by the GNOME project.</para>
+      you need to know are used in the GNOME project.</para>
 
       <para>But, more specifically, you need to know:</para>
 
@@ -1128,7 +1128,7 @@ Menu=105
         </listitem>
         <listitem>
           <para>How to write applications using Clutter+Mx (optional and
-          not vital for this tutorial: to provide custom widgets for your plugin)</para>
+          not vital): to provide custom widgets for your plugin</para>
         </listitem>
       </itemizedlist>
 
@@ -1273,7 +1273,7 @@ Menu=105
         <note>
           <para>Grilo has various other plugins, and doubtless more
           will be added over time, but the ones listed above are the
-          only ones which affect the Media Explorer user interface.</para>
+          only ones which affect Media Explorer searches.</para>
         </note>
 
         <para>You can set configure options for the build via jhbuild-mex
@@ -1291,15 +1291,15 @@ module_autogenargs['grilo-plugins'] = '--enable-upnp --enable-vimeo'
           </programlisting>
         </informalexample>
 
-        <para>To enable another modules, append <code>--enable-$MODULE</code>
+        <para>To enable other modules, append <code>--enable-$MODULE</code>
         to the autogenargs string, where <code>$MODULE</code> is one
         of the module names from
         <link linkend="developers-extending-building-grilo-plugins">this
         list</link>.</para>
 
         <para>It's also possible to disable a plugin. You might want to
-        do this if a plugin is causing Media Explorer to crash, as the
-        YouTube plugin has done on occasion in the past. To do this,
+        do this if a plugin is causing Media Explorer to crash (as the
+        YouTube plugin has done on occasion in the past). To do this,
         just pass <code>--disable-$MODULE</code> as an autogen argument.
         For example, to enable upnp and vimeo but disable youtube:</para>
 
@@ -1319,7 +1319,7 @@ module_autogenargs['grilo-plugins'] = '--enable-upnp \
         <para>Once a Grilo plugin has been enabled, the next step is
         to allow Media Explorer to use it as a content source. Once
         you've done this, any searches made through the Media Explorer
-        interface will also search content on the enabled content
+        interface will also search the enabled content
         sources (as well as the local filesystem and UPnP via the
         grilo-tracker plugin).</para>
 
@@ -1365,7 +1365,7 @@ enabled=grl-tracker;grl-vimeo;grl-flickr;grl-jamendo
           </screen>
         </informalexample>
 
-        <para>Plugins log a message like this if they load
+        <para>A plugin logs a message like this if it loads
         successfully:</para>
 
         <informalexample>
@@ -1400,11 +1400,12 @@ enabled=grl-tracker;grl-vimeo;grl-flickr;grl-jamendo
         <para>Finally, confirm that the Grilo plugin is supplying
         content to Media Explorer by performing a search. Check that
         the search results contain columns for the plugins you've enabled.
-        For example, <link linkend="">this screenshot</link> shows
-        results being returned from Jamendo, Flickr, Tracker (local
-        filesystem and UPnP), and Vimeo:</para>
+        For example,
+        <link linkend="developers-extending-building-checking-screenshot">this
+        screenshot</link> shows results being returned from Jamendo,
+        Flickr, Tracker (local filesystem and UPnP), and Vimeo:</para>
 
-        <screenshot>
+        <screenshot id="developers-extending-building-checking-screenshot">
           <mediaobject>
             <imageobject>
               <imagedata format="PNG"

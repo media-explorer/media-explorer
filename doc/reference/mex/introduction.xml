@@ -5,8 +5,8 @@
 <chapter id="introduction">
   <title>Introduction</title>
 
-  <para>Media Explorer is media centre library and reference
-  application for Linux (including MeeGo).</para>
+  <para>Media Explorer is a media centre application for
+  Linux (including MeeGo).</para>
 
   <para>It leverages
   <link linkend="developers-architecture-integration">existing
