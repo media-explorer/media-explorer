@@ -24,26 +24,28 @@ MexExplorer#main-explorer > MexScrollView
 
 *#grid-page
 {
-  padding: 48 48 0;
+  padding: 34 39 0 39;
 }
 
 *#grid-page > *#content
 {
-  padding: 8 0 0;
+  padding: 6 0 0;
 }
 
 *#grid-page MxLabel.Header
 {
+  padding: 15 21;
   border-image: url('panel-header-grid-bg.png') 0 55 1 0;
 }
 
 MxBoxLayout.Header#menu-header
 {
-  padding: 12;
-  -mx-spacing: 12;
+  padding: 15 10;
+  -mx-spacing: 10;
 }
 
-MxBoxLayout.Header#menu-header > MxLabel
+MxBoxLayout.Header#menu-header > MxLabel,
+#grid-page MxLabel.Header
 {
   font-size: 22;
 }

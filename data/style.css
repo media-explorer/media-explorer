@@ -54,7 +54,7 @@ MexTile.Important > MxTable.MexTile > MxLabel
 MxLabel.Header
 {
   border-image: url("panel-header-bg.png") 1 0;
-  padding: 12;
+  padding: 12 18;
 }
 
 /* MxButton styling */
@@ -337,6 +337,12 @@ MexScrollIndicator
 MexMenu MxLabel.Detail
 {
   font-size: 14;
+  color: #d0d0cc;
+}
+
+MxButton:focus MxLabel.Detail
+{
+  color: #464541;
 }
 
 MexMenu MxButton.Item MxIcon
@@ -366,14 +372,8 @@ MexMenu MxButton.Item MxIcon.Toggle:checked
 
 /* MexClockBin styling */
 
-MexClockBin
-{
-  padding: 8;
-}
-
 MxBoxLayout.MexClockBin > MxLabel
 {
-  font-size: 22;
   color: #d0d0cc;
 }
 
@@ -656,7 +656,7 @@ MexSlideShow
 /* Info Bar */
 MexInfoBar
 {
-  padding: 10 45 0 39;
+  padding: 10 39 0 39;
 }
 
 MxButton.Power
