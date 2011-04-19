@@ -832,7 +832,7 @@ mex_page_created_cb (MexExplorer   *explorer,
       label = mx_label_new_with_text (text);
       g_free (text);
 
-      g_object_get (G_OBJECT (model), "icon-name", &text, NULL);
+      g_object_get (G_OBJECT (data->toplevel_model), "icon-name", &text, NULL);
       icon = mx_icon_new ();
       mx_icon_set_icon_name (MX_ICON (icon), text);
       g_free (text);
