@@ -1,3 +1,7 @@
+# Forward declare those so we can use += throughout the file
+BUILT_SOURCES =
+EXTRA_DIST =
+
 AM_CFLAGS =						\
 	$(REBINDER_CFLAGS)				\
 	$(COMPILER_FLAGS) 				\
@@ -5,6 +9,18 @@ AM_CFLAGS =						\
 	-DPKGDATADIR=\""$(pkgdatadir)/rebinder"\"	\
 	-DREBINDER_ENABLE_DEBUG				\
 	$(NULL)
+
+# D-Bus server side bindings
+DBUS_SPECS = mex-rebinder-control.xml
+DBUS_SERVER_GINTERFACE =			\
+	$(DBUS_SPECS:.xml=-ginterface.h)	\
+	$(DBUS_SPECS:.xml=-ginterface.c)
+
+%-ginterface.h %-ginterface.c: %.xml Makefile.am
+	$(AM_V_GEN)python $(top_srcdir)/tools/glib-ginterface-gen.py --filename=$(basename $@) $< Mex_
+
+BUILT_SOURCES += $(DBUS_SERVER_GINTERFACE)
+EXTRA_DIST += $(DBUS_SERVER_GINTERFACE)
 
 # Common files to both the daemon and the internal library
 rebinder_common_sources =		\
@@ -25,7 +41,11 @@ rebinder_common_sources =		\
 # mex-rebinder the daemon
 bin_PROGRAMS = mex-rebinder
 
-mex_rebinder_SOURCES = $(rebinder_common_sources) rebinder-main.c
+mex_rebinder_SOURCES = 			\
+	$(rebinder_common_sources)	\
+	$(DBUS_SERVER_GINTERFACE)	\
+	rebinder-main.c			\
+	$(NULL)
 mex_rebinder_LDADD   = $(REBINDER_LIBS)
 mex_rebinder_CFLAGS  = $(AM_CFLAGS)
 

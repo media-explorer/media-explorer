@@ -58,7 +58,13 @@ struct _MexRebinderClass
 
 GType mex_rebinder_get_type (void) G_GNUC_CONST;
 
-MexRebinder *mex_rebinder_new (void);
+MexRebinder *   mex_rebinder_new        (void);
+gboolean        mex_rebinder_register   (MexRebinder  *rebinder,
+                                         const gchar  *name,
+                                         const gchar  *path,
+                                         GError      **error_in);
+void            mex_rebinder_quit       (MexRebinder           *rebinder,
+                                         DBusGMethodInvocation *context);
 
 G_END_DECLS
 

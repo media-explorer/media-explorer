@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<node name="/Rebinder_Control_Iface"
+      xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
+      xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+
+  <interface name="com.meego.mex.Rebinder">
+    <method name="Quit"  tp:name-for-bindings="Quit" />
+  </interface>
+</node>

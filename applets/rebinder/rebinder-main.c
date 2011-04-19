@@ -338,6 +338,13 @@ request_dbus_name (const gchar *name)
   return request_status == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER;
 }
 
+static void
+on_rebinder_quit (MexRebinder *rebinder,
+                  Rebinder    *the_rebinder)
+{
+  g_main_loop_quit (the_rebinder->mainloop);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -397,6 +404,7 @@ main(int argc, char *argv[])
       rebinder = mex_rebinder_new ();
       registered = mex_rebinder_register (rebinder,
                                           "com.meego.rebinder",
+                                          "/com/meego/rebinder",
                                           &error);
       if (registered == FALSE)
         {
@@ -409,6 +417,9 @@ main(int argc, char *argv[])
 
           return EXIT_FAILURE;
         }
+
+      g_signal_connect (rebinder, "quit",
+                        G_CALLBACK (on_rebinder_quit), &the_rebinder);
 
       the_rebinder.dpy = XOpenDisplay (NULL);
       if (G_UNLIKELY (the_rebinder.dpy == NULL))
