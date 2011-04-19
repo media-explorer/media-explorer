@@ -923,19 +923,10 @@ mex_player_play (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
 
-  /* The play button often is a a play/pause button
-   * there is no way of telling which it is so for
-   * now I'm going to assume every play button is a
-   * play pause.
-   */
-
   if (priv->idle_mode)
     return;
 
-  if (clutter_media_get_playing (priv->media))
-    clutter_media_set_playing (priv->media, FALSE);
-  else
-    clutter_media_set_playing (priv->media, TRUE);
+  clutter_media_set_playing (priv->media, TRUE);
 }
 
 static void
