@@ -328,9 +328,21 @@ mex_slide_show_finalize (GObject *object)
 }
 
 static void
+mex_slide_show_unmap (ClutterActor *actor)
+{
+  MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (actor)->priv;
+
+  CLUTTER_ACTOR_CLASS (mex_slide_show_parent_class)->unmap (actor);
+
+  if (priv->proxy)
+    g_object_set (G_OBJECT (priv->proxy), "model", NULL, NULL);
+}
+
+static void
 mex_slide_show_class_init (MexSlideShowClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (MexSlideShowPrivate));
 
@@ -338,6 +350,8 @@ mex_slide_show_class_init (MexSlideShowClass *klass)
   object_class->set_property = mex_slide_show_set_property;
   object_class->dispose = mex_slide_show_dispose;
   object_class->finalize = mex_slide_show_finalize;
+
+  actor_class->unmap = mex_slide_show_unmap;
 
   signals[CLOSE_REQUEST] = g_signal_new ("close-request",
                                          G_TYPE_FROM_CLASS (klass),
