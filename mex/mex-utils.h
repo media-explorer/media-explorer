@@ -100,9 +100,6 @@ void    mex_print_date      (GDateTime   *date,
                              const gchar *prefix);
 gchar * mex_date_to_string  (GDateTime *date);
 
-guint32 mex_screensaver_inhibit ();
-void mex_screensaver_uninhibit (guint32 cookie);
-
 extern const gchar *mex_shader_box_blur;
 
 GQuark mex_tile_shadow_quark ();

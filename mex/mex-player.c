@@ -42,7 +42,7 @@
 #include "mex-content-view.h"
 #include "mex-content-tile.h"
 #include "mex-media-controls.h"
-#include "mex-utils.h"
+#include "mex-screensaver.h"
 #include "mex-info-panel.h"
 static void mex_player_content_view_iface_init (MexContentViewIface *iface);
 static void mex_player_focusable_iface_init (MxFocusableIface *iface);
@@ -84,7 +84,7 @@ struct _MexPlayerPrivate
   gdouble current_position;
   guint   duration;
 
-  guint32 cookie;
+  MexScreensaver *screensaver;
 };
 
 enum
@@ -329,6 +329,12 @@ mex_player_dispose (GObject *object)
 
       g_object_unref (priv->media);
       priv->media = NULL;
+    }
+
+  if (priv->screensaver)
+    {
+      g_object_unref (priv->screensaver);
+      priv->screensaver = NULL;
     }
 
   if (priv->related_tile)
@@ -623,11 +629,7 @@ media_eos_cb (ClutterMedia *media,
 
       /* we're not playing the content or playing the idle video so allow
        * screensaver if previously inhibited */
-      if (priv->cookie)
-        {
-          mex_screensaver_uninhibit (priv->cookie);
-          priv->cookie = 0;
-        }
+      mex_screensaver_uninhibit (priv->screensaver);
 
       priv->current_position = 0.0;
       priv->at_eos = TRUE;
@@ -641,8 +643,8 @@ media_playing_cb (ClutterMedia *media,
 {
   MexPlayerPrivate *priv = player->priv;
 
-  if (!priv->cookie && !priv->idle_mode)
-    priv->cookie = mex_screensaver_inhibit ();
+  if (!priv->idle_mode)
+    mex_screensaver_inhibit (priv->screensaver);
 
   /* reset at_eos flag if a video is now playing */
   if (clutter_media_get_playing (media))
@@ -762,6 +764,8 @@ mex_player_init (MexPlayer *self)
                                "y-fill", FALSE, "y-align", MX_ALIGN_END,
                                NULL);
 
+  priv->screensaver = mex_screensaver_new ();
+
   /* start in idle mode */
   mex_player_set_idle_mode (MEX_PLAYER (self), TRUE);
 }
@@ -867,11 +871,7 @@ mex_player_set_idle_mode (MexPlayer *player,
       clutter_media_set_playing (priv->media, TRUE);
 
       /* we're idle so we don't mind the screensaver coming on */
-      if (priv->cookie > 0)
-        {
-          mex_screensaver_uninhibit (priv->cookie);
-          priv->cookie = 0;
-        }
+       mex_screensaver_uninhibit (priv->screensaver);
     }
   else
     {
@@ -882,8 +882,7 @@ mex_player_set_idle_mode (MexPlayer *player,
       clutter_media_set_uri (priv->media, NULL);
 
       /* we're playing real content so don't allow the screensaver */
-      if (!priv->cookie)
-        priv->cookie = mex_screensaver_inhibit ();
+      mex_screensaver_inhibit (priv->screensaver);
     }
 }
 
