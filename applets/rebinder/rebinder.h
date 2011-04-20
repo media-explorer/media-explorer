@@ -24,6 +24,10 @@
 #include "fakekey.h"
 #include "rebinder-evdev-manager.h"
 
+#define MEX_REBINDER_DBUS_INTERFACE	      "com.meego.mex.Rebinder"
+#define MEX_REBINDER_DBUS_PATH		      "/com/meego/mex/Rebinder"
+#define MEX_REBINDER_CONFIGURE_DBUS_INTERFACE "com.meego.mex.RebinderConfigure"
+
 typedef struct _Configure Configure;
 typedef struct _Rebinder Rebinder;
 

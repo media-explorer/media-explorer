@@ -375,7 +375,7 @@ main(int argc, char *argv[])
     {
       /* lauched in configuration mode */
 
-      if (request_dbus_name ("com.meego.rebinderConfigure") == FALSE)
+      if (request_dbus_name (MEX_REBINDER_CONFIGURE_DBUS_INTERFACE) == FALSE)
         {
           g_message ("Could not request DBus name");
           return EXIT_SUCCESS;
@@ -403,8 +403,8 @@ main(int argc, char *argv[])
 
       rebinder = mex_rebinder_new ();
       registered = mex_rebinder_register (rebinder,
-                                          "com.meego.rebinder",
-                                          "/com/meego/rebinder",
+                                          MEX_REBINDER_DBUS_INTERFACE,
+                                          MEX_REBINDER_DBUS_PATH,
                                           &error);
       if (registered == FALSE)
         {

@@ -1896,7 +1896,7 @@ static void
 rebinder_configure_run (MxWindow *window)
 {
 #if HAVE_REBINDER
-  const gchar dbus_name[] = "com.meego.rebinderConfigure";
+  const gchar dbus_name[] = MEX_REBINDER_CONFIGURE_DBUS_INTERFACE;
   Rebinder the_rebinder;
 
   if (request_dbus_name (dbus_name) == FALSE)
@@ -2164,7 +2164,7 @@ main (int argc, char **argv)
 
   /* Auto start the rebinder */
 #if HAVE_REBINDER
-  auto_start_dbus_service ("com.meego.rebinder");
+  auto_start_dbus_service (MEX_REBINDER_DBUS_INTERFACE);
 #endif /* HAVE_REBINDER */
 
   /* Create application */
