@@ -1919,6 +1919,48 @@ rebinder_configure_run (MxWindow *window)
 #endif /* HAVE_REBINDER */
 }
 
+#if HAVE_REBINDER
+static void
+rebinder_quit (void)
+{
+  DBusGConnection *connection;
+  DBusGProxy *proxy;
+  guint32 request_status;
+  GError *error = NULL;
+
+  connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
+  if (connection == NULL) {
+    g_warning ("Failed to open connection to DBus: %s", error->message);
+    g_error_free (error);
+    return;
+  }
+
+  proxy = dbus_g_proxy_new_for_name (connection,
+                                     MEX_REBINDER_DBUS_SERVICE,
+                                     MEX_REBINDER_DBUS_PATH,
+                                     MEX_REBINDER_DBUS_INTERFACE);
+  if (proxy == NULL)
+    {
+      g_message ("Could not create proxy for %s", MEX_REBINDER_DBUS_SERVICE);
+      return;
+    }
+
+  if (!dbus_g_proxy_call (proxy, "Quit", &error,
+			  G_TYPE_INVALID, G_TYPE_INVALID))
+    {
+      if (error)
+	{
+	  g_warning ("Failed to call %s: %s", "Quit", error->message);
+	  g_error_free (error);
+	}
+      return;
+  }
+
+  g_object_unref (proxy);
+  g_object_unref (connection);
+}
+#endif
+
 static void
 out_of_box (MxWindow *window)
 {
@@ -2447,6 +2489,10 @@ main (int argc, char **argv)
     check_resolution (&data);
 
   mx_application_run (app);
+
+#if HAVE_REBINDER
+  rebinder_quit ();
+#endif
 
   if (error)
     g_error_free (error);
