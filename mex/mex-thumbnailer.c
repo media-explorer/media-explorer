@@ -119,7 +119,7 @@ get_mime_type (const char *uri)
 
   file = g_file_new_for_uri (uri);
   info = g_file_query_info (file,
-                            G_FILE_ATTRIBUTE_STANDARD_FAST_CONTENT_TYPE,
+                            G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE,
                             G_FILE_QUERY_INFO_NONE,
                             NULL, &error);
   if (error) {
@@ -128,7 +128,7 @@ get_mime_type (const char *uri)
     return NULL;
   }
 
-  mime = g_strdup (g_file_info_get_attribute_string (info, G_FILE_ATTRIBUTE_STANDARD_FAST_CONTENT_TYPE));
+  mime = g_strdup (g_file_info_get_attribute_string (info, G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE));
   g_object_unref (info);
 
   return mime;
@@ -153,6 +153,7 @@ on_queue (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
 /**
  * mex_thumbnailer_generate:
  * @url: the URL to thumbnail
+ * @mime_type: the MIME type of the URL (will be sniffed if %NULL)
  * @callback: function to callback when thumbnailing is successfull
  * @user_data: data to pass to @callback
  *
@@ -162,9 +163,10 @@ on_queue (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
  * calling this function.
  */
 void
-mex_thumbnailer_generate (const char *url, MexThumbnailCallback callback, gpointer user_data)
+mex_thumbnailer_generate (const char *url, const char *mime_type, MexThumbnailCallback callback, gpointer user_data)
 {
   char *uris[2], *mimes[2];
+  gboolean free_mime = FALSE;
   ClosureData *data;
 
   /* TODO: internal queue? */
@@ -175,7 +177,12 @@ mex_thumbnailer_generate (const char *url, MexThumbnailCallback callback, gpoint
   /* We can assign @url because DBusGProxy will copy, so just free mimes[0]
      later */
   uris[0] = (char *)url;
-  mimes[0] = get_mime_type (url);
+  if (mime_type) {
+    mimes[0] = (char *)mime_type;
+  } else {
+    mimes[0] = get_mime_type (url);
+    free_mime = TRUE;
+  }
   uris[1] = mimes[1] = NULL;
 
   data = g_new0 (ClosureData, 1);
@@ -192,5 +199,6 @@ mex_thumbnailer_generate (const char *url, MexThumbnailCallback callback, gpoint
                            G_TYPE_INVALID,
                            G_TYPE_INVALID);
 
-  g_free (mimes[0]);
+  if (free_mime)
+    g_free (mimes[0]);
 }

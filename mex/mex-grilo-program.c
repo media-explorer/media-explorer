@@ -399,7 +399,7 @@ mex_grilo_program_thumbnail (MexProgram *program, GrlMedia *media)
                               thumb_uri);
     g_free (thumb_uri);
   } else {
-    mex_thumbnailer_generate (url, thumbnail_cb, program);
+    mex_thumbnailer_generate (url, grl_media_get_mime (media), thumbnail_cb, program);
   }
   g_free (thumb_path);
 }
