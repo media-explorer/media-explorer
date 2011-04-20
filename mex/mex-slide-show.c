@@ -68,6 +68,9 @@ struct _MexSlideShowPrivate
   ClutterActor  *fit_to_screen_button;
   ClutterActor  *current_tile;
 
+  /* TODO: We could probably find something better... */
+  MxFocusable   *last_focused_item;
+
   ClutterState  *state;
 
   guint slideshow_source;
@@ -113,8 +116,12 @@ mex_slide_show_accept_focus (MxFocusable *focusable,
   MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (focusable)->priv;
   MxFocusable *button;
 
-  /* always focus the play/pause button when focus is set on the slide show */
+  /* If we have a previously select item while switching back and
+     forth from controls to info panel, refocus that item. */
+  if (priv->last_focused_item)
+    return mx_focusable_accept_focus (priv->last_focused_item, focus_hint);
 
+  /* Otherwise, always focus the play/pause button. */
   button = MX_FOCUSABLE (clutter_script_get_object (priv->script,
                                                     "play-pause-button"));
 
@@ -612,10 +619,20 @@ captured_event_cb (ClutterActor *actor,
       /* toggle the info panel */
       if (g_str_equal (clutter_state_get_state (priv->state), "info"))
         {
+          ClutterActor *stage = clutter_actor_get_stage (CLUTTER_ACTOR (priv->controls));
+          MxFocusManager *manager =
+            mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
+
+          if (manager)
+            priv->last_focused_item = mx_focus_manager_get_focused (manager);
+
           if (priv->controls_prev_visible)
             clutter_state_set_state (priv->state, "controls");
           else
-            clutter_state_set_state (priv->state, "slideshow");
+            {
+              clutter_state_set_state (priv->state, "slideshow");
+              priv->last_focused_item = NULL;
+            }
         }
       else
         {
@@ -702,6 +719,7 @@ controls_timeout (ClutterActor *slideshow)
 {
   MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (slideshow)->priv;
 
+  priv->last_focused_item = NULL;
   clutter_state_set_state (priv->state, "slideshow");
 
   priv->controls_timeout = 0;
