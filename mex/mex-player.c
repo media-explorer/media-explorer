@@ -543,6 +543,7 @@ mex_player_set_controls_visible (MexPlayer *player,
   pos = clutter_actor_get_height (priv->controls);
   if (visible)
     {
+      priv->controls_prev_visible = FALSE;
       priv->controls_visible = TRUE;
 
       mx_widget_set_disabled (MX_WIDGET (priv->controls), FALSE);
