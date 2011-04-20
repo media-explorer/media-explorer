@@ -841,6 +841,8 @@ mex_explorer_push_model (MexExplorer *explorer,
             MEX_RESIZING_HBOX (resizing_hbox), 0.98f);
           mex_scroll_view_set_scroll_gravity (MEX_SCROLL_VIEW (scroll_view),
                                               CLUTTER_GRAVITY_NONE);
+          mx_bin_set_alignment (MX_BIN (scroll_view), MX_ALIGN_START,
+                                MX_ALIGN_START);
         }
 
       mx_scrollable_get_adjustments (MX_SCROLLABLE (resizing_hbox),
