@@ -1957,7 +1957,7 @@ rebinder_quit (void)
   }
 
   g_object_unref (proxy);
-  g_object_unref (connection);
+  dbus_g_connection_unref (connection);
 }
 #endif
 
