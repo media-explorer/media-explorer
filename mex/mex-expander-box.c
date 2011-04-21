@@ -666,8 +666,7 @@ mex_expander_box_allocate (ClutterActor           *actor,
                            ClutterAllocationFlags  flags)
 {
   MxPadding padding;
-  ClutterActor *background;
-  ClutterActorBox child_box, bg_box;
+  ClutterActorBox child_box;
   gdouble expand_progress, open_progress;
   gfloat available_width, available_height,
          primary_width, primary_height, primary_min_height,
@@ -678,8 +677,6 @@ mex_expander_box_allocate (ClutterActor           *actor,
 
   CLUTTER_ACTOR_CLASS (mex_expander_box_parent_class)->
     allocate (actor, box, flags);
-
-  bg_box = (ClutterActorBox){0.f, };
 
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
 
@@ -794,17 +791,23 @@ mex_expander_box_allocate (ClutterActor           *actor,
 
         case MEX_EXPANDER_BOX_DOWN:
           child_box.x1 = padding.left;
-          child_box.y1 = padding.top + (gint)(primary_height * open_progress);
+          child_box.y1 = (gint) primary_height ;
+          clutter_actor_set_clip (priv->secondary, 0, 0, secondary_width,
+                                  secondary_height * open_progress);
           break;
 
         case MEX_EXPANDER_BOX_RIGHT:
-          child_box.x1 = padding.left + (gint)(primary_width * open_progress);
+          child_box.x1 = (gint) primary_width ;
           child_box.y1 = padding.top;
+          clutter_actor_set_clip (priv->secondary, 0, 0,
+                                  secondary_width * open_progress,
+                                  secondary_height);
           break;
         }
 
-      bg_box.x2 = child_box.x2 = child_box.x1 + secondary_width;
-      bg_box.y2 = child_box.y2 = child_box.y1 + secondary_height;
+
+      child_box.x2 = child_box.x1 + secondary_width;
+      child_box.y2 = child_box.y1 + secondary_height;
       clutter_actor_allocate (priv->secondary, &child_box, flags);
     }
   else
@@ -834,21 +837,6 @@ mex_expander_box_allocate (ClutterActor           *actor,
       child_box.x2 = child_box.x1 + primary_width;
       child_box.y2 = child_box.y1 + primary_height;
       clutter_actor_allocate (priv->primary, &child_box, flags);
-
-      if (child_box.x2 > bg_box.x2)
-        bg_box.x2 = child_box.x2;
-      if (child_box.y2 > bg_box.y2)
-        bg_box.y2 = child_box.y2;
-    }
-
-  /* Re-allocate background */
-  if (!priv->expand)
-    {
-      bg_box.x2 += padding.right;
-      bg_box.y2 += padding.bottom;
-      background = mx_widget_get_border_image (MX_WIDGET (actor));
-      if (background)
-        clutter_actor_allocate (background, &bg_box, flags);
     }
 }
 
