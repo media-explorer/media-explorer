@@ -19,7 +19,7 @@ recent or alpha distro).
 For this reason, the most reliable installation technique is to
 use jhbuild-mex, available from:
 
-  https://github.com/media-explorer/media-explorer
+  https://github.com/media-explorer/jhbuild-mex
 
 jhbuild is a tool for building a project and its dependencies
 in an isolated environment, enabling you to
