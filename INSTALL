@@ -1,0 +1,30 @@
+# Installing media explorer
+
+The project is autotooled, so if you have the right dependencies
+and build tools you can build and install it with:
+
+  ./autogen.sh --prefix=$PREFIX
+  make
+  make install
+
+where $PREFIX is the root directory to install into (default: /).
+
+*** media explorer is only confirmed to work on Linux so far ***
+
+However, the dependencies may well trip you up, as there are quite
+a few, and mostly at very recent versions. It's unlikely your distro
+will support them out of the box (unless you're running a _very_
+recent or alpha distro).
+
+For this reason, the most reliable installation technique is to
+use jhbuild-mex, available from:
+
+  https://github.com/media-explorer/media-explorer
+
+jhbuild is a tool for building a project and its dependencies
+in an isolated environment, enabling you to
+use specific versions of libraries without messing up your operating
+system.
+
+Follow the jhbuild-mex README to use it to install and run
+media explorer.
