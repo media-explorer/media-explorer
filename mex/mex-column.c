@@ -1010,7 +1010,7 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
 
   /* Open/close boxes as appropriate */
   offset = 0;
-  increment = 250;
+  increment = 150;
 
   /* If we're changing the tile importance, initialise the state manager */
   if (set_tile_important && priv->n_items > 0)
