@@ -217,6 +217,20 @@ mex_column_remove (ClutterContainer *container,
   priv->children = g_list_delete_link (priv->children, link_);
   priv->n_items --;
 
+  /* children may not be at full opacity if the item removed was "open" */
+  if (MEX_IS_EXPANDER_BOX (actor)
+      && mex_expander_box_get_open (MEX_EXPANDER_BOX (actor)))
+    {
+      GList *l;
+
+      for (l = priv->children; l; l = l->next)
+        clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
+                               "opacity", 255, NULL);
+
+      clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
+                             "opacity", 255, NULL);
+    }
+
   g_signal_emit_by_name (self, "actor-removed", actor);
 
   g_object_unref (actor);
