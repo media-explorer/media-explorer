@@ -1003,7 +1003,7 @@ mex_scroll_view_adjustment_set_value (MexScrollView *view,
     priv->vtarget = value;
 
   if (priv->interpolate)
-    mx_adjustment_interpolate (adjustment, value, 400, CLUTTER_EASE_OUT_QUAD);
+    mx_adjustment_interpolate (adjustment, value, 200, CLUTTER_EASE_OUT_QUAD);
   else
     mx_adjustment_set_value (adjustment, value);
 }
