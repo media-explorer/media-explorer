@@ -31,6 +31,9 @@
     {
       "type": "MxBoxLayout",
       "child::x-fill": true,
+      "child::expand": true,
+      "child::y-fill": false,
+      "child::y-align": "end",
       "children": [
         {
           "type": "MxButton",

@@ -102,9 +102,11 @@
       "id": "next",
       "style-class": "Next",
       "label": "Next",
-      "child::expand": false,
+      "child::expand": true,
       "child::x-fill": false,
-      "child::x-align": "end"
+      "child::x-align": "end",
+      "child::y-fill": false,
+      "child::y-align": "end"
     }
   ]
 }

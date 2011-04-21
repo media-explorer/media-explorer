@@ -506,6 +506,12 @@ show_pane (Configure *config,
       return;
     }
 
+  /* override width and minimum height so panels are consistent */
+  g_object_set (G_OBJECT (pane),
+                "width", 740.0,
+                "min-height", 550.0,
+                NULL);
+
   if (config->next_button_handler)
     {
       /* that also means we have a valid config->next_button */
@@ -710,6 +716,7 @@ rebinder_configure (Rebinder *rebinder,
   mx_bin_set_alignment (MX_BIN (config->main_frame),
                         MX_ALIGN_MIDDLE,
                         MX_ALIGN_MIDDLE);
+  mx_bin_set_fill (MX_BIN (config->main_frame), FALSE, FALSE);
 
   mx_window_set_child (config->window, config->main_frame);
 

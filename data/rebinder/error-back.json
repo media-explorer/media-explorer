@@ -32,8 +32,11 @@
       "type": "MxButton",
       "id": "error",
       "label": "Try again",
+      "child::expand": true,
       "child::x-fill": false,
-      "child::x-align": "end"
+      "child::x-align": "end",
+      "child::y-fill": false,
+      "child::y-align": "end"
     }
   ]
 }

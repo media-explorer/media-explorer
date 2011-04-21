@@ -1,7 +1,8 @@
 MxLabel
 {
   color: white;
-  font-size: 16;
+  font-size: 18;
+  font-family: "Droid Sans";
 }
 
 MxLabel.Para
@@ -17,17 +18,17 @@ MxLabel.BigPaddedPara
 MxButton,
 MxButton:checked
 {
-  padding: 18 100 18 100;
+  padding: 10 100 10 100;
   border-image: url("button-bg.png") 1 0 0;
   color: white;
-  font-size: 16;
+  font-size: 18;
 }
 
 MxButton:hover,
 MxButton:focus,
 MxButton:active
 {
-  padding: 18 100 18 100;
+  padding: 11 100 11 100;
   border-image: url("button-bg-highlight.png") 0;
   color: #303030;
 }
@@ -40,8 +41,8 @@ MxLabel.PaneTitle
 
 MxBoxLayout.Pane
 {
-  border-image: url("frame-bg.png") 4;
-  padding: 70 90 70 90;
+  border-image: url("frame-bg.png") 55 55 0 55;
+  padding: 70 90 0 90;
 }
 
 /* welcome */
