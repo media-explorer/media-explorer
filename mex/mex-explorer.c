@@ -844,10 +844,12 @@ mex_explorer_push_model (MexExplorer *explorer,
           mx_bin_set_alignment (MX_BIN (scroll_view), MX_ALIGN_START,
                                 MX_ALIGN_START);
         }
-
-      mx_scrollable_get_adjustments (MX_SCROLLABLE (resizing_hbox),
-                                     &hadjust, NULL);
-      mx_adjustment_set_clamp_value (hadjust, FALSE);
+      else
+        {
+          mx_scrollable_get_adjustments (MX_SCROLLABLE (resizing_hbox),
+                                         &hadjust, NULL);
+          mx_adjustment_set_clamp_value (hadjust, FALSE);
+        }
 
       clutter_container_add_actor (CLUTTER_CONTAINER (scroll_view),
                                    resizing_hbox);
