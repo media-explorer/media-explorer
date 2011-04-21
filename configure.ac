@@ -76,7 +76,7 @@ modules="glib-2.0 >= 2.26          \
          clutter-gst-1.0 >= 1.3.8  \
          rest-0.7                  \
          dbus-glib-1               \
-         grilo-0.1 = 0.1.14"
+         grilo-0.1 >= 0.1.14"
 
 PKG_CHECK_EXISTS(libsoup-gnome-2.4,
                  [modules="$modules libsoup-gnome-2.4"
