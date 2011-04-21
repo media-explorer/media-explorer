@@ -1,0 +1,80 @@
+# About
+
+Media explorer is a media centre application for Linux. It originally
+targeted MeeGo but will also run on other distributions (e.g. confirmed
+working on Fedora 13/14 and Debian sid).
+
+
+# Features
+
+Media explorer's features include:
+
+* Browse, search and play media on local (inc. USB) and UPnP filesystems.
+* Smooth, fast, animated user interface (based on Clutter + Mx).
+* User experience designed to be usable with standard TV remote controls.
+* Media player (using GStreamer for playback) controllable over DBus.
+* Plugin system for adding new types of content and user interface
+extensions.
+* Uses standard metadata (Tracker) and media (Grilo) libraries for Linux.
+* Library of reusable classes plus Model-View-Controller framework
+for media playback and presentation (written in C/GObject).
+
+
+# History
+
+Media explorer started as an internal project inside Intel's
+Open Source Technology Center.
+
+It was released on 2011-04-21 as an open source project.
+
+See the AUTHORS file for the list of contributors.
+
+
+# License
+
+See COPYING.
+
+
+# Where to get it
+
+The source code is available at:
+
+  https://github.com/media-explorer/media-explorer
+
+Packages will shortly be available for MeeGo 1.2.
+
+
+# Dependencies
+
+Media explorer depends on:
+
+* GLib (and Gio)
+* gdk-pixbuf
+* libsoup
+* Mx (and Clutter, by association)
+* clutter-gst
+* librest
+* dbus-glib
+* grilo
+
+The exact versions required can be determined by running the configure
+script. Alternatively, you can let jhbuild manage dependencies for you
+(see the INSTALL file).
+
+
+# Installation
+
+See the INSTALL file.
+
+
+# Contributions
+
+Patches, feature requests, bugs and any other questions can be
+reported via github using the Issues tool at:
+
+  https://github.com/media-explorer/media-explorer/issues.
+
+We also maintain a list of ideas for things we'd like to add to
+media explorer at:
+
+  https://github.com/media-explorer/media-explorer/wiki/Ideas.
