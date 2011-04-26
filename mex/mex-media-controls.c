@@ -18,6 +18,7 @@
 
 
 #include "mex-media-controls.h"
+#include "mex-view-model.h"
 #include "mex.h"
 
 static void mex_media_controls_sort_items (MexMediaControls *self);
@@ -69,6 +70,8 @@ struct _MexMediaControlsPrivate
   MexProxy *proxy;
 
   guint is_queue_model : 1;
+
+  MexViewModel *model;
 };
 
 enum
@@ -162,6 +165,12 @@ mex_media_controls_dispose (GObject *object)
     {
       g_object_unref (priv->proxy);
       priv->proxy = NULL;
+    }
+
+  if (priv->model)
+    {
+      g_object_unref (priv->model);
+      priv->model = NULL;
     }
 
   if (priv->media)
@@ -290,7 +299,7 @@ mex_media_controls_unmap (ClutterActor *actor)
   CLUTTER_ACTOR_CLASS (mex_media_controls_parent_class)->unmap (actor);
 
   clutter_actor_unmap (priv->vbox);
-  g_object_set (G_OBJECT (priv->proxy), "model", NULL, NULL);
+  g_object_set (G_OBJECT (priv->model), "model", NULL, NULL);
 }
 
 static void
@@ -754,16 +763,19 @@ mex_media_controls_init (MexMediaControls *self)
 #endif
 
   /* proxy setup */
-  priv->proxy = mex_content_proxy_new (NULL, CLUTTER_CONTAINER (related_box),
+  priv->model = MEX_VIEW_MODEL (mex_view_model_new (NULL));
+  g_object_ref_sink (G_OBJECT (priv->model));
+  /* FIXME: Set an arbitrary 200-item limit as we can't handle large
+   *        amounts of actors without massive slow-down.
+   */
+  mex_view_model_set_limit (priv->model, 200);
+
+  priv->proxy = mex_content_proxy_new (MEX_MODEL (priv->model),
+                                       CLUTTER_CONTAINER (related_box),
                                        MEX_TYPE_CONTENT_TILE);
 
   g_signal_connect (priv->proxy, "object-created", G_CALLBACK (tile_created_cb),
                     self);
-
-  /* FIXME: Set an arbitrary 200-item limit as we can't handle large
-   *        amounts of actors without massive slow-down.
-   */
-  mex_proxy_set_limit (priv->proxy, 200);
 }
 
 ClutterActor *
@@ -945,10 +957,10 @@ mex_media_controls_set_content (MexMediaControls *self,
   if (context)
     {
       /* update the related strip */
-      mex_proxy_stop (priv->proxy);
-      g_object_set (G_OBJECT (priv->proxy), "model", context, NULL);
+      mex_view_model_stop (priv->model);
+      g_object_set (G_OBJECT (priv->model), "model", context, NULL);
 
-      mex_proxy_start_at (priv->proxy, priv->content, TRUE);
+      mex_view_model_start_at_content (priv->model, priv->content, TRUE);
     }
 
   /* Work out if the context was a queue */

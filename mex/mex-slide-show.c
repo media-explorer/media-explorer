@@ -30,6 +30,7 @@
 #include "mex-shadow.h"
 
 #include "mex-content-tile.h"
+#include "mex-view-model.h"
 #include "mex-content-proxy.h"
 #include "mex-download-queue.h"
 
@@ -1062,17 +1063,19 @@ mex_slide_show_set_model (MexContentView *view,
       if (priv->proxy)
         g_object_unref (priv->proxy);
 
-      priv->proxy = mex_content_proxy_new (priv->model, container,
-                                           MEX_TYPE_CONTENT_TILE);
-      g_signal_connect (priv->proxy, "object-created",
-                        G_CALLBACK (tile_created_cb), view);
-
       /* FIXME: Set an arbitrary 200-item limit as we can't handle large
        *        amounts of actors without massive slow-down.
        */
-      mex_proxy_set_limit (priv->proxy, 200);
-
-      mex_proxy_start (priv->proxy);
+      priv->model = g_object_new (MEX_TYPE_VIEW_MODEL,
+                                  "model", model,
+                                  "limit", 200,
+                                  NULL);
+      g_object_ref_sink (priv->model);
+      priv->proxy = mex_content_proxy_new (priv->model,
+                                           container,
+                                           MEX_TYPE_CONTENT_TILE);
+      g_signal_connect (priv->proxy, "object-created",
+                        G_CALLBACK (tile_created_cb), view);
     }
 }
 
@@ -1087,10 +1090,17 @@ mex_slide_show_set_content (MexContentView *view,
                             MexContent     *content)
 {
   MexSlideShow *show = MEX_SLIDE_SHOW (view);
+  MexSlideShowPrivate *priv = show->priv;
 
-  mx_image_clear (MX_IMAGE (show->priv->image));
+  mx_image_clear (MX_IMAGE (priv->image));
 
   mex_slide_show_real_set_content (show, content);
+
+  /* ensure the new content is highlighted in the photo strip */
+  mex_view_model_stop (MEX_VIEW_MODEL (priv->model));
+  mex_view_model_start_at_content (MEX_VIEW_MODEL (priv->model),
+                                   content, FALSE);
+  mex_slide_show_move (show, 0);
 
   clutter_state_set_state (show->priv->state, "controls");
 }

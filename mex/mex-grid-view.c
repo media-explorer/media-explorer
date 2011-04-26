@@ -266,7 +266,7 @@ mex_grid_view_timeline_complete_cb (ClutterTimeline *timeline,
   if (view->priv->state == STATE_CLOSING)
     CLUTTER_ACTOR_CLASS (mex_grid_view_parent_class)->hide (CLUTTER_ACTOR (view));
   else if (view->priv->state == STATE_OPENING)
-    mex_proxy_start (view->priv->proxy);
+    mex_proxy_set_model (view->priv->proxy, view->priv->model);
 
   view->priv->state = STATE_NONE;
 }
@@ -504,7 +504,7 @@ mex_alt_model_cb (MxAction    *action,
 
       old_model = mex_proxy_model_get_model (MEX_PROXY_MODEL (priv->model));
 
-      mex_proxy_model_set_model (MEX_PROXY_MODEL (priv->model), priv->alt_model);
+      mex_proxy_model_set_model (MEX_PROXY_MODEL (priv->proxy), priv->alt_model);
 
       priv->alt_model = old_model;
     }
@@ -585,7 +585,7 @@ mex_grid_view_set_model (MexGridView *view,
   if (priv->proxy)
     g_object_unref (priv->proxy);
 
-  priv->proxy = mex_content_proxy_new (priv->model, CLUTTER_CONTAINER (priv->grid),
+  priv->proxy = mex_content_proxy_new (NULL, CLUTTER_CONTAINER (priv->grid),
                                        MEX_TYPE_CONTENT_BOX);
   mex_content_proxy_set_stage (MEX_CONTENT_PROXY (priv->proxy),
                                CLUTTER_STAGE (stage));
@@ -594,7 +594,7 @@ mex_grid_view_set_model (MexGridView *view,
                     priv->grid);
 
   if (priv->state == STATE_NONE && CLUTTER_ACTOR_IS_MAPPED (view))
-    mex_proxy_start (priv->proxy);
+    mex_proxy_set_model (priv->proxy, priv->model);
 
   /* set grid title */
   g_object_bind_property (model, "title",

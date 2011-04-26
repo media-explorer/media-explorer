@@ -74,18 +74,9 @@ GType mex_proxy_get_type (void) G_GNUC_CONST;
 
 MexModel *mex_proxy_get_model (MexProxy *proxy);
 
+void mex_proxy_set_model (MexProxy *proxy, MexModel *model);
+
 GType     mex_proxy_get_object_type (MexProxy *proxy);
-
-void  mex_proxy_set_limit (MexProxy *proxy,
-                           guint     limit);
-guint mex_proxy_get_limit (MexProxy *proxy);
-
-void mex_proxy_start (MexProxy *proxy);
-void mex_proxy_start_at (MexProxy   *proxy,
-                         MexContent *start_at_content,
-                         gboolean    loop);
-
-void mex_proxy_stop (MexProxy *proxy);
 
 G_END_DECLS
 

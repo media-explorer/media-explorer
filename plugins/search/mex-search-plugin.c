@@ -24,6 +24,7 @@
 
 #include <glib/gi18n-lib.h>
 #include "mex-search-plugin.h"
+#include <mex/mex-view-model.h>
 #include <mex/mex-grilo-feed.h>
 #include <mex/mex-grilo-tracker-feed.h>
 #include <rest/rest-xml-parser.h>
@@ -689,6 +690,7 @@ mex_search_text_style_changed (MxStylable *text,
 static void
 mex_search_plugin_init (MexSearchPlugin *self)
 {
+  MexModel *view_model;
   MexProxy *suggest_proxy;
   ClutterActor *icon, *header, *text, *frame, *box, *hbox;
   MexSearchPluginPrivate *priv = self->priv = SEARCH_PLUGIN_PRIVATE (self);
@@ -764,8 +766,10 @@ mex_search_plugin_init (MexSearchPlugin *self)
   clutter_actor_set_name (priv->suggest_column, "suggest-column");
   mx_box_layout_set_orientation (MX_BOX_LAYOUT (priv->suggest_column),
                                  MX_ORIENTATION_VERTICAL);
-  suggest_proxy = mex_generic_proxy_new (MEX_MODEL (priv->suggest_model),
-                                        MX_TYPE_BUTTON);
+
+  view_model = mex_view_model_new (MEX_MODEL (priv->suggest_model));
+  suggest_proxy = mex_generic_proxy_new (view_model,
+                                         MX_TYPE_BUTTON);
   mex_generic_proxy_bind (MEX_GENERIC_PROXY (suggest_proxy),
                           mex_enum_to_string (MEX_TYPE_CONTENT_METADATA,
                                               MEX_CONTENT_METADATA_TITLE),
@@ -809,7 +813,7 @@ mex_search_plugin_init (MexSearchPlugin *self)
   mex_search_plugin_update_history (self, NULL);
 
   /* Start the history list and suggestions proxy */
-  mex_proxy_start (suggest_proxy);
+  mex_view_model_start (MEX_VIEW_MODEL (view_model));
 }
 
 G_MODULE_EXPORT const GType
