@@ -12,7 +12,7 @@
     },
     {
       "type": "MxLabel",
-      "text": "Hey there, this our pre-alpha prototype. It's not for the feint of heart, but it's a start we wanted to share with you.",
+      "text": "Hey there, this our pre-alpha prototype. It's not for the faint of heart, but it's a start we wanted to share with you.",
       "line-wrap": true,
       "style-class": "Para",
       "child::expand": false
