@@ -744,6 +744,13 @@ rebinder_configure (Rebinder *rebinder,
 void
 rebinder_configure_free (Configure *config)
 {
+  g_signal_handlers_disconnect_by_func (config->stage,
+                                        on_stage_allocation_changed,
+                                        config);
+  g_signal_handlers_disconnect_by_func (config->stage,
+                                        on_stage_captured_event,
+                                        config);
+
   if (config->external_window)
     {
       clutter_container_remove_actor (CLUTTER_CONTAINER (config->stage),
