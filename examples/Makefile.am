@@ -6,6 +6,7 @@ noinst_PROGRAMS = 			\
 	mex-info-panel-test		\
 	mex-info-bar-test		\
 	mex-media-controls-test		\
+	mex-tileout-effect-test		\
 	$(NULL)
 
 AM_CFLAGS = 						\
@@ -35,6 +36,7 @@ mex_grilo_model_test_SOURCES = mex-grilo-model-test.c
 mex_info_panel_test_SOURCES = mex-info-panel-test.c
 mex_info_bar_test_SOURCES = mex-info-bar-test.c
 mex_media_controls_test_SOURCES = mex-media-controls-test.c
+mex_tileout_effect_test_SOURCES = mex-tileout-effect-test.c
 
 # Convience targets for the grilo demo
 

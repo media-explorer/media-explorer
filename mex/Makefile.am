@@ -127,6 +127,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-surface-player.h			\
 	$(top_srcdir)/mex/mex-thumbnailer.h			\
 	$(top_srcdir)/mex/mex-tile.h				\
+	$(top_srcdir)/mex/mex-tileout-effect.h				\
 	$(top_srcdir)/mex/mex-tool-provider.h			\
 	$(top_srcdir)/mex/mex-uri-channel-provider.h		\
 	$(top_srcdir)/mex/mex-utils.h				\
@@ -221,6 +222,7 @@ mex_sources =					\
 	mex-surface-player.c			\
 	mex-thumbnailer.c			\
 	mex-tile.c				\
+	mex-tileout-effect.c			\
 	mex-tool-provider.c			\
 	mex-utils.c				\
 	mex-uri-channel-provider.c		\

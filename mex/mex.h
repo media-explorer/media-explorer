@@ -78,6 +78,7 @@
 #include <mex/mex-shell.h>
 #include <mex/mex-slide-show.h>
 #include <mex/mex-tile.h>
+#include <mex/mex-tileout-effect.h>
 #include <mex/mex-tool-provider.h>
 #include <mex/mex-queue-button.h>
 #include <mex/mex-queue-model.h>
