@@ -58,6 +58,8 @@ struct _MexModelIface
                          gpointer          user_data);
   guint (*get_length) (MexModel *model);
   gint  (*index)      (MexModel *model, MexContent *content);
+
+  MexModel *(*get_model) (MexModel *model);
 };
 
 GType         mex_model_get_type         (void) G_GNUC_CONST;
@@ -76,6 +78,8 @@ void mex_model_set_sort_func (MexModel         *model,
 guint mex_model_get_length (MexModel *model);
 gint  mex_model_index      (MexModel   *model,
                             MexContent *content);
+
+MexModel *mex_model_get_model (MexModel *model);
 
 G_END_DECLS
 

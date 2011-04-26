@@ -392,13 +392,6 @@ mex_is_toplevel_plugin_model (MexData  *data,
     return FALSE;
 }
 
-static MexModel *
-mex_model_unwrap (MexModel *model)
-{
-  return MEX_IS_PROXY_MODEL (model) ?
-    mex_proxy_model_get_model (MEX_PROXY_MODEL (model)) : model;
-}
-
 static const MexModelInfo *
 mex_get_toplevel_model_info (MexData  *data,
                              MexModel *model)
@@ -418,7 +411,7 @@ mex_get_toplevel_model_info (MexData  *data,
 
   for (m = models; m; m = m->next)
     {
-      MexModel *child_model = mex_model_unwrap (m->data);
+      MexModel *child_model = mex_model_get_model (m->data);
       const MexModelInfo *m_info =
         mex_model_manager_get_model_info (manager, child_model);
       if (m_info)
@@ -452,7 +445,7 @@ mex_grilo_open_folder_cb (MxAction *action,
 
   if (mex_is_toplevel_plugin_model (data, MEX_MODEL (feed)))
     {
-      data->toplevel_plugin_model = mex_model_unwrap (MEX_MODEL (feed));
+      data->toplevel_plugin_model = mex_model_get_model (MEX_MODEL (feed));
       data->toplevel_plugin_model_depth =
         mex_explorer_get_depth (MEX_EXPLORER (data->explorer));
     }
@@ -525,7 +518,7 @@ mex_header_activated_cb (MexExplorer *explorer,
     data->toplevel_model = mex_explorer_get_focused_model (explorer);
   else if (mex_is_toplevel_plugin_model (data, model))
     {
-      data->toplevel_plugin_model = mex_model_unwrap (model);
+      data->toplevel_plugin_model = mex_model_get_model (model);
       data->toplevel_plugin_model_depth =
         mex_explorer_get_depth (MEX_EXPLORER (data->explorer));
     }

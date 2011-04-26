@@ -314,6 +314,12 @@ mex_generic_model_index (MexModel   *model,
   return array_find (MEX_GENERIC_MODEL (model)->priv->items, content);
 }
 
+static MexModel *
+mex_generic_model_get_model (MexModel *model)
+{
+  return model;
+}
+
 static void
 mex_model_iface_init (MexModelIface *iface)
 {
@@ -325,6 +331,7 @@ mex_model_iface_init (MexModelIface *iface)
   iface->set_sort_func = mex_generic_model_set_sort_func;
   iface->get_length = mex_generic_model_get_length;
   iface->index = mex_generic_model_index;
+  iface->get_model = mex_generic_model_get_model;
 }
 
 static void

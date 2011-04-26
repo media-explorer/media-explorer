@@ -23,7 +23,7 @@
  *
  * A class can implement #MexModel to provide generic access to a collection
  * of #MexContent objects, with optional sorting and filtering.
- * 
+ *
  * The interface also provides access to the #GController for a model, which
  * advertises changes to the model via signals.
  */
@@ -270,4 +270,24 @@ mex_model_index (MexModel   *model,
              g_type_name (G_OBJECT_TYPE (model)));
 
   return 0;
+}
+
+MexModel *
+mex_model_get_model (MexModel *model)
+{
+  MexModelIface *iface;
+
+  g_return_val_if_fail (MEX_IS_MODEL (model), NULL);
+
+  iface = MEX_MODEL_GET_IFACE (model);
+
+  if (G_LIKELY (iface->get_model))
+    {
+      return iface->get_model (model);
+    }
+
+  g_warning ("MexModel of type '%s' does not implement get_model ()",
+             g_type_name (G_OBJECT_TYPE (model)));
+
+  return NULL;
 }

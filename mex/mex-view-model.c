@@ -18,7 +18,11 @@
 
 #include "mex-view-model.h"
 
-G_DEFINE_TYPE (MexViewModel, mex_view_model, MEX_TYPE_GENERIC_MODEL)
+static void mex_model_iface_init (MexModelIface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (MexViewModel, mex_view_model, MEX_TYPE_GENERIC_MODEL,
+                         G_IMPLEMENT_INTERFACE (MEX_TYPE_MODEL,
+                                                mex_model_iface_init))
 
 #define VIEW_MODEL_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_VIEW_MODEL, MexViewModelPrivate))
@@ -152,6 +156,20 @@ static void
 mex_view_model_finalize (GObject *object)
 {
   G_OBJECT_CLASS (mex_view_model_parent_class)->finalize (object);
+}
+
+static MexModel *
+mex_view_model_get_model (MexModel *model)
+{
+  MexViewModelPrivate *priv = VIEW_MODEL_PRIVATE (model);
+
+  return priv->model;
+}
+
+static void
+mex_model_iface_init (MexModelIface *iface)
+{
+  iface->get_model = mex_view_model_get_model;
 }
 
 static void
@@ -535,18 +553,6 @@ mex_view_model_stop (MexViewModel *self)
                                         self);
 
   priv->started = FALSE;
-}
-
-MexModel *
-mex_view_model_get_model (MexViewModel *self)
-{
-  MexViewModelPrivate *priv;
-
-  g_return_val_if_fail (MEX_IS_VIEW_MODEL (self), NULL);
-
-  priv = self->priv;
-
-  return MEX_MODEL (g_object_ref (priv->model));
 }
 
 void

@@ -75,8 +75,6 @@ void mex_view_model_start (MexViewModel *self);
 
 void mex_view_model_stop (MexViewModel *self);
 
-MexModel *mex_view_model_get_model (MexViewModel *self);
-
 void mex_view_model_set_limit (MexViewModel *self, guint limit);
 
 void mex_view_model_set_offset (MexViewModel *self, guint offset);
