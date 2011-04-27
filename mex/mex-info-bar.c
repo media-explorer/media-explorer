@@ -384,7 +384,6 @@ _action_new_from_desktop_file (const gchar *desktop_file_id)
 
       return action;
     }
-  g_warning ("desktop file not found for: %s", desktop_file_id);
   return NULL;
 }
 
@@ -426,20 +425,20 @@ _create_settings_dialog (MexInfoBar *self)
   MexInfoBarPrivate *priv = self->priv;
 
   ClutterActor *dialog, *rebinder_graphic, *network_graphic;
-  ClutterActor *rebinder_tile, *network_tile, *vbox, *table, *dialog_label;
+  ClutterActor *rebinder_tile, *network_tile, *dialog_layout, *dialog_label;
   ClutterActor *settings_button, *network_button;
 
   MxAction *close_dialog, *network_settings, *binding_settings;
 
   dialog = mx_dialog_new ();
-  mx_bin_set_fill (MX_BIN (dialog), FALSE, TRUE);
   mx_stylable_set_style_class (MX_STYLABLE (dialog), "MexInfoBarDialog");
 
-  /* Create actions for settings dialog */
+  dialog_label = mx_label_new_with_text (_("Settings"));
+  mx_stylable_set_style_class (MX_STYLABLE (dialog_label), "DialogHeader");
 
-  /* skip network -- this is not useful when running as an app on netbook */ 
-  /* network_settings =  _action_new_from_desktop_file ("mex-networks.desktop"); */
-  network_settings = NULL;
+  /* Create actions for settings dialog */
+  network_settings =
+    _action_new_from_desktop_file ("mex-networks.desktop");
 
   binding_settings =
     _action_new_from_desktop_file ("mex-rebinder-config.desktop");
@@ -447,25 +446,13 @@ _create_settings_dialog (MexInfoBar *self)
   close_dialog = mx_action_new_full ("close", _("Close"),
                                      G_CALLBACK (_close_dialog_cb), self);
 
-  vbox = mx_box_layout_new ();
-  mx_box_layout_set_orientation (MX_BOX_LAYOUT (vbox),
-                                  MX_ORIENTATION_VERTICAL);
-  mx_box_layout_set_spacing (MX_BOX_LAYOUT (vbox), 46);
-  clutter_actor_set_size (vbox, 560, -1);
-  clutter_container_add_actor (CLUTTER_CONTAINER (dialog), vbox);
+  dialog_layout = mx_table_new ();
+  mx_table_set_column_spacing (MX_TABLE (dialog_layout), 10);
+  mx_table_set_row_spacing (MX_TABLE (dialog_layout), 30);
 
-  dialog_label = mx_label_new_with_text (_("Settings"));
-  mx_stylable_set_style_class (MX_STYLABLE (dialog_label), "DialogHeader");
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (vbox), dialog_label, -1);
+  mx_table_add_actor (MX_TABLE (dialog_layout),
+                      CLUTTER_ACTOR (dialog_label), 0, 0);
 
-  table = mx_table_new ();
-  mx_table_set_column_spacing (MX_TABLE (table), 10);
-  mx_table_set_row_spacing (MX_TABLE (table), 30);
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (vbox), table,-1,
-                                           "x-fill", FALSE,
-                                           NULL);
-
- 
   if (binding_settings)
     {
       rebinder_graphic = mx_image_new ();
@@ -487,7 +474,7 @@ _create_settings_dialog (MexInfoBar *self)
       mx_bin_set_child (MX_BIN (rebinder_tile), settings_button);
       mx_bin_set_child (MX_BIN (settings_button), rebinder_graphic);
 
-      mx_table_add_actor (MX_TABLE (table),
+      mx_table_add_actor (MX_TABLE (dialog_layout),
                           CLUTTER_ACTOR (rebinder_tile), 1, 0);
     }
 
@@ -512,7 +499,7 @@ _create_settings_dialog (MexInfoBar *self)
       mx_bin_set_child (MX_BIN (network_tile), network_button);
       mx_bin_set_child (MX_BIN (network_button), network_graphic);
 
-      mx_table_add_actor (MX_TABLE (table),
+      mx_table_add_actor (MX_TABLE (dialog_layout),
                           CLUTTER_ACTOR (network_tile), 1, 1);
     }
 
@@ -523,9 +510,13 @@ _create_settings_dialog (MexInfoBar *self)
 
       clutter_actor_destroy (priv->settings_button);
 
-      mx_table_add_actor (MX_TABLE (table),
+      mx_table_add_actor (MX_TABLE (dialog_layout),
                           CLUTTER_ACTOR (no_settings), 1, 0);
     }
+
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (dialog), dialog_layout);
+  mx_dialog_add_action (MX_DIALOG (dialog), close_dialog);
 
   priv->settings_dialog = g_object_ref (dialog);
 
