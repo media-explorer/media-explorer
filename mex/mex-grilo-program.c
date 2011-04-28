@@ -413,6 +413,7 @@ set_metadata_from_media (MexProgram          *program,
   gchar       *string;
   const gchar *cstring;
   GrlKeyID     grl_key = _get_grl_key_from_mex (mex_key);
+  gint n;
 
   if (!grl_key)
     return;
@@ -425,10 +426,14 @@ set_metadata_from_media (MexProgram          *program,
     break;
 
   case G_TYPE_INT:
-    string = g_strdup_printf ("%i", grl_data_get_int (GRL_DATA (media),
-                                                      grl_key));
-    mex_program_set_metadata (program, mex_key, string);
-    g_free (string);
+    n = grl_data_get_int (GRL_DATA (media), grl_key);
+
+    if (n > 0)
+      {
+        string = g_strdup_printf ("%i", n);
+        mex_program_set_metadata (program, mex_key, string);
+        g_free (string);
+      }
     break;
 
   case G_TYPE_FLOAT:
