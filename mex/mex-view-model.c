@@ -30,8 +30,6 @@ G_DEFINE_TYPE_WITH_CODE (MexViewModel, mex_view_model, MEX_TYPE_GENERIC_MODEL,
 #define VIEW_MODEL_LIMIT(priv)                          \
   ((priv)->limit != 0 ? (priv)->limit : G_MAXUINT)
 
-#define PROXY_DEBUG(args...) g_message (args)
-
 enum
 {
   PROP_0,
@@ -702,4 +700,30 @@ mex_view_model_set_offset (MexViewModel *self, guint offset)
     }
 
   priv->offset = offset;
+}
+
+void
+mex_view_model_set_content (MexViewModel *self, MexContent *content)
+{
+  gint index;
+  MexViewModelPrivate *priv;
+
+  g_return_if_fail (MEX_IS_VIEW_MODEL (self));
+  g_return_if_fail (MEX_IS_CONTENT (content));
+
+  priv = self->priv;
+
+  if (priv->start_content)
+    {
+      g_object_unref (priv->start_content);
+      priv->start_content = NULL;
+    }
+
+  priv->start_content = g_object_ref (content);
+
+  index = mex_model_index (priv->model, priv->start_content);
+
+  g_return_if_fail (index >= 0);
+
+  mex_view_model_set_offset (self, index);
 }

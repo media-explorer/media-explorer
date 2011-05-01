@@ -79,6 +79,7 @@ void mex_view_model_set_limit (MexViewModel *self, guint limit);
 
 void mex_view_model_set_offset (MexViewModel *self, guint offset);
 
+void mex_view_model_set_content (MexViewModel *self, MexContent *content);
 
 G_END_DECLS
 
