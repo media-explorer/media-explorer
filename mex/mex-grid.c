@@ -915,7 +915,7 @@ mex_grid_allocate (ClutterActor           *actor,
                                (data->initial_height * (1.0 - progress));
 
       /* Check if we're visible */
-      bottom = top + (gint)(basic_height * current_height);
+      bottom = top + (gint)round (basic_height * current_height);
       if ((bottom - value >= 0) && (top - value < box->y2 - box->y1))
         {
           gint index = row * priv->real_stride;
@@ -1098,8 +1098,8 @@ mex_grid_allocate (ClutterActor           *actor,
                   span->left = box_store->x1;
                   span->right = box_store->x2;
                   span->bottom = box_store->y1 +
-                                 (gint)((box_store->y2 - box_store->y1) *
-                                        current_height);
+                                 (gint)round ((box_store->y2 - box_store->y1) *
+                                              current_height);
 
                   if (span->bottom < top)
                     top = span->bottom;
@@ -1110,8 +1110,8 @@ mex_grid_allocate (ClutterActor           *actor,
           else
             {
               g_array_set_size (priv->spans, 0);
-              top = child_box.y1 + (gint)((child_box.y2 - child_box.y1) *
-                                          current_height);
+              top = child_box.y1 + (gint)round ((child_box.y2 - child_box.y1) *
+                                                current_height);
               bottom = top;
             }
 
@@ -1196,7 +1196,7 @@ mex_grid_allocate (ClutterActor           *actor,
             &g_array_index (priv->row_sizes, MexGridRowData, row);
           gdouble current_height = (data->target_height * progress) +
                                    (data->initial_height * (1.0 - progress));
-          bottom += (gint)(basic_height * current_height);
+          bottom += (gint)round (basic_height * current_height);
         }
 
       g_object_set (G_OBJECT (priv->vadjust),
