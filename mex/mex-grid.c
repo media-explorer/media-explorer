@@ -1599,8 +1599,8 @@ mex_grid_init (MexGrid *self)
   priv->children = g_array_new (FALSE, FALSE, sizeof (ClutterActor *));
   priv->first_visible = priv->last_visible = -1;
   priv->row_sizes = g_array_new (FALSE, TRUE, sizeof (MexGridRowData));
-  priv->spans = g_array_new (FALSE, FALSE, sizeof (MexGridSpan));
-  priv->boxes = g_array_new (FALSE, FALSE, sizeof (ClutterActorBox));
+  priv->spans = g_array_new (FALSE, TRUE, sizeof (MexGridSpan));
+  priv->boxes = g_array_new (FALSE, TRUE, sizeof (ClutterActorBox));
   priv->stride = 0;
   priv->tile_width = 360;
   priv->tile_height = 202;
