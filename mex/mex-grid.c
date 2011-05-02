@@ -424,6 +424,26 @@ mex_grid_move_focus (MxFocusable      *focusable,
                                                           hint)))
                 break;
             }
+
+          /* If we're on the last row, we possibly want to focus the
+           * right hand side item on the previous row.
+           */
+          if (!focusable &&
+              (direction == MX_FOCUS_DIRECTION_RIGHT) &&
+              ((index % priv->real_stride) != (priv->real_stride - 1)) &&
+              ((index / priv->real_stride) ==
+               ((priv->children->len - 1) / priv->real_stride)))
+            {
+              child = g_array_index (priv->children, ClutterActor *,
+                                     priv->children->len - priv->real_stride);
+              if (MX_IS_FOCUSABLE (child) &&
+                  (focusable = mx_focusable_accept_focus (MX_FOCUSABLE (child),
+                                                          hint)))
+                {
+                  i = priv->children->len - priv->real_stride;
+                  break;
+                }
+            }
           break;
 
         default:
