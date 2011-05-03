@@ -56,20 +56,9 @@
                   {
                     "id" : "row1-metadata",
                     "type" : "MxLabel",
-                    "height" : 20,
                     "line-wrap" : true,
                     "child::row" : 0,
-                    "child::column" : 0,
-                    "child::y-expand" : false
-                  },
-                  {
-                    "id" : "row2-metadata",
-                    "type" : "MxLabel",
-                    "y-align" : "top",
-                    "line-wrap" : true,
-                    "child::row" : 1,
-                    "child::column" : 0,
-                    "child::y-expand" : true
+                    "child::column" : 0
                   }
                 ]
               }

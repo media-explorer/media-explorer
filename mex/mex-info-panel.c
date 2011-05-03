@@ -50,11 +50,14 @@ struct _MexInfoPanelPrivate
   ClutterActor *watch_button;
 
   MxLabel *metadata_row1;
-  MxLabel *metadata_row2;
+/*  MxLabel *metadata_row2; */
 
   MexContent *content;
 
   MexInfoPanelMode mode;
+
+  GList *video_metadata_template;
+  GList *image_metadata_template;
 };
 
 static MexContent*
@@ -65,6 +68,16 @@ mex_info_panel_get_content (MexContentView *view)
 
     return priv->content;
 }
+
+typedef enum
+{
+  NONE,
+
+  IMAGE,
+  VIDEO,
+
+  LAST
+} MexInfoPanelMime;
 
 static void mex_info_panel_set_content (MexContentView *self,
                                         MexContent *content);
@@ -132,6 +145,20 @@ mex_info_panel_dispose (GObject *object)
     {
       g_object_unref (priv->script);
       priv->script = NULL;
+    }
+
+  if (priv->image_metadata_template)
+    {
+      g_list_free_full (priv->image_metadata_template,
+                        (GDestroyNotify)mex_metadata_info_free);
+      priv->image_metadata_template = NULL;
+    }
+
+  if (priv->video_metadata_template)
+    {
+      g_list_free_full (priv->video_metadata_template,
+                        (GDestroyNotify)mex_metadata_info_free);
+      priv->video_metadata_template = NULL;
     }
 
   G_OBJECT_CLASS (mex_info_panel_parent_class)->dispose (object);
@@ -211,9 +238,9 @@ mex_info_panel_constructed (GObject *object)
   priv->metadata_row1 =
     MX_LABEL (clutter_script_get_object (priv->script, "row1-metadata"));
 
-  priv->metadata_row2 =
+  /*priv->metadata_row2 =
     MX_LABEL (clutter_script_get_object (priv->script, "row2-metadata"));
-
+*/
   mx_bin_set_child (MX_BIN (self), root);
 
   if (priv->mode == MEX_INFO_PANEL_MODE_FULL)
@@ -247,118 +274,100 @@ mex_info_panel_class_init (MexInfoPanelClass *klass)
 
 }
 
-static void
-_image_metadata (MexInfoPanel *self)
+static gchar *
+_append_human (const gchar *raw,
+               MexContentMetadata key)
 {
-  MexInfoPanelPrivate *priv = self->priv = INFO_PANEL_PRIVATE (self);
+  gchar *human;
 
-  const gchar *date, *creation_date, *model;
-  gchar *row1, *row2, *human_date;
-
-  date = mex_content_get_metadata (priv->content,
-                                   MEX_CONTENT_METADATA_DATE);
-  creation_date = mex_content_get_metadata (priv->content,
-                                            MEX_CONTENT_METADATA_CREATION_DATE);
-  model = mex_content_get_metadata (priv->content,
-                                    MEX_CONTENT_METADATA_CAMERA_MODEL);
-
-  if (creation_date)
-    human_date = mex_metadata_humanise_date (creation_date);
-  else
-    human_date = mex_metadata_humanise_date (date);
-
-  if (!human_date && !model)
+  switch (key)
     {
-      mx_label_set_text (priv->metadata_row1,
-                         _("No additional information available"));
+      case MEX_CONTENT_METADATA_DATE:
+      case MEX_CONTENT_METADATA_CREATION_DATE:
+        human = mex_metadata_humanise_date (raw);
+        break;
+
+      case MEX_CONTENT_METADATA_DURATION:
+      case MEX_CONTENT_METADATA_LAST_POSITION:
+        human = mex_metadata_humanise_duration (raw);
+        break;
+
+      default:
+        break;
     }
-  else
-    {
-      /* Date: human_date | heightxwidth */
-      row1 = g_strdup_printf ("%s %s",
-                              (human_date) ? _("Date:") : "",
-                              (human_date) ? human_date : "");
-      g_free (human_date);
+  if (human)
+    return human;
 
-      mx_label_set_text (priv->metadata_row1, row1);
-
-      row2 = g_strdup_printf ("%s",  model ? model : _(""));
-      mx_label_set_text (priv->metadata_row2, row2);
-
-      g_free (row1);
-      g_free (row2);
-    }
+  return NULL;
 }
 
+
 static void
-_video_metadata (MexInfoPanel *self)
+_set_metadata (MexInfoPanel *self, MexInfoPanelMime mime)
 {
   MexInfoPanelPrivate *priv = self->priv = INFO_PANEL_PRIVATE (self);
+  GList *temp = NULL;
+  GList *target = NULL;
+  gint i;
 
-  const gchar *date = NULL;
-  const gchar *duration = NULL;
-  const gchar *synopsis = NULL;
-  const gchar *resume_from = NULL;
+  GString *string;
+  string = g_string_new ("");
 
-  gchar *human_duration, *human_date, *temp_text, *human_resume_from;
-
-  date = mex_content_get_metadata (priv->content,
-                                   MEX_CONTENT_METADATA_DATE);
-  duration = mex_content_get_metadata (priv->content,
-                                       MEX_CONTENT_METADATA_DURATION);
-  synopsis = mex_content_get_metadata (priv->content,
-                                       MEX_CONTENT_METADATA_SYNOPSIS);
-
-  if (priv->mode == MEX_INFO_PANEL_MODE_SIMPLE)
+  switch (mime)
     {
-      resume_from =
-        mex_content_get_metadata (priv->content,
-                                  MEX_CONTENT_METADATA_LAST_POSITION);
-      if (resume_from)
+      case IMAGE:
+        target = priv->image_metadata_template;
+        break;
+
+      case VIDEO:
+        target = priv->video_metadata_template;
+        break;
+
+      default:
+        target = priv->video_metadata_template;
+    }
+
+  mex_metadata_get_metadata (&target, priv->content);
+
+  i = 0;
+
+  for (temp = target; temp; temp = temp->next)
+    {
+      MexMetadataInfo *info;
+      info = temp->data;
+
+      if (!info->value)
+        continue;
+
+      /* Add the separator after the first iteration has occurred (i>0) */
+      if (i > 0)
         {
-          if (g_str_equal (resume_from, "0"))
-            resume_from = NULL;
+          g_string_append (string, " | ");
         }
+
+      /* field name */
+      g_string_append (string, info->key_string);
+
+      /* values that we want re-written in a more human form */
+      if (info->key == MEX_CONTENT_METADATA_DATE ||
+          info->key ==  MEX_CONTENT_METADATA_CREATION_DATE ||
+          info->key == MEX_CONTENT_METADATA_DURATION ||
+          info->key == MEX_CONTENT_METADATA_LAST_POSITION)
+        {
+          gchar *human_text = _append_human (info->value, info->key);
+          g_string_append (string, human_text);
+          g_free (human_text);
+        }
+      else
+        {
+         g_string_append (string, info->value);
+        }
+      i++;
     }
 
-  human_date = mex_metadata_humanise_date (date);
-  human_duration = mex_metadata_humanise_duration (duration);
-  human_resume_from = mex_metadata_humanise_duration (resume_from);
+  mx_label_set_text (priv->metadata_row1, string->str);
 
-  if (!human_date && !human_duration && !synopsis && !human_resume_from)
-    {
-      mx_label_set_text (priv->metadata_row1,
-                         _("No additional information available"));
-    }
-  else
-    {
-      /* Date: date_value | Duration: duration_value
-       *| Resume from: resume_value */
-
-      /* TODO: This method isn't scaling up, refactor needed
-       * possibly use glist */
-      temp_text = g_strdup_printf ("%s %s %s %s %s %s %s %s",
-                                   (human_date) ? _("Date:") : "",
-                                   (human_date) ? human_date : "",
-                                   (human_duration && human_date) ? "|" : "",
-                                   (human_duration) ? _("Duration:") : "",
-                                   (human_duration) ? human_duration : "",
-                                   (human_resume_from) &&
-                                   (human_date || human_duration) ?
-                                   "|" : "",
-                                   (human_resume_from) ? _("Resume from:") : "",
-                                   (human_resume_from) ?
-                                   human_resume_from : "");
-
-      mx_label_set_text (priv->metadata_row2, (synopsis) ? synopsis : "");
-
-      mx_label_set_text (priv->metadata_row1, temp_text);
-
-      g_free (temp_text);
-      g_free (human_duration);
-      g_free (human_date);
-      g_free (human_resume_from);
-    }
+  g_string_free (string, TRUE);
 }
 
 static void
@@ -380,17 +389,16 @@ mex_info_panel_set_content (MexContentView *view, MexContent *content)
   mimetype = mex_content_get_metadata (content, MEX_CONTENT_METADATA_MIMETYPE);
 
   mx_label_set_text (priv->metadata_row1, "");
-  mx_label_set_text (priv->metadata_row2, "");
 
   if (mimetype)
     {
       if (strncmp (mimetype, "image/", 6) == 0)
         {
-          /* set the metadata labels */
-          _image_metadata (self);
           if (priv->buttons_container)
             clutter_actor_hide (priv->buttons_container);
+          _set_metadata (self, IMAGE);
         }
+      /* At the moment we only have images or video */
       else
         {
           MexContent *player_content;
@@ -413,7 +421,7 @@ mex_info_panel_set_content (MexContentView *view, MexContent *content)
             }
 
           /* set the metadata labels */
-          _video_metadata (self);
+          _set_metadata (self, VIDEO);
         }
     }
 
@@ -442,6 +450,68 @@ static void
 mex_info_panel_init (MexInfoPanel *self)
 {
   self->priv = INFO_PANEL_PRIVATE (self);
+
+  /* Template for the metadata that we want to display for images */
+
+  GList *image_metadata_template = NULL;
+
+  image_metadata_template =
+    g_list_append (image_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_CREATION_DATE,
+                                          _("Date: "),
+                                          0));
+  image_metadata_template =
+    g_list_append (image_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_DATE,
+                                          _("Date: "),
+                                          1));
+  image_metadata_template =
+    g_list_append (image_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_CAMERA_MODEL,
+                                          _("Camera model: "),
+                                          0));
+  image_metadata_template =
+    g_list_append (image_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_WIDTH,
+                                          _("Width: "),
+                                          0));
+  image_metadata_template =
+    g_list_append (image_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_HEIGHT,
+                                          _("Height: "),
+                                          0));
+
+  self->priv->image_metadata_template = image_metadata_template;
+
+
+  /* Template for the metadata we want to display for videos */
+  GList *video_metadata_template = NULL;
+
+  video_metadata_template =
+    g_list_append (video_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_DATE,
+                                          _("Date: "),
+                                          0));
+
+  video_metadata_template =
+    g_list_append (video_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_LAST_POSITION,
+                                          _("Resume from: "),
+                                          0));
+
+  video_metadata_template =
+    g_list_append (video_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_DURATION,
+                                          _("Duration: "),
+                                          0));
+
+  video_metadata_template =
+    g_list_append (video_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_SYNOPSIS,
+                                          _("Description: "),
+                                          0));
+
+  self->priv->video_metadata_template = video_metadata_template;
 }
 
 ClutterActor *
