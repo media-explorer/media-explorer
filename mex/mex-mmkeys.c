@@ -164,6 +164,8 @@ mex_mmkeys_control (MexMMkeys *self, const gchar *key)
       goto end;
     }
 
+  return;
+
 end:
   kevent->time = time (NULL);
   clutter_event_put (event);
