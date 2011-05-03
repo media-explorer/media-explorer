@@ -326,3 +326,93 @@ mex_metadata_humanise_time (const gchar *time_str)
     }
   return NULL;
 }
+
+/**
+ * mex_metadata_info_new:
+ * @key: Metadata key
+ * @key_string: A field label for the metadata value
+ * @priority: How important this metadata is. 0 = High
+ *
+ * Container to pass through mex_metadata_get_metadata
+ *
+ * Return value: a new MexMetadataInfo.
+ */
+MexMetadataInfo *
+mex_metadata_info_new (MexContentMetadata key,
+                      const  gchar *key_string,
+                      gint priority)
+{
+  MexMetadataInfo *info;
+
+  info = g_new0 (MexMetadataInfo, 1);
+
+  info->key = key;
+  info->key_string = key_string;
+  info->priority = priority;
+  info->value = NULL;
+
+  return info;
+}
+
+/**
+ * mex_metadata_info_free:
+ * @info: MexMetadaInfo
+ *
+ * Free/0 the values of MexMetadataInfo
+ *
+ * Return value: a new MexMetadataInfo.
+ */
+void
+mex_metadata_info_free (MexMetadataInfo *info)
+{
+  if (!info)
+    return;
+
+  info->key = 0;
+  info->priority = 0;
+  info->value = NULL;
+  info->key_string = NULL;
+
+  g_free (info);
+}
+
+/**
+ * mex_metadata_get_metadata:
+ * @metadata_template: A GList with MexMetadataInfo data
+ *
+ * Fills in the values for the GList of MexMetadataInfo using the priority
+ * value to provide fall back metadata. Where the highest priority is 0.
+ *
+ */
+void
+mex_metadata_get_metadata (GList **metadata_template, MexContent *content)
+{
+  GList *current;
+
+  for (current = *metadata_template; current != NULL; current = current->next)
+    {
+      MexMetadataInfo *info_n;
+      info_n = current->data;
+
+      /* remove any values left from a previous call */
+      info_n->value = NULL;
+
+      /* if there is no previous item (i.e. this is the start) then set the
+       * value. OR if the priority of the item is 0.
+       */
+      if (current->prev == NULL || info_n->priority == 0)
+        {
+          info_n->value = mex_content_get_metadata (content, info_n->key);
+        }
+      /* If the priority of the current item is greater than the previous item
+       * and the previous item wasn't filled in then we're filling in a
+       * fallback item.
+       */
+      else if (info_n->priority >
+               ((MexMetadataInfo *)current->prev->data)->priority &&
+               ((MexMetadataInfo *)current->prev->data)->value == NULL)
+        {
+          info_n->value = mex_content_get_metadata (content, info_n->key);
+        }
+    }
+}

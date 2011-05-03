@@ -21,6 +21,16 @@
 
 #include <glib.h>
 
+#include <mex/mex-content.h>
+
+typedef struct
+{
+  MexContentMetadata key;
+  const gchar      *key_string;
+  gint              priority;
+  const gchar       *value;
+} MexMetadataInfo;
+
 void mex_metadata_from_uri (const gchar *uri,
                             gchar      **title,
                             gchar      **showname,
@@ -33,5 +43,13 @@ gchar * mex_metadata_humanise_duration (const gchar *duration);
 gchar *mex_metadata_humanise_date (const gchar *iso8601_date);
 
 gchar *mex_metadata_humanise_time (const gchar *time);
+
+void mex_metadata_get_metadata (GList **metadata_template, MexContent *content);
+
+MexMetadataInfo *mex_metadata_info_new (MexContentMetadata key,
+                                        const gchar *key_string,
+                                        gint priority);
+
+void mex_metadata_info_free (MexMetadataInfo *info);
 
 #endif
