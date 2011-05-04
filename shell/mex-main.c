@@ -678,45 +678,6 @@ mex_set_page_width_cb (MexGridSizeData *data)
   return FALSE;
 }
 
-static void
-mex_notify_page_width_cb (ClutterActor *box,
-                          GParamSpec   *pspec,
-                          MexData      *data)
-{
-  gfloat width, menu_width;
-  GList *children;
-  MxPadding padding;
-
-  static MexGridSizeData size_data = { 0, };
-
-  /* FIXME: Think of a better way of calculating this size, this is
-   *        terribly hacky...
-   */
-
-  mex_free_grid_size_data (&size_data);
-
-  width = clutter_actor_get_width (box);
-  mx_widget_get_padding (MX_WIDGET (box), &padding);
-
-  children = clutter_container_get_children (CLUTTER_CONTAINER (box));
-  menu_width = clutter_actor_get_width (children->data);
-  g_list_free (children);
-
-  size_data.grid = MEX_GRID (g_object_get_data (G_OBJECT (box), "grid"));
-  g_object_add_weak_pointer (G_OBJECT (size_data.grid),
-                             (gpointer *)&size_data.grid);
-
-  size_data.width =
-    (gint)((width - padding.left - padding.right - menu_width) / 3.f);
-  size_data.height = (gint)((size_data.width * 9.f) / 16.f);
-
-  size_data.source =
-    g_idle_add_full (G_PRIORITY_HIGH,
-                     (GSourceFunc)mex_set_page_width_cb,
-                     &size_data,
-                     NULL);
-}
-
 typedef struct
 {
   MexGriloFeed *feed;
@@ -1007,12 +968,6 @@ mex_page_created_cb (MexExplorer   *explorer,
       /* Name actors so we can style */
       clutter_actor_set_name (page_box, "grid-page");
       clutter_actor_set_name (layout, "content");
-
-      /* FIXME: Hack... Need a better way of getting at the grid... */
-      g_object_set_data (G_OBJECT (page_box), "grid",
-                         mx_bin_get_child (MX_BIN (*page)));
-      g_signal_connect (page_box, "notify::width",
-                        G_CALLBACK (mex_notify_page_width_cb), data);
 
       /* Before we finally wrap the page, check if this model is a Grilo
        * feed and low-light it slightly/prevent focus if it's still

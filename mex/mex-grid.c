@@ -57,6 +57,9 @@ typedef struct
 
 struct _MexGridPrivate
 {
+  guint            tile_width_changed : 1;
+  guint            tile_height_changed : 1;
+  guint            tile_size_notified : 1;
   guint            has_focus : 1;
   guint            next_foreach_is_style_changed : 1;
   guint            focus_waiting;
@@ -866,6 +869,24 @@ mex_grid_get_preferred_height (ClutterActor *actor,
     *nat_height_p = height + padding.top + padding.bottom;
 }
 
+static gboolean
+mex_grid_notify_tile_size (MexGrid *grid)
+{
+  MexGridPrivate *priv = grid->priv;
+
+  priv->tile_size_notified = TRUE;
+
+  if (priv->tile_width_changed)
+    g_object_notify (G_OBJECT (grid), "tile-width");
+  if (priv->tile_height_changed)
+    g_object_notify (G_OBJECT (grid), "tile-height");
+
+  priv->tile_width_changed = FALSE;
+  priv->tile_height_changed = FALSE;
+
+  return FALSE;
+}
+
 static void
 mex_grid_allocate (ClutterActor           *actor,
                    const ClutterActorBox  *box,
@@ -897,8 +918,39 @@ mex_grid_allocate (ClutterActor           *actor,
   /* We start off by assuming that all the actors are the same size - for
    * this size, we use the set tile-size.
    */
-  basic_width = priv->tile_width;
-  basic_height = priv->tile_height;
+  basic_width = round (avail_width / (gfloat) priv->real_stride);
+  if (basic_width != priv->tile_width)
+    {
+      basic_height = basic_width * priv->tile_height / priv->tile_width;
+
+      priv->tile_width_changed = TRUE;
+      priv->tile_width = basic_width;
+
+      if (basic_height != priv->tile_height)
+        {
+          priv->tile_height_changed = TRUE;
+          priv->tile_height = basic_height;
+        }
+
+      priv->tile_size_notified = FALSE;
+    }
+  else
+    basic_height = priv->tile_height;
+
+  /* Ok... That's a terrible kludge. Why the hell are we doing that ??
+   *
+   * Simple, changing the tiles' size triggers a relayouting of the
+   * tiles and consequently a relayouting of the tiles' parent (ie.
+   * the grid itself) which we are trying to layout in this function.
+   * So this timeout is just a workaround to prevent that to happen.
+   *
+   * If you know a better way, please fix that...
+   */
+  if ((priv->tile_width_changed || priv->tile_height_changed) &&
+      !priv->tile_size_notified)
+    g_idle_add_full (G_PRIORITY_HIGH,
+                     (GSourceFunc) mex_grid_notify_tile_size,
+                     self, NULL);
 
   if (priv->vadjust)
     value = (gint)mx_adjustment_get_value (priv->vadjust);
@@ -1537,7 +1589,7 @@ mex_grid_class_init (MexGridClass *klass)
                             "Stride",
                             "Amount of widgets to pack horizontally. "
                             "0 = Automatic, based on tile width.",
-                            0, G_MAXINT, 0,
+                            0, G_MAXINT, 3,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STRIDE, pspec);
 
@@ -1621,7 +1673,7 @@ mex_grid_init (MexGrid *self)
   priv->row_sizes = g_array_new (FALSE, TRUE, sizeof (MexGridRowData));
   priv->spans = g_array_new (FALSE, TRUE, sizeof (MexGridSpan));
   priv->boxes = g_array_new (FALSE, TRUE, sizeof (ClutterActorBox));
-  priv->stride = 0;
+  priv->stride = 3;
   priv->tile_width = 360;
   priv->tile_height = 202;
 
