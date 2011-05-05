@@ -61,6 +61,7 @@ libmex_rebinder_la_LIBADD   = $(REBINDER_LIBS)
 
 servicedir = $(datadir)/dbus-1/services/
 service_in_files = mex-rebinder.service.in
-dist_service_DATA = mex-rebinder.service
+service_DATA = mex-rebinder.service
 
-CLEANFILES = mex-rebinder.service
+CLEANFILES = $(service_DATA)
+EXTRA_DIST = $(service_in_files)
