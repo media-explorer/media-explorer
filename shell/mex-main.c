@@ -2059,7 +2059,7 @@ static GOptionEntry entries[] =
     "Start full screen", NULL },
   { "no-version", 0, 0, G_OPTION_ARG_NONE, &opt_no_version,
     "Do not dispay the version", NULL },
-  { "igore-resolution", 'r', 0, G_OPTION_ARG_NONE, &opt_ignore_res,
+  { "ignore-resolution", 'r', 0, G_OPTION_ARG_NONE, &opt_ignore_res,
     "Don't warn if the screen size isn't sufficient", NULL },
   { NULL }
 };
