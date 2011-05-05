@@ -619,16 +619,6 @@ mex_grid_set_property (GObject      *object,
       mex_grid_set_stride (self, g_value_get_int (value));
       break;
 
-    case PROP_TILE_WIDTH:
-      mex_grid_set_tile_size (self, g_value_get_float (value),
-                              priv->tile_height);
-      break;
-
-    case PROP_TILE_HEIGHT:
-      mex_grid_set_tile_size (self, priv->tile_width,
-                              g_value_get_float (value));
-      break;
-
     case PROP_HADJUST:
       mex_grid_set_adjustments (MX_SCROLLABLE (object),
                                 g_value_get_object (value),
@@ -1596,13 +1586,13 @@ mex_grid_class_init (MexGridClass *klass)
   pspec = g_param_spec_float ("tile-width", "Tile width",
                               "Minimum width to set on new tiles",
                               -1, G_MAXFLOAT, 360,
-                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TILE_WIDTH, pspec);
 
   pspec = g_param_spec_float ("tile-height", "Tile height",
                               "Minimum height to set on new tiles",
                               -1, G_MAXFLOAT, 202,
-                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TILE_HEIGHT, pspec);
 
   /* MxScrollable properties */
@@ -1738,37 +1728,6 @@ mex_grid_get_tile_size (MexGrid *grid,
     *width = grid->priv->tile_width;
   if (height)
     *height = grid->priv->tile_height;
-}
-
-void
-mex_grid_set_tile_size (MexGrid *grid,
-                        gfloat   width,
-                        gfloat   height)
-{
-  gboolean notify_width, notify_height;
-  MexGridPrivate *priv;
-
-  g_return_if_fail (MEX_IS_GRID (grid));
-
-  priv = grid->priv;
-  notify_width = (priv->tile_width != width);
-  notify_height = (priv->tile_height != height);
-
-  if (notify_width || notify_height)
-    {
-      priv->tile_width = width;
-      priv->tile_height = height;
-
-      if (!priv->stride)
-        priv->real_stride = 0;
-
-      mex_grid_start_animation (grid);
-
-      if (notify_width)
-        g_object_notify (G_OBJECT (grid), "tile-width");
-      if (notify_height)
-        g_object_notify (G_OBJECT (grid), "tile-height");
-    }
 }
 
 static void

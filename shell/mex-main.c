@@ -666,10 +666,7 @@ static gboolean
 mex_set_page_width_cb (MexGridSizeData *data)
 {
   if (data->grid)
-    {
-      mex_grid_set_stride (data->grid, 3);
-      mex_grid_set_tile_size (data->grid, data->width, data->height);
-    }
+    mex_grid_set_stride (data->grid, 3);
 
   data->source = 0;
 
