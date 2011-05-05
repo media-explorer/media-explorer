@@ -216,21 +216,12 @@ dist_applications_DATA =			\
 	mex-shutdown.desktop		\
 	$(NULL)
 
-autostartdir = $(sysconfdir)/xdg/autostart
-dist_autostart_DATA = mex.desktop
-
-
 if ENABLE_REBINDER
 dist_applications_DATA += mex-rebinder-config.desktop
-dist_autostart_DATA += mex-rebinder.desktop
 endif
 
 if ENABLE_NETWORKS
 dist_applications_DATA += mex-networks.desktop
-endif
-
-if ENABLE_DISPLAYCONF
-dist_autostart_DATA += mex-displayconf.desktop
 endif
 
 griloconfdir = $(sysconfdir)/$(PACKAGE)
