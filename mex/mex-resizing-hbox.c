@@ -253,7 +253,10 @@ mex_resizing_hbox_remove (ClutterContainer *container,
       else
         {
           if (data->timeline)
-            g_object_unref (data->timeline);
+            {
+              g_object_unref (data->timeline);
+              data->timeline = NULL;
+            }
 
           priv->children = g_list_delete_link (priv->children, c);
           g_slice_free (MexResizingHBoxChild, data);
@@ -655,6 +658,17 @@ mex_resizing_hbox_dispose (GObject *object)
   MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (object)->priv;
 
   priv->in_dispose = TRUE;
+
+  if (priv->children)
+    {
+      while (priv->children)
+        {
+          MexResizingHBoxChild *data = priv->children->data;
+
+          clutter_container_remove_actor (CLUTTER_CONTAINER (object),
+                                          data->child);
+        }
+    }
 
   if (priv->hadjust)
     {
