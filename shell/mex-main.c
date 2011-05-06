@@ -100,7 +100,7 @@ static void mex_remove_notify_grilo_feed_completed (gpointer  userdata,
                                                     GObject  *old_object);
 
 static gboolean opt_fullscreen = FALSE;
-static gboolean opt_no_version = FALSE;
+static gboolean opt_version    = FALSE;
 static gboolean opt_ignore_res = FALSE;
 
 static void
@@ -2057,7 +2057,7 @@ static GOptionEntry entries[] =
 {
   { "full-screen", 'f', 0, G_OPTION_ARG_NONE, &opt_fullscreen,
     "Start full screen", NULL },
-  { "no-version", 0, 0, G_OPTION_ARG_NONE, &opt_no_version,
+  { "show-version", 0, 0, G_OPTION_ARG_NONE, &opt_version,
     "Do not dispay the version", NULL },
   { "ignore-resolution", 'r', 0, G_OPTION_ARG_NONE, &opt_ignore_res,
     "Don't warn if the screen size isn't sufficient", NULL },
@@ -2348,7 +2348,7 @@ main (int argc, char **argv)
   clutter_container_add_actor (CLUTTER_CONTAINER (data.stack), data.slide_show);
   clutter_actor_hide (data.slide_show);
 
-  if (opt_no_version == FALSE)
+  if (opt_version == TRUE)
     {
       /* Pack the version in the stack and align it to the bottom left */
       data.version = mx_label_new_with_text ("v" MEX_VERSION_GIT);
