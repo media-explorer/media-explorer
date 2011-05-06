@@ -1200,7 +1200,10 @@ mex_grid_allocate (ClutterActor           *actor,
 
           /* If we've moved outside of the visible range, break */
           if (top - value >= box->y2 - box->y1)
-            break;
+            {
+              row += 1;
+              break;
+            }
         }
     }
 
