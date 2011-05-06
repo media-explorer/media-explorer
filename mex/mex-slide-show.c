@@ -415,7 +415,7 @@ rotate_clicked_cb (ClutterActor *button,
 
   set_content_rotation (priv->content, angle);
 
-  clutter_actor_animate (priv->image, CLUTTER_EASE_IN_SINE, 500,
+  clutter_actor_animate (priv->image, CLUTTER_EASE_OUT_SINE, 250,
                          "image-rotation", (gfloat) angle, NULL);
 }
 
