@@ -589,9 +589,13 @@ fit_to_screen_toggled_cb (MxButton     *button,
   toggled = mx_button_get_toggled (button);
 
   if (!toggled)
-    mx_image_set_scale_mode (MX_IMAGE (priv->image), MX_IMAGE_SCALE_FIT);
+    mx_image_animate_scale_mode (MX_IMAGE (priv->image),
+                                 CLUTTER_EASE_OUT_SINE, 250,
+                                 MX_IMAGE_SCALE_FIT);
   else
-    mx_image_set_scale_mode (MX_IMAGE (priv->image), MX_IMAGE_SCALE_CROP);
+    mx_image_animate_scale_mode (MX_IMAGE (priv->image),
+                                 CLUTTER_EASE_OUT_SINE, 250,
+                                 MX_IMAGE_SCALE_CROP);
 
 
   g_object_set_qdata (G_OBJECT (priv->content), image_fit_quark (),
@@ -711,6 +715,8 @@ image_loaded (MxImage      *image,
 
   fit = GPOINTER_TO_INT (g_object_get_qdata (G_OBJECT (priv->content),
                                              image_fit_quark ()));
+  mx_image_set_scale_mode (MX_IMAGE (priv->image), (fit) ? MX_IMAGE_SCALE_CROP :
+                           MX_IMAGE_SCALE_FIT);
   mx_button_set_toggled (MX_BUTTON (priv->fit_to_screen_button), fit);
 }
 
