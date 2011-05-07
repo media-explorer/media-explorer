@@ -764,7 +764,7 @@ mex_resizing_hbox_start_animation (MexResizingHBox *self)
   GList *c;
   gdouble progress;
   guint anim_delay;
-  gint i, focus, n_children;
+  gint i, focus;
   MexResizingHBoxPrivate *priv = self->priv;
 
   if (!priv->children)
@@ -795,7 +795,6 @@ mex_resizing_hbox_start_animation (MexResizingHBox *self)
   else
     focus = -1;
 
-  n_children = g_list_length (priv->children);
   progress = clutter_alpha_get_alpha (priv->alpha);
   anim_delay = 0;
 
@@ -886,7 +885,6 @@ mex_resizing_hbox_get_preferred_width (ClutterActor *actor,
                                        gfloat       *nat_width_p)
 {
   GList *c;
-  gdouble progress;
   MxPadding padding;
   gfloat min_width, nat_width;
 
@@ -896,7 +894,6 @@ mex_resizing_hbox_get_preferred_width (ClutterActor *actor,
   for_height -= padding.top + padding.bottom;
 
   min_width = nat_width = 0;
-  progress = clutter_alpha_get_alpha (priv->alpha);
 
   for (c = priv->children; c; c = c->next)
     {
