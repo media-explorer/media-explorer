@@ -619,6 +619,8 @@ media_eos_cb (ClutterMedia *media,
   else
     {
       /* set the control visible */
+      clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
+                             250, "opacity", 0x00, NULL);
       mex_player_set_controls_visible (player, TRUE);
 
       clutter_media_set_progress (media, priv->position);
