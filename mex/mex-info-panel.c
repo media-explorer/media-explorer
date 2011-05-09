@@ -147,18 +147,18 @@ mex_info_panel_dispose (GObject *object)
       priv->script = NULL;
     }
 
-  if (priv->image_metadata_template)
+  while (priv->image_metadata_template)
     {
-      g_list_free_full (priv->image_metadata_template,
-                        (GDestroyNotify)mex_metadata_info_free);
-      priv->image_metadata_template = NULL;
+      mex_metadata_info_free (priv->image_metadata_template->data);
+      priv->image_metadata_template = g_list_delete_link (
+        priv->image_metadata_template, priv->image_metadata_template);
     }
 
-  if (priv->video_metadata_template)
+  while (priv->video_metadata_template)
     {
-      g_list_free_full (priv->video_metadata_template,
-                        (GDestroyNotify)mex_metadata_info_free);
-      priv->video_metadata_template = NULL;
+      mex_metadata_info_free (priv->video_metadata_template->data);
+      priv->video_metadata_template = g_list_delete_link (
+        priv->video_metadata_template, priv->video_metadata_template);
     }
 
   G_OBJECT_CLASS (mex_info_panel_parent_class)->dispose (object);
