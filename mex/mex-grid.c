@@ -611,7 +611,6 @@ mex_grid_set_property (GObject      *object,
                        GParamSpec   *pspec)
 {
   MexGrid *self = MEX_GRID (object);
-  MexGridPrivate *priv = self->priv;
 
   switch (property_id)
     {
