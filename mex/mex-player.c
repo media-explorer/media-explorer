@@ -179,19 +179,23 @@ mex_player_set_content (MexContentView *view,
 
       /* TODO: handle special cases like content from a queue, in that
          case we are likely to start from beginning. */
-      if (sduration) {
+      if (sduration)
         priv->duration = atoi (sduration);
-      } else {
+      else
         priv->duration = 0;
-      }
-      if (priv->duration > 0) {
-        if (sposition) {
-          int position = atoi (sposition);
-          priv->position = (gdouble) position / (gdouble) priv->duration;
-        } else {
-          priv->position = 0.0;
+
+      if (priv->duration > 0)
+        {
+          if (sposition)
+            {
+              int position = atoi (sposition);
+              priv->position = (gdouble) position / (gdouble) priv->duration;
+            }
+          else
+            {
+              priv->position = 0.0;
+            }
         }
-      }
 
       if (MEX_IS_PROGRAM (content))
         {
