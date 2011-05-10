@@ -83,6 +83,9 @@ void mex_media_controls_focus_content (MexMediaControls *self,
 void mex_media_controls_set_sort_func (MexMediaControls *self,
                                        GCompareDataFunc  func,
                                        gpointer          userdata);
+MexContent *
+mex_media_controls_get_enqueued (MexMediaControls *self,                                                         MexContent *current_content);
+
 G_END_DECLS
 
 #endif /* _MEX_MEDIA_CONTROLS_H */

@@ -66,6 +66,8 @@ struct _MexMediaControlsPrivate
   gpointer sort_data;
 
   MexProxy *proxy;
+
+  guint is_queue_model : 1;
 };
 
 enum
@@ -889,6 +891,7 @@ mex_media_controls_set_content (MexMediaControls *self,
   g_return_if_fail (MEX_IS_CONTENT (content));
 
   priv->content = content;
+  priv->is_queue_model = FALSE;
 
   mex_media_controls_update_header (self);
 
@@ -897,6 +900,25 @@ mex_media_controls_set_content (MexMediaControls *self,
   g_object_set (G_OBJECT (priv->proxy), "model", context, NULL);
 
   mex_proxy_start_at (priv->proxy, priv->content, TRUE);
+
+  /* Work out if we're playing a queue model */
+  if (MEX_IS_AGGREGATE_MODEL (context))
+    {
+      MexModel *real_model;
+      MexModelManager *model_manager;
+      const MexModelInfo *model_info;
+
+      model_manager = mex_model_manager_get_default ();
+      real_model =
+        mex_aggregate_model_get_model_for_content (MEX_AGGREGATE_MODEL (context),
+                                                content);
+
+      model_info = mex_model_manager_get_model_info (model_manager, real_model);
+
+      if (model_info)
+        if (g_strcmp0 (model_info->category, "queue") == 0)
+            priv->is_queue_model = TRUE;
+    }
 
   /* Update content on the queue button */
   mex_content_view_set_content (MEX_CONTENT_VIEW (priv->queue_button),
@@ -951,6 +973,52 @@ mex_media_controls_sort_items (MexMediaControls *self)
     }
 
   g_list_free (children);
+}
+
+/**
+  * mex_media_controls_get_enqueued:
+  * @controls: The MexMediaControls widget
+  * @current_content: MexContent that the player is currently playing
+  *
+  * If the media controls has been given a queue model then return the next
+  * MexContent in the queue model.
+  *
+  * Return value: The next content in the queue or NULL
+  */
+MexContent *
+mex_media_controls_get_enqueued (MexMediaControls *controls,
+                                 MexContent *current_content)
+{
+  MexMediaControlsPrivate *priv;
+  MexModel *queue;
+  MexContent *content;
+
+  if (!MEX_IS_MEDIA_CONTROLS (controls) || !MEX_IS_CONTENT (current_content))
+    return NULL;
+
+  priv = controls->priv;
+
+  if (priv->is_queue_model == FALSE)
+    return NULL;
+
+  queue = mex_proxy_get_model (priv->proxy);
+  if (queue)
+    {
+      gint idx, length;
+
+      idx = mex_model_index (queue, current_content);
+      length = mex_model_get_length (queue);
+
+      if (idx++ > length)
+       return NULL;
+
+      content = mex_model_get_content (queue, idx);
+    }
+
+  if (content)
+    return content;
+
+  return NULL;
 }
 
 void
