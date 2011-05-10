@@ -105,6 +105,7 @@ static void mex_remove_notify_grilo_feed_completed (gpointer  userdata,
 static gboolean opt_fullscreen = FALSE;
 static gboolean opt_version    = FALSE;
 static gboolean opt_ignore_res = FALSE;
+static gboolean opt_touch      = FALSE;
 
 static void
 mex_header_activated_cb (MexExplorer *explorer,
@@ -1405,6 +1406,12 @@ on_volume_changed (ClutterActor *volume,
   mex_show_volume_control (data);
 }
 
+static void
+mex_enable_touch_events (MexData *data)
+{
+  opt_touch = TRUE;
+}
+
 static gboolean
 mex_captured_event_cb (ClutterActor *actor,
                        ClutterEvent *event,
@@ -1413,18 +1420,24 @@ mex_captured_event_cb (ClutterActor *actor,
   gboolean handled, fullscreen;
   ClutterKeyEvent *key_event;
 
-  switch (event->type)
+  if (!opt_touch)
     {
-      /* don't respond to any mouse events */
-    case CLUTTER_BUTTON_PRESS:
-    case CLUTTER_BUTTON_RELEASE:
-    case CLUTTER_ENTER:
-    case CLUTTER_LEAVE:
-    case CLUTTER_MOTION:
-    case CLUTTER_SCROLL:
-      return TRUE;
-    default:
-      break;
+      switch (event->type)
+        {
+          /* don't respond to any mouse events */
+        case CLUTTER_BUTTON_PRESS:
+        case CLUTTER_BUTTON_RELEASE:
+          mex_enable_touch_events (data);
+          break;
+
+        case CLUTTER_ENTER:
+        case CLUTTER_LEAVE:
+        case CLUTTER_MOTION:
+        case CLUTTER_SCROLL:
+          return TRUE;
+        default:
+          break;
+        }
     }
 
   if (event->type != CLUTTER_KEY_PRESS)
@@ -2204,6 +2217,8 @@ static GOptionEntry entries[] =
     "Do not dispay the version", NULL },
   { "ignore-resolution", 'r', 0, G_OPTION_ARG_NONE, &opt_ignore_res,
     "Don't warn if the screen size isn't sufficient", NULL },
+  { "touch-mode", 't', 0, G_OPTION_ARG_NONE, &opt_touch,
+    "Enable touch-screen mode", NULL },
   { NULL }
 };
 
