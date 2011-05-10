@@ -618,6 +618,14 @@ media_eos_cb (ClutterMedia *media,
     }
   else
     {
+      MexContent *enqueued_content;
+
+      enqueued_content =
+        mex_media_controls_get_enqueued (MEX_MEDIA_CONTROLS (priv->controls),
+                                         priv->content);
+      if (enqueued_content)
+        mex_player_set_content (MEX_CONTENT_VIEW (player), enqueued_content);
+
       /* set the control visible */
       clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
                              250, "opacity", 0x00, NULL);
