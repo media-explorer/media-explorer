@@ -1134,6 +1134,21 @@ mex_column_unmap (ClutterActor *actor)
   CLUTTER_ACTOR_CLASS (mex_column_parent_class)->unmap (actor);
 }
 
+static gboolean
+mex_column_captured_event (ClutterActor *actor,
+                           ClutterEvent *event)
+{
+  MexColumnPrivate *priv = MEX_COLUMN (actor)->priv;
+
+  if ((event->type == CLUTTER_BUTTON_PRESS) && !priv->has_focus)
+    {
+      mex_push_focus (MX_FOCUSABLE (actor));
+      return TRUE;
+    }
+
+  return FALSE;
+}
+
 static void
 mex_column_class_init (MexColumnClass *klass)
 {
@@ -1154,6 +1169,7 @@ mex_column_class_init (MexColumnClass *klass)
   a_class->pick = mex_column_pick;
   a_class->map = mex_column_map;
   a_class->unmap = mex_column_unmap;
+  a_class->captured_event = mex_column_captured_event;
 
   g_type_class_add_private (klass, sizeof (MexColumnPrivate));
 
@@ -1271,6 +1287,9 @@ mex_column_init (MexColumn *self)
 
   /* End of private children */
   clutter_actor_pop_internal (CLUTTER_ACTOR (self));
+
+  /* Set the column as reactive */
+  clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
 }
 
 
