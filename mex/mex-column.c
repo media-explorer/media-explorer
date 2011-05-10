@@ -31,7 +31,8 @@ enum
   PROP_ICON_NAME,
   PROP_PLACEHOLDER_ACTOR,
   PROP_HADJUST,
-  PROP_VADJUST
+  PROP_VADJUST,
+  PROP_SINGLE_IMPORTANT
 };
 
 enum
@@ -44,6 +45,7 @@ enum
 struct _MexColumnPrivate
 {
   guint         has_focus : 1;
+  guint         single_important : 1;
 
   ClutterActor *header;
   ClutterActor *button;
@@ -162,22 +164,19 @@ mex_column_add (ClutterContainer *container,
   /* Expand/collapse any drawer that gets added as appropriate */
   if (MEX_IS_EXPANDER_BOX (actor))
     {
-      mex_expander_box_set_important (MEX_EXPANDER_BOX (actor),
-                                      priv->has_focus);
+      gboolean open =
+        priv->has_focus && (!priv->single_important || priv->n_items == 1);
+
       g_signal_connect (actor, "notify::open",
                         G_CALLBACK (expander_box_open_notify), container);
 
-      /* FIXME: Again, like further down in this file, this is liable to
-       *        break and we really need to add a function to
-       *        MexContentBox to retrieve its internal MexTile.
-       */
+      mex_expander_box_set_important (MEX_EXPANDER_BOX (actor), open);
+
       if (MEX_IS_CONTENT_BOX (actor))
         {
-          ClutterActor *child =
-            mex_expander_box_get_primary_child (MEX_EXPANDER_BOX (actor));
-
-          child = mex_expander_box_get_primary_child (MEX_EXPANDER_BOX (child));
-          mex_tile_set_important (MEX_TILE (child), priv->has_focus);
+          ClutterActor *tile =
+            mex_content_box_get_tile (MEX_CONTENT_BOX (actor));
+          mex_tile_set_important (MEX_TILE (tile), priv->has_focus);
         }
     }
 
@@ -557,6 +556,10 @@ mex_column_set_property (GObject      *object,
                                   g_value_get_object (value));
       break;
 
+    case PROP_SINGLE_IMPORTANT:
+      mex_column_set_single_important (self, g_value_get_boolean (value));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -594,6 +597,10 @@ mex_column_get_property (GObject    *object,
     case PROP_VADJUST:
       mex_column_get_adjustments (MX_SCROLLABLE (self), NULL, &adjustment);
       g_value_set_object (value, adjustment);
+      break;
+
+    case PROP_SINGLE_IMPORTANT:
+      g_value_set_boolean (value, mex_column_get_single_important (self));
       break;
 
     default:
@@ -1089,6 +1096,9 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
         }
       else
         mex_expander_box_set_important (MEX_EXPANDER_BOX (child), TRUE);
+
+      if (priv->single_important)
+        open = FALSE;
     }
 
   if (priv->expand_timeline && set_tile_important && (offset >= increment))
@@ -1169,6 +1179,13 @@ mex_column_class_init (MexColumnClass *klass)
                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
                                G_PARAM_CONSTRUCT);
   g_object_class_install_property (o_class, PROP_ICON_NAME, pspec);
+
+  pspec = g_param_spec_boolean ("single-important",
+                                "Single Important",
+                                "Only mark a single item as important.",
+                                FALSE,
+                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (o_class, PROP_SINGLE_IMPORTANT, pspec);
 
   /* MxScrollable properties */
   g_object_class_override_property (o_class,
@@ -1360,4 +1377,27 @@ mex_column_get_sort_func (MexColumn *column,
     *userdata = column->priv->sort_data;
 
   return column->priv->sort_func;
+}
+
+void
+mex_column_set_single_important (MexColumn *column,
+                                 gboolean   single_important)
+{
+  MexColumnPrivate *priv;
+
+  g_return_if_fail (MEX_IS_COLUMN (column));
+
+  priv = column->priv;
+  if (priv->single_important != single_important)
+    {
+      priv->single_important = single_important;
+      g_object_notify (G_OBJECT (column), "single-important");
+    }
+}
+
+gboolean
+mex_column_get_single_important (MexColumn *column)
+{
+  g_return_val_if_fail (MEX_IS_COLUMN (column), FALSE);
+  return column->priv->single_important;
 }

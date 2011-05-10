@@ -84,6 +84,10 @@ void             mex_column_set_sort_func (MexColumn        *column,
 MexActorSortFunc mex_column_get_sort_func (MexColumn        *column,
                                            gpointer         *userdata);
 
+void     mex_column_set_single_important (MexColumn *column,
+                                          gboolean   single_important);
+gboolean mex_column_get_single_important (MexColumn *column);
+
 G_END_DECLS
 
 #endif /* __MEX_COLUMN_H__ */
