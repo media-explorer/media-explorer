@@ -111,6 +111,10 @@ void mex_explorer_set_n_preview_items (MexExplorer *explorer,
                                        gint         n_preview_items);
 gint mex_explorer_get_n_preview_items (MexExplorer *explorer);
 
+void     mex_explorer_set_touch_mode (MexExplorer *explorer,
+                                      gboolean     touch_mode_on);
+gboolean mex_explorer_get_touch_mode (MexExplorer *explorer);
+
 G_END_DECLS
 
 #endif /* _MEX_EXPLORER_H */

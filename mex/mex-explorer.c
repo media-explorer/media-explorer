@@ -60,12 +60,14 @@ enum
   PROP_ROOT_MODEL,
   PROP_MODEL,
   PROP_N_PREVIEW_ITEMS,
-  PROP_DEPTH
+  PROP_DEPTH,
+  PROP_TOUCH_MODE
 };
 
 struct _MexExplorerPrivate
 {
   guint         has_temporary_focus : 1;
+  guint         touch_mode          : 1;
   MexModel     *root_model;
   GQueue        pages;
   GList        *to_destroy;
@@ -160,6 +162,10 @@ mex_explorer_get_property (GObject    *object,
       g_value_set_uint (value, mex_explorer_get_depth (self));
       break;
 
+    case PROP_TOUCH_MODE:
+      g_value_set_boolean (value, mex_explorer_get_touch_mode (self));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -182,6 +188,10 @@ mex_explorer_set_property (GObject      *object,
 
     case PROP_N_PREVIEW_ITEMS:
       mex_explorer_set_n_preview_items (self, g_value_get_int (value));
+      break;
+
+    case PROP_TOUCH_MODE:
+      mex_explorer_set_touch_mode (self, g_value_get_boolean (value));
       break;
 
     default:
@@ -345,6 +355,13 @@ mex_explorer_class_init (MexExplorerClass *klass)
                              0, G_MAXUINT, 0,
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_DEPTH, pspec);
+
+  pspec = g_param_spec_boolean ("touch-mode",
+                                "Touch Mode",
+                                "Enable touch-screen operation.",
+                                FALSE,
+                                G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_TOUCH_MODE, pspec);
 
   signals[PAGE_CREATED] =
     g_signal_new ("page-created",
@@ -636,6 +653,8 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
 
   /* Create a new column for this model */
   column = mex_column_new (NULL, NULL);
+  if (priv->touch_mode)
+    mex_column_set_collapse_on_focus (MEX_COLUMN (column), FALSE);
 
   g_object_get (model, "display-item-count", &display_item_count,
                 "title", &title, NULL);
@@ -1354,4 +1373,47 @@ mex_explorer_get_n_preview_items (MexExplorer *explorer)
 {
   g_return_val_if_fail (MEX_IS_EXPLORER (explorer), 0);
   return explorer->priv->n_preview_items;
+}
+
+static void
+mex_explorer_set_touch_mode_recursive (GList    *children,
+                                       gboolean  on)
+{
+  GList *l;
+
+  for (l = children; l; l = l->next)
+    {
+      if (MEX_IS_COLUMN (l->data))
+        mex_column_set_collapse_on_focus (l->data, !on);
+      else if (CLUTTER_IS_CONTAINER (l->data))
+        {
+          GList *sub_children = clutter_container_get_children (l->data);
+          mex_explorer_set_touch_mode_recursive (sub_children, on);
+          g_list_free (sub_children);
+        }
+    }
+}
+
+void
+mex_explorer_set_touch_mode (MexExplorer *explorer,
+                             gboolean     on)
+{
+  MexExplorerPrivate *priv;
+
+  g_return_if_fail (MEX_IS_EXPLORER (explorer));
+
+  priv = explorer->priv;
+  if (priv->touch_mode != on)
+    {
+      priv->touch_mode = on;
+      mex_explorer_set_touch_mode_recursive (priv->pages.head, on);
+      g_object_notify (G_OBJECT (explorer), "touch-mode");
+    }
+}
+
+gboolean
+mex_explorer_get_touch_mode (MexExplorer *explorer)
+{
+  g_return_val_if_fail (MEX_IS_EXPLORER (explorer), FALSE);
+  return explorer->priv->touch_mode;
 }
