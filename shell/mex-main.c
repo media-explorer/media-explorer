@@ -1409,7 +1409,14 @@ on_volume_changed (ClutterActor *volume,
 static void
 mex_enable_touch_events (MexData *data)
 {
+  MxSettings *settings;
+
   opt_touch = TRUE;
+  mex_explorer_set_touch_mode (MEX_EXPLORER (data->explorer), TRUE);
+
+  /* FIXME: This value is arbitrary and should be set by the platform */
+  settings = mx_settings_get_default ();
+  g_object_set (G_OBJECT (settings), "drag-threshold", (guint)5, NULL);
 }
 
 static gboolean
@@ -2685,6 +2692,8 @@ main (int argc, char **argv)
 
   if (!opt_ignore_res)
     check_resolution (&data);
+  if (opt_touch)
+    mex_enable_touch_events (&data);
 
   mx_application_run (app);
 
