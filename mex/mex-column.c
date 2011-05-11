@@ -784,6 +784,9 @@ mex_column_get_preferred_height (ClutterActor *actor,
 
           min_height += child_min_height;
           nat_height += child_nat_height;
+
+          if (priv->adjustment)
+            break;
         }
     }
 
