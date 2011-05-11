@@ -84,9 +84,9 @@ void             mex_column_set_sort_func (MexColumn        *column,
 MexActorSortFunc mex_column_get_sort_func (MexColumn        *column,
                                            gpointer         *userdata);
 
-void     mex_column_set_single_important (MexColumn *column,
-                                          gboolean   single_important);
-gboolean mex_column_get_single_important (MexColumn *column);
+void     mex_column_set_collapse_on_focus (MexColumn *column,
+                                           gboolean   collapse);
+gboolean mex_column_get_collapse_on_focus (MexColumn *column);
 
 G_END_DECLS
 

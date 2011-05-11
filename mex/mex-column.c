@@ -32,7 +32,7 @@ enum
   PROP_PLACEHOLDER_ACTOR,
   PROP_HADJUST,
   PROP_VADJUST,
-  PROP_SINGLE_IMPORTANT
+  PROP_COLLAPSE_ON_FOCUS
 };
 
 enum
@@ -45,7 +45,7 @@ enum
 struct _MexColumnPrivate
 {
   guint         has_focus : 1;
-  guint         single_important : 1;
+  guint         collapse : 1;
 
   ClutterActor *header;
   ClutterActor *button;
@@ -164,13 +164,11 @@ mex_column_add (ClutterContainer *container,
   /* Expand/collapse any drawer that gets added as appropriate */
   if (MEX_IS_EXPANDER_BOX (actor))
     {
-      gboolean open =
-        priv->has_focus && (!priv->single_important || priv->n_items == 1);
-
       g_signal_connect (actor, "notify::open",
                         G_CALLBACK (expander_box_open_notify), container);
 
-      mex_expander_box_set_important (MEX_EXPANDER_BOX (actor), open);
+      mex_expander_box_set_important (MEX_EXPANDER_BOX (actor),
+                                      priv->has_focus);
 
       if (MEX_IS_CONTENT_BOX (actor))
         {
@@ -556,8 +554,8 @@ mex_column_set_property (GObject      *object,
                                   g_value_get_object (value));
       break;
 
-    case PROP_SINGLE_IMPORTANT:
-      mex_column_set_single_important (self, g_value_get_boolean (value));
+    case PROP_COLLAPSE_ON_FOCUS:
+      mex_column_set_collapse_on_focus (self, g_value_get_boolean (value));
       break;
 
     default:
@@ -599,8 +597,8 @@ mex_column_get_property (GObject    *object,
       g_value_set_object (value, adjustment);
       break;
 
-    case PROP_SINGLE_IMPORTANT:
-      g_value_set_boolean (value, mex_column_get_single_important (self));
+    case PROP_COLLAPSE_ON_FOCUS:
+      g_value_set_boolean (value, mex_column_get_collapse_on_focus (self));
       break;
 
     default:
@@ -1051,7 +1049,7 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
       gchar signal_name[32+16];
       ClutterActor *child = c->data;
 
-      if (child == focused_cell)
+      if (!priv->collapse || (child == focused_cell))
         open = TRUE;
 
       if (!MEX_IS_EXPANDER_BOX (child))
@@ -1096,9 +1094,6 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
         }
       else
         mex_expander_box_set_important (MEX_EXPANDER_BOX (child), TRUE);
-
-      if (priv->single_important)
-        open = FALSE;
     }
 
   if (priv->expand_timeline && set_tile_important && (offset >= increment))
@@ -1196,12 +1191,12 @@ mex_column_class_init (MexColumnClass *klass)
                                G_PARAM_CONSTRUCT);
   g_object_class_install_property (o_class, PROP_ICON_NAME, pspec);
 
-  pspec = g_param_spec_boolean ("single-important",
-                                "Single Important",
-                                "Only mark a single item as important.",
-                                FALSE,
+  pspec = g_param_spec_boolean ("collapse-on-focus",
+                                "Collapse On Focus",
+                                "Collapse items before the focused item.",
+                                TRUE,
                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (o_class, PROP_SINGLE_IMPORTANT, pspec);
+  g_object_class_install_property (o_class, PROP_COLLAPSE_ON_FOCUS, pspec);
 
   /* MxScrollable properties */
   g_object_class_override_property (o_class,
@@ -1288,8 +1283,9 @@ mex_column_init (MexColumn *self)
   /* End of private children */
   clutter_actor_pop_internal (CLUTTER_ACTOR (self));
 
-  /* Set the column as reactive */
+  /* Set the column as reactive and enable collapsing */
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
+  priv->collapse = TRUE;
 }
 
 
@@ -1399,24 +1395,33 @@ mex_column_get_sort_func (MexColumn *column,
 }
 
 void
-mex_column_set_single_important (MexColumn *column,
-                                 gboolean   single_important)
+mex_column_set_collapse_on_focus (MexColumn *column,
+                                 gboolean   collapse)
 {
   MexColumnPrivate *priv;
 
   g_return_if_fail (MEX_IS_COLUMN (column));
 
   priv = column->priv;
-  if (priv->single_important != single_important)
+  if (priv->collapse != collapse)
     {
-      priv->single_important = single_important;
-      g_object_notify (G_OBJECT (column), "single-important");
+      ClutterActor *stage;
+
+      priv->collapse = collapse;
+      g_object_notify (G_OBJECT (column), "collapse-on-focus");
+
+      if ((stage = clutter_actor_get_stage (CLUTTER_ACTOR (column))))
+        {
+          MxFocusManager *manager =
+            mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
+          mex_column_notify_focused_cb (manager, NULL, column);
+        }
     }
 }
 
 gboolean
-mex_column_get_single_important (MexColumn *column)
+mex_column_get_collapse_on_focus (MexColumn *column)
 {
   g_return_val_if_fail (MEX_IS_COLUMN (column), FALSE);
-  return column->priv->single_important;
+  return column->priv->collapse;
 }
