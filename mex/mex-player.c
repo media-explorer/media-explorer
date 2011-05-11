@@ -622,32 +622,36 @@ media_eos_cb (ClutterMedia *media,
     }
   else
     {
+      /* Check to see if we have enqueued content and if so play it next */
       MexContent *enqueued_content;
 
       enqueued_content =
         mex_media_controls_get_enqueued (MEX_MEDIA_CONTROLS (priv->controls),
                                          priv->content);
-      if (enqueued_content)
-        mex_player_set_content (MEX_CONTENT_VIEW (player), enqueued_content);
 
       /* set the control visible */
       clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
                              250, "opacity", 0x00, NULL);
       mex_player_set_controls_visible (player, TRUE);
 
-      clutter_media_set_progress (media, priv->position);
-      clutter_media_set_playing (media, FALSE);
+      if (enqueued_content)
+        {
+          mex_player_set_content (MEX_CONTENT_VIEW (player), enqueued_content);
+        }
+      else
+        {
+          mex_screensaver_uninhibit (priv->screensaver);
+
+          clutter_media_set_progress (media, priv->position);
+          clutter_media_set_playing (media, FALSE);
+
+          priv->current_position = 0.0;
+          priv->at_eos = TRUE;
+        }
 
       /* focus the related content */
       mex_media_controls_focus_content (MEX_MEDIA_CONTROLS (priv->controls),
                                         priv->content);
-
-      /* we're not playing the content or playing the idle video so allow
-       * screensaver if previously inhibited */
-      mex_screensaver_uninhibit (priv->screensaver);
-
-      priv->current_position = 0.0;
-      priv->at_eos = TRUE;
     }
 }
 
