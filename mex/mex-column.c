@@ -964,6 +964,10 @@ mex_column_pick (ClutterActor *actor, const ClutterColor *color)
 
   CLUTTER_ACTOR_CLASS (mex_column_parent_class)->pick (actor, color);
 
+  /* Don't pick children when we don't have focus */
+  if (!priv->has_focus)
+    return;
+
   for (c = priv->children; c; c = c->next)
     clutter_actor_paint (c->data);
   clutter_actor_paint (priv->header);
