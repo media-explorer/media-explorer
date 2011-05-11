@@ -911,6 +911,20 @@ mex_column_allocate (ClutterActor          *actor,
 }
 
 static void
+mex_column_apply_transform (ClutterActor *actor,
+                            CoglMatrix   *matrix)
+{
+  MexColumnPrivate *priv = MEX_COLUMN (actor)->priv;
+
+  CLUTTER_ACTOR_CLASS (mex_column_parent_class)->
+    apply_transform (actor, matrix);
+
+  if (priv->adjustment)
+    cogl_matrix_translate (matrix, 0,
+                           -mx_adjustment_get_value (priv->adjustment), 0);
+}
+
+static void
 mex_column_paint (ClutterActor *actor)
 {
   GList *c;
@@ -1163,6 +1177,7 @@ mex_column_class_init (MexColumnClass *klass)
   a_class->get_preferred_width = mex_column_get_preferred_width;
   a_class->get_preferred_height = mex_column_get_preferred_height;
   a_class->allocate = mex_column_allocate;
+  a_class->apply_transform = mex_column_apply_transform;
   a_class->paint = mex_column_paint;
   a_class->pick = mex_column_pick;
   a_class->map = mex_column_map;
