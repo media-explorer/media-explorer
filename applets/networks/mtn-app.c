@@ -1407,8 +1407,8 @@ mtn_app_get_main_page (MtnApp *self)
     clutter_actor_set_clip_to_allocation (scroll, TRUE);
     mex_scroll_view_set_indicators_hidden (MEX_SCROLL_VIEW (scroll),
                                            FALSE);
-    mex_scroll_view_set_scroll_policy (MEX_SCROLL_VIEW (scroll),
-                                       MX_SCROLL_POLICY_VERTICAL);
+    mx_kinetic_scroll_view_set_scroll_policy (MX_KINETIC_SCROLL_VIEW (scroll),
+                                              MX_SCROLL_POLICY_VERTICAL);
     clutter_container_add_actor (CLUTTER_CONTAINER (stack),
                                  scroll);
 

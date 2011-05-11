@@ -25,7 +25,8 @@
 
 static void clutter_container_iface_init (ClutterContainerIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (MexScrollView, mex_scroll_view, MX_TYPE_BIN,
+G_DEFINE_TYPE_WITH_CODE (MexScrollView, mex_scroll_view,
+                         MX_TYPE_KINETIC_SCROLL_VIEW,
                          G_IMPLEMENT_INTERFACE (CLUTTER_TYPE_CONTAINER,
                                                 clutter_container_iface_init))
 
@@ -37,7 +38,6 @@ enum
   PROP_0,
 
   PROP_INDICATORS_HIDDEN,
-  PROP_SCROLL_POLICY,
   PROP_FOLLOW_RECURSE,
   PROP_SCROLL_DELAY,
   PROP_SCROLL_GRAVITY,
@@ -52,7 +52,6 @@ struct _MexScrollViewPrivate
   guint           follow_recurse    : 1;
   guint           interpolate       : 1;
 
-  MxScrollPolicy  scroll_policy;
   ClutterGravity  scroll_gravity;
 
   ClutterActor   *child;
@@ -327,10 +326,6 @@ mex_scroll_view_get_property (GObject    *object,
       g_value_set_boolean (value, mex_scroll_view_get_indicators_hidden (self));
       break;
 
-    case PROP_SCROLL_POLICY:
-      g_value_set_enum (value, mex_scroll_view_get_scroll_policy (self));
-      break;
-
     case PROP_FOLLOW_RECURSE:
       g_value_set_boolean (value, mex_scroll_view_get_follow_recurse (self));
       break;
@@ -364,10 +359,6 @@ mex_scroll_view_set_property (GObject      *object,
     {
     case PROP_INDICATORS_HIDDEN:
       mex_scroll_view_set_indicators_hidden (self, g_value_get_boolean (value));
-      break;
-
-    case PROP_SCROLL_POLICY:
-      mex_scroll_view_set_scroll_policy (self, g_value_get_enum (value));
       break;
 
     case PROP_FOLLOW_RECURSE:
@@ -430,6 +421,7 @@ mex_scroll_view_get_preferred_width (ClutterActor *actor,
                                      gfloat       *nat_width_p)
 {
   MxPadding padding;
+  /*MxScrollPolicy scroll_policy;*/
   gfloat child_min_width, child_nat_width, scroll_w;
 
   MexScrollViewPrivate *priv = MEX_SCROLL_VIEW (actor)->priv;
@@ -463,8 +455,11 @@ mex_scroll_view_get_preferred_width (ClutterActor *actor,
     *nat_width_p = MAX (child_nat_width, scroll_w) +
                    padding.left + padding.right;
 
-  if ((priv->scroll_policy == MX_SCROLL_POLICY_BOTH) ||
-      (priv->scroll_policy == MX_SCROLL_POLICY_HORIZONTAL))
+  /*scroll_policy =
+    mx_kinetic_scroll_view_get_scroll_policy (MX_KINETIC_SCROLL_VIEW (actor));
+
+  if ((scroll_policy == MX_SCROLL_POLICY_BOTH) ||
+      (scroll_policy == MX_SCROLL_POLICY_HORIZONTAL))*/
     child_min_width = 0;
 
   if (min_width_p)
@@ -479,6 +474,7 @@ mex_scroll_view_get_preferred_height (ClutterActor *actor,
                                       gfloat       *nat_height_p)
 {
   MxPadding padding;
+  /*MxScrollPolicy scroll_policy;*/
   gfloat child_min_height, child_nat_height, scroll_h;
 
   MexScrollViewPrivate *priv = MEX_SCROLL_VIEW (actor)->priv;
@@ -513,8 +509,11 @@ mex_scroll_view_get_preferred_height (ClutterActor *actor,
     *nat_height_p = MAX (child_nat_height, scroll_h) +
                     padding.top + padding.bottom;
 
-  if ((priv->scroll_policy == MX_SCROLL_POLICY_BOTH) ||
-      (priv->scroll_policy == MX_SCROLL_POLICY_VERTICAL))
+  /*scroll_policy =
+    mx_kinetic_scroll_view_get_scroll_policy (MX_KINETIC_SCROLL_VIEW (actor));
+
+  if ((scroll_policy == MX_SCROLL_POLICY_BOTH) ||
+      (scroll_policy == MX_SCROLL_POLICY_VERTICAL))*/
     child_min_height = 0;
 
   if (min_height_p)
@@ -851,14 +850,6 @@ mex_scroll_view_class_init (MexScrollViewClass *klass)
                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INDICATORS_HIDDEN, pspec);
 
-  pspec = g_param_spec_enum ("scroll-policy",
-                             "Scroll policy",
-                             "The scroll policy",
-                             MX_TYPE_SCROLL_POLICY,
-                             MX_SCROLL_POLICY_BOTH,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_SCROLL_POLICY, pspec);
-
   pspec = g_param_spec_boolean ("follow-recurse",
                                 "Follow recurse",
                                 "Whether focus-following recurses to the "
@@ -907,7 +898,6 @@ mex_scroll_view_init (MexScrollView *self)
 {
   MexScrollViewPrivate *priv = self->priv = SCROLL_VIEW_PRIVATE (self);
 
-  priv->scroll_policy = MX_SCROLL_POLICY_BOTH;
   priv->interpolate = TRUE;
 
   /* Set x-fill and y-fill to true to get the simple allocation */
@@ -932,6 +922,10 @@ mex_scroll_view_init (MexScrollView *self)
                     G_CALLBACK (mex_scroll_view_style_changed_cb), NULL);
   g_signal_connect (self, "notify::child",
                     G_CALLBACK (mex_scroll_view_notify_child), NULL);
+
+  /* Queue a relayout when the scroll-policy changes */
+  g_signal_connect (self, "notify::scroll-policy",
+                    G_CALLBACK (clutter_actor_queue_relayout), NULL);
 }
 
 ClutterActor *
@@ -1055,6 +1049,7 @@ mex_scroll_view_ensure_visible (MexScrollView         *scroll,
                                 const ClutterGeometry *geometry)
 {
   MxAdjustment *hadjust, *vadjust;
+  MxScrollPolicy scroll_policy;
   MexScrollViewPrivate *priv;
 
   g_return_if_fail (MEX_IS_SCROLL_VIEW (scroll));
@@ -1067,9 +1062,12 @@ mex_scroll_view_ensure_visible (MexScrollView         *scroll,
   mx_scrollable_get_adjustments (MX_SCROLLABLE (priv->child),
                                  &hadjust, &vadjust);
 
+  scroll_policy =
+    mx_kinetic_scroll_view_get_scroll_policy (MX_KINETIC_SCROLL_VIEW (scroll));
+
   if (hadjust &&
-      ((priv->scroll_policy == MX_SCROLL_POLICY_BOTH) ||
-       (priv->scroll_policy == MX_SCROLL_POLICY_HORIZONTAL)))
+      ((scroll_policy == MX_SCROLL_POLICY_BOTH) ||
+       (scroll_policy == MX_SCROLL_POLICY_HORIZONTAL)))
     {
       gdouble new_value;
       gdouble value = mx_adjustment_get_value (hadjust);
@@ -1112,8 +1110,8 @@ mex_scroll_view_ensure_visible (MexScrollView         *scroll,
     }
 
   if (vadjust &&
-      ((priv->scroll_policy == MX_SCROLL_POLICY_BOTH) ||
-       (priv->scroll_policy == MX_SCROLL_POLICY_VERTICAL)))
+      ((scroll_policy == MX_SCROLL_POLICY_BOTH) ||
+       (scroll_policy == MX_SCROLL_POLICY_VERTICAL)))
     {
       gdouble new_value;
       gdouble value = mx_adjustment_get_value (vadjust);
@@ -1154,32 +1152,6 @@ mex_scroll_view_ensure_visible (MexScrollView         *scroll,
           break;
         }
     }
-}
-
-void
-mex_scroll_view_set_scroll_policy (MexScrollView  *view,
-                                   MxScrollPolicy  policy)
-{
-  MexScrollViewPrivate *priv;
-
-  g_return_if_fail (MEX_IS_SCROLL_VIEW (view));
-
-  priv = view->priv;
-  if (priv->scroll_policy != policy)
-    {
-      priv->scroll_policy = policy;
-
-      g_object_notify (G_OBJECT (view), "scroll-policy");
-
-      clutter_actor_queue_relayout (CLUTTER_ACTOR (view));
-    }
-}
-
-MxScrollPolicy
-mex_scroll_view_get_scroll_policy (MexScrollView  *view)
-{
-  g_return_val_if_fail (MEX_IS_SCROLL_VIEW (view), MX_SCROLL_POLICY_NONE);
-  return view->priv->scroll_policy;
 }
 
 void

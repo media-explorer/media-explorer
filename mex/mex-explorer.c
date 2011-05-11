@@ -647,8 +647,8 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
 
   /* Create a scroll-view for the column */
   scroll = mex_scroll_view_new ();
-  mex_scroll_view_set_scroll_policy (MEX_SCROLL_VIEW (scroll),
-                                     MX_SCROLL_POLICY_VERTICAL);
+  mx_kinetic_scroll_view_set_scroll_policy (MX_KINETIC_SCROLL_VIEW (scroll),
+                                            MX_SCROLL_POLICY_VERTICAL);
   mex_scroll_view_set_indicators_hidden (MEX_SCROLL_VIEW (scroll), TRUE);
 
   /* Create a new column for this model */
@@ -899,6 +899,8 @@ mex_explorer_push_model (MexExplorer *explorer,
       ClutterActor *scroll_view, *grid;
 
       scroll_view = mex_scroll_view_new ();
+      mx_kinetic_scroll_view_set_scroll_policy (
+        MX_KINETIC_SCROLL_VIEW (scroll_view), MX_SCROLL_POLICY_VERTICAL);
       mx_stylable_set_style_class (MX_STYLABLE (scroll_view), "Grid");
       grid = mex_grid_new ();
       clutter_container_add_actor (CLUTTER_CONTAINER (scroll_view), grid);

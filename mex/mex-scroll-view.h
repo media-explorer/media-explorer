@@ -53,14 +53,14 @@ typedef struct _MexScrollViewPrivate MexScrollViewPrivate;
 
 struct _MexScrollView
 {
-  MxBin parent;
+  MxKineticScrollView parent;
 
   MexScrollViewPrivate *priv;
 };
 
 struct _MexScrollViewClass
 {
-  MxBinClass parent_class;
+  MxKineticScrollViewClass parent_class;
 };
 
 GType mex_scroll_view_get_type (void) G_GNUC_CONST;
@@ -70,10 +70,6 @@ ClutterActor *mex_scroll_view_new (void);
 void     mex_scroll_view_set_indicators_hidden (MexScrollView *view,
                                                 gboolean       hidden);
 gboolean mex_scroll_view_get_indicators_hidden (MexScrollView *view);
-
-void           mex_scroll_view_set_scroll_policy (MexScrollView  *view,
-                                                  MxScrollPolicy  policy);
-MxScrollPolicy mex_scroll_view_get_scroll_policy (MexScrollView  *view);
 
 void     mex_scroll_view_set_follow_recurse (MexScrollView *view,
                                              gboolean       recurse);

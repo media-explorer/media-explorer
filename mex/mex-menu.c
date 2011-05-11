@@ -489,8 +489,8 @@ mex_menu_create_layout (MexMenu *menu, gboolean lower)
   mx_stylable_set_style_class (MX_STYLABLE (layout), "Menu");
 
   scroll = mex_scroll_view_new ();
-  mex_scroll_view_set_scroll_policy (MEX_SCROLL_VIEW (scroll),
-                                     MX_SCROLL_POLICY_VERTICAL);
+  mx_kinetic_scroll_view_set_scroll_policy (MX_KINETIC_SCROLL_VIEW (scroll),
+                                            MX_SCROLL_POLICY_VERTICAL);
   mex_scroll_view_set_indicators_hidden (MEX_SCROLL_VIEW (scroll), TRUE);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (scroll), layout);
