@@ -309,7 +309,7 @@ mex_column_set_adjustments (MxScrollable *scrollable,
 {
   MexColumnPrivate *priv = MEX_COLUMN (scrollable)->priv;
 
-  if (priv->adjustment == hadjust)
+  if (priv->adjustment == vadjust)
     return;
 
   if (priv->adjustment)
@@ -320,7 +320,7 @@ mex_column_set_adjustments (MxScrollable *scrollable,
       g_object_unref (priv->adjustment);
     }
 
-  priv->adjustment = hadjust;
+  priv->adjustment = vadjust;
 
   if (priv->adjustment)
     {
@@ -340,16 +340,16 @@ mex_column_get_adjustments (MxScrollable  *scrollable,
 {
   MexColumnPrivate *priv = MEX_COLUMN (scrollable)->priv;
 
-  if (vadjust)
-    *vadjust = NULL;
+  if (hadjust)
+    *hadjust = NULL;
 
-  if (!hadjust)
+  if (!vadjust)
     return;
 
   if (!priv->adjustment)
-    mx_scrollable_set_adjustments (scrollable, mx_adjustment_new (), NULL);
+    mx_scrollable_set_adjustments (scrollable, NULL, mx_adjustment_new ());
 
-  *hadjust = priv->adjustment;
+  *vadjust = priv->adjustment;
 }
 
 static void
@@ -544,14 +544,14 @@ mex_column_set_property (GObject      *object,
       break;
 
     case PROP_HADJUST:
-      mex_column_set_adjustments (MX_SCROLLABLE (self),
-                                  g_value_get_object (value),
-                                  self->priv->adjustment);
+      mex_column_set_adjustments (MX_SCROLLABLE (self), NULL,
+                                  g_value_get_object (value));
       break;
 
     case PROP_VADJUST:
-      mex_column_set_adjustments (MX_SCROLLABLE (self), NULL,
-                                  g_value_get_object (value));
+      mex_column_set_adjustments (MX_SCROLLABLE (self),
+                                  g_value_get_object (value),
+                                  self->priv->adjustment);
       break;
 
     case PROP_COLLAPSE_ON_FOCUS:
