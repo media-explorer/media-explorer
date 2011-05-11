@@ -1070,7 +1070,7 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
       gchar signal_name[32+16];
       ClutterActor *child = c->data;
 
-      if (!priv->collapse || (child == focused_cell))
+      if ((!priv->collapse && priv->has_focus) || (child == focused_cell))
         open = TRUE;
 
       if (!MEX_IS_EXPANDER_BOX (child))
