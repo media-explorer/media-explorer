@@ -204,6 +204,10 @@ _reset_thumbnail (MexContentTile *tile)
     {
       _update_thumbnail_from_image (tile, PKGDATADIR "/thumb-video.png");
     }
+  else if (mime && (g_str_has_prefix (mime, "audio/")))
+    {
+      _update_thumbnail_from_image (tile, PKGDATADIR "/thumb-music.png");
+    }
   else if (mime && g_str_equal (mime, "x-grl/box"))
     {
       _update_thumbnail_from_image (tile, PKGDATADIR "/folder-tile.png");
