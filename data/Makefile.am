@@ -5,6 +5,7 @@ dist_extra_DATA = \
 	folder-tile.png \
 	thumb-image.png \
 	thumb-video.png \
+	thumb-music.png \
 	$(NULL)
 
 jsondir = $(pkgdatadir)/json
@@ -146,6 +147,8 @@ dist_icon_categories_DATA = \
 			    icons/icon-panelheader-search-highlight.png \
 			    icons/icon-panelheader-tv.png \
 			    icons/icon-panelheader-tv-highlight.png \
+			    icons/icon-panelheader-music.png \
+			    icons/icon-panelheader-music-highlight.png \
 			    icons/icon-panelheader-queue-highlight.png \
 			    icons/icon-panelheader-queue.png \
 			    icons/icon-panelheader-usb-highlight.png \
