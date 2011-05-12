@@ -60,6 +60,7 @@ struct _MexColumnPrivate
   guint             n_items;
   MexActorSortFunc  sort_func;
   gpointer          sort_data;
+  gint              open_boxes;
 
   MxAdjustment *adjustment;
 };
@@ -114,6 +115,10 @@ expander_box_open_notify (MexExpanderBox *box,
       clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
                              "opacity", 56, NULL);
 
+      /* Restore the opened box to full opacity */
+      clutter_actor_animate (CLUTTER_ACTOR (box), CLUTTER_EASE_IN_OUT_QUAD, 200,
+                             "opacity", 255, NULL);
+
       shadow = mex_shadow_new (CLUTTER_ACTOR (box));
       mex_shadow_set_paint_flags (shadow,
                                   MEX_TEXTURE_FRAME_TOP | MEX_TEXTURE_FRAME_BOTTOM);
@@ -121,8 +126,15 @@ expander_box_open_notify (MexExpanderBox *box,
       mex_shadow_set_color (shadow, &shadow_color);
 
       g_object_set_qdata (G_OBJECT (box), _item_shadow_quark (), shadow);
+
+      priv->open_boxes ++;
     }
   else
+    {
+      priv->open_boxes --;
+    }
+
+  if (priv->open_boxes == 0)
     {
       /* restore all children to full opacity */
       for (l = priv->children; l; l = l->next)
