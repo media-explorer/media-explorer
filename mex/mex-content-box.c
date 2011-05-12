@@ -386,6 +386,10 @@ static void
 mex_content_box_notify_open_cb (MexExpanderBox *box,
                                 GParamSpec     *pspec)
 {
+  ClutterStage *stage;
+  MxFocusManager *fmanager;
+
+  MexActionManager *manager = mex_action_manager_get_default ();
   MexContentBoxPrivate *priv = MEX_CONTENT_BOX (box)->priv;
   gboolean open = mex_expander_box_get_open (box);
 
@@ -393,65 +397,13 @@ mex_content_box_notify_open_cb (MexExpanderBox *box,
     {
       mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (priv->box), NULL);
       priv->created_menu = FALSE;
-    }
-}
-
-static gboolean
-mex_content_box_key_press_event_cb (ClutterActor    *actor,
-                                    ClutterKeyEvent *event,
-                                    MexExpanderBox  *drawer)
-{
-  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (drawer)->priv;
-  MxFocusManager *fmanager;
-  ClutterStage *stage;
-  gboolean open;
-  MexActionManager *manager = mex_action_manager_get_default ();
-
-  if (event->keyval != MEX_KEY_OK &&
-      event->keyval != MEX_KEY_INFO)
-    {
-      return FALSE;
+      return;
     }
 
-
-  open = !mex_expander_box_get_open (drawer);
-
-
-  stage = (ClutterStage *)clutter_actor_get_stage (actor);
+  stage = (ClutterStage *)clutter_actor_get_stage (CLUTTER_ACTOR (box));
   fmanager = mx_focus_manager_get_for_stage (stage);
 
-
-  if (event->keyval == MEX_KEY_OK)
-    {
-      GList *actions;
-
-      actions = mex_action_manager_get_actions_for_content (manager,
-                                                            priv->content);
-
-      if (actions)
-        {
-          MxAction *action = actions->data;
-
-          mex_action_set_content (action, priv->content);
-          mex_action_set_context (action, priv->model);
-
-          g_signal_emit_by_name (action, "activated", 0);
-
-          g_list_free (actions);
-
-          return TRUE;
-        }
-    }
-
-  /* We only want to expand the box if we have either more than one action,
-   * or we have description metadata. We already track this when determining
-   * if the info icon should be visible, so use that to determine whether
-   * we should allow opening here.
-   */
-  if (open && !mex_tile_get_secondary_icon (MEX_TILE (priv->tile)))
-    return FALSE;
-
-  if (open && !priv->created_menu)
+  if (!priv->created_menu)
     {
       GList *actions;
 
@@ -517,11 +469,63 @@ mex_content_box_key_press_event_cb (ClutterActor    *actor,
 
           g_list_free (actions);
         }
+
+      /* Make sure the menu box is open */
+      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->box), TRUE);
     }
   else
     {
       mx_focus_manager_push_focus (fmanager, MX_FOCUSABLE (priv->tile));
     }
+}
+
+static gboolean
+mex_content_box_key_press_event_cb (ClutterActor    *actor,
+                                    ClutterKeyEvent *event,
+                                    MexExpanderBox  *drawer)
+{
+  gboolean open;
+
+  MexActionManager *manager = mex_action_manager_get_default ();
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (drawer)->priv;
+
+  if (event->keyval != MEX_KEY_OK &&
+      event->keyval != MEX_KEY_INFO)
+    {
+      return FALSE;
+    }
+
+  if (event->keyval == MEX_KEY_OK)
+    {
+      GList *actions;
+
+      actions = mex_action_manager_get_actions_for_content (manager,
+                                                            priv->content);
+
+      if (actions)
+        {
+          MxAction *action = actions->data;
+
+          mex_action_set_content (action, priv->content);
+          mex_action_set_context (action, priv->model);
+
+          g_signal_emit_by_name (action, "activated", 0);
+
+          g_list_free (actions);
+
+          return TRUE;
+        }
+    }
+
+  open = !mex_expander_box_get_open (drawer);
+
+  /* We only want to expand the box if we have either more than one action,
+   * or we have description metadata. We already track this when determining
+   * if the info icon should be visible, so use that to determine whether
+   * we should allow opening here.
+   */
+  if (open && !mex_tile_get_secondary_icon (MEX_TILE (priv->tile)))
+    return FALSE;
 
   mex_expander_box_set_open (drawer, open);
   mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->box), open);
@@ -680,6 +684,29 @@ mex_content_box_class_init (MexContentBoxClass *klass)
                                      G_TYPE_NONE, 0);
 }
 
+static gboolean
+mex_content_box_tile_clicked_cb (ClutterActor       *tile,
+                                 ClutterButtonEvent *event,
+                                 MexContentBox      *self)
+{
+  MexContentBoxPrivate *priv = self->priv;
+
+  if (mex_expander_box_get_open (MEX_EXPANDER_BOX (self)))
+    {
+      mex_expander_box_set_open (MEX_EXPANDER_BOX (self), FALSE);
+      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->box), FALSE);
+    }
+  else
+    {
+      mex_expander_box_set_open (MEX_EXPANDER_BOX (self), TRUE);
+      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->box), TRUE);
+    }
+
+  mex_push_focus (MX_FOCUSABLE (priv->tile));
+
+  return TRUE;
+}
+
 static void
 mex_content_box_init (MexContentBox *self)
 {
@@ -706,6 +733,10 @@ mex_content_box_init (MexContentBox *self)
   /* Create tile */
   priv->tile = mex_content_tile_new ();
   mx_bin_set_fill (MX_BIN (priv->tile), TRUE, TRUE);
+
+  clutter_actor_set_reactive (priv->tile, TRUE);
+  g_signal_connect (priv->tile, "button-release-event",
+                    G_CALLBACK (mex_content_box_tile_clicked_cb), self);
 
   /* Create secondary box for tile/menu */
   priv->box = mex_expander_box_new ();
