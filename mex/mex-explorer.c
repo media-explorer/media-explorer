@@ -482,7 +482,7 @@ static void
 mex_explorer_column_object_created_cb (MexProxy     *proxy,
                                        MexContent   *content,
                                        ClutterActor *object,
-                                       gpointer      grid)
+                                       gpointer      column)
 {
   const gchar *mime_type;
 
