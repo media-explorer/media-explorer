@@ -1160,7 +1160,7 @@ mex_column_button_release_event (ClutterActor       *actor,
   returnval = CLUTTER_ACTOR_CLASS (mex_column_parent_class)->
     button_release_event (actor, event);
 
-  if (!priv->has_focus)
+  if (!returnval && !priv->has_focus)
     {
       mex_push_focus (MX_FOCUSABLE (actor));
       return TRUE;
