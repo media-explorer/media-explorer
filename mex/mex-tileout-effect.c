@@ -421,7 +421,6 @@ mex_tileout_effect_set_property (GObject      *object,
 {
   MexTileoutEffect *effect = MEX_TILEOUT_EFFECT (object);
   MexTileoutEffectPrivate *priv = effect->priv;
-  ClutterActor *target;
 
   switch (property_id)
     {
@@ -435,8 +434,17 @@ mex_tileout_effect_set_property (GObject      *object,
       break;
     case PROP_PROGRESS:
       priv->progress = g_value_get_double (value);
-      target = clutter_actor_meta_get_actor (CLUTTER_ACTOR_META (effect));
-      clutter_actor_queue_redraw (target);
+#if CLUTTER_CHECK_VERSION (1, 7, 1)
+      /* If we have a recent version of Clutter then we can queue a
+         rerun of the effect instead of redrawing the entire actor */
+      clutter_effect_queue_rerun (CLUTTER_EFFECT (effect));
+#else
+      {
+        ClutterActor *target;
+        target = clutter_actor_meta_get_actor (CLUTTER_ACTOR_META (effect));
+        clutter_actor_queue_redraw (target);
+      }
+#endif
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
