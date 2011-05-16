@@ -118,6 +118,10 @@ _setup_grl_mex_mapping (void)
                         MEX_CONTENT_METADATA_ISO_SPEED);
   _insert_grl_mex_link (GRL_METADATA_KEY_CREATION_DATE,
                         MEX_CONTENT_METADATA_CREATION_DATE);
+  _insert_grl_mex_link (GRL_METADATA_KEY_ARTIST,
+                        MEX_CONTENT_METADATA_ARTIST);
+  _insert_grl_mex_link (GRL_METADATA_KEY_ALBUM,
+                        MEX_CONTENT_METADATA_ALBUM);
 }
 
 static GrlKeyID
@@ -504,6 +508,9 @@ set_metadatas_from_media (MexProgram *program,
   set_metadata_from_media (program, media, MEX_CONTENT_METADATA_EXPOSURE_TIME);
   set_metadata_from_media (program, media, MEX_CONTENT_METADATA_ISO_SPEED);
   set_metadata_from_media (program, media, MEX_CONTENT_METADATA_CREATION_DATE);
+  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_ALBUM);
+  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_ARTIST);
+
 }
 
 static void
