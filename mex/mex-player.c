@@ -58,6 +58,9 @@ G_DEFINE_TYPE_WITH_CODE (MexPlayer, mex_player, MX_TYPE_STACK,
 					MEX_TYPE_PLAYER,      \
 					MexPlayerPrivate))
 
+
+#define   GST_PLAY_FLAG_VIS (1 << 3)
+
 struct _MexPlayerPrivate
 {
 #if defined(USE_PLAYER_CLUTTER_GST) || defined(USE_PLAYER_SURFACE)
@@ -848,6 +851,26 @@ mex_get_stream_cb (MexProgram   *program,
     {
       clutter_gst_video_texture_set_seek_flags (video_texture,
                                                 CLUTTER_GST_SEEK_FLAG_NONE);
+    }
+
+  if (g_str_has_prefix (mex_content_get_metadata (priv->content,
+                                                  MEX_CONTENT_METADATA_MIMETYPE),
+                        "audio/"))
+    {
+      GstElement *gst_element, *visual;
+      gint gst_flags;
+
+      gst_element = clutter_gst_video_texture_get_pipeline (video_texture);
+      g_object_get (G_OBJECT (gst_element), "flags", &gst_flags, NULL);
+
+      gst_flags = (GST_PLAY_FLAG_VIS | gst_flags);
+
+      g_object_set (G_OBJECT (gst_element), "flags", gst_flags, NULL);
+
+      visual = gst_element_factory_make ("libvisual_infinite", NULL);
+
+      if (visual)
+        g_object_set (G_OBJECT (gst_element), "vis-plugin", visual, NULL);
     }
 #endif
 
