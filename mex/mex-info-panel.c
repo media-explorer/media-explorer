@@ -240,9 +240,6 @@ mex_info_panel_constructed (GObject *object)
   priv->metadata_row1 =
     MX_LABEL (clutter_script_get_object (priv->script, "row1-metadata"));
 
-  /*priv->metadata_row2 =
-    MX_LABEL (clutter_script_get_object (priv->script, "row2-metadata"));
-*/
   mx_bin_set_child (MX_BIN (self), root);
 
   if (priv->mode == MEX_INFO_PANEL_MODE_FULL)
@@ -473,12 +470,12 @@ mex_info_panel_init (MexInfoPanel *self)
   image_metadata_template =
     g_list_append (image_metadata_template,
                    mex_metadata_info_new (MEX_CONTENT_METADATA_CREATION_DATE,
-                                          _("Date: "),
+                                          _("Date added: "),
                                           0));
   image_metadata_template =
     g_list_append (image_metadata_template,
                    mex_metadata_info_new (MEX_CONTENT_METADATA_DATE,
-                                          _("Date: "),
+                                          _("Date taken: "),
                                           1));
   image_metadata_template =
     g_list_append (image_metadata_template,
