@@ -36,15 +36,18 @@ struct _MexTrackerPluginPrivate {
   MexModelManager *manager;
   GHashTable *video_models;
   GHashTable *image_models;
+  GHashTable *music_models;
 
   GList *query_keys;
   GList *video_keys;
   GList *image_keys;
+  GList *music_keys;
 };
 
 typedef enum {
   MEX_TRACKER_CATEGORY_IMAGE,
   MEX_TRACKER_CATEGORY_VIDEO,
+  MEX_TRACKER_CATEGORY_MUSIC,
 } MexTrackerCategory;
 
 static void
@@ -80,6 +83,12 @@ mex_tracker_plugin_finalize (GObject *gobject)
       priv->image_keys = NULL;
     }
 
+  if (priv->music_keys)
+    {
+      g_list_free (priv->music_keys);
+      priv->music_keys = NULL;
+    }
+
   if (priv->video_models)
     {
       g_hash_table_foreach (priv->video_models, remove_model, self);
@@ -92,6 +101,13 @@ mex_tracker_plugin_finalize (GObject *gobject)
       g_hash_table_foreach (priv->image_models, remove_model, self);
       g_hash_table_destroy (priv->image_models);
       priv->image_models = NULL;
+    }
+
+  if (priv->music_models)
+    {
+      g_hash_table_foreach (priv->music_models, remove_model, self);
+      g_hash_table_destroy (priv->music_models);
+      priv->music_models = NULL;
     }
 
   G_OBJECT_CLASS (mex_tracker_plugin_parent_class)->finalize (gobject);
@@ -130,12 +146,21 @@ add_model (MexTrackerPlugin *self,
       metadata_keys = self->priv->image_keys;
       box = grl_media_image_new ();
       break;
+
     case MEX_TRACKER_CATEGORY_VIDEO:
       cat_name = "videos";
       query = "?urn a nmm:Video . ?urn tracker:available true";
       models = self->priv->video_models;
       metadata_keys = self->priv->video_keys;
       box = grl_media_video_new ();
+      break;
+
+    case MEX_TRACKER_CATEGORY_MUSIC:
+      cat_name = "music";
+      query = "?urn a nmm:MusicPiece . ?urn tracker:available true";
+      models = self->priv->music_models;
+      metadata_keys = self->priv->music_keys;
+      box = grl_media_audio_new ();
       break;
     }
 
@@ -193,6 +218,7 @@ handle_new_source_plugin (MexTrackerPlugin *self, GrlMediaPlugin *plugin)
 
   add_model (self, plugin, MEX_TRACKER_CATEGORY_VIDEO);
   add_model (self, plugin, MEX_TRACKER_CATEGORY_IMAGE);
+  add_model (self, plugin, MEX_TRACKER_CATEGORY_MUSIC);
 }
 
 static void
@@ -237,6 +263,13 @@ registry_source_removed_cb (GrlPluginRegistry *registry,
       mex_model_manager_remove_model (priv->manager, model);
       g_hash_table_remove (priv->image_models, source);
     }
+
+  model = g_hash_table_lookup (priv->music_models, source);
+  if (model)
+    {
+      mex_model_manager_remove_model (priv->manager, model);
+      g_hash_table_remove (priv->music_models, source);
+    }
 }
 
 static void
@@ -252,12 +285,15 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                               g_object_unref, NULL);
   priv->video_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
                                               g_object_unref, NULL);
+  priv->music_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                                              g_object_unref, NULL);
 
   priv->query_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
                                                 GRL_METADATA_KEY_TITLE,
                                                 GRL_METADATA_KEY_MIME,
                                                 GRL_METADATA_KEY_URL,
                                                 GRL_METADATA_KEY_DATE,
+                                                GRL_METADATA_KEY_THUMBNAIL,
                                                 NULL);
 
   priv->image_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
@@ -284,6 +320,16 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                 GRL_METADATA_KEY_LAST_POSITION,
                                                 GRL_METADATA_KEY_PLAY_COUNT,
                                                 GRL_METADATA_KEY_LAST_PLAYED,
+                                                NULL);
+
+  priv->music_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                GRL_METADATA_KEY_DURATION,
+                                                GRL_METADATA_KEY_THUMBNAIL,
+                                                GRL_METADATA_KEY_LAST_POSITION,
+                                                GRL_METADATA_KEY_PLAY_COUNT,
+                                                GRL_METADATA_KEY_LAST_PLAYED,
+                                                GRL_METADATA_KEY_ARTIST,
+                                                GRL_METADATA_KEY_ALBUM,
                                                 NULL);
 
   priv->manager = mex_model_manager_get_default ();
