@@ -169,14 +169,6 @@ mex_action_manager_get_actions_for_content (MexActionManager *manager,
   last_position = mex_content_get_metadata (content,
                                             MEX_CONTENT_METADATA_LAST_POSITION);
 
-  /* last_position can be 0 or null these states can be combined */
-
-  if (last_position)
-    {
-      if (g_str_equal (last_position, "0"))
-        last_position = NULL;
-    }
-
   actions = NULL;
   priv = manager->priv;
 
