@@ -83,6 +83,8 @@ struct _MexPlayerPrivate
   guint idle_mode : 1;
   guint at_eos : 1;
 
+  guint playing_from_queue : 1;
+
   gdouble position;
   gdouble current_position;
   guint   duration;
@@ -180,9 +182,9 @@ mex_player_set_content (MexContentView *view,
       sduration = mex_content_get_metadata (content,
                                             MEX_CONTENT_METADATA_DURATION);
 
-      /* TODO: handle special cases like content from a queue, in that
-         case we are likely to start from beginning. */
-      if (sduration)
+
+      if (sduration &&
+          !mex_media_controls_get_playing_queue (MEX_MEDIA_CONTROLS (priv->controls)))
         priv->duration = atoi (sduration);
       else
         priv->duration = 0;
@@ -639,10 +641,12 @@ media_eos_cb (ClutterMedia *media,
 
       if (enqueued_content)
         {
+          priv->playing_from_queue = TRUE;
           mex_player_set_content (MEX_CONTENT_VIEW (player), enqueued_content);
         }
       else
         {
+          priv->playing_from_queue = TRUE;
           mex_screensaver_uninhibit (priv->screensaver);
 
           clutter_media_set_progress (media, priv->position);
@@ -852,6 +856,8 @@ mex_get_stream_cb (MexProgram   *program,
       clutter_gst_video_texture_set_seek_flags (video_texture,
                                                 CLUTTER_GST_SEEK_FLAG_NONE);
     }
+
+  /* TODO when we have settings we can configure this feature */
 
   if (g_str_has_prefix (mex_content_get_metadata (priv->content,
                                                   MEX_CONTENT_METADATA_MIMETYPE),
