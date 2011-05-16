@@ -86,6 +86,8 @@ void mex_media_controls_set_sort_func (MexMediaControls *self,
 MexContent *
 mex_media_controls_get_enqueued (MexMediaControls *self,                                                         MexContent *current_content);
 
+gboolean mex_media_controls_get_playing_queue (MexMediaControls *self);
+
 G_END_DECLS
 
 #endif /* _MEX_MEDIA_CONTROLS_H */

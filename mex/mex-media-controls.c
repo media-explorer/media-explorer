@@ -35,7 +35,8 @@ enum
 {
   PROP_0,
 
-  PROP_MEDIA
+  PROP_MEDIA,
+  PROP_PLAYING_QUEUE
 };
 
 struct _MexMediaControlsPrivate
@@ -121,6 +122,10 @@ mex_media_controls_get_property (GObject    *object,
     {
     case PROP_MEDIA:
       g_value_set_object (value, mex_media_controls_get_media (self));
+      break;
+
+    case PROP_PLAYING_QUEUE:
+      g_value_set_boolean (value, mex_media_controls_get_playing_queue (self));
       break;
 
     default:
@@ -880,6 +885,11 @@ mex_media_controls_get_media (MexMediaControls *self)
   return self->priv->media;
 }
 
+gboolean
+mex_media_controls_get_playing_queue (MexMediaControls *self)
+{
+  return self->priv->is_queue_model;
+}
 
 void
 mex_media_controls_set_content (MexMediaControls *self,
