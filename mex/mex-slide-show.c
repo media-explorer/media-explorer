@@ -776,6 +776,17 @@ state_notify_cb (ClutterState *state,
 }
 
 
+static void
+mex_slide_show_hide (MexSlideShow *self)
+{
+  clutter_state_set_state (self->priv->state, "slideshow");
+}
+
+static void
+mex_slide_show_show (MexSlideShow *self)
+{
+  clutter_state_set_state (self->priv->state, "controls");
+}
 
 static void
 mex_slide_show_init (MexSlideShow *self)
@@ -850,6 +861,9 @@ mex_slide_show_init (MexSlideShow *self)
   clutter_state_set_state (priv->state, "slideshow");
   g_signal_connect (priv->state, "notify::state", G_CALLBACK (state_notify_cb),
                     self);
+
+  g_signal_connect (self, "hide", mex_slide_show_hide, NULL);
+  g_signal_connect (self, "show", mex_slide_show_show, NULL);
 }
 
 ClutterActor *
