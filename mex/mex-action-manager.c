@@ -185,26 +185,26 @@ mex_action_manager_get_actions_for_content (MexActionManager *manager,
     {
       gint i;
       MexActionInfo *info = value;
+      const gchar *action_name;
+      action_name = mx_action_get_name (info->action);
 
-      /* if we don't have a last position don't show:
-       * resume or play from start
-       */
-
+      /* If there isn't a last position skip: */
       if (!last_position)
         {
-          if (g_str_equal (mx_action_get_name (info->action),
-                            "play-from-last") ||
-              g_str_equal (mx_action_get_name (info->action),
-                            "play-from-begin"))
+          if (g_str_equal (action_name, "play-from-last") ||
+              g_str_equal (action_name, "play-from-begin") ||
+              g_str_equal (action_name, "listen-from-begin"))
             continue;
         }
       else
         {
-          if (g_str_equal (mx_action_get_name (info->action),
-                       "play"))
+          /* We don't want resume and listen or play because
+           * this action is provided by the start
+           */
+          if (g_str_equal (action_name, "play") ||
+              g_str_equal (action_name, "listen"))
             continue;
         }
-
 
       /* If we've been asked for actions that apply to a
        * blank mime-type, only return actions that were
