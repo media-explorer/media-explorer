@@ -2017,6 +2017,8 @@ static GOptionEntry entries[] =
 };
 
 static const gchar *play_action_mimetypes[] = { "video/", "x-mex/media", NULL };
+static const gchar *listen_action_mimetypes[] = { "audio/", NULL };
+static const gchar *resume_action_mimetypes[] = { "video/", "audio/", "x-mex/media", NULL };
 static const gchar *folder_action_mimetypes[] = { "x-grl/box", NULL };
 static const gchar *show_action_mimetypes[] = { "image/", NULL };
 static const gchar *back_action_mimetypes[] = { "x-mex/back", NULL };
@@ -2041,6 +2043,8 @@ main (int argc, char **argv)
   MexActionInfo play = { 0, };
   MexActionInfo play_from_last = { 0, };
   MexActionInfo play_from_begin = { 0, };
+  MexActionInfo listen_from_begin = { 0, };
+  MexActionInfo listen = { 0, };
   MexActionInfo open_folder = { 0, };
   MexActionInfo show = { 0, };
   MexActionInfo back = { 0, };
@@ -2361,7 +2365,7 @@ main (int argc, char **argv)
     mx_action_new_full ("play-from-last", _("Resume"),
                         G_CALLBACK (mex_play_from_last_cb), &data);
   mx_action_set_icon (play_from_last.action, "media-watch-mex");
-  play_from_last.mime_types = (gchar **)play_action_mimetypes;
+  play_from_last.mime_types = (gchar **)resume_action_mimetypes;
 
   /* This is the default action for this mime-type, so it should have the
    * highest priority. Play from beginning / Watch have slightly lower
@@ -2398,6 +2402,38 @@ main (int argc, char **argv)
   open_folder.mime_types = (gchar **)folder_action_mimetypes;
   open_folder.priority = G_MAXINT;
 
+  /* Listen action (for audio) */
+  listen.action =
+    mx_action_new_full ("listen", _("Listen"),
+                        G_CALLBACK (mex_play_from_begin_cb), &data);
+  mx_action_set_icon (listen.action, "media-listen-mex");
+  listen.mime_types = (gchar **)listen_action_mimetypes;
+  listen.priority = G_MAXINT;
+
+  listen_from_begin.action =
+    mx_action_new_full ("listen-from-begin", _("Listen from start"),
+                        G_CALLBACK (mex_play_from_begin_cb), &data);
+  mx_action_set_icon (listen_from_begin.action,
+                      "media-watch-from-beginning-mex");
+  listen_from_begin.mime_types = (gchar **)listen_action_mimetypes;
+  listen_from_begin.priority = G_MAXINT - 1;
+
+  /* View action (for pictures) */
+  show.action = mx_action_new_full ("show", _("View"),
+                                    G_CALLBACK (mex_show_cb), &data);
+  mx_action_set_icon (show.action, "media-watch-mex");
+  show.mime_types = (gchar **)show_action_mimetypes;
+  show.priority = G_MAXINT;
+
+  /* Open folder action */
+  open_folder.action =
+    mx_action_new_full ("open-grilo-folder", _("Open folder"),
+                        G_CALLBACK (mex_grilo_open_folder_cb), &data);
+  mx_action_set_icon (open_folder.action, "user-home-highlight-mex");
+  open_folder.mime_types = (gchar **)folder_action_mimetypes;
+  open_folder.priority = G_MAXINT;
+
+
   /* Go back action */
   back.action =
     mx_action_new_full ("go-back", _("Go back"),
@@ -2412,6 +2448,8 @@ main (int argc, char **argv)
   mex_action_manager_add_action (amanager, &show);
   mex_action_manager_add_action (amanager, &open_folder);
   mex_action_manager_add_action (amanager, &back);
+  mex_action_manager_add_action (amanager, &listen);
+  mex_action_manager_add_action (amanager, &listen_from_begin);
 
   /* Add the default categories to the model manager */
   mmanager = mex_model_manager_get_default ();
