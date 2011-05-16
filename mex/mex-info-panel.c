@@ -58,6 +58,7 @@ struct _MexInfoPanelPrivate
 
   GList *video_metadata_template;
   GList *image_metadata_template;
+  GList *music_metadata_template;
 };
 
 static MexContent*
@@ -75,6 +76,7 @@ typedef enum
 
   IMAGE,
   VIDEO,
+  MUSIC,
 
   LAST
 } MexInfoPanelMime;
@@ -323,6 +325,10 @@ _set_metadata (MexInfoPanel *self, MexInfoPanelMime mime)
         target = priv->video_metadata_template;
         break;
 
+      case MUSIC:
+        target = priv->music_metadata_template;
+        break;
+
       default:
         target = priv->video_metadata_template;
     }
@@ -397,6 +403,15 @@ mex_info_panel_set_content (MexContentView *view, MexContent *content)
           if (priv->buttons_container)
             clutter_actor_hide (priv->buttons_container);
           _set_metadata (self, IMAGE);
+        }
+      else if (strncmp (mimetype, "audio/", 6) == 0)
+        {
+          /* TODO fix this properly we need it to be a watch button*/
+
+          if (priv->watch_button)
+            clutter_actor_show (priv->watch_button);
+
+          _set_metadata (self, MUSIC);
         }
       /* At the moment we only have images or video */
       else
@@ -490,21 +505,18 @@ mex_info_panel_init (MexInfoPanel *self)
   video_metadata_template =
     g_list_append (video_metadata_template,
                    mex_metadata_info_new (MEX_CONTENT_METADATA_DATE,
-                                          _("Date: "),
+                                          _("Date added: "),
                                           0));
-
   video_metadata_template =
     g_list_append (video_metadata_template,
                    mex_metadata_info_new (MEX_CONTENT_METADATA_LAST_POSITION,
                                           _("Resume from: "),
                                           0));
-
   video_metadata_template =
     g_list_append (video_metadata_template,
                    mex_metadata_info_new (MEX_CONTENT_METADATA_DURATION,
                                           _("Duration: "),
-                                          0));
-
+                                          1));
   video_metadata_template =
     g_list_append (video_metadata_template,
                    mex_metadata_info_new (MEX_CONTENT_METADATA_SYNOPSIS,
@@ -512,6 +524,42 @@ mex_info_panel_init (MexInfoPanel *self)
                                           0));
 
   self->priv->video_metadata_template = video_metadata_template;
+
+  GList *music_metadata_template = NULL;
+
+  music_metadata_template =
+    g_list_append (music_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_ARTIST,
+                                          _("Artist: "),
+                                          0));
+  music_metadata_template =
+    g_list_append (music_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_ALBUM,
+                                          _("Album: "),
+                                          0));
+  music_metadata_template =
+    g_list_append (music_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_LAST_POSITION,
+                                          _("Resume from: "),
+                                          0));
+  music_metadata_template =
+    g_list_append (music_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_DURATION,
+                                          _("Duration: "),
+                                          1));
+  music_metadata_template =
+    g_list_append (music_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_PLAY_COUNT,
+                                          _("Plays: "),
+                                          0));
+  music_metadata_template =
+    g_list_append (music_metadata_template,
+                   mex_metadata_info_new (MEX_CONTENT_METADATA_DATE,
+                                          _("Date added: "),
+                                          0));
+
+  self->priv->music_metadata_template = music_metadata_template;
+
 }
 
 ClutterActor *
