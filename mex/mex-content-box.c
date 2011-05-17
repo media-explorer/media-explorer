@@ -610,6 +610,13 @@ mex_content_box_unmap (ClutterActor *actor)
   CLUTTER_ACTOR_CLASS (mex_content_box_parent_class)->unmap (actor);
 }
 
+static gboolean
+mex_content_box_get_paint_volume (ClutterActor       *actor,
+                                  ClutterPaintVolume *volume)
+{
+  return clutter_paint_volume_set_from_allocation (volume, actor);
+}
+
 static void
 mex_content_box_class_init (MexContentBoxClass *klass)
 {
@@ -626,6 +633,7 @@ mex_content_box_class_init (MexContentBoxClass *klass)
   object_class->finalize = mex_content_box_finalize;
 
   actor_class->paint = mex_content_box_paint;
+  actor_class->get_paint_volume = mex_content_box_get_paint_volume;
   actor_class->map = mex_content_box_map;
   actor_class->unmap = mex_content_box_unmap;
 
