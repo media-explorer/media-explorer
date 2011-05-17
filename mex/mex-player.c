@@ -547,7 +547,12 @@ mex_player_set_controls_visible (MexPlayer *player,
   MxFocusManager *fmanager;
 
   stage = (ClutterStage*) clutter_actor_get_stage (CLUTTER_ACTOR (player));
-  fmanager = mx_focus_manager_get_for_stage (stage);
+
+  if (stage)
+    fmanager = mx_focus_manager_get_for_stage (stage);
+  else
+    fmanager = NULL;
+
 
   pos = clutter_actor_get_height (priv->controls);
   if (visible)
@@ -566,16 +571,18 @@ mex_player_set_controls_visible (MexPlayer *player,
 
       if (priv->related_tile)
         {
-          mx_focus_manager_push_focus_with_hint (fmanager,
-                                                 MX_FOCUSABLE (priv->related_tile),
-                                                 MX_FOCUS_HINT_PRIOR);
+          if (fmanager)
+            mx_focus_manager_push_focus_with_hint (fmanager,
+                                                   MX_FOCUSABLE (priv->related_tile),
+                                                   MX_FOCUS_HINT_PRIOR);
 
           g_object_unref (priv->related_tile);
           priv->related_tile = NULL;
         }
       else
         {
-          mx_focus_manager_push_focus (fmanager, MX_FOCUSABLE (priv->controls));
+          if (fmanager)
+            mx_focus_manager_push_focus (fmanager, MX_FOCUSABLE (priv->controls));
         }
     }
 
