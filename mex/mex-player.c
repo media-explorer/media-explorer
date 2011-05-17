@@ -954,6 +954,7 @@ mex_player_stop (MexPlayer *player)
   if (priv->idle_mode)
     return;
 
+  clutter_media_set_uri (CLUTTER_MEDIA (priv->media), NULL);
   clutter_media_set_playing (priv->media, FALSE);
   g_signal_emit (player, signals[CLOSE_REQUEST], 0);
 }
