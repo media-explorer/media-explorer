@@ -1,0 +1,53 @@
+This package was debianized by Lionel Landwerlin <llandwerlin@gmail.com> on
+Wed, 18 May 2011 17:05:00 +0000
+
+It was downloaded from http://media-explorer.github.com/
+
+Upstream Author(s):
+
+    Chris Lord <chris@linux.intel.com>
+    Damien Lespiau <damien.lespiau@intel.com>
+    Dave Tappy <dave.tappy@gmail.com>
+    Elliot Smith <elliot.smith@intel.com>
+    Hannah Scurfield <hannah.l.scurfield@intel.com>
+    Hylke Bons <hylkebons@gmail.com>
+    Iain Holmes <iain@linux.intel.com>
+    Jussi Kukkonen <jku@linux.intel.com>
+    Lionel Landwerlin <lionel.g.landwerlin@linux.intel.com>
+    Michael Wood <michael.g.wood@linux.intel.com>
+    Robert Bradford <rob@linux.intel.com>
+    Ross Burton <ross.burton@intel.com>
+    Ross Varlese <ross.varlese@gmail.com>
+    Thomas Wood <thomas.wood@intel.com>
+    Victor Szilagyi <victor@semiot.com>
+
+Copyright:
+
+    Copyright (C) 2011 Intel Corporation.
+
+License:
+
+    This package is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2 of the License, or (at your option) any later version.
+
+    This package is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this package; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+
+On Debian systems, the complete text of the GNU Lesser General
+Public License can be found in `/usr/share/common-licenses/LGPL-2'.
+
+The Debian packaging is:
+
+    Copyright (C) 2011 Lionel Landwerlin <llandwerlin@gmail.com>
+
+and is licensed under the GPL version 3,
+see `/usr/share/common-licenses/GPL-3'.
+
