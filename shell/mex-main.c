@@ -187,6 +187,113 @@ mex_player_media_notify_buffer_fill_cb (ClutterMedia *media,
 }
 
 static void
+play_transition_complete (ClutterAnimation *animation,
+                          ClutterActor     *actor)
+{
+  GObject *fade;
+  MexContent *content;
+  MexData *data;
+
+  fade = clutter_animation_get_object (animation);
+  content = g_object_get_data (fade, "mex-content");
+  data = g_object_get_data (fade, "mex-data");
+
+  clutter_actor_destroy (CLUTTER_ACTOR (fade));
+
+  mex_show_actor (data, actor);
+  mex_hide_actor (data, data->explorer);
+
+  mex_content_view_set_content (MEX_CONTENT_VIEW (actor), content);
+}
+
+static void
+explorer_transition_complete (ClutterAnimation *animation,
+                              ClutterActor     *actor)
+{
+  ClutterActor *explorer;
+
+  explorer = (ClutterActor*)clutter_animation_get_object (animation);
+
+  clutter_actor_set_scale (explorer, 1.0, 1.0);
+  clutter_actor_set_opacity (explorer, 255);
+}
+
+static void
+run_play_transition (MexData      *data,
+                     MexContent   *content,
+                     ClutterActor *actor,
+                     gboolean      fade_out)
+{
+  ClutterActor *fade;
+  gfloat x, y, width, height, stage_width, stage_height;
+  ClutterColor black = {0, 0, 0, 255};
+  ClutterActor *focused, *a;
+  MxFocusManager *manager;
+  gint duration = 500;
+
+  clutter_actor_get_size (CLUTTER_ACTOR (data->stage), &stage_width,
+                          &stage_height);
+
+  fade = clutter_rectangle_new_with_color (&black);
+  g_object_set_data (G_OBJECT (fade), "mex-content", content);
+  g_object_set_data (G_OBJECT (fade), "mex-data", data);
+  clutter_actor_set_opacity (fade, 128);
+  clutter_actor_set_anchor_point_from_gravity (fade, CLUTTER_GRAVITY_CENTER);
+  clutter_actor_set_rotation (fade, CLUTTER_X_AXIS, -80, 0, 0, 0);
+
+  /* find the content box that has been activated */
+  manager = mx_focus_manager_get_for_stage (data->stage);
+  a = (ClutterActor*) mx_focus_manager_get_focused (manager);
+  while (a)
+    {
+      if (MEX_IS_CONTENT_BOX (a))
+        break;
+      a = clutter_actor_get_parent (a);
+    }
+
+  if (a)
+    {
+      clutter_actor_get_transformed_position (a, &x, &y);
+      clutter_actor_get_size (CLUTTER_ACTOR (a), &width, &height);
+
+      clutter_actor_set_position (fade, x + width / 2, y + height / 2);
+      clutter_actor_set_size (CLUTTER_ACTOR (fade), width, height);
+    }
+  else
+    {
+      /* show the actor immediately if no content box was found */
+      mex_hide_actor (data, data->explorer);
+      mex_show_actor (data, actor);
+      mex_content_view_set_content (MEX_CONTENT_VIEW (actor), content);
+
+      clutter_actor_destroy (fade);
+
+      return;
+    }
+
+  clutter_container_add (CLUTTER_CONTAINER (data->stage), fade, NULL);
+  clutter_actor_raise_top (fade);
+
+  g_object_set (data->explorer, "scale-gravity", CLUTTER_GRAVITY_CENTER, NULL);
+  clutter_actor_animate (data->explorer, CLUTTER_EASE_IN_OUT_CUBIC, duration,
+                         "scale-x", 0.9, "scale-y", 0.9,
+                         "signal-after::completed",
+                         explorer_transition_complete, actor,
+                         "opacity", 128, NULL);
+
+  clutter_actor_animate (fade, CLUTTER_EASE_OUT_CUBIC, duration,
+                         "opacity", 255,
+                         "x", stage_width / 2.0,
+                         "y", stage_height / 2.0,
+                         "width", stage_width,
+                         "height", stage_height,
+                         "rotation-angle-x", (gdouble) 0,
+                         "signal-after::completed", play_transition_complete,
+                         actor,
+                         NULL);
+}
+
+static void
 mex_play_from_last_cb (MxAction *action, MexData *data)
 {
   MexContent *content = mex_action_get_content (action);
@@ -201,14 +308,12 @@ mex_play_from_last_cb (MxAction *action, MexData *data)
 
   g_object_set (content, "last-position-start", TRUE, NULL);
   mex_content_view_set_context (MEX_CONTENT_VIEW (data->player), model);
-  mex_content_view_set_content (MEX_CONTENT_VIEW (data->player), content);
 
   /* hide other actors */
-  mex_hide_actor (data, data->explorer);
   mex_hide_actor (data, data->slide_show);
 
   /* show the video player */
-  mex_show_actor (data, data->player);
+  run_play_transition (data, content, data->player, TRUE);
 }
 
 static void
@@ -226,14 +331,12 @@ mex_play_from_begin_cb (MxAction *action, MexData *data)
 
   g_object_set (content, "last-position-start", FALSE, NULL);
   mex_content_view_set_context (MEX_CONTENT_VIEW (data->player), model);
-  mex_content_view_set_content (MEX_CONTENT_VIEW (data->player), content);
 
   /* hide other actors */
-  mex_hide_actor (data, data->explorer);
   mex_hide_actor (data, data->slide_show);
 
   /* show the video player */
-  mex_show_actor (data, data->player);
+  run_play_transition (data, content, data->player, TRUE);
 }
 
 static void
@@ -251,18 +354,15 @@ mex_show_cb (MxAction *action, MexData *data)
 
   /* start the slide show */
   mex_content_view_set_context (MEX_CONTENT_VIEW (data->slide_show), model);
-  mex_content_view_set_content (MEX_CONTENT_VIEW (data->slide_show), content);
-
 
   /* hide other actors */
-  mex_hide_actor (data, data->explorer);
   mex_hide_actor (data, data->player);
 
   /* stop any playing video, even in idle mode */
   mex_player_set_idle_mode (MEX_PLAYER (data->player), FALSE);
 
   /* show the slide show */
-  mex_show_actor (data, data->slide_show);
+  run_play_transition (data, content, data->slide_show, FALSE);
 }
 
 static gboolean
@@ -1092,11 +1192,7 @@ mex_hide_actor (MexData      *data,
       clutter_actor_lower_bottom (data->player);
     }
   else
-    clutter_actor_animate (actor, ALPHA, DURATION,
-                           "opacity", 0,
-                           "signal-swapped::completed", clutter_actor_hide,
-                           actor,
-                           NULL);
+    clutter_actor_hide (actor);
 }
 
 
