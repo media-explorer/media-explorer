@@ -227,5 +227,5 @@ if ENABLE_NETWORKS
 dist_applications_DATA += mex-networks.desktop
 endif
 
-griloconfdir = $(sysconfdir)/$(PACKAGE)
+griloconfdir = $(datadir)/$(PACKAGE)
 dist_griloconf_DATA = grilo-system.conf
