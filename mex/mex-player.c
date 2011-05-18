@@ -912,6 +912,8 @@ mex_player_set_idle_mode (MexPlayer *player,
 
   priv->idle_mode = idle;
 
+  mex_player_set_controls_visible (player, !idle);
+
   if (idle)
     {
       clutter_actor_hide (priv->controls);
