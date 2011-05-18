@@ -422,7 +422,7 @@ set_metadata_from_media (MexProgram          *program,
   if (!grl_key)
     return;
 
-  switch (G_PARAM_SPEC (grl_key)->value_type) {
+  switch (GRL_METADATA_KEY_GET_TYPE (grl_key)) {
   case G_TYPE_STRING:
     cstring = grl_data_get_string (GRL_DATA (media), grl_key);
     if (cstring)
@@ -464,7 +464,7 @@ set_metadata_to_media (GrlMedia           *media,
     return;
   }
 
-  switch (G_PARAM_SPEC (grl_key)->value_type) {
+  switch (GRL_METADATA_KEY_GET_TYPE (grl_key)) {
   case G_TYPE_STRING:
     grl_data_set_string (GRL_DATA (media), grl_key, value);
     break;
