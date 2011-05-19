@@ -1,13 +1,11 @@
 [
   {
     "type" : "MxAction",
-    "id" : "play-pause-action",
-    "icon" : "media-playback-start"
+    "id" : "play-pause-action"
   },
   {
     "type" : "MxAction",
-    "id" : "stop-action",
-    "icon" : "media-playback-stop"
+    "id" : "stop-action"
   },
   {
     "type" : "MxAction",
