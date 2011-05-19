@@ -99,62 +99,61 @@ dist_volumecontrolstyle_DATA = \
 
 
 
-icondir = $(datadir)/icons/hicolor/scalable
+icondir = $(styledir)/icons/mex
+dist_icon_DATA = \
+		 icons/index.theme
 
-icon_statusdir = $(icondir)/status
-dist_icon_status_DATA = \
-			icons/icon-notifications.png
+icon_22x22dir = $(icondir)/22x22
+dist_icon_22x22_DATA = \
+		 icons/icon-info-highlight.png
 
-icon_actionsdir = $(icondir)/actions
-dist_icon_actions_DATA = \
-			 icons/icon-power.png \
-			 icons/icon-power-highlight.png \
-			 icons/icon-settings.png \
-			 icons/icon-settings-highlight.png \
-			 icons/icon-checkbox-off.png \
-			 icons/icon-checkbox-off-highlight.png \
-			 icons/icon-checkbox-on.png \
-			 icons/icon-checkbox-on-highlight.png \
-			 icons/icon-info-highlight.png \
-			 icons/media-addtoqueue-mex.png \
-			 icons/media-addtoqueue-mex-highlight.png \
-			 icons/media-removefromqueue-mex.png \
-			 icons/media-removefromqueue-mex-highlight.png \
-			 icons/media-watch-mex.png \
-			 icons/media-watch-mex-highlight.png \
-			 icons/media-watch-from-beginning-mex.png \
-			 icons/media-watch-from-beginning-mex-highlight.png \
-			 icons/x-mex-app-launch-mex.png \
-			 icons/x-mex-app-launch-mex-highlight.png \
-			 icons/stock_left-mex-highlight.png \
-			 icons/stock_left-mex.png \
-			 icons/stock_right-mex-highlight.png \
-			 icons/stock_right-mex.png
-
-icon_categoriesdir = $(icondir)/categories
-dist_icon_categories_DATA = \
-			    icons/icon-panelheader-apps.png \
-			    icons/icon-panelheader-apps-highlight.png \
-			    icons/icon-panelheader-computer-highlight.png \
-			    icons/icon-panelheader-computer.png \
-			    icons/icon-panelheader-photos.png \
-			    icons/icon-panelheader-photos-highlight.png \
-			    icons/icon-panelheader-recommended.png \
-			    icons/icon-panelheader-recommended-highlight.png \
-			    icons/icon-panelheader-recorded.png \
-			    icons/icon-panelheader-recorded-highlight.png \
-			    icons/icon-panelheader-search.png \
-			    icons/icon-panelheader-search-highlight.png \
-			    icons/icon-panelheader-tv.png \
-			    icons/icon-panelheader-tv-highlight.png \
-			    icons/icon-panelheader-music.png \
-			    icons/icon-panelheader-music-highlight.png \
-			    icons/icon-panelheader-queue-highlight.png \
-			    icons/icon-panelheader-queue.png \
-			    icons/icon-panelheader-usb-highlight.png \
-			    icons/icon-panelheader-usb.png \
-			    icons/icon-panelheader-videos.png \
-			    icons/icon-panelheader-videos-highlight.png
+icon_26x26dir = $(icondir)/26x26
+dist_icon_26x26_DATA = \
+		 icons/icon-notifications.png \
+		 icons/icon-power.png \
+		 icons/icon-power-highlight.png \
+		 icons/icon-settings.png \
+		 icons/icon-settings-highlight.png \
+		 icons/icon-checkbox-off.png \
+		 icons/icon-checkbox-off-highlight.png \
+		 icons/icon-checkbox-on.png \
+		 icons/icon-checkbox-on-highlight.png \
+		 icons/media-addtoqueue-mex.png \
+		 icons/media-addtoqueue-mex-highlight.png \
+		 icons/media-removefromqueue-mex.png \
+		 icons/media-removefromqueue-mex-highlight.png \
+		 icons/media-watch-mex.png \
+		 icons/media-watch-mex-highlight.png \
+		 icons/media-watch-from-beginning-mex.png \
+		 icons/media-watch-from-beginning-mex-highlight.png \
+		 icons/x-mex-app-launch-mex.png \
+		 icons/x-mex-app-launch-mex-highlight.png \
+		 icons/stock_left-mex-highlight.png \
+		 icons/stock_left-mex.png \
+		 icons/stock_right-mex-highlight.png \
+		 icons/stock_right-mex.png \
+		 icons/icon-panelheader-apps.png \
+		 icons/icon-panelheader-apps-highlight.png \
+		 icons/icon-panelheader-computer-highlight.png \
+		 icons/icon-panelheader-computer.png \
+		 icons/icon-panelheader-photos.png \
+		 icons/icon-panelheader-photos-highlight.png \
+		 icons/icon-panelheader-recommended.png \
+		 icons/icon-panelheader-recommended-highlight.png \
+		 icons/icon-panelheader-recorded.png \
+		 icons/icon-panelheader-recorded-highlight.png \
+		 icons/icon-panelheader-search.png \
+		 icons/icon-panelheader-search-highlight.png \
+		 icons/icon-panelheader-tv.png \
+		 icons/icon-panelheader-tv-highlight.png \
+		 icons/icon-panelheader-music.png \
+		 icons/icon-panelheader-music-highlight.png \
+		 icons/icon-panelheader-queue-highlight.png \
+		 icons/icon-panelheader-queue.png \
+		 icons/icon-panelheader-usb-highlight.png \
+		 icons/icon-panelheader-usb.png \
+		 icons/icon-panelheader-videos.png \
+		 icons/icon-panelheader-videos-highlight.png
 
 if ENABLE_REBINDER
 rebinderdir = $(pkgdatadir)/rebinder

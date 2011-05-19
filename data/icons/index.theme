@@ -1,0 +1,16 @@
+[Icon Theme]
+Name=mex
+Comment=Media Explorer icon theme
+Inherits=gnome
+
+Directories=22x22,26x26
+
+[22x22]
+Context=Icons
+Size=22
+Type=Fixed
+
+[26x26]
+Context=Icons
+Size=26
+Type=Fixed

@@ -88,8 +88,29 @@ static GQuark mex_action_model_quark = 0;
 void
 mex_style_load_default ()
 {
-  GError *error = NULL;
+  GList *d, *dirs;
 
+  GError *error = NULL;
+  MxIconTheme *theme = mx_icon_theme_get_default ();
+
+  /* Set the icon theme */
+  dirs = g_list_copy (mx_icon_theme_get_search_paths (theme));
+
+  for (d = dirs; d; d = d->next)
+    d->data = g_strdup (d->data);
+  dirs = g_list_prepend (dirs, g_strdup (PKGDATADIR "/style/icons"));
+
+  mx_icon_theme_set_search_paths (theme, dirs);
+
+  while (dirs)
+    {
+      g_free (dirs->data);
+      dirs = g_list_delete_link (dirs, dirs);
+    }
+
+  mx_icon_theme_set_theme_name (theme, "mex");
+
+  /* Load the style */
   mx_style_load_from_file (mx_style_get_default (),
                            PKGDATADIR "/style/style.css",
                            &error);
