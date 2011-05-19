@@ -1149,8 +1149,7 @@ mex_show_actor (MexData      *data,
     {
       /* main menu view */
       mx_widget_set_disabled (MX_WIDGET (data->layout), FALSE);
-      clutter_actor_animate (data->layout, ALPHA, DURATION,
-                             "opacity", 0xff, NULL);
+      clutter_actor_set_opacity (data->layout, 0xff);
     }
   else if (actor == data->player)
     {
@@ -1182,8 +1181,7 @@ mex_hide_actor (MexData      *data,
     {
       /* main menu view */
       mx_widget_set_disabled (MX_WIDGET (data->layout), TRUE);
-      clutter_actor_animate (data->layout, ALPHA, DURATION,
-                             "opacity", 0x00, NULL);
+      clutter_actor_set_opacity (data->layout, 0);
     }
   else if (actor == data->player)
     {
