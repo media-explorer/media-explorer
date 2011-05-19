@@ -16,6 +16,7 @@
     "type" : "MexScrollView",
     "id" : "media-controls",
     "indicators-hidden" : true,
+    "scroll-policy" : "vertical",
     "height" : 150,
     "children" : [
       {
@@ -96,6 +97,7 @@
           {
             "type" : "MexScrollView",
             "indicators-hidden" : true,
+            "scroll-policy" : "horizontal",
             "children" : [
               {
                 "type" : "MxBoxLayout",
