@@ -512,50 +512,73 @@ mex_media_controls_update_header (MexMediaControls *self)
                                                MEX_CONTENT_METADATA_TITLE));
 }
 
+static void
+mex_media_controls_replace_content (MexMediaControls *self,
+                                    MexContent       *content)
+{
+  MexPlayer *player;
+  MxScrollable *related_box;
+  MxAdjustment *adjustment;
+  gdouble upper;
+
+  MexMediaControlsPrivate *priv = self->priv;
+
+  player = mex_player_get_default ();
+
+  mex_content_view_set_content (MEX_CONTENT_VIEW (player), content);
+
+  priv->content = content;
+  mex_media_controls_update_header (self);
+  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->queue_button),
+                                content);
+
+  mex_push_focus ((MxFocusable*) clutter_script_get_object (priv->script,
+                                              "play-pause-button"));
+
+  related_box = (MxScrollable *)clutter_script_get_object (priv->script,
+                                                           "related-box");
+  mx_scrollable_get_adjustments (MX_SCROLLABLE (related_box),
+                                 &adjustment, NULL);
+
+  mx_adjustment_get_values (adjustment, NULL, NULL, &upper,
+                            NULL, NULL, NULL);
+
+  mx_adjustment_set_value (adjustment, upper);
+  mx_scrollable_set_adjustments (MX_SCROLLABLE (related_box),
+                                 adjustment,
+                                 NULL);
+}
+
 static gboolean
 key_press_event_cb (ClutterActor    *actor,
                     ClutterKeyEvent *event,
                     gpointer         user_data)
 {
-  MexMediaControlsPrivate *priv = MEX_MEDIA_CONTROLS (user_data)->priv;
+  MexMediaControls *self = MEX_MEDIA_CONTROLS (user_data);
 
   if (event->keyval == MEX_KEY_OK)
     {
-      MexContent *content;
-      MexPlayer *player;
-      MxScrollable *related_box;
-      MxAdjustment *adjustment;
-      gdouble upper;
+      MexContent *content =
+        mex_content_view_get_content (MEX_CONTENT_VIEW (actor));
+      mex_media_controls_replace_content (self, content);
 
-      content = mex_content_view_get_content (MEX_CONTENT_VIEW (actor));
-
-      player = mex_player_get_default ();
-
-      mex_content_view_set_content (MEX_CONTENT_VIEW (player), content);
-
-      priv->content = content;
-      mex_media_controls_update_header (user_data);
-      mex_content_view_set_content (MEX_CONTENT_VIEW (priv->queue_button),
-                                    content);
-
-      mex_push_focus ((MxFocusable*) clutter_script_get_object (priv->script,
-                                                  "play-pause-button"));
-
-      related_box = (MxScrollable *)clutter_script_get_object (priv->script,
-                                                               "related-box");
-      mx_scrollable_get_adjustments (MX_SCROLLABLE (related_box),
-                                     &adjustment, NULL);
-
-      mx_adjustment_get_values (adjustment, NULL, NULL, &upper,
-                                NULL, NULL, NULL);
-
-      mx_adjustment_set_value (adjustment, upper);
-      mx_scrollable_set_adjustments (MX_SCROLLABLE (related_box),
-                                     adjustment,
-                                     NULL);
+      return TRUE;
     }
 
   return FALSE;
+}
+
+static gboolean
+button_release_event_cb (ClutterActor       *actor,
+                         ClutterButtonEvent *event,
+                         gpointer            user_data)
+{
+  MexMediaControls *self = MEX_MEDIA_CONTROLS (user_data);
+  MexContent *content = mex_content_view_get_content (MEX_CONTENT_VIEW (actor));
+
+  mex_media_controls_replace_content (self, content);
+
+  return TRUE;
 }
 
 static MexShadow*
@@ -620,11 +643,14 @@ tile_created_cb (MexProxy *proxy,
     }
 
   mex_tile_set_important (MEX_TILE (object), TRUE);
+  clutter_actor_set_reactive (CLUTTER_ACTOR (object), TRUE);
 
   g_object_set (object, "thumb-height", 140, "thumb-width", 250, NULL);
 
   g_signal_connect (object, "key-press-event", G_CALLBACK (key_press_event_cb),
                     controls);
+  g_signal_connect (object, "button-release-event",
+                    G_CALLBACK (button_release_event_cb), controls);
 
   g_signal_connect (object, "focus-in", G_CALLBACK (tile_focus_in_cb), NULL);
   g_signal_connect (object, "focus-out", G_CALLBACK (tile_focus_out_cb), NULL);
