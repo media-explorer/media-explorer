@@ -401,12 +401,23 @@ mex_player_restart_timer (MexPlayer *player)
 
 
 static gboolean
-mex_player_captured_event (ClutterActor    *actor,
+mex_player_captured_event (ClutterActor *actor,
                            ClutterEvent *event)
 {
-  MexPlayerPrivate *priv = MEX_PLAYER (actor)->priv;
+  MexPlayer *self = MEX_PLAYER (actor);
+  MexPlayerPrivate *priv = self->priv;
 
-  if (!priv->controls_prev_visible)
+  /* Do nothing if the info panel is up */
+  if (priv->controls_prev_visible)
+    return FALSE;
+
+  /* If a mouse button was pressed and the controls aren't visible, show them,
+   * otherwise restart the control-showing timer.
+   */
+  if ((event->type == CLUTTER_BUTTON_PRESS) &&
+      !priv->controls_visible)
+    mex_player_set_controls_visible (self, TRUE);
+  else
     mex_player_restart_timer (MEX_PLAYER (actor));
 
   return FALSE;
@@ -496,9 +507,6 @@ mex_player_key_press_event (ClutterActor    *actor,
           return TRUE;
         }
     }
-
-  /* any other key presses should reset the hide timer */
-  mex_player_restart_timer (MEX_PLAYER (actor));
 
   return FALSE;
 }
@@ -919,6 +927,7 @@ mex_player_set_idle_mode (MexPlayer *player,
       clutter_actor_hide (priv->controls);
       clutter_actor_hide (priv->info_panel);
       mx_widget_set_disabled (MX_WIDGET (player), TRUE);
+      clutter_actor_set_reactive (CLUTTER_ACTOR (player), FALSE);
 
       if (priv->content) {
         save_old_content (player);
@@ -941,6 +950,7 @@ mex_player_set_idle_mode (MexPlayer *player,
       clutter_actor_show (priv->controls);
       clutter_actor_show (priv->info_panel);
       mx_widget_set_disabled (MX_WIDGET (player), FALSE);
+      clutter_actor_set_reactive (CLUTTER_ACTOR (player), TRUE);
       clutter_media_set_playing (priv->media, FALSE);
       clutter_media_set_uri (priv->media, NULL);
 
