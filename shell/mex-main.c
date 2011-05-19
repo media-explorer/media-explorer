@@ -1416,7 +1416,7 @@ mex_enable_touch_events (MexData *data)
 
   /* FIXME: This value is arbitrary and should be set by the platform */
   settings = mx_settings_get_default ();
-  g_object_set (G_OBJECT (settings), "drag-threshold", (guint)5, NULL);
+  g_object_set (G_OBJECT (settings), "drag-threshold", (guint)10, NULL);
 }
 
 static gboolean
