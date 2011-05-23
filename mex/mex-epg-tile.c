@@ -163,7 +163,8 @@ mex_epg_tile_set_event (MexEpgTile  *tile,
 
   /* Update the label of the button */
   program = mex_epg_event_get_program (event);
-  title = mex_program_get_metadata (program, MEX_CONTENT_METADATA_TITLE);
+  title = mex_content_get_metadata (MEX_CONTENT (program),
+                                    MEX_CONTENT_METADATA_TITLE);
   mx_button_set_label (MX_BUTTON (tile), title);
   mx_bin_set_alignment (MX_BIN (tile), MX_ALIGN_START, MX_ALIGN_MIDDLE);
 

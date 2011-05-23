@@ -264,6 +264,27 @@ mex_content_save_metadata (MexContent *content)
 }
 
 void
+mex_content_foreach_metadata (MexContent           *content,
+                              MexContentMetadataCb  callback,
+                              gpointer              data)
+{
+  MexContentIface *iface;
+
+  g_return_if_fail (MEX_IS_CONTENT (content));
+  g_return_if_fail (callback != NULL);
+
+  iface = MEX_CONTENT_GET_IFACE (content);
+
+  if (iface->foreach_metadata) {
+    iface->foreach_metadata (content, callback, data);
+    return;
+  }
+
+  g_warning ("MexContent of type '%s' does not implement foreach_metadata()",
+             g_type_name (G_OBJECT_TYPE (content)));
+}
+
+void
 mex_content_set_last_used_metadatas (MexContent *content)
 {
   guint count;

@@ -178,7 +178,7 @@ verify_event (MexEpgEvent *event,
     {
       const gchar *metadata;
 
-      metadata = mex_program_get_metadata (program, index2key[i]);
+      metadata = mex_content_get_metadata (MEX_CONTENT (program), index2key[i]);
       g_assert_cmpstr (expected->metadata[i], ==, metadata);
     }
 

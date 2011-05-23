@@ -201,6 +201,18 @@ mex_grilo_program_finalize (GObject *object)
   G_OBJECT_CLASS (mex_grilo_program_parent_class)->finalize (object);
 }
 
+static void
+mex_grilo_program_set_metadata (MexContent *content,
+                                MexContentMetadata key,
+                                const gchar *value)
+{
+  MexContentIface        *iface, *parent_iface;
+
+  iface = MEX_CONTENT_GET_IFACE (content);
+  parent_iface = g_type_interface_peek_parent (iface);
+  parent_iface->set_metadata (content, key, value);
+}
+
 typedef struct
 {
   MexGriloProgram   *self;
@@ -216,15 +228,19 @@ mex_grilo_program_get_stream_cb (GrlMediaSource *source,
                                  const GError   *error)
 {
   MexGriloProgramClosure *closure = userdata;
-  MexProgram *program = MEX_PROGRAM (closure->self);
+  MexContent *content = MEX_CONTENT (closure->self);
+  const gchar *url = grl_media_get_url (media);
 
-  mex_program_set_metadata (program, MEX_CONTENT_METADATA_STREAM,
-                            grl_media_get_url (media));
-  closure->reply (program, grl_media_get_url (media), error, closure->userdata);
+  MEX_CONTENT_IFACE (mex_grilo_program_parent_class)->set_metadata (content,
+                                                                    MEX_CONTENT_METADATA_STREAM,
+                                                                    url);
 
-  g_slice_free (MexGriloProgramClosure, closure);
-  g_object_unref (program);
+  closure->reply (MEX_PROGRAM (content),
+                  url, error, closure->userdata);
+
+  g_object_unref (content);
   g_object_unref (source);
+  g_slice_free (MexGriloProgramClosure, closure);
 }
 
 static gboolean
@@ -335,18 +351,21 @@ get_thumbnail_path_for_uri (const char *uri)
 static void
 thumbnail_cb (const char *uri, gpointer user_data)
 {
-  MexProgram *program;
+  MexContent *content;
   char *thumb_path;
 
-  program = MEX_PROGRAM (user_data);
+  content = MEX_CONTENT (user_data);
 
   thumb_path = get_thumbnail_path_for_uri (uri);
 
-  if (g_file_test (thumb_path, G_FILE_TEST_EXISTS)) {
-    gchar *thumb_uri = g_filename_to_uri (thumb_path, NULL, NULL);
-    mex_program_set_metadata (program, MEX_CONTENT_METADATA_STILL, thumb_uri);
-    g_free (thumb_uri);
-  }
+  if (g_file_test (thumb_path, G_FILE_TEST_EXISTS))
+    {
+      gchar *thumb_uri = g_filename_to_uri (thumb_path, NULL, NULL);
+      mex_grilo_program_set_metadata (content,
+                                      MEX_CONTENT_METADATA_STILL,
+                                      thumb_uri);
+      g_free (thumb_uri);
+    }
 
   g_free (thumb_path);
 }
@@ -358,7 +377,7 @@ thumbnail_cb (const char *uri, gpointer user_data)
  *
  */
 static void
-mex_grilo_program_thumbnail (MexProgram *program, GrlMedia *media)
+mex_grilo_program_thumbnail (MexContent *content, GrlMedia *media)
 {
   const char *url;
   char *thumb_path;
@@ -374,7 +393,7 @@ mex_grilo_program_thumbnail (MexProgram *program, GrlMedia *media)
 
       tmp = g_build_filename (mex_get_data_dir (), "common", "folder-tile.png",
                               NULL);
-      mex_program_set_metadata (program, MEX_CONTENT_METADATA_STILL, tmp);
+      mex_grilo_program_set_metadata (content, MEX_CONTENT_METADATA_STILL, tmp);
       g_free (tmp);
       return;
     }
@@ -383,7 +402,8 @@ mex_grilo_program_thumbnail (MexProgram *program, GrlMedia *media)
    * If we're already got a thumbnail, see if we're happy with it or want to
    * ignore it.
    */
-  thumb_path = (char*)mex_program_get_metadata (program, MEX_CONTENT_METADATA_STILL);
+  thumb_path = (char*)mex_content_get_metadata (content,
+                                                MEX_CONTENT_METADATA_STILL);
   if (thumb_path) {
     /* If the thumbnail is already a good one, we're done */
     if (thumb_path && strstr (thumb_path, "/.thumbnails/x-huge/"))
@@ -395,7 +415,7 @@ mex_grilo_program_thumbnail (MexProgram *program, GrlMedia *media)
      * If your platform doesn't have Totem then this can be removed!
      */
     if (thumb_path && strstr (thumb_path, "/.thumbnails/normal/"))
-      mex_program_set_metadata (program, MEX_CONTENT_METADATA_STILL, NULL);
+      mex_grilo_program_set_metadata (content, MEX_CONTENT_METADATA_STILL, NULL);
   }
 
   /*
@@ -405,18 +425,19 @@ mex_grilo_program_thumbnail (MexProgram *program, GrlMedia *media)
   thumb_path = get_thumbnail_path_for_uri (url);
   if (g_file_test (thumb_path, G_FILE_TEST_EXISTS)) {
     gchar *thumb_uri = g_filename_to_uri (thumb_path, NULL, NULL);
-    mex_program_set_metadata (program, MEX_CONTENT_METADATA_STILL,
-                              thumb_uri);
+    mex_grilo_program_set_metadata (content, MEX_CONTENT_METADATA_STILL,
+                                    thumb_uri);
     g_free (thumb_uri);
   } else {
-    mex_thumbnailer_generate (url, grl_media_get_mime (media), thumbnail_cb, program);
+    mex_thumbnailer_generate (url, grl_media_get_mime (media),
+                              thumbnail_cb, content);
   }
   g_free (thumb_path);
 }
 
 /* Returns whether to free the value parameter or not. */
 static void
-set_metadata_from_media (MexProgram          *program,
+set_metadata_from_media (MexContent          *content,
                          GrlMedia            *media,
                          MexContentMetadata   mex_key)
 {
@@ -432,7 +453,7 @@ set_metadata_from_media (MexProgram          *program,
   case G_TYPE_STRING:
     cstring = grl_data_get_string (GRL_DATA (media), grl_key);
     if (cstring)
-      mex_program_set_metadata (program, mex_key, cstring);
+      mex_grilo_program_set_metadata (content, mex_key, cstring);
     break;
 
   case G_TYPE_INT:
@@ -441,7 +462,7 @@ set_metadata_from_media (MexProgram          *program,
     if (n > 0)
       {
         string = g_strdup_printf ("%i", n);
-        mex_program_set_metadata (program, mex_key, string);
+        mex_grilo_program_set_metadata (content, mex_key, string);
         g_free (string);
       }
     break;
@@ -449,7 +470,7 @@ set_metadata_from_media (MexProgram          *program,
   case G_TYPE_FLOAT:
     string = g_strdup_printf ("%f", grl_data_get_float (GRL_DATA (media),
                                                         grl_key));
-    mex_program_set_metadata (program, mex_key, string);
+    mex_grilo_program_set_metadata (content, mex_key, string);
     g_free (string);
     break;
   }
@@ -488,7 +509,7 @@ set_metadata_to_media (GrlMedia           *media,
 }
 
 static void
-set_metadatas_from_media (MexProgram *program,
+set_metadatas_from_media (MexContent *content,
                           GrlMedia   *media)
 {
   /* FIXME: This list is just hard-coded and needs to be the same as
@@ -496,26 +517,26 @@ set_metadatas_from_media (MexProgram *program,
    *        to add an API to retrieve all setted keys, we might want
    *        to use that.
    */
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_TITLE);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_SYNOPSIS);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_MIMETYPE);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_STILL);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_STREAM);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_WIDTH);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_HEIGHT);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_DATE);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_DURATION);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_LAST_POSITION);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_PLAY_COUNT);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_LAST_PLAYED_DATE);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_CAMERA_MODEL);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_ORIENTATION);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_FLASH_USED);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_EXPOSURE_TIME);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_ISO_SPEED);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_CREATION_DATE);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_ALBUM);
-  set_metadata_from_media (program, media, MEX_CONTENT_METADATA_ARTIST);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_TITLE);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_SYNOPSIS);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_MIMETYPE);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_STILL);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_STREAM);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_WIDTH);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_HEIGHT);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_DATE);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_DURATION);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_LAST_POSITION);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_PLAY_COUNT);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_LAST_PLAYED_DATE);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_CAMERA_MODEL);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_ORIENTATION);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_FLASH_USED);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_EXPOSURE_TIME);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_ISO_SPEED);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_CREATION_DATE);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_ALBUM);
+  set_metadata_from_media (content, media, MEX_CONTENT_METADATA_ARTIST);
 
 }
 
@@ -527,11 +548,11 @@ program_complete_cb (GrlMediaSource *source,
                      const GError   *error)
 {
   MexGriloProgram *self = userdata;
-  MexProgram *program = MEX_PROGRAM (self);
+  MexContent *content = MEX_CONTENT (self);
 
-  set_metadatas_from_media (program, media);
+  set_metadatas_from_media (content, media);
 
-  mex_grilo_program_thumbnail (program, media);
+  mex_grilo_program_thumbnail (content, media);
 
   g_object_unref (self);
   g_object_unref (source);
@@ -593,10 +614,7 @@ _mex_grilo_program_set_metadata (MexContent         *content,
     return;
 
   set_metadata_to_media (priv->media, key, value);
-
-  /* FIXME: This is kind of a chain up to parent's method... We
-     probably can do something better. */
-  mex_program_set_metadata (MEX_PROGRAM (content), key, value);
+  mex_grilo_program_set_metadata (content, key, value);
 }
 
 static void
@@ -709,7 +727,7 @@ mex_grilo_program_set_grilo_media (MexGriloProgram *program,
     g_object_unref (priv->media);
   priv->media = g_object_ref (media);
 
-  set_metadatas_from_media (MEX_PROGRAM (program), media);
+  set_metadatas_from_media (MEX_CONTENT (program), media);
 
   /* Unset 'completed' so that the next time completed is called, all data
    * on this Grilo media is re-resolved.

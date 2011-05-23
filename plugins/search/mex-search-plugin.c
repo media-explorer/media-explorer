@@ -144,12 +144,12 @@ mex_search_plugin_class_init (MexSearchPluginClass *klass)
 }
 
 static void
-mex_search_plugin_mimetype_set_cb (MexProgram *program)
+mex_search_plugin_mimetype_set_cb (MexContent *content)
 {
-  const gchar *mime = mex_program_get_metadata (program,
+  const gchar *mime = mex_content_get_metadata (content,
                                                 MEX_CONTENT_METADATA_MIMETYPE);
   if (!mime || !(*mime) || g_str_equal (mime, "application/x-shockwave-flash"))
-    mex_program_set_metadata (program, MEX_CONTENT_METADATA_MIMETYPE,
+    mex_content_set_metadata (content, MEX_CONTENT_METADATA_MIMETYPE,
                               "x-mex/media");
 }
 
@@ -191,7 +191,7 @@ mex_search_plugin_model_changed_cb (GController          *controller,
               g_free (notify);
             }
 
-          mex_search_plugin_mimetype_set_cb (MEX_PROGRAM (content));
+          mex_search_plugin_mimetype_set_cb (content);
         }
       break;
 
@@ -300,8 +300,8 @@ mex_search_plugin_update_history (MexSearchPlugin *self,
       current = contents;
       while (current < contents + length)
         {
-          MexProgram *program =
-            mex_program_new (priv->history_model);
+          MexContent *content =
+            MEX_CONTENT (mex_program_new (priv->history_model));
           gchar *end = g_utf8_strchr (current, -1, '\n');
 
           if (end)
@@ -309,12 +309,14 @@ mex_search_plugin_update_history (MexSearchPlugin *self,
 
           if (*current)
             {
-              mex_program_set_metadata (program, MEX_CONTENT_METADATA_TITLE,
+              mex_content_set_metadata (content,
+                                        MEX_CONTENT_METADATA_TITLE,
                                         current);
-              mex_program_set_metadata (program, MEX_CONTENT_METADATA_MIMETYPE,
+              mex_content_set_metadata (content,
+                                        MEX_CONTENT_METADATA_MIMETYPE,
                                         "x-mex/search");
               mex_model_add_content (MEX_MODEL (priv->history_model),
-                                     MEX_CONTENT (program));
+                                     content);
             }
 
           if (end)
@@ -331,12 +333,11 @@ mex_search_plugin_update_history (MexSearchPlugin *self,
        * TODO: Have a way of inserting 'stock' content rather than doing
        *       this, I suppose.
        */
-      MexProgram *program = mex_program_new (priv->history_model);
-      mex_program_set_metadata (program, MEX_CONTENT_METADATA_TITLE, "MeeGo");
-      mex_program_set_metadata (program, MEX_CONTENT_METADATA_MIMETYPE,
+      MexContent *content = MEX_CONTENT (mex_program_new (priv->history_model));
+      mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, "MeeGo");
+      mex_content_set_metadata (content, MEX_CONTENT_METADATA_MIMETYPE,
                                 "x-mex/search");
-      mex_model_add_content (MEX_MODEL (priv->history_model),
-                             MEX_CONTENT (program));
+      mex_model_add_content (MEX_MODEL (priv->history_model), content);
     }
 }
 
@@ -524,7 +525,7 @@ mex_suggest_complete_cb (MexDownloadQueue *queue,
   n = rest_xml_node_find (root, "CompleteSuggestion");
   for (; n; n = n->next)
     {
-      MexProgram *program;
+      MexContent *content;
       const gchar *suggestion;
 
       RestXmlNode *node = rest_xml_node_find (n, "suggestion");
@@ -537,13 +538,12 @@ mex_suggest_complete_cb (MexDownloadQueue *queue,
       if (!suggestion)
         continue;
 
-      program = mex_program_new (priv->suggest_model);
-      mex_program_set_metadata (program, MEX_CONTENT_METADATA_TITLE,
+      content = MEX_CONTENT (mex_program_new (priv->suggest_model));
+      mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE,
                                 suggestion);
-      mex_program_set_metadata (program, MEX_CONTENT_METADATA_MIMETYPE,
+      mex_content_set_metadata (content, MEX_CONTENT_METADATA_MIMETYPE,
                                 "x-mex/search");
-      mex_model_add_content (MEX_MODEL (priv->suggest_model),
-                             MEX_CONTENT (program));
+      mex_model_add_content (MEX_MODEL (priv->suggest_model), content);
     }
 
   /* Unref */

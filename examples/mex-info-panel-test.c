@@ -54,11 +54,14 @@ main (int argc, char **argv)
 
   MexFeed *feed = mex_feed_new ("source", "title");
   MexProgram *program =  mex_program_new (feed);
-  mex_program_set_metadata (program, MEX_CONTENT_METADATA_TITLE,
+  mex_content_set_metadata (MEX_CONTENT (program),
+                            MEX_CONTENT_METADATA_TITLE,
                             "The cats on the moon");
-  mex_program_set_metadata (program, MEX_CONTENT_METADATA_SYNOPSIS,
+  mex_content_set_metadata (MEX_CONTENT (program),
+                            MEX_CONTENT_METADATA_SYNOPSIS,
                             "An original title where cats are sent to the moon to catch all the mice which are naturally attracted there due to the large consistency of cheese, this results in a space race between NASA and CATSA, leading to war on the moon over territory claimed by cats");
-  mex_program_set_metadata (program, MEX_CONTENT_METADATA_STILL,
+  mex_content_set_metadata (MEX_CONTENT (program),
+                            MEX_CONTENT_METADATA_STILL,
                             "http://farm5.static.flickr.com/4013/4305303148_5cbc986a44_m.jpg");
 
   mex_content_view_set_content (MEX_CONTENT_VIEW (info_panel),

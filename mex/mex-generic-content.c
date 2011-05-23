@@ -33,6 +33,8 @@ enum {
 struct _MexGenericContentPrivate {
   int dummy;
 
+  GHashTable *metadata;
+
   gboolean last_position_start;
   gboolean save_last_position;
 };
@@ -43,6 +45,10 @@ G_DEFINE_TYPE_WITH_CODE (MexGenericContent, mex_generic_content, G_TYPE_INITIALL
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_CONTENT,
                                                 mex_content_iface_init));
 
+/*
+ * MexContent implementation
+ */
+
 static GParamSpec *
 content_get_property (MexContent         *content,
                       MexContentMetadata  key)
@@ -51,58 +57,100 @@ content_get_property (MexContent         *content,
   return NULL;
 }
 
-const gchar *
-mex_generic_content_get_property_name (MexContentMetadata key)
-{
-  return mex_enum_to_string (MEX_TYPE_CONTENT_METADATA, key);
-}
-
-/*
- * MexContent implementation
- */
-
-static const char *
-content_get_property_name (MexContent         *content,
-                           MexContentMetadata  key)
-{
-  return mex_generic_content_get_property_name (key);
-}
-
 static const char *
 content_get_metadata (MexContent         *content,
                       MexContentMetadata  key)
 {
   MexGenericContent *gc = (MexGenericContent *) content;
-  MexGenericContentClass *klass = MEX_GENERIC_CONTENT_GET_CLASS (gc);
+  MexGenericContentPrivate *priv = gc->priv;
 
-  if (klass->get_metadata) {
-    return klass->get_metadata (gc, key);
-  }
+  return (const gchar *) g_hash_table_lookup (priv->metadata,
+                                              GUINT_TO_POINTER (key));
+}
 
-  return NULL;
+static void
+content_set_metadata (MexContent         *content,
+                      MexContentMetadata  key,
+                      const gchar        *value)
+{
+  const char *property;
+  MexGenericContent *gc = (MexGenericContent *) content;
+  MexGenericContentPrivate *priv = gc->priv;
+
+  if (value)
+    g_hash_table_insert (priv->metadata, GUINT_TO_POINTER (key),
+                         g_strdup (value));
+  else
+    g_hash_table_remove (priv->metadata, GUINT_TO_POINTER (key));
+
+  property = mex_content_get_property_name (content, key);
+  g_object_notify (G_OBJECT (content), property);
 }
 
 static char *
-content_get_metadata_fallback (MexContent        *content,
-                               MexContentMetadata key)
+content_get_metadata_fallback (MexContent         *content,
+                               MexContentMetadata  key)
+{
+  return NULL;
+}
+
+static const char *
+content_get_property_name (MexContent         *content,
+                           MexContentMetadata  key)
+{
+  return mex_enum_to_string (MEX_TYPE_CONTENT_METADATA, key);
+}
+
+static void
+content_save_metadata (MexContent *content)
+{
+  /* No implementation possible here */
+}
+
+struct MetadataCbStuff {
+  MexContentMetadataCb callback;
+  gpointer             data;
+};
+
+static void
+content_foreach_metadata_cb (gpointer key,
+                             gpointer value,
+                             gpointer data)
+{
+  struct MetadataCbStuff *stuff = (struct MetadataCbStuff *) data;
+
+  stuff->callback ((MexContentMetadata) key,
+                   (const gchar *) value,
+                   stuff->data);
+}
+
+static void
+content_foreach_metadata (MexContent           *content,
+                          MexContentMetadataCb  callback,
+                          gpointer              data)
 {
   MexGenericContent *gc = (MexGenericContent *) content;
-  MexGenericContentClass *klass = MEX_GENERIC_CONTENT_GET_CLASS (gc);
+  MexGenericContentPrivate *priv = gc->priv;
+  struct MetadataCbStuff stuff;
 
-  if (klass->get_metadata_fallback) {
-    return klass->get_metadata_fallback (gc, key);
-  }
+  stuff.callback = callback;
+  stuff.data     = data;
 
-  return NULL;
+  g_hash_table_foreach (priv->metadata,
+                        content_foreach_metadata_cb,
+                        &stuff);
 }
 
 static void
 mex_content_iface_init (MexContentIface *iface)
 {
-  iface->get_property = content_get_property;
-  iface->get_metadata = content_get_metadata;
-  iface->get_property_name = content_get_property_name;
+  iface->get_property          = content_get_property;
+  iface->get_metadata          = content_get_metadata;
+  iface->set_metadata          = content_set_metadata;
   iface->get_metadata_fallback = content_get_metadata_fallback;
+  iface->get_property_name     = content_get_property_name;
+  iface->save_metadata         = content_save_metadata;
+  iface->foreach_metadata      = content_foreach_metadata;
 }
 
 /*
@@ -118,6 +166,15 @@ mex_generic_content_finalize (GObject *object)
 static void
 mex_generic_content_dispose (GObject *object)
 {
+  MexGenericContent *content = (MexGenericContent *) object;
+  MexGenericContentPrivate *priv = content->priv;
+
+  if (priv->metadata)
+    {
+      g_hash_table_unref (priv->metadata);
+      priv->metadata = NULL;
+    }
+
   G_OBJECT_CLASS (mex_generic_content_parent_class)->dispose (object);
 }
 
@@ -205,7 +262,7 @@ mex_generic_content_class_init (MexGenericContentClass *klass)
 
     if (!i) continue;
 
-    name = mex_generic_content_get_property_name (i);
+    name = mex_content_metadata_key_to_string (i);
 
     pspec = g_param_spec_string (name, name, "A dynamic metadata property",
                                  NULL, G_PARAM_READWRITE |
@@ -228,6 +285,8 @@ mex_generic_content_init (MexGenericContent *self)
   MexGenericContentPrivate *priv = GET_PRIVATE (self);
 
   self->priv = priv;
+
+  priv->metadata = g_hash_table_new_full (NULL, NULL, NULL, g_free);
 
   priv->last_position_start = TRUE;
   priv->save_last_position = TRUE;

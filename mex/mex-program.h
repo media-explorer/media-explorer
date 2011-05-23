@@ -88,11 +88,6 @@ MexProgram *mex_program_new (MexFeed *feed);
 
 MexFeed *mex_program_get_feed (MexProgram *program);
 
-const char *mex_program_get_metadata (MexProgram *program,
-                                      guint       key);
-void mex_program_set_metadata (MexProgram *program,
-                               guint       key,
-                               const char *value);
 void mex_program_add_actor (MexProgram *program,
                             const char *actor);
 GPtrArray *mex_program_get_actors (MexProgram *program);

@@ -60,18 +60,9 @@ struct _MexGenericContent
 struct _MexGenericContentClass
 {
   GInitiallyUnownedClass parent_class;
-
-  const char *(* get_metadata) (MexGenericContent *content,
-                                MexContentMetadata key);
-  char *(* get_metadata_fallback) (MexGenericContent *content,
-                                   MexContentMetadata key);
-  GParamSpec *(* get_property) (MexGenericContent *content,
-                                MexContentMetadata key);
 };
 
 GType mex_generic_content_get_type (void) G_GNUC_CONST;
-
-const gchar *mex_generic_content_get_property_name (MexContentMetadata key);
 
 gboolean mex_generic_content_get_last_position_start (MexGenericContent *self);
 

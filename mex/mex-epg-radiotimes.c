@@ -389,7 +389,7 @@ parse_program (gchar *line)
       MEX_NOTE (EPG, "metadata %s: %s",
                  mex_content_metadata_key_to_string (field2key[i]), field);
 
-      mex_program_set_metadata (program, field2key[i], field);
+      mex_content_set_metadata (MEX_CONTENT (program), field2key[i], field);
     }
 
   return program;
@@ -461,7 +461,7 @@ parse_epg_dat_line (Request   *req,
       /* we add the duration here as parse_program don't do it and that we
        * need the duration in seconds instead of minutes */
       duration_s = g_strdup_printf ("%d", duration);
-      mex_program_set_metadata (program,
+      mex_content_set_metadata (MEX_CONTENT (program),
                                 MEX_CONTENT_METADATA_DURATION,
                                 duration_s);
       g_free (duration_s);

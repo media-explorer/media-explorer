@@ -2545,16 +2545,16 @@ main (int argc, char **argv)
   /* Create the 'Up folder' shortcut content */
   data.folder_content =
     g_object_ref_sink (MEX_CONTENT (mex_program_new (NULL)));
-  mex_program_set_metadata (MEX_PROGRAM (data.folder_content),
+  mex_content_set_metadata (data.folder_content,
                             MEX_CONTENT_METADATA_TITLE,
                             _("Back"));
-  mex_program_set_metadata (MEX_PROGRAM (data.folder_content),
+  mex_content_set_metadata (data.folder_content,
                             MEX_CONTENT_METADATA_MIMETYPE,
                             "x-mex/back");
 
   tmp = g_strconcat ("file://", mex_get_data_dir (),
                      "/shell/style/folder-tile-up.png", NULL);
-  mex_program_set_metadata (MEX_PROGRAM (data.folder_content),
+  mex_content_set_metadata (data.folder_content,
                             MEX_CONTENT_METADATA_STILL, tmp);
   g_free (tmp);
 

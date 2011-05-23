@@ -30,7 +30,6 @@ enum {
 };
 
 struct _MexProgramPrivate {
-  GHashTable *metadata;
   GPtrArray *actors;
   MexFeed *feed;
 };
@@ -42,23 +41,14 @@ G_DEFINE_TYPE (MexProgram, mex_program, MEX_TYPE_GENERIC_CONTENT);
 
 static guint32 signals[LAST_SIGNAL] = {0,};
 
-static const char *
-get_metadata_internal (MexProgram *program,
-                       guint       key)
-{
-  MexProgramPrivate *priv = program->priv;
-
-  return g_hash_table_lookup (priv->metadata, GUINT_TO_POINTER (key));
-}
-
 /* Append each string in the metadata hashtable into a long string which will
    then be tokenised and split into index terms */
 static void
-make_metadata_string (gpointer key,
-                      gpointer value,
-                      gpointer userdata)
+make_metadata_string (MexContentMetadata  key,
+                      const gchar        *value,
+                      gpointer            data)
 {
-  GString *str = (GString *) userdata;
+  GString *str = (GString *) data;
 
   g_string_append (str, " ");
   g_string_append (str, value);
@@ -67,15 +57,14 @@ make_metadata_string (gpointer key,
 static char *
 _mex_program_get_index_str (MexProgram *program)
 {
-  MexProgramPrivate *priv;
   GString *str;
   char *index_str;
 
   g_return_val_if_fail (MEX_IS_PROGRAM (program), NULL);
-  priv = program->priv;
 
   str = g_string_new ("");
-  g_hash_table_foreach (priv->metadata, make_metadata_string, str);
+  mex_content_foreach_metadata (MEX_CONTENT (program),
+                                make_metadata_string, str);
 
   index_str = str->str;
   g_string_free (str, FALSE);
@@ -92,8 +81,6 @@ mex_program_finalize (GObject *object)
 {
   MexProgram *self = (MexProgram *) object;
   MexProgramPrivate *priv = self->priv;
-
-  g_hash_table_destroy (priv->metadata);
 
   if (priv->actors) {
     g_ptr_array_unref (priv->actors);
@@ -127,12 +114,6 @@ mex_program_set_property (GObject      *object,
   MexProgram *self = MEX_PROGRAM (object);
   MexProgramPrivate *priv = self->priv;
 
-  if (prop_id < MEX_CONTENT_METADATA_LAST_ID)
-    {
-      mex_program_set_metadata (self, prop_id, g_value_get_string (value));
-      return;
-    }
-
   switch (prop_id) {
   case PROP_FEED:
     priv->feed = (MexFeed *) g_value_dup_object (value);
@@ -151,14 +132,7 @@ mex_program_get_property (GObject    *object,
                           GParamSpec *pspec)
 {
   MexProgram *self = MEX_PROGRAM (object);
-  MexContent *content = MEX_CONTENT (self);
   MexProgramPrivate *priv = self->priv;
-
-  if (prop_id < MEX_CONTENT_METADATA_LAST_ID)
-    {
-      g_value_set_string (value, mex_content_get_metadata (content, prop_id));
-      return;
-    }
 
   switch (prop_id) {
   case PROP_FEED:
@@ -171,14 +145,7 @@ mex_program_get_property (GObject    *object,
   }
 }
 
-static GParamSpec *
-program_get_property (MexGenericContent *content,
-                      MexContentMetadata key)
-{
-  /* TODO */
-  return NULL;
-}
-
+#if 0
 static char *
 program_get_metadata_fallback (MexGenericContent *gc,
                                MexContentMetadata key)
@@ -228,35 +195,18 @@ program_get_metadata_fallback (MexGenericContent *gc,
 
   return target;
 }
-
-static const char *
-program_get_metadata (MexGenericContent *content,
-                      MexContentMetadata key)
-{
-  MexProgram *program = MEX_PROGRAM (content);
-  const char *result;
-
-  result = get_metadata_internal (program, key);
-
-  return result;
-}
+#endif
 
 static void
 mex_program_class_init (MexProgramClass *klass)
 {
   GParamSpec *pspec;
   GObjectClass *o_class = (GObjectClass *) klass;
-  MexGenericContentClass *c_class = (MexGenericContentClass *) klass;
-  gint i = 0;
 
   o_class->dispose = mex_program_dispose;
   o_class->finalize = mex_program_finalize;
   o_class->set_property = mex_program_set_property;
   o_class->get_property = mex_program_get_property;
-
-  c_class->get_property = program_get_property;
-  c_class->get_metadata = program_get_metadata;
-  c_class->get_metadata_fallback = program_get_metadata_fallback;
 
   klass->get_index_str = _mex_program_get_index_str;
 
@@ -276,17 +226,6 @@ mex_program_class_init (MexProgramClass *klass)
                                    G_SIGNAL_NO_RECURSE, 0, NULL, NULL,
                                    g_cclosure_marshal_VOID__VOID,
                                    G_TYPE_NONE, 0);
-
-
-  for (i = MEX_CONTENT_METADATA_NONE; i < MEX_CONTENT_METADATA_LAST_ID; i++) {
-    const char *name;
-
-    if (!i) continue;
-
-    name = mex_generic_content_get_property_name (i);
-
-    g_object_class_override_property (o_class, i, name);
-  }
 }
 
 static void
@@ -295,8 +234,6 @@ mex_program_init (MexProgram *self)
   MexProgramPrivate *priv = GET_PRIVATE (self);
 
   self->priv = priv;
-
-  priv->metadata = g_hash_table_new_full (NULL, NULL, NULL, g_free);
 }
 
 MexProgram *
@@ -310,36 +247,6 @@ mex_program_get_feed (MexProgram *program)
 {
   g_return_val_if_fail (MEX_IS_PROGRAM (program), NULL);
   return program->priv->feed;
-}
-
-const char *
-mex_program_get_metadata (MexProgram *program,
-                          guint       key)
-{
-  g_return_val_if_fail (MEX_IS_PROGRAM (program), NULL);
-
-  return get_metadata_internal (program, key);
-}
-
-void
-mex_program_set_metadata (MexProgram *program,
-                          guint       key,
-                          const char *value)
-{
-  const char *property;
-  MexProgramPrivate *priv;
-
-  g_return_if_fail (MEX_IS_PROGRAM (program));
-
-  priv = program->priv;
-  if (value)
-    g_hash_table_insert (priv->metadata, GUINT_TO_POINTER (key),
-                         g_strdup (value));
-  else
-    g_hash_table_remove (priv->metadata, GUINT_TO_POINTER (key));
-
-  property = mex_content_get_property_name (MEX_CONTENT (program), key);
-  g_object_notify (G_OBJECT (program), property);
 }
 
 void

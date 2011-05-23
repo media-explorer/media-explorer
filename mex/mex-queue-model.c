@@ -138,13 +138,13 @@ _controller_changed_cb (GController          *controller,
   if (action == G_CONTROLLER_ADD)
     {
       /* FIXME: Make a proper property */
-      mex_program_set_metadata (MEX_PROGRAM (content),
+      mex_content_set_metadata (content,
                                 MEX_CONTENT_METADATA_QUEUED,
                                 "yes");
     }
   else if (action == G_CONTROLLER_REMOVE)
     {
-      mex_program_set_metadata (MEX_PROGRAM (content),
+      mex_content_set_metadata (content,
                                 MEX_CONTENT_METADATA_QUEUED,
                                 NULL);
     }
@@ -197,7 +197,7 @@ mex_queue_model_init (MexQueueModel *self)
  * mex_queue_model_dup_singleton:
  *
  * Returns: a referenced queue model, you should use g_object_unref when you
- * have finished with it. 
+ * have finished with it.
  */
 MexModel *
 mex_queue_model_dup_singleton ()
@@ -295,7 +295,7 @@ mex_queue_model_save (MexQueueModel *model)
   gsize buf_len;
 
   filename = _queue_file_name ();
-  f = g_file_new_for_path (filename); 
+  f = g_file_new_for_path (filename);
 
   if (mex_model_get_length (MEX_MODEL (model)) == 0)
     {

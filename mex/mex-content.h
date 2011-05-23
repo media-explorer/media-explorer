@@ -84,6 +84,10 @@ typedef enum {
     MEX_CONTENT_METADATA_LAST_ID
 } MexContentMetadata;
 
+typedef void (*MexContentMetadataCb) (MexContentMetadata key,
+                                      const gchar *value,
+                                      gpointer data);
+
 struct _MexContentIface
 {
   GTypeInterface g_iface;
@@ -102,6 +106,10 @@ struct _MexContentIface
                                            MexContentMetadata  key);
 
   void          (*save_metadata)          (MexContent *content);
+
+  void          (*foreach_metadata)       (MexContent           *content,
+                                           MexContentMetadataCb  callback,
+                                           gpointer              data);
 };
 
 GType         mex_content_get_type                (void) G_GNUC_CONST;
@@ -116,6 +124,10 @@ void          mex_content_set_metadata            (MexContent         *list,
                                                    MexContentMetadata  key,
                                                    const gchar        *value);
 void          mex_content_save_metadata           (MexContent         *list);
+
+void          mex_content_foreach_metadata        (MexContent           *content,
+                                                   MexContentMetadataCb  callback,
+                                                   gpointer              data);
 
 const char *  mex_content_get_property_name       (MexContent         *content,
                                                    MexContentMetadata  key);
