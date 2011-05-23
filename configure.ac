@@ -11,7 +11,7 @@ m4_define([mex_interface_age], [0])
 m4_define([mex_binary_age], [m4_eval(100 * mex_minor + mex_micro)])
 
 AC_PREREQ(2.53)
-AC_INIT([mex], [mex_version], [http://www.intel.com])
+AC_INIT([mex], [mex_version], [http://media-explorer.github.com])
 AC_CONFIG_SRCDIR([mex/mex.h])
 AC_CONFIG_MACRO_DIR([build])
 AC_CONFIG_AUX_DIR([build])
