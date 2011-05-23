@@ -139,7 +139,7 @@ mex_library_plugin_init (MexLibraryPlugin *self)
       MexFeed *feed;
       GrlMedia *box;
       const gchar *path;
-      MexModelInfo *video_info, *photo_info;
+      MexModelInfo *video_info, *photo_info, *music_info;
 
       query_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
                                               GRL_METADATA_KEY_TITLE,
@@ -204,6 +204,37 @@ mex_library_plugin_init (MexLibraryPlugin *self)
           photo_info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
                                                            "pictures", 0);
           priv->models = g_list_append (priv->models, photo_info);
+          g_object_unref (feed);
+          g_list_free (metadata_keys);
+        }
+
+      /* Add the music model */
+      path = g_get_user_special_dir (G_USER_DIRECTORY_MUSIC);
+      box = mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
+                                                 query_keys, path);
+
+      if (box)
+        {
+          GList *metadata_keys =
+            grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                       GRL_METADATA_KEY_DESCRIPTION,
+                                       GRL_METADATA_KEY_THUMBNAIL,
+                                       GRL_METADATA_KEY_WIDTH,
+                                       GRL_METADATA_KEY_HEIGHT,
+                                       GRL_METADATA_KEY_ARTIST,
+                                       GRL_METADATA_KEY_ALBUM,
+                                       NULL);
+
+          feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                                     query_keys, metadata_keys, box);
+          g_object_set (feed, "icon-name", "icon-library",
+                        "placeholder-text", "No music found", NULL);
+
+          mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
+
+          music_info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
+                                                           "music", 0);
+          priv->models = g_list_append (priv->models, music_info);
           g_object_unref (feed);
           g_list_free (metadata_keys);
         }
