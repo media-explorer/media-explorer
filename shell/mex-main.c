@@ -2254,8 +2254,8 @@ main (int argc, char **argv)
       if (!grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL))
         {
           /* try and load the upnp and filesystem plugins instead */
-         if (grl_plugin_registry_load_by_id (registry, "grl-upnp", NULL) ||
-          grl_plugin_registry_load_by_id (registry, "grl-filesystem", NULL))
+         if (!grl_plugin_registry_load_by_id (registry, "grl-upnp", NULL) ||
+             !grl_plugin_registry_load_by_id (registry, "grl-filesystem", NULL))
            g_warning ("We had no config and all the fallback grilo-plugins can not be loaded, please check that grilo-plugins has been correctly installed");
         }
     }
