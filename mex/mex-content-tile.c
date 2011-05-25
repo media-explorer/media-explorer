@@ -23,6 +23,8 @@
 #include "mex-aspect-frame.h"
 #include "mex-program.h"
 
+#include "mex-utils.h"
+
 static void mex_content_view_iface_init (MexContentViewIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 
@@ -178,6 +180,7 @@ _reset_thumbnail (MexContentTile *tile)
   MexContentTilePrivate *priv = tile->priv;
   MexDownloadQueue *queue = mex_download_queue_get_default ();
   const gchar *mime = NULL;
+  gchar *placeholder_filename = NULL;
 
   queue = mex_download_queue_get_default ();
 
@@ -197,20 +200,31 @@ _reset_thumbnail (MexContentTile *tile)
 
   if (mime && g_str_has_prefix (mime, "image/"))
     {
-      _update_thumbnail_from_image (tile, PKGDATADIR "/thumb-image.png");
+      placeholder_filename = "thumb-image.png";
     }
   else if (mime && (g_str_has_prefix (mime, "video/") ||
                     g_str_equal (mime, "x-mex/media")))
     {
-      _update_thumbnail_from_image (tile, PKGDATADIR "/thumb-video.png");
+      placeholder_filename = "thumb-video.png";
     }
   else if (mime && (g_str_has_prefix (mime, "audio/")))
     {
-      _update_thumbnail_from_image (tile, PKGDATADIR "/thumb-music.png");
+      placeholder_filename = "thumb-music.png";
     }
   else if (mime && g_str_equal (mime, "x-grl/box"))
     {
-      _update_thumbnail_from_image (tile, PKGDATADIR "/folder-tile.png");
+      placeholder_filename = "folder-tile.png";
+    }
+
+  if (placeholder_filename)
+    {
+      gchar *tmp;
+      const gchar *dir = mex_get_data_dir ();
+
+      tmp = g_build_filename (dir, "common",
+                              placeholder_filename, NULL);
+      _update_thumbnail_from_image (tile, tmp);
+      g_free (tmp);
     }
   else
     {

@@ -89,8 +89,10 @@ void
 mex_style_load_default ()
 {
   GList *d, *dirs;
+  gchar *tmp;
 
   GError *error = NULL;
+
   MxIconTheme *theme = mx_icon_theme_get_default ();
 
   /* Set the icon theme */
@@ -98,7 +100,10 @@ mex_style_load_default ()
 
   for (d = dirs; d; d = d->next)
     d->data = g_strdup (d->data);
-  dirs = g_list_prepend (dirs, g_strdup (PKGDATADIR "/style/icons"));
+
+  tmp = g_build_filename (mex_get_data_dir (), "common", "style", "icons",
+                          NULL);
+  dirs = g_list_prepend (dirs, tmp);
 
   mx_icon_theme_set_search_paths (theme, dirs);
 
@@ -111,9 +116,10 @@ mex_style_load_default ()
   mx_icon_theme_set_theme_name (theme, "mex");
 
   /* Load the style */
-  mx_style_load_from_file (mx_style_get_default (),
-                           PKGDATADIR "/style/style.css",
-                           &error);
+  tmp = g_build_filename (mex_get_data_dir (), "common",
+                          "style", "style.css", NULL);
+  mx_style_load_from_file (mx_style_get_default (), tmp, &error);
+  g_free (tmp);
 
   if (error)
     {
@@ -609,3 +615,35 @@ mex_replace_border_image (CoglHandle     *texture_p,
     }
 }
 
+
+const char*
+mex_get_data_dir ()
+{
+  static char* datadir = NULL;
+  gint i;
+
+  if (!datadir)
+    {
+      static gchar** system_data_dirs;
+
+      system_data_dirs = g_get_system_data_dirs ();
+
+      for (i = 0; system_data_dirs[i]; i++)
+        {
+          datadir = g_build_filename (system_data_dirs[i], "mex", NULL);
+
+          if (g_file_test (datadir, G_FILE_TEST_IS_DIR))
+            break;
+          else
+            {
+              g_free (datadir);
+              datadir = NULL;
+            }
+        }
+
+      if (!datadir)
+        g_warning ("Could not find application data directory.");
+    }
+
+  return datadir;
+}

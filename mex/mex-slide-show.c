@@ -795,13 +795,16 @@ mex_slide_show_init (MexSlideShow *self)
   ClutterActor *actor;
   GError *err = NULL;
   MxAction *action;
+  gchar *tmp;
 
   self->priv = priv = SLIDE_SHOW_PRIVATE (self);
 
   priv->script = clutter_script_new ();
 
-  clutter_script_load_from_file (priv->script, PKGJSONDIR "/slide-show.json",
-                                 &err);
+  tmp = g_build_filename (mex_get_data_dir (), "json", "slide-show.json",
+                          NULL);
+  clutter_script_load_from_file (priv->script, tmp, &err);
+  g_free (tmp);
 
   priv->image = (ClutterActor*) clutter_script_get_object (priv->script,
                                                            "viewer");

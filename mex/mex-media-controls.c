@@ -642,13 +642,16 @@ mex_media_controls_init (MexMediaControls *self)
   GError *err = NULL;
   MxAdjustment *adjustment;
   ClutterActor *related_box;
+  gchar *tmp;
 
   MexMediaControlsPrivate *priv = self->priv = MEDIA_CONTROLS_PRIVATE (self);
 
   priv->script = script = clutter_script_new ();
 
-  clutter_script_load_from_file (script, PKGJSONDIR "/media-controls.json",
-                                 &err);
+  tmp = g_build_filename (mex_get_data_dir (), "json", "media-controls.json",
+                          NULL);
+  clutter_script_load_from_file (script, tmp, &err);
+  g_free (tmp);
 
   if (err)
     {

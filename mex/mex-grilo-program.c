@@ -23,6 +23,7 @@
 
 #include "mex-grilo-program.h"
 #include "mex-thumbnailer.h"
+#include "mex-utils.h"
 
 static void mex_content_iface_init (MexContentIface *iface);
 
@@ -367,11 +368,16 @@ mex_grilo_program_thumbnail (MexProgram *program, GrlMedia *media)
   if (url == NULL || !g_str_has_prefix (url, "file:///"))
     return;
 
-  if (GRL_IS_MEDIA_BOX (media)) {
-    mex_program_set_metadata (program, MEX_CONTENT_METADATA_STILL,
-                              "file:///" PKGDATADIR "/folder-tile.png");
-    return;
-  }
+  if (GRL_IS_MEDIA_BOX (media))
+    {
+      gchar *tmp;
+
+      tmp = g_build_filename (mex_get_data_dir (), "common", "folder-tile.png",
+                              NULL);
+      mex_program_set_metadata (program, MEX_CONTENT_METADATA_STILL, tmp);
+      g_free (tmp);
+      return;
+    }
 
   /*
    * If we're already got a thumbnail, see if we're happy with it or want to

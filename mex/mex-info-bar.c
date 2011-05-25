@@ -455,13 +455,16 @@ _create_settings_dialog (MexInfoBar *self)
 
   if (binding_settings)
     {
+      gchar *tmp;
+
       rebinder_graphic = mx_image_new ();
       mx_stylable_set_style_class (MX_STYLABLE (rebinder_graphic),
                                "RebinderGraphic");
 
-      mx_image_set_from_file (MX_IMAGE (rebinder_graphic),
-                              PKGDATADIR "/style/info-bar/graphic-rebinder.png",
-                              NULL);
+      tmp = g_build_filename (mex_get_data_dir (), "common", "style",
+                              "info-bar", "graphic-rebinder.png", NULL);
+      mx_image_set_from_file (MX_IMAGE (rebinder_graphic), tmp, NULL);
+      g_free (tmp);
 
       rebinder_tile = mex_tile_new ();
       mex_tile_set_label (MEX_TILE (rebinder_tile), _("Remote mapping"));
@@ -480,13 +483,15 @@ _create_settings_dialog (MexInfoBar *self)
 
   if (network_settings)
     {
+      gchar *tmp;
       network_graphic = mx_image_new ();
       mx_stylable_set_style_class (MX_STYLABLE (network_graphic),
                                    "NetworkGraphic");
 
-      mx_image_set_from_file (MX_IMAGE (network_graphic),
-                              PKGDATADIR "/style/info-bar/graphic-network.png",
-                              NULL);
+      tmp = g_build_filename (mex_get_data_dir (), "common", "style",
+                              "info-bar", "graphic-network.png", NULL);
+      mx_image_set_from_file (MX_IMAGE (network_graphic), tmp, NULL);
+      g_free (tmp);
 
       network_tile = mex_tile_new ();
       mex_tile_set_label (MEX_TILE (network_tile), _("Network"));
@@ -566,13 +571,16 @@ mex_info_bar_init (MexInfoBar *self)
 {
   ClutterScript *script;
   GError *err = NULL;
+  gchar *tmp;
 
   MexInfoBarPrivate *priv = self->priv = INFO_BAR_PRIVATE (self);
 
   priv->script = script = clutter_script_new ();
 
-  clutter_script_load_from_file (script, PKGJSONDIR "/info-bar.json",
-                                 &err);
+  tmp = g_build_filename (mex_get_data_dir (), "json", "info-bar.json", NULL);
+  clutter_script_load_from_file (script, tmp, &err);
+  g_free (tmp);
+
   if (err)
     {
       g_warning ("Could not load info bar: %s", err->message);

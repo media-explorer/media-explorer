@@ -916,6 +916,8 @@ mex_player_set_idle_mode (MexPlayer *player,
 
   if (idle)
     {
+      gchar *tmp;
+
       clutter_actor_hide (priv->controls);
       clutter_actor_hide (priv->info_panel);
       mx_widget_set_disabled (MX_WIDGET (player), TRUE);
@@ -926,8 +928,11 @@ mex_player_set_idle_mode (MexPlayer *player,
         priv->content = NULL;
       }
 
-      clutter_media_set_uri (priv->media,
-                             "file://" PKGDATADIR "/style/background-loop.mkv");
+      tmp = g_strconcat ("file://", mex_get_data_dir (),
+                         "/common/style/background-loop.mkv", NULL);
+      clutter_media_set_uri (priv->media, tmp);
+      g_free (tmp);
+
       clutter_media_set_playing (priv->media, TRUE);
 
       /* we're idle so we don't mind the screensaver coming on */

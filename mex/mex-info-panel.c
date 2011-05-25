@@ -187,6 +187,7 @@ static void
 mex_info_panel_constructed (GObject *object)
 {
   ClutterActor *root;
+  gchar *tmp;
 
   GError *err = NULL;
   MexInfoPanel *self = MEX_INFO_PANEL (object);
@@ -197,9 +198,10 @@ mex_info_panel_constructed (GObject *object)
   switch (priv->mode)
     {
     case MEX_INFO_PANEL_MODE_FULL:
-      clutter_script_load_from_file (priv->script,
-                                     PKGJSONDIR "/info-panel-full.json",
-                                     &err);
+      tmp = g_build_filename (mex_get_data_dir (), "json",
+                              "info-panel-full.json", NULL);
+      clutter_script_load_from_file (priv->script, tmp, &err);
+      g_free (tmp);
 
       priv->watch_button =
         CLUTTER_ACTOR (clutter_script_get_object (priv->script, "watch-button"));
@@ -216,9 +218,11 @@ mex_info_panel_constructed (GObject *object)
       break;
 
     case MEX_INFO_PANEL_MODE_SIMPLE:
-      clutter_script_load_from_file (priv->script,
-                                     PKGJSONDIR "/info-panel-simple.json",
-                                     &err);
+      tmp = g_build_filename (mex_get_data_dir (), "json",
+                              "info-panel-simple.json", NULL);
+      clutter_script_load_from_file (priv->script, tmp, &err);
+      g_free (tmp);
+
       mx_stylable_set_style_class (MX_STYLABLE (self), "Simple");
       break;
 

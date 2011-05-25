@@ -2130,6 +2130,7 @@ main (int argc, char **argv)
   MexPluginManager *pmanager;
   MexActionManager *amanager;
   GrlPluginRegistry *registry;
+  gchar *tmp;
 
   GError *error = NULL;
   MexData data = { 0, };
@@ -2264,8 +2265,9 @@ main (int argc, char **argv)
   app = mx_application_new (&argc, &argv, "Media Explorer",
                             MX_APPLICATION_SINGLE_INSTANCE);
   mex_style_load_default ();
-  mx_style_load_from_file (mx_style_get_default (),
-                           PKGDATADIR "/style/style.css", &error);
+  tmp = g_build_filename (mex_get_data_dir (), "shell", "style", "style.css", NULL);
+  mx_style_load_from_file (mx_style_get_default (), tmp, &error);
+  g_free (tmp);
 
   if (error)
     {
@@ -2448,9 +2450,12 @@ main (int argc, char **argv)
   mex_program_set_metadata (MEX_PROGRAM (data.folder_content),
                             MEX_CONTENT_METADATA_MIMETYPE,
                             "x-mex/back");
+
+  tmp = g_strconcat ("file://", mex_get_data_dir (),
+                     "/shell/style/folder-tile-up.png", NULL);
   mex_program_set_metadata (MEX_PROGRAM (data.folder_content),
-                            MEX_CONTENT_METADATA_STILL,
-                            "file://" PKGDATADIR "/style/folder-tile-up.png");
+                            MEX_CONTENT_METADATA_STILL, tmp);
+  g_free (tmp);
 
   /* Add the actions */
 

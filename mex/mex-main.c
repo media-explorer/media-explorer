@@ -244,7 +244,8 @@ mex_lirc_deinit (struct lirc_config *config)
 static struct lirc_config *
 mex_lirc_init (const gchar *name)
 {
-  int lirc_fd;
+  int lirc_fd, res;
+  gchar *tmp;
 
   lirc_fd = lirc_init ((char *)name, 1);
 
@@ -255,7 +256,11 @@ mex_lirc_init (const gchar *name)
       struct lirc_config *config = NULL;
 
       /* Load the default config */
-      if (lirc_readconfig (PKGDATADIR "/mex-lircrc", &config, NULL) == 0)
+      tmp = g_build_filename (mex_get_data_dir (), "mex-lircrc", NULL);
+      res = lirc_readconfig (tmp, &config, NULL);
+      g_free (tmp);
+
+      if (res == 0)
         {
           int flags;
           GIOChannel *channel;

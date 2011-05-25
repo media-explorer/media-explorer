@@ -109,4 +109,5 @@ void mex_replace_border_image (CoglHandle     *texture_p,
                                MxBorderImage **image_p,
                                CoglHandle     *material_p);
 
+const char* mex_get_data_dir ();
 #endif /* _MEX_UTILS_H */
