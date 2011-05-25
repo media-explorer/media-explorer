@@ -42,6 +42,8 @@
 #include <clutter/x11/clutter-x11.h>
 #endif
 
+#include "mex-debug.h"
+
 #define ALPHA CLUTTER_EASE_OUT_QUAD
 #define DURATION 400
 
@@ -2237,7 +2239,7 @@ main (int argc, char **argv)
                 }
               else
                 {
-                  g_message ("loaded: %s plugin", enabled_plugins[i]);
+                  MEX_NOTE (MISC, "loaded: %s plugin", enabled_plugins[i]);
                 }
             }
           g_strfreev (enabled_plugins);
@@ -2246,7 +2248,7 @@ main (int argc, char **argv)
     }
   else
     {
-      g_message ("No mex.conf found, loading default plugins");
+      MEX_NOTE (MISC, "No mex.conf found, loading default plugins");
 
       /* Tracker is our first choice of plugin */
       if (!grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL))
