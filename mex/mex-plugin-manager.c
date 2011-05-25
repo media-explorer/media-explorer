@@ -21,6 +21,7 @@
 #include "mex-marshal.h"
 #include <gmodule.h>
 #include <string.h>
+#include <stdlib.h>
 
 G_DEFINE_TYPE (MexPluginManager, mex_plugin_manager, G_TYPE_OBJECT)
 
@@ -222,6 +223,9 @@ mex_plugin_manager_init (MexPluginManager *self)
   cwd = g_get_current_dir ();
   priv->search_paths[2] = g_build_filename (cwd, "plugins", NULL);
   g_free (cwd);
+
+  priv->search_paths[3] = g_strdup (getenv ("MEX_PLUGIN_PATH"));
+
 
   priv->plugins = g_hash_table_new_full (g_str_hash,
                                          g_str_equal,
