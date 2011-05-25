@@ -2051,6 +2051,7 @@ _close_screen_dialog_cb (MxAction *action, gpointer user_data)
 static void
 check_resolution (MexData *data)
 {
+#if HAVE_CLUTTER_X11
   Screen *screen;
   ClutterActor *dialog, *layout, *title, *label;
   MxAction *action;
@@ -2089,6 +2090,7 @@ check_resolution (MexData *data)
   clutter_actor_show (dialog);
   mx_dialog_set_transient_parent (MX_DIALOG (dialog), CLUTTER_ACTOR (data->stage));
   mex_push_focus (MX_FOCUSABLE (dialog));
+#endif
 }
 
 static void

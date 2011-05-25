@@ -309,6 +309,11 @@ PKG_CHECK_EXISTS(clutter-cex100-1.0, [AC_DEFINE(HAVE_CLUTTER_CEX100,
                                       [Defined if we are on CEX100])],
                  [])
 
+PKG_CHECK_EXISTS(clutter-x11-1.0, [AC_DEFINE(HAVE_CLUTTER_X11,
+                                   [1],
+                                   [Defined if we are on X11])],
+                 [])
+
 # Default list of plugins to compile
 WITH_PLUGINS="search,queue,tracker"
 
