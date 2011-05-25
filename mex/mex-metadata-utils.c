@@ -281,10 +281,9 @@ mex_metadata_humanise_date (const gchar *iso8601_date)
 {
   if (iso8601_date)
     {
-      gchar *humanised;
+      gchar humanised[255];
       struct tm tm_parsed;
       gchar *valid;
-      size_t len;
 
       /* clear tm_parsed */
       memset (&tm_parsed, '\0', sizeof (struct tm));
@@ -296,10 +295,8 @@ mex_metadata_humanise_date (const gchar *iso8601_date)
       if (valid == NULL)
         {
           /* arg1 NULL to measure desired allocation for humanised */
-          len = strftime (NULL, 256, "%e %b %Y", &tm_parsed);
-          humanised = g_malloc (len + 1);
-          strftime (humanised, 256, "%e %b %Y", &tm_parsed);
-          return humanised;
+          strftime (humanised, 255, "%e %b %Y", &tm_parsed);
+          return g_strdup (humanised);
         }
       g_free (valid);
     }
