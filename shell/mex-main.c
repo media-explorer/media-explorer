@@ -1229,10 +1229,84 @@ mex_show_home_screen (MexData *data)
   mex_explorer_set_focused_model (MEX_EXPLORER (data->explorer), model);
 }
 
+void
+mex_go_back_transition_complete (ClutterAnimation *animation,
+                gpointer *data)
+{
+  ClutterActor *actor = (ClutterActor*) clutter_animation_get_object (animation);
+  clutter_actor_destroy (actor);
+}
+void
+mex_go_back_transition_first_stage (ClutterAnimation *animation,
+                MexData *data)
+{
+  MxFocusManager *manager;
+  ClutterActor *actor;
+  ClutterActor *focused;
+  gfloat x, y, width, height;
+
+  actor = (ClutterActor*) clutter_animation_get_object (animation);
+
+  /* hide the slide show */
+  mex_hide_actor (data, data->slide_show);
+
+  /* hide the video player */
+  mex_hide_actor (data, data->player);
+
+  /* hide any tools */
+  if (data->current_tool)
+    mex_hide_actor (data, data->current_tool);
+
+  /* show main layout */
+  mex_show_actor (data, data->explorer);
+
+
+  /* ensure the rectangle is still above everything else */
+  clutter_actor_raise_top (actor);
+
+  manager = mx_focus_manager_get_for_stage (data->stage);
+  focused = (ClutterActor*) mx_focus_manager_get_focused (manager);
+
+  /* find the center of the focused actor */
+  if (focused)
+    {
+      clutter_actor_get_transformed_position (focused, &x, &y);
+      clutter_actor_get_size (focused, &width, &height);
+
+      x = x + width / 2.0;
+      y = y + height / 2.0;
+
+      clutter_actor_animate (actor, CLUTTER_EASE_IN_SINE, 500,
+                             "width", 200.f,
+                             "height", 150.f,
+                             "x", x,
+                             "y", y,
+                             "opacity", (guchar) 60,
+                             "rotation-angle-x", (gdouble) -90,
+                             "signal-after::completed",
+                             mex_go_back_transition_complete, NULL,
+                             NULL);
+    }
+  else
+    {
+      /* simply fade in the menu if there was no focused actor */
+
+      clutter_actor_animate (actor, CLUTTER_EASE_IN_SINE, 500,
+                             "opacity", (guchar) 0,
+                             "signal-after::completed",
+                             mex_go_back_transition_complete, NULL,
+                             NULL);
+
+    }
+}
+
 static void
 mex_go_back (MexData *data)
 {
   MexContent *content;
+  ClutterActor *transition;
+  gfloat width, height;
+
 
   /* if the current actor is the explorer, try to move up the hierarchy */
   if (clutter_actor_get_opacity (data->layout) == 0xff)
@@ -1258,22 +1332,28 @@ mex_go_back (MexData *data)
       else
         content = NULL;
 
-      /* hide the slide show */
-      mex_hide_actor (data, data->slide_show);
-
-      /* hide the video player */
-      mex_hide_actor (data, data->player);
-
-      /* hide any tools */
-      if (data->current_tool)
-        mex_hide_actor (data, data->current_tool);
-
-
-      /* show main layout */
-      mex_show_actor (data, data->explorer);
-
       if (content)
-        mex_explorer_focus_content (MEX_EXPLORER (data->explorer), content);
+        mex_explorer_focus_content (MEX_EXPLORER (data->explorer),
+                                    content);
+
+      transition = clutter_rectangle_new_with_color (CLUTTER_COLOR_Black);
+      clutter_actor_get_size (CLUTTER_ACTOR (data->stage), &width,
+                              &height);
+      clutter_actor_set_anchor_point_from_gravity (transition,
+                                                   CLUTTER_GRAVITY_CENTER);
+      clutter_actor_set_size (transition, width, height);
+      clutter_actor_set_position (transition, width / 2, height / 2);
+      clutter_actor_set_opacity (transition, 0);
+
+      clutter_container_add_actor (CLUTTER_CONTAINER (data->stage),
+                                   transition);
+      clutter_actor_raise_top (transition);
+
+      clutter_actor_animate (transition, CLUTTER_EASE_OUT_CUBIC, 200,
+                             "opacity", (guchar) 255,
+                             "signal-after::completed",
+                             mex_go_back_transition_first_stage, data,
+                             NULL);
     }
 }
 
