@@ -26,6 +26,7 @@
 #include <grilo.h>
 #include <mex/mex.h>
 #include <mex/mex-grilo-feed.h>
+#include <mex/mex-grilo-tracker-feed.h>
 #include <mex/mex-plugin-manager.h>
 #include <mex/mex-mmkeys.h>
 #include <clutter-gst/clutter-gst.h>
@@ -439,22 +440,34 @@ mex_grilo_open_folder_cb (MxAction *action,
         mex_explorer_get_depth (MEX_EXPLORER (data->explorer));
     }
 
-  g_object_get (G_OBJECT (feed),
-                "grilo-source", &source,
-                "tracker-filter", &filter,
-                NULL);
+  g_object_get (G_OBJECT (feed), "grilo-source", &source, NULL);
+
+  if (MEX_IS_GRILO_TRACKER_FEED (feed))
+      g_object_get (G_OBJECT (feed), "tracker-filter", &filter, NULL);
+
   media = mex_grilo_program_get_grilo_media (MEX_GRILO_PROGRAM (program));
 
-  /* FIXME: if only we had g_object_clone()... */
-  feed = g_object_new (G_OBJECT_TYPE (feed),
-                       "grilo-source", source,
-                       "grilo-box", media,
-                       "tracker-filter", filter,
-                       NULL);
+  /* FIXME: if only we had g_object_clone().. */
+
+  if (filter)
+    {
+      feed = g_object_new (G_OBJECT_TYPE (feed),
+                         "grilo-source", source,
+                         "grilo-box", media,
+                         "tracker-filter", filter,
+                         NULL);
+      g_free (filter);
+    }
+  else
+    {
+      feed = g_object_new (G_OBJECT_TYPE (feed),
+                         "grilo-source", source,
+                         "grilo-box", media,
+                         NULL);
+    }
+
   if (source)
     g_object_unref (source);
-  if (filter)
-    g_free (filter);
 
   data->folder_opened = TRUE;
 
