@@ -2612,15 +2612,6 @@ main (int argc, char **argv)
   show.mime_types = (gchar **)show_action_mimetypes;
   show.priority = G_MAXINT;
 
-  /* Open folder action */
-  open_folder.action =
-    mx_action_new_full ("open-grilo-folder", _("Open folder"),
-                        G_CALLBACK (mex_grilo_open_folder_cb), &data);
-  mx_action_set_icon (open_folder.action, "user-home-highlight-mex");
-  open_folder.mime_types = (gchar **)folder_action_mimetypes;
-  open_folder.priority = G_MAXINT;
-
-
   /* Go back action */
   back.action =
     mx_action_new_full ("go-back", _("Go back"),
