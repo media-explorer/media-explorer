@@ -24,6 +24,9 @@
 #include <config.h>
 #include <glib/gi18n-lib.h>
 
+#include <grilo.h>
+#include "mex-grilo-tracker-feed.h"
+
 static void
 mex_queue_button_set_content (MexContentView *view,
                               MexContent     *content);
@@ -116,26 +119,185 @@ mex_queue_button_class_init (MexQueueButtonClass *klass)
 }
 
 static void
+_add_remove_recursive (MexModel *queue_model, MexFeed *feed, gboolean add)
+{
+  gint len, i;
+
+  len = mex_model_get_length (MEX_MODEL (feed));
+
+  for (i=0; i < len; i++)
+    {
+      MexContent *content;
+
+      content = mex_model_get_content (MEX_MODEL (feed), i);
+      /* Don't accidentally add a directory to the queue */
+      if (g_str_has_prefix (mex_content_get_metadata (content,                                        MEX_CONTENT_METADATA_MIMETYPE), "x-grl/box"))
+        continue;
+
+      if (add)
+        mex_model_add_content (queue_model, content);
+      else
+        mex_model_remove_content (queue_model, content);
+    }
+  g_object_unref (feed);
+}
+
+static void
+_remove_directory_query_complete_cb (MexFeed *feed,
+                                     GParamSpec *spec,
+                                     MexQueueButton *q_button)
+{
+  MexQueueButtonPrivate *priv = q_button->priv;
+
+  _add_remove_recursive (priv->queue_model, feed, FALSE);
+}
+
+static void
+_add_directory_query_complete_cb (MexFeed *feed,
+                                  GParamSpec *spec,
+                                  MexQueueButton *q_button)
+{
+  MexQueueButtonPrivate *priv = q_button->priv;
+
+  _add_remove_recursive (priv->queue_model, feed, TRUE);
+}
+
+
+/* When the MexContent set on the queue button is a directory we
+ * try to add the children of the directory and mark the directory
+ * as queued. When the child items are added to the queue model they
+ * are marked as queued via the controller
+ */
+static void
+_add_from_directory (MexQueueButton *q_button, gboolean add)
+{
+  MexQueueButtonPrivate *priv = q_button->priv;
+  MexFeed *feed;
+  GrlMediaSource *source;
+  GList *metadata_keys;
+  GList *query_keys;
+
+  const gchar *filter;
+  const gchar *stream_uri;
+
+  if (!MEX_IS_GRILO_PROGRAM (priv->content))
+    return;
+
+  g_object_get (priv->content, "feed", &feed, NULL);
+
+  if (MEX_IS_GRILO_FEED (feed))
+    {
+      g_object_get (feed,
+                    "grilo-source", &source,
+                    "grilo-query-keys", &query_keys,
+                    "grilo-metadata-keys", &metadata_keys,
+                    NULL);
+
+      stream_uri =
+        mex_content_get_metadata (priv->content, MEX_CONTENT_METADATA_STREAM);
+
+      /* tracker filesystem feed */
+      if (MEX_IS_GRILO_TRACKER_FEED (feed))
+        {
+          gchar *orig_filter;
+          g_object_get (feed, "tracker-filter", &orig_filter, NULL);
+
+                   filter =
+            g_strdup_printf("FILTER(fn:starts-with(nie:url(?urn), '%s'))",
+                            stream_uri);
+
+          feed = mex_grilo_tracker_feed_new (source,
+                                             query_keys,
+                                             metadata_keys,
+                                             filter, NULL);
+
+          mex_grilo_feed_query (MEX_GRILO_FEED (feed), orig_filter, 0,
+                                G_MAXINT);
+          g_free (orig_filter);
+        }
+      /* We already know that the content is ia MexGriloProgram
+       * box provides the root Grlio media content.
+       * filesystem grilo feed
+       */
+      else
+        {
+          GrlMedia *box;
+          g_object_get (priv->content, "grilo-media", &box, NULL);
+          GError *error=NULL;
+
+          feed = mex_grilo_feed_new (source, query_keys, metadata_keys, box);
+          mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
+          g_object_unref (box);
+        }
+      /* unref/free the stuff we g_object_get'ed */
+      g_object_unref (source);
+      g_list_free (query_keys);
+      g_list_free (metadata_keys);
+
+      /* we don't actually want to add the priv->content into the queue model,
+       * only it's children, which is where the QUEUED flag is usually set
+       */
+
+      if (add)
+        {
+          g_signal_connect (feed, "notify::completed",
+                            G_CALLBACK (_add_directory_query_complete_cb),
+                            q_button);
+
+          mex_content_set_metadata (priv->content, MEX_CONTENT_METADATA_QUEUED,
+                                    "yes");
+        }
+      else
+        {
+          g_signal_connect (feed, "notify::completed",
+                            G_CALLBACK (_remove_directory_query_complete_cb),
+                            q_button);
+
+          mex_content_set_metadata (priv->content, MEX_CONTENT_METADATA_QUEUED,
+                                    NULL);
+        }
+    }
+  else
+    {
+      /* We're not working with a grilo feed therefore we can't help :( */
+      return;
+    }
+}
+
+static void
 _queue_button_notify_toggled_cb (MxButton       *button,
                                  GParamSpec     *pspec,
                                  MexQueueButton *q_button)
 {
   MexQueueButtonPrivate *priv = q_button->priv;
 
+  gboolean directory;
+
+  directory =
+    g_str_has_prefix (mex_content_get_metadata (priv->content,                                        MEX_CONTENT_METADATA_MIMETYPE), "x-grl/box");
+
+  /* Triggers a train of actions that makes content have it's queued
+   * property set which then runs the notify cb which calls
+   * mex_queue_button_update so we don't need to run it directly
+   */
+
   if (mx_button_get_toggled (button))
     {
       mex_queue_button_set_animated (q_button, TRUE);
-      
-      /* Triggers a train of actions that makes content have it's queued
-       * property set which then runs the notify cb which calls
-       * mex_queue_button_update so we don't need to run it directly
-       */
-      mex_model_add_content (priv->queue_model, priv->content);
+
+      if (directory)
+        _add_from_directory (q_button, TRUE);
+      else
+        mex_model_add_content (priv->queue_model, priv->content);
     }
   else
     {
       mex_queue_button_set_animated (q_button, FALSE);
-      mex_model_remove_content (priv->queue_model, priv->content);
+
+      if (directory)
+          _add_from_directory (q_button, FALSE);
+      else
+        mex_model_remove_content (priv->queue_model, priv->content);
     }
 }
 
