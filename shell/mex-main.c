@@ -2593,7 +2593,7 @@ main (int argc, char **argv)
   listen.action =
     mx_action_new_full ("listen", _("Listen"),
                         G_CALLBACK (mex_play_from_begin_cb), &data);
-  mx_action_set_icon (listen.action, "media-listen-mex");
+  mx_action_set_icon (listen.action, "media-watch-mex");
   listen.mime_types = (gchar **)listen_action_mimetypes;
   listen.priority = G_MAXINT;
 
