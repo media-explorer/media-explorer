@@ -213,7 +213,8 @@ _add_from_directory (MexQueueButton *q_button, gboolean add)
 
           mex_grilo_feed_query (MEX_GRILO_FEED (feed), orig_filter, 0,
                                 G_MAXINT);
-          g_free (orig_filter);
+          if (orig_filter)
+            g_free (orig_filter);
         }
       /* We already know that the content is ia MexGriloProgram
        * box provides the root Grlio media content.
@@ -223,16 +224,18 @@ _add_from_directory (MexQueueButton *q_button, gboolean add)
         {
           GrlMedia *box;
           g_object_get (priv->content, "grilo-media", &box, NULL);
-          GError *error=NULL;
 
           feed = mex_grilo_feed_new (source, query_keys, metadata_keys, box);
           mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
           g_object_unref (box);
         }
       /* unref/free the stuff we g_object_get'ed */
-      g_object_unref (source);
-      g_list_free (query_keys);
-      g_list_free (metadata_keys);
+      if (source)
+        g_object_unref (source);
+      if (query_keys)
+        g_list_free (query_keys);
+      if (metadata_keys)
+        g_list_free (metadata_keys);
 
       /* we don't actually want to add the priv->content into the queue model,
        * only it's children, which is where the QUEUED flag is usually set
