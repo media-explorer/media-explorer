@@ -121,6 +121,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-screensaver.h			\
 	$(top_srcdir)/mex/mex-scroll-indicator.h		\
 	$(top_srcdir)/mex/mex-scroll-view.h			\
+	$(top_srcdir)/mex/mex-scrollable-container.h		\
 	$(top_srcdir)/mex/mex-settings.h			\
 	$(top_srcdir)/mex/mex-shadow.h				\
 	$(top_srcdir)/mex/mex-shell.h				\
@@ -216,6 +217,7 @@ mex_sources =					\
 	mex-screensaver.c			\
 	mex-scroll-indicator.c			\
 	mex-scroll-view.c			\
+	mex-scrollable-container.c		\
 	mex-settings.c				\
 	mex-shadow.c				\
 	mex-shell.c				\

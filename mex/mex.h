@@ -74,6 +74,7 @@
 #include <mex/mex-resizing-hbox-child.h>
 #include <mex/mex-scroll-indicator.h>
 #include <mex/mex-scroll-view.h>
+#include <mex/mex-scrollable-container.h>
 #include <mex/mex-settings.h>
 #include <mex/mex-shadow.h>
 #include <mex/mex-shell.h>
