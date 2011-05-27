@@ -495,9 +495,6 @@ mex_explorer_column_object_created_cb (MexProxy     *proxy,
       g_signal_stop_emission_by_name (proxy, "object-created");
       return;
     }
-
-  /* Set the thumbnail size in column views */
-  mex_content_box_set_thumbnail_size (MEX_CONTENT_BOX (object), 426, 239);
 }
 
 static void
