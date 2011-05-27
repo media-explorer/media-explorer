@@ -19,6 +19,7 @@
 
 #include "mex-resizing-hbox.h"
 #include "mex-resizing-hbox-child.h"
+#include "mex-scrollable-container.h"
 #include "mex-utils.h"
 #include <math.h>
 
@@ -26,6 +27,7 @@ static void clutter_container_iface_init (ClutterContainerIface *iface);
 static void mx_scrollable_iface_init (MxScrollableIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 static void mx_stylable_iface_init (MxStylableIface *iface);
+static void mex_scrollable_container_iface_init (MexScrollableContainerInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexResizingHBox, mex_resizing_hbox, MX_TYPE_WIDGET,
                          G_IMPLEMENT_INTERFACE (CLUTTER_TYPE_CONTAINER,
@@ -35,7 +37,9 @@ G_DEFINE_TYPE_WITH_CODE (MexResizingHBox, mex_resizing_hbox, MX_TYPE_WIDGET,
                          G_IMPLEMENT_INTERFACE (MX_TYPE_FOCUSABLE,
                                                 mx_focusable_iface_init)
                          G_IMPLEMENT_INTERFACE (MX_TYPE_STYLABLE,
-                                                mx_stylable_iface_init))
+                                                mx_stylable_iface_init)
+                         G_IMPLEMENT_INTERFACE (MEX_TYPE_SCROLLABLE_CONTAINER,
+                                                mex_scrollable_container_iface_init))
 
 #define RESIZING_HBOX_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_RESIZING_HBOX, MexResizingHBoxPrivate))
@@ -90,8 +94,10 @@ struct _MexResizingHBoxPrivate
 
 static GQuark mex_resizing_hbox_meta_quark = 0;
 
-static void
-mex_resizing_hbox_start_animation (MexResizingHBox *self);
+static void mex_resizing_hbox_start_animation (MexResizingHBox *self);
+static void mex_resizing_hbox_get_allocation (MexResizingHBox *self,
+                                              ClutterActor    *child,
+                                              ClutterActorBox *box);
 
 /* ClutterContainerIface */
 
@@ -546,6 +552,21 @@ mx_stylable_iface_init (MxStylableIface *iface)
                                   MX_TYPE_BORDER_IMAGE,
                                   G_PARAM_READWRITE);
       mx_stylable_iface_install_property (iface, MEX_TYPE_RESIZING_HBOX, pspec);
+    }
+}
+
+/* MexScrollableContainerInterface */
+
+static void
+mex_scrollable_container_iface_init (MexScrollableContainerInterface *iface)
+{
+  static gboolean is_initialized = FALSE;
+
+  if (G_UNLIKELY (!is_initialized))
+    {
+      is_initialized = TRUE;
+
+      iface->get_allocation = mex_resizing_hbox_get_allocation;
     }
 }
 
@@ -1124,10 +1145,10 @@ mex_resizing_hbox_allocate (ClutterActor           *actor,
   mex_resizing_hbox_allocate_children (self, box, flags, progress, NULL, NULL);
 }
 
-void
-mex_resizing_hbox_get_child_box (MexResizingHBox *self,
-                                 ClutterActor    *child,
-                                 ClutterActorBox *box)
+static void
+mex_resizing_hbox_get_allocation (MexResizingHBox *self,
+                                  ClutterActor    *child,
+                                  ClutterActorBox *box)
 {
   ClutterActorBox self_box;
 

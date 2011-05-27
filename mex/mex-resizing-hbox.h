@@ -71,10 +71,6 @@ void mex_resizing_hbox_set_resizing_enabled (MexResizingHBox *hbox,
                                              gboolean         enabled);
 gboolean mex_resizing_hbox_get_resizing_enabled (MexResizingHBox *hbox);
 
-void mex_resizing_hbox_get_child_box (MexResizingHBox *self,
-                                      ClutterActor    *child,
-                                      ClutterActorBox *box);
-
 void mex_resizing_hbox_set_horizontal_depth_scale (MexResizingHBox *hbox,
                                              gfloat           multiplier);
 gfloat mex_resizing_hbox_get_horizontal_depth_scale (MexResizingHBox *hbox);

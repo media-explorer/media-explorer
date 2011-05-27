@@ -20,6 +20,7 @@
 #include "mex-scroll-view.h"
 #include "mex-scroll-indicator.h"
 #include "mex-resizing-hbox.h"
+#include "mex-scrollable-container.h"
 
 /* This widget is mostly derived from MxScrollView */
 
@@ -602,9 +603,9 @@ mex_scroll_view_focus_allocation_cb (ClutterActor           *focus,
    *       to figure out a way to do this in a generic way in the
    *       scrollable interface, perhaps.
    */
-  if (MEX_IS_RESIZING_HBOX (priv->child))
-    mex_resizing_hbox_get_child_box (MEX_RESIZING_HBOX (priv->child),
-                                     focus, &child_box);
+  if (MEX_IS_SCROLLABLE_CONTAINER (priv->child))
+    mex_scrollable_container_get_allocation (
+      MEX_SCROLLABLE_CONTAINER (priv->child), focus, &child_box);
   else
     child_box = *box;
 
