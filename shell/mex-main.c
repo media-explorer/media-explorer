@@ -872,20 +872,10 @@ mex_page_created_cb (MexExplorer   *explorer,
           mex_expander_box_set_important (MEX_EXPANDER_BOX (box), TRUE);
           mex_tile_set_important (MEX_TILE (tile), TRUE);
 
-          /* Make sure it stays correctly sized */
+          /* Make sure the tile stays the correct size */
           g_object_bind_property (container, "tile-width",
-                                  box, "thumb-width",
+                                  tile, "width",
                                   G_BINDING_SYNC_CREATE);
-          g_object_bind_property (container, "tile-height",
-                                  box, "thumb-height",
-                                  G_BINDING_SYNC_CREATE);
-
-          /* Add a shadow */
-          shadow = mex_shadow_new (box);
-          mex_shadow_set_radius_y (shadow, 24);
-          mex_shadow_set_paint_flags (shadow,
-                                      MEX_TEXTURE_FRAME_TOP |
-                                      MEX_TEXTURE_FRAME_BOTTOM);
 
           /* Add to the grid  */
           clutter_container_add_actor (container, box);

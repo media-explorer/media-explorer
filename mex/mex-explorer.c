@@ -28,7 +28,6 @@
 #include "mex-marshal.h"
 #include "mex-resizing-hbox.h"
 #include "mex-scroll-view.h"
-#include "mex-shadow.h"
 #include "mex-tile.h"
 
 static void model_length_changed_cb (MexModel   *model,
@@ -468,12 +467,12 @@ mex_explorer_clear_cb (gpointer data, gpointer user_data)
 }
 
 static gboolean
-mex_explorer_transform_grid_height_cb (GBinding     *binding,
-                                       const GValue *source,
-                                       GValue       *target,
-                                       gpointer      userdata)
+mex_explorer_shrink_tile_height_cb (GBinding     *binding,
+                                    const GValue *source,
+                                    GValue       *target,
+                                    gpointer      userdata)
 {
-  gfloat height = g_value_get_float (source) * (1.0 / 1.5);
+  gfloat height = g_value_get_float (source) / 1.5f;
   g_value_set_float (target, height);
   return TRUE;
 }
@@ -515,21 +514,13 @@ mex_explorer_grid_object_created_cb (MexProxy      *proxy,
   ClutterActor *tile = mex_content_box_get_tile (content_box);
   ClutterActor *menu = mex_content_box_get_menu (content_box);
   ClutterActor *details = mex_content_box_get_details (content_box);
-  MexShadow *shadow = mex_shadow_new (CLUTTER_ACTOR (object));
-
-  mex_shadow_set_radius_y (shadow, 24);
-  mex_shadow_set_paint_flags (shadow,
-                              MEX_TEXTURE_FRAME_TOP |
-                              MEX_TEXTURE_FRAME_BOTTOM);
 
   mex_tile_set_important (MEX_TILE (tile), TRUE);
   mex_expander_box_set_important (MEX_EXPANDER_BOX (object), TRUE);
 
+  /* Make sure the tiles stay the correct size */
   g_object_bind_property (grid, "tile-width",
-                          object, "thumb-width",
-                          G_BINDING_SYNC_CREATE);
-  g_object_bind_property (grid, "tile-height",
-                          object, "thumb-height",
+                          tile, "width",
                           G_BINDING_SYNC_CREATE);
 
   /* Make sure expanded grid tiles fill a nice-looking space */
@@ -539,7 +530,7 @@ mex_explorer_grid_object_created_cb (MexProxy      *proxy,
   g_object_bind_property_full (grid, "tile-height",
                                details, "height",
                                G_BINDING_SYNC_CREATE,
-                               mex_explorer_transform_grid_height_cb,
+                               mex_explorer_shrink_tile_height_cb,
                                NULL,
                                NULL,
                                NULL);
