@@ -71,6 +71,7 @@
 #include <mex/mex-proxy.h>
 #include <mex/mex-proxy-model.h>
 #include <mex/mex-resizing-hbox.h>
+#include <mex/mex-resizing-hbox-child.h>
 #include <mex/mex-scroll-indicator.h>
 #include <mex/mex-scroll-view.h>
 #include <mex/mex-settings.h>
