@@ -661,7 +661,7 @@ mex_content_box_class_init (MexContentBoxClass *klass)
   pspec = g_param_spec_int ("thumb-width",
                             "Thumbnail width",
                             "Scale the width of the thumbnail while loading.",
-                            0, G_MAXINT, 0,
+                            -1, G_MAXINT, 426,
                             G_PARAM_READWRITE |
                             G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_THUMB_WIDTH, pspec);
@@ -669,7 +669,7 @@ mex_content_box_class_init (MexContentBoxClass *klass)
   pspec = g_param_spec_int ("thumb-height",
                             "Thumbnail height",
                             "Scale the height of the thumbnail while loading.",
-                            0, G_MAXINT, 0,
+                            -1, G_MAXINT, 240,
                             G_PARAM_READWRITE |
                             G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_THUMB_HEIGHT, pspec);
@@ -713,6 +713,8 @@ mex_content_box_init (MexContentBox *self)
   MexContentBoxPrivate *priv = self->priv = CONTENT_BOX_PRIVATE (self);
   ClutterActor *hline, *box;
 
+  priv->thumb_width = 426;
+  priv->thumb_height = 240;
 
   /* Create description panel */
   box = mx_box_layout_new ();
@@ -732,6 +734,10 @@ mex_content_box_init (MexContentBox *self)
 
   /* Create tile */
   priv->tile = mex_content_tile_new ();
+  g_object_set (G_OBJECT (priv->tile),
+                "thumb-width", priv->thumb_width,
+                "thumb-height", priv->thumb_height,
+                NULL);
   mx_bin_set_fill (MX_BIN (priv->tile), TRUE, TRUE);
 
   clutter_actor_set_reactive (priv->tile, TRUE);
