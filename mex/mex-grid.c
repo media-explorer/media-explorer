@@ -20,6 +20,7 @@
 #include "mex-grid.h"
 #include "mex-content-box.h"
 #include "mex-content-view.h"
+#include "mex-shadow.h"
 #include <math.h>
 
 static void clutter_container_iface_init (ClutterContainerIface *iface);
@@ -40,28 +41,12 @@ G_DEFINE_TYPE_WITH_CODE (MexGrid, mex_grid, MX_TYPE_WIDGET,
 #define GRID_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_GRID, MexGridPrivate))
 
-typedef struct
-{
-  gfloat left;
-  gfloat right;
-  gfloat bottom;
-} MexGridSpan;
-
-typedef struct
-{
-  gdouble initial_height;
-  gdouble target_height;
-  gfloat  y;
-  gfloat  y2;
-} MexGridRowData;
-
 struct _MexGridPrivate
 {
-  guint            tile_width_changed : 1;
-  guint            tile_height_changed : 1;
-  guint            tile_size_notified : 1;
   guint            has_focus : 1;
   guint            next_foreach_is_style_changed : 1;
+  guint            tile_width_changed : 1;
+  guint            tile_height_changed : 1;
   guint            focus_waiting;
 
   GArray          *children;
@@ -71,21 +56,19 @@ struct _MexGridPrivate
   gpointer         sort_data;
 
   gint             stride;
-  gint             real_stride;
-  gfloat           tile_width;
-  gfloat           tile_height;
-  GArray          *row_sizes;
-  GArray          *spans;
-  GArray          *boxes;
 
   ClutterAlpha    *alpha;
   ClutterTimeline *timeline;
   guint            anim_length;
+  gdouble          initial_row;
+  gdouble          animated_row;
 
   MxAdjustment    *vadjust;
 
   gint             first_visible;
   gint             last_visible;
+  gfloat           tile_width;
+  gfloat           tile_height;
 
   CoglHandle       highlight;
   CoglHandle       highlight_material;
@@ -100,11 +83,12 @@ enum
   PROP_HADJUST,
   PROP_VADJUST,
   PROP_TILE_WIDTH,
-  PROP_TILE_HEIGHT,
+  PROP_TILE_HEIGHT
 };
 
+static GQuark mex_grid_shadow_quark = 0;
+
 static void mex_grid_start_animation (MexGrid *self);
-static void mex_grid_ensure_rows (MexGrid *self, const ClutterActorBox *box);
 
 /* ClutterContainerIface */
 
@@ -162,6 +146,33 @@ mex_grid_insert_sorted (MexGrid      *self,
 }
 
 static void
+mex_grid_child_add_shadow (ClutterActor *child)
+{
+  MexShadow *shadow = mex_shadow_new (child);
+
+  mex_shadow_set_radius_y (shadow, 24);
+  mex_shadow_set_paint_flags (shadow,
+                              MEX_TEXTURE_FRAME_TOP |
+                              MEX_TEXTURE_FRAME_BOTTOM);
+
+  g_object_set_qdata (G_OBJECT (child), mex_grid_shadow_quark, shadow);
+}
+
+static MexShadow *
+mex_grid_child_get_shadow (ClutterActor *child)
+{
+  return g_object_get_qdata (G_OBJECT (child), mex_grid_shadow_quark);
+}
+
+static void
+mex_grid_child_remove_shadow (ClutterActor *child)
+{
+  MexShadow *shadow = mex_grid_child_get_shadow (child);
+  g_object_set_qdata (G_OBJECT (child), mex_grid_shadow_quark, NULL);
+  g_object_unref (shadow);
+}
+
+static void
 mex_grid_add (ClutterContainer *container,
               ClutterActor     *actor)
 {
@@ -172,6 +183,8 @@ mex_grid_add (ClutterContainer *container,
     mex_grid_insert_sorted (self, actor);
   else
     g_array_append_val (priv->children, actor);
+
+  mex_grid_child_add_shadow (actor);
 
   clutter_actor_set_parent (actor, CLUTTER_ACTOR (self));
 
@@ -208,6 +221,8 @@ mex_grid_remove (ClutterContainer *container,
         continue;
 
       g_object_ref (actor);
+
+      mex_grid_child_remove_shadow (actor);
 
       g_array_remove_index (priv->children, i);
       clutter_actor_unparent (actor);
@@ -352,12 +367,12 @@ mex_grid_move_focus (MxFocusable      *focusable,
       break;
 
     case MX_FOCUS_DIRECTION_UP:
-      dx = -priv->real_stride;
+      dx = -priv->stride;
       hint = MX_FOCUS_HINT_FIRST;
       break;
 
     case MX_FOCUS_DIRECTION_DOWN:
-      dx = priv->real_stride;
+      dx = priv->stride;
       hint = MX_FOCUS_HINT_FIRST;
       break;
 
@@ -396,8 +411,8 @@ mex_grid_move_focus (MxFocusable      *focusable,
            */
           if (!focusable &&
               (direction == MX_FOCUS_DIRECTION_DOWN) &&
-              ((index / priv->real_stride) ==
-               ((priv->children->len - 1) / priv->real_stride) - 1))
+              ((index / priv->stride) ==
+               ((priv->children->len - 1) / priv->stride) - 1))
             {
               child = g_array_index (priv->children, ClutterActor *,
                                      priv->children->len - 1);
@@ -416,10 +431,10 @@ mex_grid_move_focus (MxFocusable      *focusable,
           for (i = index + dx; (i >= 0) && (i < priv->children->len); i += dx)
             {
               if ((direction == MX_FOCUS_DIRECTION_LEFT) &&
-                  ((i + 1) % priv->real_stride == 0))
+                  ((i + 1) % priv->stride == 0))
                 break;
               if ((direction == MX_FOCUS_DIRECTION_RIGHT) &&
-                  (i % priv->real_stride == 0))
+                  (i % priv->stride == 0))
                 break;
               child = g_array_index (priv->children, ClutterActor *, i);
               if (MX_IS_FOCUSABLE (child) &&
@@ -433,17 +448,17 @@ mex_grid_move_focus (MxFocusable      *focusable,
            */
           if (!focusable &&
               (direction == MX_FOCUS_DIRECTION_RIGHT) &&
-              ((index % priv->real_stride) != (priv->real_stride - 1)) &&
-              ((index / priv->real_stride) ==
-               ((priv->children->len - 1) / priv->real_stride)))
+              ((index % priv->stride) != (priv->stride - 1)) &&
+              ((index / priv->stride) ==
+               ((priv->children->len - 1) / priv->stride)))
             {
               child = g_array_index (priv->children, ClutterActor *,
-                                     priv->children->len - priv->real_stride);
+                                     priv->children->len - priv->stride);
               if (MX_IS_FOCUSABLE (child) &&
                   (focusable = mx_focusable_accept_focus (MX_FOCUSABLE (child),
                                                           hint)))
                 {
-                  i = priv->children->len - priv->real_stride;
+                  i = priv->children->len - priv->stride;
                   break;
                 }
             }
@@ -462,8 +477,31 @@ mex_grid_move_focus (MxFocusable      *focusable,
        * having to iterate over all our children later on when
        * we're notified of the focus change.
        */
+
+      /* Update the shadow properties */
+      if (priv->current_focus)
+        {
+          MexShadow *shadow = mex_grid_child_get_shadow (priv->current_focus);
+          mex_shadow_set_radius_y (shadow, 24);
+          mex_shadow_set_paint_flags (shadow,
+                                      MEX_TEXTURE_FRAME_TOP |
+                                      MEX_TEXTURE_FRAME_BOTTOM);
+        }
+
+      if (child)
+        {
+          MexShadow *shadow = mex_grid_child_get_shadow (child);
+          mex_shadow_set_radius_y (shadow, 16);
+          mex_shadow_set_paint_flags (shadow,
+                                      MEX_TEXTURE_FRAME_TOP |
+                                      MEX_TEXTURE_FRAME_BOTTOM |
+                                      MEX_TEXTURE_FRAME_LEFT |
+                                      MEX_TEXTURE_FRAME_RIGHT);
+        }
+
+      /* Update the focused child/row pointers */
       priv->current_focus = child;
-      priv->focused_row = i / priv->real_stride;
+      priv->focused_row = i / priv->stride;
     }
 
   return focusable;
@@ -516,7 +554,7 @@ mex_grid_accept_focus (MxFocusable *focusable, MxFocusHint hint)
           if (returnval)
             {
               priv->current_focus = child;
-              priv->focused_row = i / priv->real_stride;
+              priv->focused_row = i / priv->stride;
               break;
             }
         }
@@ -571,22 +609,13 @@ mex_grid_get_property (GObject    *object,
                        GValue     *value,
                        GParamSpec *pspec)
 {
-  MexGrid *grid = (MexGrid *) object;
-  MexGridPrivate *priv = grid->priv;
   MxAdjustment *adjustment;
+  MexGrid *self = MEX_GRID (object);
 
   switch (property_id)
     {
     case PROP_STRIDE:
-      g_value_set_int (value, mex_grid_get_stride (MEX_GRID (object)));
-      break;
-
-    case PROP_TILE_WIDTH:
-      g_value_set_float (value, priv->tile_width);
-      break;
-
-    case PROP_TILE_HEIGHT:
-      g_value_set_float (value, priv->tile_height);
+      g_value_set_int (value, mex_grid_get_stride (self));
       break;
 
     case PROP_HADJUST:
@@ -597,6 +626,14 @@ mex_grid_get_property (GObject    *object,
     case PROP_VADJUST:
       mex_grid_get_adjustments (MX_SCROLLABLE (object), NULL, &adjustment);
       g_value_set_object (value, adjustment);
+      break;
+
+    case PROP_TILE_WIDTH:
+      g_value_set_float (value, self->priv->tile_width);
+      break;
+
+    case PROP_TILE_HEIGHT:
+      g_value_set_float (value, self->priv->tile_height);
       break;
 
     default:
@@ -654,6 +691,7 @@ mex_grid_dispose (GObject *object)
 
   if (priv->timeline)
     {
+      clutter_timeline_stop (priv->timeline);
       g_object_unref (priv->timeline);
       priv->timeline = NULL;
     }
@@ -680,24 +718,6 @@ mex_grid_finalize (GObject *object)
       priv->children = NULL;
     }
 
-  if (priv->row_sizes)
-    {
-      g_array_unref (priv->row_sizes);
-      priv->row_sizes = NULL;
-    }
-
-  if (priv->spans)
-    {
-      g_array_unref (priv->spans);
-      priv->spans = NULL;
-    }
-
-  if (priv->boxes)
-    {
-      g_array_unref (priv->boxes);
-      priv->boxes = NULL;
-    }
-
   if (priv->highlight_image)
     {
       g_boxed_free (MX_TYPE_BORDER_IMAGE, priv->highlight_image);
@@ -710,11 +730,7 @@ mex_grid_finalize (GObject *object)
 static void
 mex_grid_start_animation (MexGrid *self)
 {
-  gint i;
-  gdouble progress;
   MexGridPrivate *priv = self->priv;
-
-  mex_grid_ensure_rows (self, NULL);
 
   if (!priv->timeline)
     return;
@@ -725,77 +741,11 @@ mex_grid_start_animation (MexGrid *self)
       return;
     }
 
-  progress = clutter_alpha_get_alpha (priv->alpha);
-
-  for (i = 0; i <= (priv->children->len - 1) / priv->real_stride; i++)
-    {
-      gdouble current_height;
-      MexGridRowData *data =
-        &g_array_index (priv->row_sizes, MexGridRowData, i);
-
-      current_height = (data->target_height * progress) +
-                       (data->initial_height * (1.0 - progress));
-
-      data->initial_height = current_height;
-      if (!priv->has_focus)
-        data->target_height = 1.0 / pow (1.5, 2);
-      else if (i == priv->focused_row)
-        data->target_height = 1.0;
-      else
-        data->target_height = 1.0 /
-                              pow (1.5, MIN (2, ABS (priv->focused_row - i)));
-    }
+  priv->initial_row = priv->animated_row;
 
   clutter_timeline_set_direction (priv->timeline, CLUTTER_TIMELINE_FORWARD);
   clutter_timeline_rewind (priv->timeline);
   clutter_timeline_start (priv->timeline);
-}
-
-static void
-mex_grid_ensure_rows (MexGrid               *self,
-                      const ClutterActorBox *box)
-{
-  gint needed_rows;
-  MexGridPrivate *priv = self->priv;
-
-  if (!priv->real_stride || box)
-    {
-      if (priv->stride)
-        priv->real_stride = priv->stride;
-      else
-        {
-          gfloat width;
-          MxPadding padding;
-          ClutterActorBox alloc_box;
-
-          /* Make sure we have the allocation */
-          if (!box)
-            clutter_actor_get_allocation_box (CLUTTER_ACTOR (self),
-                                              &alloc_box);
-          else
-            alloc_box = *box;
-
-          /* Take into account padding */
-          mx_widget_get_padding (MX_WIDGET (self), &padding);
-          width = alloc_box.x2 - alloc_box.x1 - padding.left - padding.right;
-
-          /* Calculate how many tiles we can fit into our allocated width */
-          if (width > priv->tile_width)
-            priv->real_stride = (gint)(width / priv->tile_width);
-          else
-            priv->real_stride = 1;
-        }
-    }
-
-  needed_rows = (priv->children->len + priv->real_stride - 1) /
-    priv->real_stride;
-
-  if ((priv->row_sizes->len < needed_rows) ||
-      (priv->row_sizes->len > needed_rows + 1))
-    {
-      /* Grow or shrink array */
-      g_array_set_size (priv->row_sizes, needed_rows);
-    }
 }
 
 static void
@@ -804,21 +754,26 @@ mex_grid_get_preferred_width (ClutterActor *actor,
                               gfloat       *min_width_p,
                               gfloat       *nat_width_p)
 {
-  gfloat width;
+  gfloat min_width, width;
   MxPadding padding;
 
   MexGridPrivate *priv = MEX_GRID (actor)->priv;
 
-  mx_widget_get_padding (MX_WIDGET (actor), &padding);
-  if (priv->stride)
-    width = (priv->tile_width * priv->stride) + padding.left + padding.right;
+  if (!priv->children->len)
+    min_width = width = 0;
   else
-    width = priv->tile_width + padding.left + padding.right;
+    {
+      ClutterActor *child = g_array_index (priv->children, ClutterActor *, 0);
+      clutter_actor_get_preferred_width (child, -1, NULL, &min_width);
+      width = min_width * priv->stride;
+    }
+
+  mx_widget_get_padding (MX_WIDGET (actor), &padding);
 
   if (min_width_p)
-    *min_width_p = width;
+    *min_width_p = min_width + padding.left + padding.right;
   if (nat_width_p)
-    *nat_width_p = width;
+    *nat_width_p = width + padding.left + padding.right;
 }
 
 static void
@@ -827,53 +782,29 @@ mex_grid_get_preferred_height (ClutterActor *actor,
                                gfloat       *min_height_p,
                                gfloat       *nat_height_p)
 {
-  gfloat min_height, height;
+  gfloat height;
   MxPadding padding;
 
   MexGridPrivate *priv = MEX_GRID (actor)->priv;
 
-  if (min_height_p)
-    *min_height_p = 0;
-  if (nat_height_p)
-    *nat_height_p = 0;
-
-  if (priv->has_focus && priv->current_focus)
-    clutter_actor_get_preferred_height (priv->current_focus,
-                                        -1,
-                                        &min_height,
-                                        &height);
+  if (!priv->children->len)
+    height = 0;
   else
-    min_height = height = 0.f;
+    {
+      ClutterActor *child = priv->current_focus ?
+        priv->current_focus :
+        g_array_index (priv->children, ClutterActor *, 0);
 
-  if (min_height < priv->tile_height)
-    min_height = priv->tile_height;
-  if (height < min_height)
-    height = min_height;
+      clutter_actor_get_preferred_height (child, -1, NULL, &height);
+    }
 
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
+  height += padding.top + padding.bottom;
 
   if (min_height_p)
-    *min_height_p = min_height + padding.top + padding.bottom;
+    *min_height_p = height;
   if (nat_height_p)
-    *nat_height_p = height + padding.top + padding.bottom;
-}
-
-static gboolean
-mex_grid_notify_tile_size (MexGrid *grid)
-{
-  MexGridPrivate *priv = grid->priv;
-
-  priv->tile_size_notified = TRUE;
-
-  if (priv->tile_width_changed)
-    g_object_notify (G_OBJECT (grid), "tile-width");
-  if (priv->tile_height_changed)
-    g_object_notify (G_OBJECT (grid), "tile-height");
-
-  priv->tile_width_changed = FALSE;
-  priv->tile_height_changed = FALSE;
-
-  return FALSE;
+    *nat_height_p = height;
 }
 
 static void
@@ -881,13 +812,13 @@ mex_grid_allocate (ClutterActor           *actor,
                    const ClutterActorBox  *box,
                    ClutterAllocationFlags  flags)
 {
-  gint i, row;
+  gdouble value;
   MxPadding padding;
-  gdouble value, progress;
+  gboolean allocated_focus;
+  ClutterActor *first_child;
   ClutterActorBox child_box;
-  gboolean do_second_phase, allocated_focus;
-  gfloat basic_width, basic_height, avail_width, avail_height, top, bottom,
-         focus_top;
+  gint i, first_row, last_row;
+  gfloat basic_width, basic_height, avail_width, avail_height, bottom;
 
   MexGrid *self = MEX_GRID (actor);
   MexGridPrivate *priv = self->priv;
@@ -899,369 +830,161 @@ mex_grid_allocate (ClutterActor           *actor,
   if (!priv->children->len)
     return;
 
-  progress = clutter_alpha_get_alpha (priv->alpha);
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   avail_width = box->x2 - box->x1 - padding.left - padding.right;
   avail_height = box->y2 - box->y1 - padding.top - padding.bottom;
 
-  /* We start off by assuming that all the actors are the same size - for
-   * this size, we use the set tile-size.
+  /* Allocate all actors in the visible range their preferred size. The
+   * visible range is based on the preferred height of the first actor. If
+   * the first actor is a content-box, this size is gotten from the tile
+   * within.
    */
-  basic_width = round (avail_width / (gfloat) priv->real_stride);
-  if (basic_width != priv->tile_width)
+  basic_width = floorf (avail_width / (gfloat) priv->stride);
+  first_child = g_array_index (priv->children, ClutterActor *, 0);
+  if (MEX_IS_CONTENT_BOX (first_child))
     {
-      basic_height = basic_width * priv->tile_height / priv->tile_width;
-
-      priv->tile_width_changed = TRUE;
-      priv->tile_width = basic_width;
-
-      if (basic_height != priv->tile_height)
-        {
-          priv->tile_height_changed = TRUE;
-          priv->tile_height = basic_height;
-        }
-
-      priv->tile_size_notified = FALSE;
+      ClutterActor *tile =
+        mex_content_box_get_tile (MEX_CONTENT_BOX (first_child));
+      clutter_actor_get_preferred_height (tile, basic_width,
+                                          NULL, &basic_height);
     }
   else
-    basic_height = priv->tile_height;
+    clutter_actor_get_preferred_height (first_child, basic_width,
+                                        NULL, &basic_height);
 
-  /* Ok... That's a terrible kludge. Why the hell are we doing that ??
-   *
-   * Simple, changing the tiles' size triggers a relayouting of the
-   * tiles and consequently a relayouting of the tiles' parent (ie.
-   * the grid itself) which we are trying to layout in this function.
-   * So this timeout is just a workaround to prevent that to happen.
-   *
-   * If you know a better way, please fix that...
+  /* Check if the basic size has changed and set a variable to notify later.
+   * We notify later to avoid allocation cycles, so children can bind their
+   * size properties directly to the tile-width property.
    */
-  if ((priv->tile_width_changed || priv->tile_height_changed) &&
-      !priv->tile_size_notified)
-    g_idle_add_full (G_PRIORITY_HIGH,
-                     (GSourceFunc) mex_grid_notify_tile_size,
-                     self, NULL);
+  if (priv->tile_width != basic_width)
+    {
+      priv->tile_width = basic_width;
+      priv->tile_width_changed = TRUE;
+    }
+
+  if (priv->tile_height != basic_height)
+    {
+      priv->tile_height = basic_height;
+      priv->tile_height_changed = TRUE;
+    }
 
   if (priv->vadjust)
     value = (gint)mx_adjustment_get_value (priv->vadjust);
   else
     value = 0;
 
-  /* Allocate all actors in the visible range the standard size, unless
-   * the current row height isn't the target height. When we get to an
-   * animating row, we break and allow the second, more complex
-   * allocation phase to allocate the rest.
-   *
-   * The assumption here is that any transition the child has that affects
-   * its size will take less time than the row-size transition in this
-   * container.
-   *
-   * NOTE: There's also a bad assumption that anything that isn't in
-   *       view is the basic size - unfortunately, there's not really
-   *       any way to fix this without having to measure it, and then
-   *       we become slow again.
-   *       This will produce incorrect results visually if you scroll
-   *       vertically very quickly with actors that are resizing, but
-   *       unless the animation speed is very slow, should be
-   *       unnoticeable.
+  /* Calculate our visible range - we buffer it by a few rows, for lingering
+   * animations/shadows/rounding errors.
    */
-  focus_top = -1;
-  do_second_phase = FALSE;
-  bottom = top = padding.top;
-  mex_grid_ensure_rows (self, box);
-  for (row = 0; row <= (priv->children->len - 1) / priv->real_stride; row++)
-    {
-      MexGridRowData *data =
-        &g_array_index (priv->row_sizes, MexGridRowData, row);
-      gdouble current_height = (data->target_height * progress) +
-                               (data->initial_height * (1.0 - progress));
+  first_row = MAX (0, (value / (gint)(basic_height / pow (1.5, 2))) - 3);
+  priv->first_visible = first_row * priv->stride;
+  last_row = ((value + avail_height) / (gint)(basic_height / pow (1.5, 2))) + 3;
+  priv->last_visible = MIN (priv->children->len - 1, last_row * priv->stride);
 
-      /* Check if we're visible */
-      bottom = top + (gint)round (basic_height * current_height);
-      if ((bottom - value >= 0) && (top - value < box->y2 - box->y1))
-        {
-          gint index = row * priv->real_stride;
-
-          /* Store the first visible child index, and the height at which
-           * it's visible.
-           */
-          if (priv->first_visible == -1)
-            priv->first_visible = index;
-          priv->last_visible = MIN (priv->children->len - 1,
-                                    index + (priv->real_stride - 1));
-
-          if ((current_height == data->target_height) &&
-              (!priv->has_focus || (row != priv->focused_row)))
-            {
-              child_box.y1 = top;
-              child_box.x1 = padding.left;
-
-              for (i = index;
-                   (i < index + priv->real_stride) && (i < priv->children->len);
-                   i++)
-                {
-                  gfloat width, height;
-                  ClutterActor *child =
-                    g_array_index (priv->children, ClutterActor *, i);
-
-                  clutter_actor_get_preferred_size (child,
-                                                    NULL, NULL,
-                                                    &width, &height);
-                  child_box.x2 = child_box.x1 + MAX (basic_width, width);
-                  child_box.y2 = child_box.y1 + MAX (basic_height, height);
-                  clutter_actor_allocate (child, &child_box, flags);
-                  child_box.x1 = child_box.x2;
-                }
-            }
-          else
-            {
-              /* This row is animating, or focused - break out into
-               * the more complicated allocation.
-               */
-              do_second_phase = TRUE;
-              break;
-            }
-        }
-
-      /* Store top/bottom of row */
-      data->y = top;
-      data->y2 = bottom;
-
-      if (priv->has_focus && (row == priv->focused_row))
-        focus_top = bottom;
-
-      top = bottom;
-    }
-
-  /* Allocate animating rows and any subsequent rows beneath them. */
   allocated_focus = FALSE;
-  if (do_second_phase)
+  bottom = 0;
+
+  child_box.y1 = first_row * (basic_height / pow (1.5, 2));
+
+  /* Allocate all the visible children */
+  for (i = first_row; i <= last_row; i++)
     {
-      g_array_set_size (priv->spans, 0);
-      g_array_set_size (priv->boxes, priv->real_stride);
-      for (; row <= (priv->children->len - 1) / priv->real_stride; row++)
+      gint j;
+      gdouble factor;
+
+      for (j = i * priv->stride;
+           j < MIN ((i + 1) * priv->stride, priv->children->len); j++)
         {
-          gint s;
-          gboolean do_spanning;
+          ClutterActor *child =
+            g_array_index (priv->children, ClutterActor *, j);
 
-          gint index = row * priv->real_stride;
-          MexGridRowData *data =
-            &g_array_index (priv->row_sizes, MexGridRowData, row);
-          gdouble current_height = (data->target_height * progress) +
-                                   (data->initial_height * (1.0 - progress));
+          child_box.x1 = (basic_width * (j % priv->stride)) + padding.left;
 
-          /* Work out the allocation boxes */
-          child_box.x1 = padding.left;
-          do_spanning = FALSE;
+          /* Get the preferred size of the child */
+          clutter_actor_get_preferred_size (child, NULL, NULL,
+                                            &child_box.x2, &child_box.y2);
+          child_box.x2 += child_box.x1;
+          child_box.y2 += child_box.y1;
 
-          if (priv->first_visible == -1)
-            priv->first_visible = index;
+          if (child_box.y2 > bottom)
+            bottom = child_box.y2;
 
-          for (i = index;
-               (i < index + priv->real_stride) && (i < priv->children->len);
-               i++)
+          /* Make sure the box stays within the bounds of the parents */
+          if (child_box.x2 > box->x2 - padding.right)
             {
-              gfloat width, height;
-
-              ClutterActor *child =
-                g_array_index (priv->children, ClutterActor *, i);
-              ClutterActorBox *box_store =
-                &g_array_index (priv->boxes, ClutterActorBox, i - index);
-
-              /* Get the size of the child */
-              clutter_actor_get_preferred_size (child,
-                                                NULL, NULL,
-                                                &width, &height);
-
-              /* Make sure it's at least the basic size */
-              if (width < basic_width)
-                width = basic_width;
-              if (height < basic_height)
-                height = basic_height;
-
-              child_box.x2 = child_box.x1 + width;
-
-              /* If we have spans stored, use those */
-              if (priv->spans->len)
-                {
-                  child_box.y1 = 0;
-                  for (s = 0; s < priv->spans->len; s++)
-                    {
-                      MexGridSpan *span =
-                        &g_array_index (priv->spans, MexGridSpan, s);
-
-                      if ((child_box.x1 < span->right) &&
-                          (child_box.x2 > span->left))
-                        {
-                          if (span->bottom > child_box.y1)
-                            child_box.y1 = span->bottom;
-                        }
-                    }
-                }
-              else
-                child_box.y1 = top;
-              child_box.y2 = child_box.y1 + height;
-
-              /* Store box */
-              *box_store = child_box;
-
-              /* Push boxes left if necessary, but only do this for an
-               * abnormally sized actor.
-               */
-              if (((width != basic_width) || (height != basic_height)) &&
-                  (box_store->x2 - padding.left >= avail_width))
-                {
-                  gint back;
-                  gfloat push = (box_store->x2 - padding.left) - avail_width;
-                  for (back = i - index; back >= 0; back--)
-                    {
-                      ClutterActorBox *prev_box =
-                        &g_array_index (priv->boxes, ClutterActorBox, back);
-                      prev_box->x2 -= push;
-                      prev_box->x1 -= push;
-                    }
-                }
-
-              child_box.x1 = box_store->x2;
+              child_box.x1 -= child_box.x2 - box->x2 - padding.right;
+              child_box.x2 = box->x2 - padding.right;
             }
 
-          /* Figure out if we need to store spans */
-          for (i = 0; i < priv->real_stride - 1; i++)
-            {
-              ClutterActorBox *box1, *box2;
+          clutter_actor_allocate (child, &child_box, flags);
 
-              box1 = &g_array_index (priv->boxes, ClutterActorBox, i);
-              box2 = &g_array_index (priv->boxes, ClutterActorBox, i + 1);
-
-              if (box2->y2 != box1->y2)
-                {
-                  do_spanning = TRUE;
-                  break;
-                }
-            }
-
-          /* Store top of row */
-          data->y = top;
-
-          /* Store child spans - basically copies of the boxes */
-          if (do_spanning)
-            {
-              /* Create spans */
-              top = G_MAXFLOAT;
-              bottom = 0;
-              g_array_set_size (priv->spans, priv->real_stride);
-              for (i = 0; i < priv->real_stride; i++)
-                {
-                  ClutterActorBox *box_store =
-                    &g_array_index (priv->boxes, ClutterActorBox, i);
-                  MexGridSpan *span =
-                    &g_array_index (priv->spans, MexGridSpan, i);
-
-                  span->left = box_store->x1;
-                  span->right = box_store->x2;
-                  span->bottom = box_store->y1 +
-                                 (gint)round ((box_store->y2 - box_store->y1) *
-                                              current_height);
-
-                  if (span->bottom < top)
-                    top = span->bottom;
-                  if (span->bottom > bottom)
-                    bottom = span->bottom;
-                }
-            }
-          else
-            {
-              g_array_set_size (priv->spans, 0);
-              top = child_box.y1 + (gint)round ((child_box.y2 - child_box.y1) *
-                                                current_height);
-              bottom = top;
-            }
-
-          /* Store bottom of row */
-          data->y2 = bottom;
-
-          /* Allocate */
-          for (i = index;
-               (i < index + priv->real_stride) && (i < priv->children->len);
-               i++)
-            {
-              ClutterActor *child =
-                g_array_index (priv->children, ClutterActor *, i);
-              ClutterActorBox *box_store =
-                &g_array_index (priv->boxes, ClutterActorBox, i - index);
-
-              clutter_actor_allocate (child, box_store, flags);
-              if (child == priv->current_focus)
-                allocated_focus = TRUE;
-            }
-
-          priv->last_visible = MIN (priv->children->len - 1,
-                                    index + (priv->real_stride - 1));
-
-          /* If we've moved outside of the visible range, break */
-          if (top - value >= box->y2 - box->y1)
-            {
-              row += 1;
-              break;
-            }
+          if (child == priv->current_focus)
+            allocated_focus = TRUE;
         }
+
+      if (j >= priv->children->len)
+        break;
+
+      /* The focused row is the only row that gets its full height - there
+       * is also an animation between switching rows, so we store a variable
+       * to keep track of what rows we're between.
+       *
+       * The focused row gets its full height, the two adjacent rows get a
+       * bit less height, then every other row gets even less height (but not
+       * increasingly so).
+       */
+      factor = ABS (priv->animated_row - i);
+      child_box.y1 += basic_height /
+                      pow (1.5, CLAMP (factor, 0.0, 2.0));
     }
 
   /* Make sure to always allocate the focused actor, so that it's
    * possible to scroll to it based on its allocation box.
    */
-  if (!allocated_focus && priv->has_focus)
+  if (!allocated_focus && priv->current_focus)
     {
-      gint index = priv->focused_row * priv->real_stride;
-
-      /* Find out where the top of the focused actor is */
-      if (focus_top < 0)
+      for (i = 0; i < priv->stride; i++)
         {
-          focus_top = top;
-          for (; row < priv->focused_row; row++)
+          gint idx;
+          ClutterActor *child;
+
+          idx = (priv->focused_row * priv->stride) + i;
+          if (idx >= priv->children->len)
+            break;
+
+          child = g_array_index (priv->children, ClutterActor *, idx);
+          if (child != priv->current_focus)
+            continue;
+
+          /* Note, this y value is an approximation */
+          child_box.y1 = priv->focused_row * (basic_height / pow (1.5, 2));
+          child_box.x1 = i * basic_width;
+
+          clutter_actor_get_preferred_size (child, NULL, NULL,
+                                            &child_box.x2, &child_box.y2);
+          child_box.y2 += child_box.y1;
+          child_box.x2 += child_box.x1;
+
+          if (child_box.x2 > box->x2 - padding.right)
             {
-              MexGridRowData *data =
-                &g_array_index (priv->row_sizes, MexGridRowData, row);
-              gdouble current_height = (data->target_height * progress) +
-                                       (data->initial_height * (1.0 - progress));
-              focus_top += basic_height * current_height;
+              child_box.x1 -= child_box.x2 - box->x2 - padding.right;
+              child_box.x2 = box->x2 - padding.right;
             }
+
+          allocated_focus = TRUE;
+
+          break;
         }
 
-      for (i = 0; i < priv->real_stride; i++)
-        {
-          ClutterActor *child =
-            g_array_index (priv->children, ClutterActor *, i + index);
-
-          if (child == priv->current_focus)
-            {
-              /* Allocate the focused actor the basic size */
-              child_box.x1 = basic_width * i;
-              child_box.x2 = child_box.x1 + basic_width;
-              child_box.y1 = focus_top;
-              child_box.y2 = child_box.y1 + basic_height;
-
-              clutter_actor_allocate (child, &child_box, flags);
-              allocated_focus = TRUE;
-
-              break;
-            }
-        }
+      if (!allocated_focus)
+        g_warning (G_STRLOC ": Haven't allocated the focused actor");
     }
-
-  if (!allocated_focus && priv->has_focus)
-    g_warning (G_STRLOC ": Haven't allocated the focused actor");
 
   /* Set the adjustment values */
   if (priv->vadjust)
     {
-      for (; row <= (priv->children->len - 1) / priv->real_stride; row++)
-        {
-          MexGridRowData *data =
-            &g_array_index (priv->row_sizes, MexGridRowData, row);
-          gdouble current_height = (data->target_height * progress) +
-                                   (data->initial_height * (1.0 - progress));
-          bottom += (gint)round (basic_height * current_height);
-        }
+      if (priv->last_visible != priv->children->len - 1)
+        bottom = ((priv->children->len - 1) / priv->stride + 1) * basic_height;
 
       g_object_set (G_OBJECT (priv->vadjust),
                     "lower", 0.0,
@@ -1288,23 +1011,41 @@ mex_grid_apply_transform (ClutterActor *actor,
 }
 
 static void
+mex_grid_draw_child_with_lowlight (MexGrid      *self,
+                                   ClutterActor *child,
+                                   gint          row)
+{
+  gfloat opacity;
+  ClutterActorBox child_box;
+  MexGridPrivate *priv = self->priv;
+
+  clutter_actor_paint (child);
+
+  clutter_actor_get_allocation_box (child, &child_box);
+  opacity = (MIN (2.f, ABS (row - priv->animated_row)) / 2.f) * 0.5f;
+  cogl_set_source_color4f (0.f, 0.f, 0.f, opacity);
+  cogl_rectangle (child_box.x1, child_box.y1,
+                  child_box.x2, child_box.y2);
+}
+
+static void
 mex_grid_paint (ClutterActor *actor)
 {
+  gint i;
   gfloat y;
   MxPadding padding;
-  gint i, focused_row;
   ClutterActorBox box;
   guint8 paint_opacity;
+  gboolean clipped, draw_focus;
 
-  MexGrid *grid = MEX_GRID (actor);
-  MexGridPrivate *priv = grid->priv;
+  MexGrid *self = MEX_GRID (actor);
+  MexGridPrivate *priv = self->priv;
 
   CLUTTER_ACTOR_CLASS (mex_grid_parent_class)->paint (actor);
 
   if (priv->first_visible == -1)
     return;
 
-  /* Clip our allocated area + padding */
   clutter_actor_get_allocation_box (actor, &box);
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   if (priv->vadjust)
@@ -1312,89 +1053,71 @@ mex_grid_paint (ClutterActor *actor)
   else
     y = 0;
 
-  cogl_clip_push_rectangle (padding.left,
-                            y + padding.top,
-                            box.x2 - box.x1 - padding.right,
-                            y + box.y2 - box.y1 - padding.bottom);
-
-  paint_opacity = clutter_actor_get_paint_opacity (actor);
-
-  /* Clip around all rows above the focused row */
-  if (priv->has_focus)
-    focused_row = MIN (priv->focused_row * priv->real_stride,
-                       priv->last_visible);
-  else
-    focused_row = priv->last_visible;
-
-  if (priv->has_focus && (focused_row > priv->first_visible))
+  /* Construct a clipping rectangle that goes around the focused child if
+   * it's visible.
+   */
+  clipped = FALSE;
+  if (priv->current_focus)
     {
-      MexGridRowData *focused_row_data =
-        &g_array_index (priv->row_sizes, MexGridRowData,
-                        focused_row / priv->real_stride);
+      ClutterActorBox child_box;
 
-      /* The focused row might not span the entire width of the grid, so
-       * craft a path that goes around it.
-       */
-      if (priv->last_visible < focused_row + priv->real_stride - 1)
+      clutter_actor_get_allocation_box (priv->current_focus, &child_box);
+      if (child_box.y2 > y && child_box.y1 < y + (box.y2 - box.y1))
         {
-          ClutterActorBox child_box;
-          ClutterActor *child = g_array_index (priv->children, ClutterActor *,
-                                               priv->last_visible);
+          /* This path encloses the grid */
+          cogl_path_move_to (0, y);
+          cogl_path_line_to (box.x2 - box.x1, y);
+          cogl_path_line_to (box.x2 - box.x1, y + (box.y2 - box.y1));
+          cogl_path_line_to (0, y + (box.y2 - box.y1));
+          cogl_path_line_to (0, y);
 
-          clutter_actor_get_allocation_box (child, &child_box);
-
-          cogl_path_move_to (padding.left, focused_row_data->y);
-          cogl_path_line_to (padding.left, y + padding.top);
-          cogl_path_line_to (box.x2 - box.x1 - padding.right, y + padding.top);
-          cogl_path_line_to (box.x2 - box.x1 - padding.right, child_box.y2);
+          /* This path excludes the currently focused actor */
+          cogl_path_line_to (child_box.x1, child_box.y1);
+          cogl_path_line_to (child_box.x1, child_box.y2);
           cogl_path_line_to (child_box.x2, child_box.y2);
-          cogl_path_line_to (child_box.x2, focused_row_data->y);
-          cogl_path_close ();
+          cogl_path_line_to (child_box.x2, child_box.y1);
+          cogl_path_line_to (child_box.x1, child_box.y1);
 
+          cogl_path_close ();
           cogl_clip_push_from_path ();
+
+          clipped = TRUE;
         }
-      else
-        cogl_clip_push_rectangle (padding.left, y + padding.top,
-                                  box.x2 - box.x1 - padding.right,
-                                  focused_row_data->y);
     }
+
+  if (!clipped)
+    cogl_clip_push_rectangle (0, y,
+                              box.x2 - box.x1,
+                              y + box.y2 - box.y1);
+
+  draw_focus = FALSE;
+  paint_opacity = clutter_actor_get_paint_opacity (actor);
 
   /* Draw children */
   for (i = priv->first_visible; i <= priv->last_visible; i++)
     {
+      gint row = i / priv->stride;
       ClutterActor *child = g_array_index (priv->children, ClutterActor *, i);
 
-      /* Unclip rows above the focused row */
-      if (priv->has_focus && (focused_row > priv->first_visible) &&
-          (i == focused_row))
-        cogl_clip_pop ();
-
       /* Paint child */
-      clutter_actor_paint (child);
+      if (child == priv->current_focus)
+        draw_focus = TRUE;
+      else
+        mex_grid_draw_child_with_lowlight (self, child, row);
+    }
 
-      /* Draw lowlight */
-      if (!priv->has_focus || (i < focused_row) ||
-          (i >= focused_row + priv->real_stride))
-        {
-          ClutterActorBox child_box;
-          MexGridRowData *data =
-            &g_array_index (priv->row_sizes, MexGridRowData,
-                            i / priv->real_stride);
+  /* Unset the clip around the actor */
+  cogl_clip_pop ();
 
-          gdouble progress = clutter_alpha_get_alpha (priv->alpha);
-
-          gdouble current_height = (data->target_height * progress) +
-                                   (data->initial_height * (1.0 - progress));
-
-          guint8 opacity = (guint8)((paint_opacity * 0.75) *
-                                    (1.0 - current_height));
-
-          clutter_actor_get_allocation_box (child, &child_box);
-
-          cogl_set_source_color4ub (0, 0, 0, opacity);
-          cogl_rectangle (child_box.x1, child_box.y1,
-                          child_box.x2, child_box.y2);
-        }
+  /* Draw the focused actor */
+  if (draw_focus)
+    {
+      /* Clip around the actor box */
+      cogl_clip_push_rectangle (0, y, box.x2 - box.x1,
+                                y + (box.y2 - box.y1));
+      mex_grid_draw_child_with_lowlight (self, priv->current_focus,
+                                         priv->focused_row);
+      cogl_clip_pop ();
     }
 
   /* Draw the highlight */
@@ -1420,8 +1143,17 @@ mex_grid_paint (ClutterActor *actor)
           0, 0, 1, 1);
     }
 
-  /* Unset the clip around the actor */
-  cogl_clip_pop ();
+  /* Notify the tile-size properties */
+  if (priv->tile_width_changed)
+    {
+      priv->tile_width_changed = FALSE;
+      g_object_notify (G_OBJECT (actor), "tile-width");
+    }
+  if (priv->tile_height_changed)
+    {
+      priv->tile_height_changed = FALSE;
+      g_object_notify (G_OBJECT (actor), "tile-height");
+    }
 }
 
 static void
@@ -1471,7 +1203,7 @@ mex_grid_set_focused_actor (MexGrid      *self,
         if (g_array_index (priv->children, ClutterActor *, i) == actor)
           break;
 
-      priv->focused_row = i / priv->real_stride;
+      priv->focused_row = i / priv->stride;
     }
 
   /* Animate to possibly newly focused row (or reset) */
@@ -1579,21 +1311,24 @@ mex_grid_class_init (MexGridClass *klass)
 
   pspec = g_param_spec_int ("stride",
                             "Stride",
-                            "Amount of widgets to pack horizontally. "
-                            "0 = Automatic, based on tile width.",
-                            0, G_MAXINT, 3,
+                            "Amount of widgets to pack horizontally.",
+                            1, G_MAXINT, 3,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_STRIDE, pspec);
 
-  pspec = g_param_spec_float ("tile-width", "Tile width",
-                              "Minimum width to set on new tiles",
-                              -1, G_MAXFLOAT, 360,
+  pspec = g_param_spec_float ("tile-width",
+                              "Tile width",
+                              "Convenience property representing the width "
+                              "of a tile in the grid.",
+                              0.f, G_MAXFLOAT, 0.f,
                               G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TILE_WIDTH, pspec);
 
-  pspec = g_param_spec_float ("tile-height", "Tile height",
-                              "Minimum height to set on new tiles",
-                              -1, G_MAXFLOAT, 202,
+  pspec = g_param_spec_float ("tile-height",
+                              "Tile height",
+                              "Convenience property representing the height "
+                              "of a row in the grid.",
+                              0.f, G_MAXFLOAT, 0.f,
                               G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TILE_HEIGHT, pspec);
 
@@ -1605,13 +1340,16 @@ mex_grid_class_init (MexGridClass *klass)
   g_object_class_override_property (object_class,
                                     PROP_VADJUST,
                                     "vertical-adjustment");
+
+  mex_grid_shadow_quark = g_quark_from_static_string ("mex-grid-shadow");
 }
 
 /* Following function copied from MexDrawersBox */
 static void
 mex_grid_timeline_completed_cb (ClutterTimeline *timeline,
-                                ClutterActor    *box)
+                                MexGrid         *self)
 {
+  MexGridPrivate *priv = self->priv;
   ClutterTimelineDirection direction =
     clutter_timeline_get_direction (timeline);
 
@@ -1625,7 +1363,8 @@ mex_grid_timeline_completed_cb (ClutterTimeline *timeline,
                                   CLUTTER_TIMELINE_FORWARD);
   clutter_timeline_rewind (timeline);
 
-  clutter_actor_queue_relayout (box);
+  priv->animated_row = priv->focused_row;
+  clutter_actor_queue_relayout (CLUTTER_ACTOR (self));
 }
 
 static void
@@ -1656,26 +1395,35 @@ mex_grid_style_changed_cb (MxStylable          *stylable,
 }
 
 static void
+mex_grid_timeline_new_frame_cb (ClutterTimeline *timeline,
+                                gint             msecs,
+                                MexGrid         *self)
+{
+  gdouble progress;
+  MexGridPrivate *priv = self->priv;
+
+  progress = clutter_alpha_get_alpha (priv->alpha);
+  priv->animated_row = ((1.0 - progress) * priv->initial_row) +
+                       (progress * priv->focused_row);
+
+  clutter_actor_queue_relayout (CLUTTER_ACTOR (self));
+}
+
+static void
 mex_grid_init (MexGrid *self)
 {
   MexGridPrivate *priv = self->priv = GRID_PRIVATE (self);
 
   priv->children = g_array_new (FALSE, FALSE, sizeof (ClutterActor *));
   priv->first_visible = priv->last_visible = -1;
-  priv->row_sizes = g_array_new (FALSE, TRUE, sizeof (MexGridRowData));
-  priv->spans = g_array_new (FALSE, TRUE, sizeof (MexGridSpan));
-  priv->boxes = g_array_new (FALSE, TRUE, sizeof (ClutterActorBox));
   priv->stride = 3;
-  priv->tile_width = 360;
-  priv->tile_height = 202;
 
   priv->anim_length = 150;
   priv->timeline = clutter_timeline_new (priv->anim_length);
   priv->alpha = clutter_alpha_new_full (priv->timeline, CLUTTER_EASE_OUT_QUAD);
 
-  g_signal_connect_swapped (priv->timeline, "new-frame",
-                            G_CALLBACK (clutter_actor_queue_relayout),
-                            self);
+  g_signal_connect (priv->timeline, "new-frame",
+                    G_CALLBACK (mex_grid_timeline_new_frame_cb), self);
   g_signal_connect (priv->timeline, "completed",
                     G_CALLBACK (mex_grid_timeline_completed_cb),
                     self);
@@ -1708,7 +1456,7 @@ mex_grid_set_stride (MexGrid *grid, gint stride)
   priv = grid->priv;
   if (priv->stride != stride)
     {
-      priv->real_stride = priv->stride = stride;
+      priv->stride = stride;
 
       g_object_notify (G_OBJECT (grid), "stride");
 
@@ -1717,19 +1465,6 @@ mex_grid_set_stride (MexGrid *grid, gint stride)
        */
       mex_grid_start_animation (grid);
     }
-}
-
-void
-mex_grid_get_tile_size (MexGrid *grid,
-                        gfloat  *width,
-                        gfloat  *height)
-{
-  g_return_if_fail (MEX_IS_GRID (grid));
-
-  if (width)
-    *width = grid->priv->tile_width;
-  if (height)
-    *height = grid->priv->tile_height;
 }
 
 static void
