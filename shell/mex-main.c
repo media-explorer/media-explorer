@@ -845,7 +845,7 @@ mex_page_created_cb (MexExplorer   *explorer,
       MxBoxLayout *menu_layout;
       const MexModelInfo *info;
       MxAction *order, *alt_model;
-      ClutterActor *page_box, *layout, *label, *icon, *title_box;
+      ClutterActor *layout, *label, *icon, *title_box;
       MexMenu *menu;
 
       gchar *text = NULL;
@@ -887,9 +887,8 @@ mex_page_created_cb (MexExplorer   *explorer,
       /* Create the menu */
       menu = MEX_MENU (mex_menu_new ());
       mex_menu_set_min_width (menu, 284);
+      mex_resizing_hbox_set_max_depth (MEX_RESIZING_HBOX (menu), 1);
       g_object_set_data (G_OBJECT (model), "menu", menu);
-      mex_resizing_hbox_set_resizing_enabled (MEX_RESIZING_HBOX (menu),
-                                              FALSE);
 
       /* Add a title/icon */
       g_object_get (G_OBJECT (data->toplevel_model), "title", &text, NULL);
@@ -1059,18 +1058,13 @@ mex_page_created_cb (MexExplorer   *explorer,
                                                "expand", TRUE,
                                                NULL);
 
-      /* Add menu and page to an hbox so the page can expand */
-      page_box = mx_box_layout_new ();
-      mx_box_layout_add_actor (MX_BOX_LAYOUT (page_box),
-                               CLUTTER_ACTOR (menu), 0);
-      mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (page_box),
-                                               layout, 1,
-                                               "expand", TRUE,
-                                               NULL);
+      /* Add the page to the menu. Menu children are set not to expand,
+       * so the layout will take the extra space.
+       */
+      clutter_container_add_actor (CLUTTER_CONTAINER (menu), layout);
 
       /* Name actors so we can style */
-      clutter_actor_set_name (page_box, "grid-page");
-      clutter_actor_set_name (layout, "content");
+      clutter_actor_set_name (CLUTTER_ACTOR (menu), "grid-page");
 
       /* Before we finally wrap the page, check if this model is a Grilo
        * feed and low-light it slightly/prevent focus if it's still
@@ -1100,7 +1094,7 @@ mex_page_created_cb (MexExplorer   *explorer,
                              mex_remove_notify_grilo_feed_completed, pl_data);
         }
 
-      *page = page_box;
+      *page = CLUTTER_ACTOR (menu);
     }
 }
 
