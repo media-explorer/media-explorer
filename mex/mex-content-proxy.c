@@ -54,9 +54,9 @@ struct _MexContentProxyPrivate {
 #define GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), MEX_TYPE_CONTENT_PROXY, MexContentProxyPrivate))
 G_DEFINE_TYPE (MexContentProxy, mex_content_proxy, MEX_TYPE_PROXY);
 
-static void mex_content_proxy_object_created_cb (MexProxy   *proxy,
-                                                 MexContent *content,
-                                                 GObject    *object);
+static void mex_content_proxy_object_created (MexProxy   *proxy,
+                                              MexContent *content,
+                                              GObject    *object);
 
 static void
 mex_content_proxy_finalize (GObject *object)
@@ -146,7 +146,7 @@ mex_content_proxy_class_init (MexContentProxyClass *klass)
   o_class->set_property = mex_content_proxy_set_property;
   o_class->get_property = mex_content_proxy_get_property;
 
-  class->object_created = mex_content_proxy_object_created_cb;
+  class->object_created = mex_content_proxy_object_created;
 
   g_type_class_add_private (klass, sizeof (MexContentProxyPrivate));
 
@@ -158,9 +158,9 @@ mex_content_proxy_class_init (MexContentProxyClass *klass)
 }
 
 static void
-mex_content_proxy_object_created_cb (MexProxy   *proxy,
-                                     MexContent *content,
-                                     GObject    *object)
+mex_content_proxy_object_created (MexProxy   *proxy,
+                                  MexContent *content,
+                                  GObject    *object)
 {
   ClutterStage *stage;
 
