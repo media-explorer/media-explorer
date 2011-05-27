@@ -435,9 +435,7 @@ mex_player_key_press_event (ClutterActor    *actor,
     case MEX_KEY_INFO:
         {
           MexContent *content;
-          ClutterActor *controls;
 
-          controls = priv->controls;
           content = priv->content;
 
           if (priv->info_visible)

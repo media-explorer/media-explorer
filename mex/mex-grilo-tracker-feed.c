@@ -200,10 +200,6 @@ item_cb (GrlMediaSource *source,
   MexGriloTrackerFeed *feed = (MexGriloTrackerFeed *) userdata;
   MexGriloTrackerFeedPrivate *priv = feed->priv;
   MexProgram *program;
-  const MexGriloOperation *op;
-
-  op = mex_grilo_feed_get_operation (MEX_GRILO_FEED (feed));
-
 
   if (error) {
     g_warning ("Error browsing: %s", error->message);
@@ -312,7 +308,6 @@ filter_media (MexGriloTrackerFeed *feed, GrlMedia *media)
   const MexGriloOperation *op;
   gchar *query_text = NULL, *query_final = NULL;
   const gchar *str_id = grl_media_get_id (media);
-  guint id;
 
   if (!str_id) {
     g_warning ("Cannot filter media without id");
@@ -328,11 +323,11 @@ filter_media (MexGriloTrackerFeed *feed, GrlMedia *media)
   query_final = g_strdup_printf ("%s . FILTER(tracker:id(?urn) = %s)",
                                  query_text, str_id);
 
-  id = grl_media_source_query (priv->source, query_final,
-                               priv->keys,
-                               0, 1,
-                               BROWSE_FLAGS,
-                               item_cb, feed);
+  grl_media_source_query (priv->source, query_final,
+                          priv->keys,
+                          0, 1,
+                          BROWSE_FLAGS,
+                          item_cb, feed);
 
   g_free (query_final);
   g_free (query_text);

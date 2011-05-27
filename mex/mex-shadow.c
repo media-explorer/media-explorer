@@ -332,9 +332,7 @@ mex_shadow_convolve_transpose_normalise (gfloat *kernel,
                                          gint    height)
 {
   guchar normal;
-  gint x, y, cols, col;
-
-  cols = radius * 2 + 1;
+  gint x, y, col;
 
   normal = 0;
   for (y = 0; y < height; y++)

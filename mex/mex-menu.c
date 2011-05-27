@@ -598,12 +598,9 @@ mex_menu_action_set_detail (MexMenu     *menu,
                             const gchar *detail)
 {
   ClutterActor *item;
-  MexMenuPrivate *priv;
 
   g_return_if_fail (MEX_IS_MENU (menu));
   g_return_if_fail (action);
-
-  priv = menu->priv;
 
   item = mex_menu_find_item (menu, action);
 
@@ -621,12 +618,9 @@ mex_menu_action_get_detail (MexMenu     *menu,
                             const gchar *action)
 {
   ClutterActor *item;
-  MexMenuPrivate *priv;
 
   g_return_val_if_fail (MEX_IS_MENU (menu), NULL);
   g_return_val_if_fail (action, NULL);
-
-  priv = menu->priv;
 
   item = mex_menu_find_item (menu, action);
 
@@ -645,12 +639,9 @@ mex_menu_action_set_toggled (MexMenu     *menu,
                              gboolean     toggled)
 {
   ClutterActor *item;
-  MexMenuPrivate *priv;
 
   g_return_if_fail (MEX_IS_MENU (menu));
   g_return_if_fail (action);
-
-  priv = menu->priv;
 
   item = mex_menu_find_item (menu, action);
 
@@ -668,12 +659,9 @@ mex_menu_action_get_toggled (MexMenu     *menu,
                              const gchar *action)
 {
   ClutterActor *item;
-  MexMenuPrivate *priv;
 
   g_return_val_if_fail (MEX_IS_MENU (menu), FALSE);
   g_return_val_if_fail (action, FALSE);
-
-  priv = menu->priv;
 
   item = mex_menu_find_item (menu, action);
 

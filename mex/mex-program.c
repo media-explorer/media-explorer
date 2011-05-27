@@ -410,11 +410,9 @@ mex_program_get_stream (MexProgram       *program,
                         gpointer          userdata)
 {
   MexProgramClass *klass;
-  MexProgramPrivate *priv;
   const char *stream;
 
   g_return_if_fail (MEX_IS_PROGRAM (program));
-  priv = program->priv;
 
   /* Some backends (eg. Apple trailers) may be able to cache the stream
      so we can just use the standard metadata method to obtain it */

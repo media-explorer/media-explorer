@@ -399,15 +399,12 @@ mex_feed_search (MexFeed            *feed,
                  MexFeedSearchMode   mode,
                  MexModel           *results_model)
 {
-  MexFeedPrivate *priv;
   int i;
   GHashTable *count_hash = NULL;
   GPtrArray *terms;
 
   g_return_if_fail (MEX_IS_FEED (feed));
   g_return_if_fail (MEX_IS_MODEL (results_model));
-
-  priv = feed->priv;
 
   terms = get_full_search_terms (feed, search);
 

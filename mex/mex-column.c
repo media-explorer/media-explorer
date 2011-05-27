@@ -961,8 +961,7 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
   GList *c;
   guint offset, increment;
   ClutterActor *focused, *focused_cell;
-  gboolean cell_has_focus, has_focus, open, set_tile_important,
-    focus_out_of_resizing_hbox;
+  gboolean cell_has_focus, has_focus, open, set_tile_important;
 
   MexColumnPrivate *priv = self->priv;
 
@@ -972,7 +971,6 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
   focused_cell = NULL;
   set_tile_important = FALSE;
   cell_has_focus = has_focus = FALSE;
-  focus_out_of_resizing_hbox = FALSE;
 
   if (focused)
     {

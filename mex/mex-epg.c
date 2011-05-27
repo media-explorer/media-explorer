@@ -295,7 +295,7 @@ mex_epg_allocate (ClutterActor           *actor,
   MxPadding padding;
   ClutterActorBox column_box, scrollview_box, indicator_box;
   gfloat available_width, available_height, column_width;
-  gfloat indicator_width;
+/*  gfloat indicator_width; */
 
   CLUTTER_ACTOR_CLASS (mex_epg_parent_class)->allocate (actor, box, flags);
 
@@ -343,7 +343,7 @@ mex_epg_allocate (ClutterActor           *actor,
   clutter_actor_allocate (priv->grid_scrollview, &scrollview_box, flags);
 
   /* selection_indicator */
-  indicator_width = clutter_actor_get_width (priv->selection_indicator);
+  /* indicator_width = clutter_actor_get_width (priv->selection_indicator); */
   //indicator_box.x1 = column_box.x1 - (int) (indicator_width / 2);
   indicator_box.x1 = 0;
   indicator_box.y1 = 0;
@@ -495,7 +495,6 @@ mex_epg_init (MexEpg *self)
   MexChannelManager *manager;
   const GPtrArray *channels;
   ClutterActor *viewport;
-  MexShadow *shadow;
   ClutterColor color = {0xff, 0, 0, 0};
   guint i;
 
@@ -534,7 +533,7 @@ mex_epg_init (MexEpg *self)
   clutter_container_add_actor (CLUTTER_CONTAINER (viewport), priv->grid);
 
   /* Add shadows */
-  shadow = mex_shadow_new (priv->channel_box);
+  mex_shadow_new (priv->channel_box);
 
   /* selection_indicator */
   priv->selection_indicator = clutter_rectangle_new_with_color (&color);
