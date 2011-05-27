@@ -32,6 +32,7 @@
  */
 
 #include "mex-menu.h"
+#include "mex-resizing-hbox-child.h"
 #include "mex-scroll-view.h"
 #include "mex-utils.h"
 
@@ -504,6 +505,10 @@ mex_menu_create_layout (MexMenu *menu, gboolean lower)
         clutter_actor_raise (scroll, clutter_actor_get_parent (priv->layout));
     }
 
+  mex_resizing_hbox_child_set_expand (MEX_RESIZING_HBOX (menu), scroll, FALSE);
+  if (priv->depth != 0)
+    mex_resizing_hbox_child_set_push (MEX_RESIZING_HBOX (menu), scroll, TRUE);
+
   return layout;
 }
 
@@ -843,10 +848,11 @@ mex_menu_push (MexMenu *menu)
     }
   else
     {
+      priv->depth ++;
       priv->layout = mex_menu_create_layout (menu, FALSE);
       g_object_set_qdata (G_OBJECT (priv->layout),
                           mex_menu_depth_quark,
-                          GINT_TO_POINTER (++priv->depth));
+                          GINT_TO_POINTER (priv->depth));
 
       if (priv->has_focus)
         priv->focus_on_add = TRUE;
@@ -893,10 +899,11 @@ mex_menu_pop (MexMenu *menu)
     }
   else
     {
+      priv->depth --;
       priv->layout = mex_menu_create_layout (menu, TRUE);
       g_object_set_qdata (G_OBJECT (priv->layout),
                           mex_menu_depth_quark,
-                          GINT_TO_POINTER (--priv->depth));
+                          GINT_TO_POINTER (priv->depth));
 
       if (priv->has_focus)
         priv->focus_on_add = TRUE;
@@ -943,11 +950,7 @@ mex_menu_clear_all (MexMenu *menu)
 
   priv->layout = mex_menu_create_layout (menu, FALSE);
 
-  if (priv->depth != 0)
-    {
-      priv->depth = 0;
-      g_object_notify (G_OBJECT (menu), "depth");
-    }
+  g_object_notify (G_OBJECT (menu), "depth");
 }
 
 MxBoxLayout *
