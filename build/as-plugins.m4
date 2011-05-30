@@ -32,6 +32,7 @@ AC_DEFUN([AS_MEX_PLUGIN],
   MEX_PLUGINS_ALL="$MEX_PLUGINS_ALL [$1]"
 
   define([pname_def],translit([$1], -a-z, _a-z))
+  define([PNAME_DEF],translit(PLUGIN_[$1], -a-z, _A-Z))
 
   AC_ARG_ENABLE([$1],
     AC_HELP_STRING([--disable-[$1]], [disable dependency-less $1 plugin]),
@@ -54,12 +55,16 @@ AC_DEFUN([AS_MEX_PLUGIN],
   undefine([pname_def])
 
   if [[ -z "$WITH_PLUGINS" ]] || echo " [$WITH_PLUGINS] " | tr , ' ' | grep -i " [$1] " > /dev/null; then
+    if test "x$2" != x ; then
+      PKG_CHECK_MODULES(PNAME_DEF, [$2])
+    fi
     MEX_PLUGINS_SELECTED="$MEX_PLUGINS_SELECTED [$1]"
   fi
   if echo " [$WITHOUT_PLUGINS] " | tr , ' ' | grep -i " [$1] " > /dev/null; then
     MEX_PLUGINS_SELECTED=`echo " $MEX_PLUGINS_SELECTED " | $SED -e 's/ [$1] / /'`
   fi
   AM_CONDITIONAL([USE_PLUGIN_]translit([$1], a-z, A-Z), echo " $MEX_PLUGINS_SELECTED " | grep -i " [$1] " > /dev/null)
+  undefine([PNAME_DEF])
 ])
 
 dnl AG_MEX_DISABLE_PLUGIN(PLUGIN-NAME)
