@@ -64,4 +64,4 @@ service_in_files = mex-rebinder.service.in
 service_DATA = mex-rebinder.service
 
 CLEANFILES = $(service_DATA)
-EXTRA_DIST = $(service_in_files)
+EXTRA_DIST += $(service_in_files)
