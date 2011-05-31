@@ -20,6 +20,7 @@
 #include "mex-grid.h"
 #include "mex-content-box.h"
 #include "mex-content-view.h"
+#include "mex-scrollable-container.h"
 #include "mex-shadow.h"
 #include <math.h>
 
@@ -27,6 +28,7 @@ static void clutter_container_iface_init (ClutterContainerIface *iface);
 static void mx_scrollable_iface_init (MxScrollableIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 static void mx_stylable_iface_init (MxStylableIface *iface);
+static void mex_scrollable_container_iface_init (MexScrollableContainerInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexGrid, mex_grid, MX_TYPE_WIDGET,
                          G_IMPLEMENT_INTERFACE (CLUTTER_TYPE_CONTAINER,
@@ -36,7 +38,9 @@ G_DEFINE_TYPE_WITH_CODE (MexGrid, mex_grid, MX_TYPE_WIDGET,
                          G_IMPLEMENT_INTERFACE (MX_TYPE_FOCUSABLE,
                                                 mx_focusable_iface_init)
                          G_IMPLEMENT_INTERFACE (MX_TYPE_STYLABLE,
-                                                mx_stylable_iface_init))
+                                                mx_stylable_iface_init)
+                         G_IMPLEMENT_INTERFACE (MEX_TYPE_SCROLLABLE_CONTAINER,
+                                                mex_scrollable_container_iface_init))
 
 #define GRID_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_GRID, MexGridPrivate))
@@ -601,6 +605,114 @@ mx_stylable_iface_init (MxStylableIface *iface)
     }
 }
 
+/* MexScrollableContainerInterface */
+
+static void
+mex_grid_get_tile_size (MexGrid               *grid,
+                        const ClutterActorBox *box,
+                        gfloat                *basic_width,
+                        gfloat                *basic_height)
+{
+  MxPadding padding;
+  ClutterActor *first_child;
+
+  MexGridPrivate *priv = grid->priv;
+
+  mx_widget_get_padding (MX_WIDGET (grid), &padding);
+
+  /* Calculate the basic size of a tile - The width is gotten from the
+   * available width of the grid divided by the stride, the height is derived
+   * from the preferred height of the first child. If the child is a content
+   * box, it's gotten from the tile within the content box.
+   */
+  *basic_width = floorf ((box->x2 - box->x1 - padding.right - padding.left) /
+                         (gfloat) priv->stride);
+
+  first_child = g_array_index (priv->children, ClutterActor *, 0);
+  if (MEX_IS_CONTENT_BOX (first_child))
+    {
+      ClutterActor *tile =
+        mex_content_box_get_tile (MEX_CONTENT_BOX (first_child));
+      clutter_actor_get_preferred_height (tile, *basic_width,
+                                          NULL, basic_height);
+    }
+  else
+    clutter_actor_get_preferred_height (first_child, *basic_width,
+                                        NULL, basic_height);
+}
+
+static void
+mex_grid_get_allocation (MexScrollableContainer *self,
+                         ClutterActor           *child,
+                         ClutterActorBox        *box)
+{
+  gboolean found;
+  MxPadding padding;
+  gint i, row, column;
+  ClutterActorBox grid_box;
+  gfloat avail_width, basic_width, basic_height;
+
+  MexGrid *grid = MEX_GRID (self);
+  MexGridPrivate *priv = grid->priv;
+
+  /* Figure out what row the child is on */
+  found = FALSE;
+  for (i = 0; i < priv->children->len; i++)
+    if (g_array_index (priv->children, ClutterActor *, i) == child)
+      {
+        found = TRUE;
+        break;
+      }
+
+  if (!found)
+    {
+      g_warning (G_STRLOC ": Can't give allocation for child not in grid");
+      return;
+    }
+
+  row = i / priv->stride;
+  column = i % priv->stride;
+
+  clutter_actor_get_allocation_box (CLUTTER_ACTOR (grid), &grid_box);
+  mx_widget_get_padding (MX_WIDGET (grid), &padding);
+  mex_grid_get_tile_size (grid, &grid_box, &basic_width, &basic_height);
+  avail_width = grid_box.x2 - grid_box.x1 - padding.left - padding.right;
+
+  box->x1 = column * basic_width;
+
+  if (row > 0)
+    {
+      box->y1 = (row - 1) *
+                (basic_height / pow (1.5, 2.0));
+      box->y1 += basic_height / pow (1.5, 1.0);
+    }
+  else
+    box->y1 = 0;
+
+  clutter_actor_get_preferred_size (child, NULL, NULL, &box->x2, &box->y2);
+  box->x2 += box->x1;
+  box->y2 += box->y1;
+
+  if (box->x2 > avail_width)
+    {
+      box->x1 -= (box->x2 - avail_width);
+      box->x2 = avail_width;
+    }
+}
+
+static void
+mex_scrollable_container_iface_init (MexScrollableContainerInterface *iface)
+{
+  static gboolean is_initialized = FALSE;
+
+  if (G_UNLIKELY (!is_initialized))
+    {
+      is_initialized = TRUE;
+
+      iface->get_allocation = mex_grid_get_allocation;
+    }
+}
+
 /* Actor implementation */
 
 static void
@@ -814,8 +926,6 @@ mex_grid_allocate (ClutterActor           *actor,
 {
   gdouble value;
   MxPadding padding;
-  gboolean allocated_focus;
-  ClutterActor *first_child;
   ClutterActorBox child_box;
   gint i, first_row, last_row;
   gfloat basic_width, basic_height, avail_width, avail_height, bottom;
@@ -835,22 +945,9 @@ mex_grid_allocate (ClutterActor           *actor,
   avail_height = box->y2 - box->y1 - padding.top - padding.bottom;
 
   /* Allocate all actors in the visible range their preferred size. The
-   * visible range is based on the preferred height of the first actor. If
-   * the first actor is a content-box, this size is gotten from the tile
-   * within.
+   * visible range is based on the preferred height of the first actor.
    */
-  basic_width = floorf (avail_width / (gfloat) priv->stride);
-  first_child = g_array_index (priv->children, ClutterActor *, 0);
-  if (MEX_IS_CONTENT_BOX (first_child))
-    {
-      ClutterActor *tile =
-        mex_content_box_get_tile (MEX_CONTENT_BOX (first_child));
-      clutter_actor_get_preferred_height (tile, basic_width,
-                                          NULL, &basic_height);
-    }
-  else
-    clutter_actor_get_preferred_height (first_child, basic_width,
-                                        NULL, &basic_height);
+  mex_grid_get_tile_size (self, box, &basic_width, &basic_height);
 
   /* Check if the basic size has changed and set a variable to notify later.
    * We notify later to avoid allocation cycles, so children can bind their
@@ -881,7 +978,6 @@ mex_grid_allocate (ClutterActor           *actor,
   last_row = ((value + avail_height) / (gint)(basic_height / pow (1.5, 2))) + 3;
   priv->last_visible = MIN (priv->children->len - 1, last_row * priv->stride);
 
-  allocated_focus = FALSE;
   bottom = 0;
 
   child_box.y1 = first_row * (basic_height / pow (1.5, 2));
@@ -910,16 +1006,13 @@ mex_grid_allocate (ClutterActor           *actor,
             bottom = child_box.y2;
 
           /* Make sure the box stays within the bounds of the parents */
-          if (child_box.x2 > box->x2 - padding.right)
+          if (child_box.x2 > avail_width)
             {
-              child_box.x1 -= child_box.x2 - box->x2 - padding.right;
-              child_box.x2 = box->x2 - padding.right;
+              child_box.x1 -= child_box.x2 - avail_width;
+              child_box.x2 = avail_width;
             }
 
           clutter_actor_allocate (child, &child_box, flags);
-
-          if (child == priv->current_focus)
-            allocated_focus = TRUE;
         }
 
       if (j >= priv->children->len)
@@ -936,48 +1029,6 @@ mex_grid_allocate (ClutterActor           *actor,
       factor = ABS (priv->animated_row - i);
       child_box.y1 += basic_height /
                       pow (1.5, CLAMP (factor, 0.0, 2.0));
-    }
-
-  /* Make sure to always allocate the focused actor, so that it's
-   * possible to scroll to it based on its allocation box.
-   */
-  if (!allocated_focus && priv->current_focus)
-    {
-      for (i = 0; i < priv->stride; i++)
-        {
-          gint idx;
-          ClutterActor *child;
-
-          idx = (priv->focused_row * priv->stride) + i;
-          if (idx >= priv->children->len)
-            break;
-
-          child = g_array_index (priv->children, ClutterActor *, idx);
-          if (child != priv->current_focus)
-            continue;
-
-          /* Note, this y value is an approximation */
-          child_box.y1 = priv->focused_row * (basic_height / pow (1.5, 2));
-          child_box.x1 = i * basic_width;
-
-          clutter_actor_get_preferred_size (child, NULL, NULL,
-                                            &child_box.x2, &child_box.y2);
-          child_box.y2 += child_box.y1;
-          child_box.x2 += child_box.x1;
-
-          if (child_box.x2 > box->x2 - padding.right)
-            {
-              child_box.x1 -= child_box.x2 - box->x2 - padding.right;
-              child_box.x2 = box->x2 - padding.right;
-            }
-
-          allocated_focus = TRUE;
-
-          break;
-        }
-
-      if (!allocated_focus)
-        g_warning (G_STRLOC ": Haven't allocated the focused actor");
     }
 
   /* Set the adjustment values */

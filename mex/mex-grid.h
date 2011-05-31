@@ -71,10 +71,6 @@ ClutterActor * mex_grid_new (void);
 gint mex_grid_get_stride (MexGrid *grid);
 void mex_grid_set_stride (MexGrid *grid, gint stride);
 
-void mex_grid_get_tile_size (MexGrid *grid,
-                             gfloat  *width,
-                             gfloat  *height);
-
 void             mex_grid_set_sort_func (MexGrid          *grid,
                                          MexActorSortFunc  func,
                                          gpointer          userdata);
