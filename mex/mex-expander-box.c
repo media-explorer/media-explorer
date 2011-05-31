@@ -1100,7 +1100,7 @@ mex_expander_box_init (MexExpanderBox *self)
   priv->close_on_unfocus = TRUE;
 
   priv->alpha = clutter_alpha_new ();
-  clutter_alpha_set_mode (priv->alpha, CLUTTER_LINEAR);
+  clutter_alpha_set_mode (priv->alpha, CLUTTER_EASE_OUT_CUBIC);
 
   priv->direction = MEX_EXPANDER_BOX_DOWN;
   priv->expand_timeline = clutter_timeline_new (150);
