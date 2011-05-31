@@ -64,8 +64,8 @@ struct _MexScrollViewPrivate
   guint           keep_visible_timeout;
   guint           scroll_delay;
 
-  gfloat          htarget;
-  gfloat          vtarget;
+  gdouble         htarget;
+  gdouble         vtarget;
 };
 
 static void
@@ -993,9 +993,19 @@ mex_scroll_view_adjustment_set_value (MexScrollView *view,
                                  &hadjust, &vadjust);
 
   if (adjustment == hadjust)
-    priv->htarget = value;
+    {
+      if (value == priv->htarget)
+        return;
+
+      priv->htarget = value;
+    }
   else
-    priv->vtarget = value;
+    {
+      if (value == priv->vtarget)
+        return;
+
+      priv->vtarget = value;
+    }
 
   if (priv->interpolate)
     mx_adjustment_interpolate (adjustment, value, 200, CLUTTER_EASE_OUT_QUAD);
