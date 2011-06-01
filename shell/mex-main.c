@@ -2244,9 +2244,9 @@ main (int argc, char **argv)
   /* FIXME: Replace this with a configuration file */
   MexModelCategoryInfo search = { "search", _("Search"), "icon-panelheader-search", 0, "" };
   MexModelCategoryInfo videos = { "videos", _("Videos"), "icon-panelheader-videos", 20, _("Connect an external drive or update your network settings to see Videos here.") };
-  MexModelCategoryInfo music = { "music", _("Music"), "icon-panelheader-music", 20, _("Connect an external drive or update your network settings to see Music here.") };
   MexModelCategoryInfo pictures = { "pictures", _("Photos"), "icon-panelheader-photos", 30, _("Connect an external drive or update your network settings to see Photos here.") };
-  MexModelCategoryInfo queue = { "queue", _("Queue"), "icon-panelheader-queue", 40, _("This is your custom playlist.  Select Add to queue from the info menu on any video file to add it here.") };
+  MexModelCategoryInfo music = { "music", _("Music"), "icon-panelheader-music", 40, _("Connect an external drive or update your network settings to see Music here.") };
+  MexModelCategoryInfo queue = { "queue", _("Queue"), "icon-panelheader-queue", 50, _("This is your custom playlist.  Select Add to queue from the info menu on any video file to add it here.") };
 
 #ifdef HAVE_CLUTTER_CEX100
   const ClutterColor black = { 0x00, 0x00, 0x00, 0x00 };
