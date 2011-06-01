@@ -93,6 +93,20 @@ mex_tracker_model_set_property (GObject      *object,
 static void
 mex_tracker_model_dispose (GObject *object)
 {
+  MexTrackerModel        *model = (MexTrackerModel *) object;
+  MexTrackerModelPrivate *priv  = model->priv;
+
+  if (priv->sparql_filter)
+    {
+      mex_tracker_model_set_filter (model, NULL);
+    }
+
+  if (priv->queries)
+    {
+      g_list_free (priv->queries);
+      priv->queries = NULL;
+    }
+
   G_OBJECT_CLASS (mex_tracker_model_parent_class)->dispose (object);
 }
 
