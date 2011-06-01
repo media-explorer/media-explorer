@@ -202,3 +202,95 @@ mex_thumbnailer_generate (const char *url, const char *mime_type, MexThumbnailCa
   if (free_mime)
     g_free (mimes[0]);
 }
+
+/*
+ * Here we're gracefully (ahem) extending the fd.o thumbnail specification[1]
+ * with a size "huge", which is 512x512px.
+ *
+ * [1] http://people.freedesktop.org/~vuntz/thumbnail-spec-cache/directory.html
+ */
+static char *
+get_thumbnail_path_for_uri (const char *uri)
+{
+  char *basepath;
+  char *md5;
+  char *file;
+  char *path;
+
+  basepath = g_build_filename (g_get_home_dir (),
+                               ".thumbnails",
+                               "x-huge",
+                               NULL);
+  g_mkdir_with_parents (basepath, 0777);
+
+  md5 = g_compute_checksum_for_string (G_CHECKSUM_MD5, uri, -1);
+  file = g_strconcat (md5, ".png", NULL);
+  g_free (md5);
+
+  path = g_build_filename (basepath,
+                           file,
+                           NULL);
+
+  g_free (basepath);
+  g_free (file);
+
+  return path;
+}
+
+static void
+mex_thumbnailer_set_thumbnail (const gchar *uri, MexContent *content)
+{
+  char *thumb_path;
+
+  thumb_path = get_thumbnail_path_for_uri (uri);
+
+  if (g_file_test (thumb_path, G_FILE_TEST_EXISTS))
+    {
+      gchar *thumb_uri = g_filename_to_uri (thumb_path, NULL, NULL);
+      mex_content_set_metadata (content,
+                                MEX_CONTENT_METADATA_STILL,
+                                thumb_uri);
+      g_free (thumb_uri);
+    }
+
+  g_free (thumb_path);
+}
+
+void
+mex_thumbnailer_generate_for_content (MexContent *content)
+{
+  char *uris[2], *mimes[2];
+  gboolean free_mime = FALSE;
+  ClosureData *data;
+
+  if (!mex_thumbnailer_init ())
+    return;
+
+  uris[0] = (gchar *) mex_content_get_metadata (content,
+                                               MEX_CONTENT_METADATA_STREAM);
+  mimes[0] = (gchar *) mex_content_get_metadata (content,
+                                                 MEX_CONTENT_METADATA_MIMETYPE);
+
+  if (!mimes[0]) {
+    mimes[0] = get_mime_type (uris[0]);
+    free_mime = TRUE;
+  }
+  uris[1] = mimes[1] = NULL;
+
+  data = g_new0 (ClosureData, 1);
+  data->callback = (MexThumbnailCallback) mex_thumbnailer_set_thumbnail;
+  data->user_data = content;
+
+  dbus_g_proxy_begin_call (thumb_proxy, "Queue",
+                           on_queue, data, NULL,
+                           G_TYPE_STRV, uris,
+                           G_TYPE_STRV, mimes,
+                           G_TYPE_STRING, "x-huge",
+                           G_TYPE_STRING, "default",
+                           G_TYPE_UINT, 0,
+                           G_TYPE_INVALID,
+                           G_TYPE_INVALID);
+
+  if (free_mime)
+    g_free (mimes[0]);
+}
