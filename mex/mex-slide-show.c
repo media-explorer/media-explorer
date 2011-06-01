@@ -212,6 +212,9 @@ mex_slide_show_real_set_content (MexSlideShow *show,
   ClutterContainer *container;
   MexDownloadQueue *queue;
 
+  if (content == priv->content)
+    return;
+
   url = mex_content_get_metadata (content, MEX_CONTENT_METADATA_STREAM);
 
   if (!url)
@@ -988,6 +991,9 @@ tile_created_cb (MexProxy *proxy,
   notify_pseudo_class (MX_BIN (object));
 
   mex_slide_show_sort_items (slideshow);
+
+  /* ensure the correct item is highlighted in the photo strip */
+  mex_slide_show_move (slideshow, 0);
 }
 
 static void
@@ -1048,9 +1054,6 @@ mex_slide_show_set_content (MexContentView *view,
   mx_image_clear (MX_IMAGE (show->priv->image));
 
   mex_slide_show_real_set_content (show, content);
-
-  /* ensure the new content is highlighted in the photo strip */
-  mex_slide_show_move (show, 0);
 
   clutter_state_set_state (show->priv->state, "controls");
 }
