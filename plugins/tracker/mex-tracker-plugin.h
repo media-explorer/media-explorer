@@ -21,6 +21,7 @@
 
 #include <glib-object.h>
 #include <gmodule.h>
+
 #include <mex/mex.h>
 
 G_BEGIN_DECLS

@@ -352,7 +352,7 @@ AS_MEX_PLUGIN(search)
 AS_MEX_PLUGIN(queue)
 AS_MEX_PLUGIN(applications)
 AS_MEX_PLUGIN(upnp)
-AS_MEX_PLUGIN(tracker)
+AS_MEX_PLUGIN(tracker, [tracker-sparql-0.10])
 AS_MEX_PLUGIN(dbusinput)
 
 AC_CONFIG_FILES([

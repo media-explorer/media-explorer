@@ -22,8 +22,9 @@
 
 #include <glib/gi18n.h>
 #include <grilo.h>
-#include <mex/mex-grilo-tracker-feed.h>
+/* #include <mex/mex-grilo-tracker-feed.h> */
 #include "mex-tracker-plugin.h"
+#include "mex-tracker-model.h"
 
 G_DEFINE_TYPE (MexTrackerPlugin, mex_tracker_plugin, G_TYPE_OBJECT)
 
@@ -48,6 +49,7 @@ typedef enum {
   MEX_TRACKER_CATEGORY_IMAGE,
   MEX_TRACKER_CATEGORY_VIDEO,
   MEX_TRACKER_CATEGORY_MUSIC,
+  MEX_TRACKER_CATEGORY_SERIES,
 } MexTrackerCategory;
 
 static void
@@ -121,126 +123,64 @@ mex_tracker_plugin_class_init (MexTrackerPluginClass *klass)
   object_class->finalize = mex_tracker_plugin_finalize;
 
   g_type_class_add_private (klass, sizeof (MexTrackerPluginPrivate));
+
+  mex_tracker_connection_init ();
 }
 
 static void
-add_model (MexTrackerPlugin *self,
-           GrlMediaPlugin *plugin,
-           MexTrackerCategory category)
+add_model (MexTrackerPlugin *self, MexTrackerCategory category)
 {
   GList *metadata_keys;
-  MexFeed *feed, *dir_feed;
-  GrlMedia *box;
+  MexModel *model;
   MexModelInfo *info;
   gchar *query, *cat_name;
-  GHashTable *models;
-  const gchar *source_name = grl_metadata_source_get_name (GRL_METADATA_SOURCE (plugin));
+  /* GHashTable *models; */
   gint priority;
 
   switch (category)
     {
     case MEX_TRACKER_CATEGORY_IMAGE:
       cat_name = "pictures";
-      query = "?urn a nmm:Photo . ?urn tracker:available true";
-      models = self->priv->image_models;
+      query = "?u a nmm:Photo . ?u tracker:available true";
+      /* models = self->priv->image_models; */
       metadata_keys = self->priv->image_keys;
-      box = grl_media_image_new ();
       break;
 
     case MEX_TRACKER_CATEGORY_VIDEO:
       cat_name = "videos";
-      query = "?urn a nmm:Video . ?urn tracker:available true";
-      models = self->priv->video_models;
+      query = "?u a nmm:Video . ?u tracker:available true";
+      /* models = self->priv->video_models; */
       metadata_keys = self->priv->video_keys;
-      box = grl_media_video_new ();
       break;
 
     case MEX_TRACKER_CATEGORY_MUSIC:
       cat_name = "music";
-      query = "?urn a nmm:MusicPiece . ?urn tracker:available true";
-      models = self->priv->music_models;
+      query = "?u a nmm:MusicPiece . ?u tracker:available true";
+      /* models = self->priv->music_models; */
       metadata_keys = self->priv->music_keys;
-      box = grl_media_audio_new ();
+      break;
+
+    case MEX_TRACKER_CATEGORY_SERIES:
+      cat_name = "series";
+      query = "?u a nmm:Video . ?u tracker:available true . FILTER(bound(nmm:episodeNumber(?u)))";
+      /* models = self->priv->video_models; */
+      metadata_keys = self->priv->video_keys;
       break;
     }
 
-  grl_media_set_id (GRL_MEDIA (box), NULL);
-  feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (plugin),
-                                     self->priv->query_keys,
-                                     metadata_keys,
-                                     NULL, box);
-  mex_grilo_feed_query (MEX_GRILO_FEED (feed), query, 0, MAX_TRACKER_RESULTS);
+  model = (MexModel *) g_object_new (MEX_TYPE_TRACKER_MODEL, "filter", query, NULL);
 
-  g_hash_table_insert (models, plugin, feed);
+  priority = -100;
 
-  /* set the local files source to appear first */
-  if (!g_strcmp0 (source_name, "Local files"))
-    priority = -100;
-  else
-    priority = 0;
-
-  info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed), cat_name,
+  info = mex_model_info_new_with_sort_funcs (model, cat_name,
                                              priority);
-  info->userdata = plugin;
 
   /* Set 'Newest' as the default sort function */
   info->default_sort_index = 2;
 
-  dir_feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (plugin),
-                                         self->priv->query_keys,
-                                         metadata_keys,
-                                         query, NULL);
-  g_object_set (G_OBJECT (dir_feed), "title",
-                _("Show Folders"), NULL);
-  mex_grilo_feed_browse (MEX_GRILO_FEED (dir_feed), 0, G_MAXINT);
-  info->alt_model = MEX_MODEL (dir_feed);
-
   mex_model_manager_add_model (self->priv->manager, info);
   mex_model_info_free (info);
 }
-
-static void
-handle_new_source_plugin (MexTrackerPlugin *self, GrlMediaPlugin *plugin)
-{
-  GrlSupportedOps ops;
-  GrlMetadataSource *meta = GRL_METADATA_SOURCE (plugin);
-  const char *id;
-
-  id = grl_media_plugin_get_id (plugin);
-  if (g_strcmp0 (id,"grl-tracker") != 0)
-    return;
-
-  ops = grl_metadata_source_supported_operations (meta);
-  if ((ops & GRL_OP_QUERY) == 0)
-    return;
-
-  grl_media_source_notify_change_start (GRL_MEDIA_SOURCE (plugin), NULL);
-
-  add_model (self, plugin, MEX_TRACKER_CATEGORY_VIDEO);
-  add_model (self, plugin, MEX_TRACKER_CATEGORY_IMAGE);
-  add_model (self, plugin, MEX_TRACKER_CATEGORY_MUSIC);
-}
-
-static void
-registry_source_added_cb (GrlPluginRegistry *registry,
-                          GrlMediaPlugin *source,
-                          MexTrackerPlugin *plugin)
-{
-  handle_new_source_plugin (plugin, source);
-}
-
-/*static int
-source_compare (gconstpointer listdata, gconstpointer userdata)
-{
-  GrlMediaSource *user_source, *list_source;
-
-  g_object_get (MEX_GRILO_FEED (listdata),
-                "grilo-source", &list_source,
-                NULL);
-  user_source = GRL_MEDIA_SOURCE (userdata);
-
-  return (user_source == list_source) ? 0 : -1;
-}*/
 
 static void
 registry_source_removed_cb (GrlPluginRegistry *registry,
@@ -278,6 +218,12 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
   MexTrackerPluginPrivate *priv;
   GrlPluginRegistry *registry;
   GList *plugins, *iter;
+  MexModelCategoryInfo series = { "series",
+                                  _("Series"),
+                                  "icon-panelheader-videos",
+                                  20,
+                                  _("Connect an external drive or update your network settings to see Series here.") };
+
 
   priv = self->priv = GET_PRIVATE (self);
 
@@ -334,16 +280,12 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
 
   priv->manager = mex_model_manager_get_default ();
 
-  registry = grl_plugin_registry_get_default ();
-  plugins = grl_plugin_registry_get_sources (registry, FALSE);
-  for (iter = plugins; iter != NULL; iter = iter->next)
-    handle_new_source_plugin (self, GRL_MEDIA_PLUGIN (iter->data));
-  g_list_free (plugins);
+  mex_model_manager_add_category (priv->manager, &series);
 
-  g_signal_connect (registry, "source-added",
-                    G_CALLBACK (registry_source_added_cb), self);
-  g_signal_connect (registry, "source-removed",
-                    G_CALLBACK (registry_source_removed_cb), self);
+  add_model (self, MEX_TRACKER_CATEGORY_VIDEO);
+  add_model (self, MEX_TRACKER_CATEGORY_SERIES);
+  add_model (self, MEX_TRACKER_CATEGORY_IMAGE);
+  add_model (self, MEX_TRACKER_CATEGORY_MUSIC);
 }
 
 MexTrackerPlugin *
