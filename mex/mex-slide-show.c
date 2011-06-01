@@ -868,8 +868,8 @@ mex_slide_show_init (MexSlideShow *self)
   g_signal_connect (priv->state, "notify::state", G_CALLBACK (state_notify_cb),
                     self);
 
-  g_signal_connect (self, "hide", mex_slide_show_hide, NULL);
-  g_signal_connect (self, "show", mex_slide_show_show, NULL);
+  g_signal_connect (self, "hide", G_CALLBACK (mex_slide_show_hide), NULL);
+  g_signal_connect (self, "show", G_CALLBACK (mex_slide_show_show), NULL);
 }
 
 ClutterActor *
