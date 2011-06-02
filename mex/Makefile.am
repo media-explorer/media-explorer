@@ -52,6 +52,7 @@ libmex_player_client_la_LIBADD = $(MEX_LIBS)
 mex_headers =							\
 	$(top_srcdir)/mex/mex.h					\
 	$(top_srcdir)/mex/mex-action-button.h			\
+	$(top_srcdir)/mex/mex-action-list.h			\
 	$(top_srcdir)/mex/mex-action-manager.h			\
 	$(top_srcdir)/mex/mex-action-provider.h			\
 	$(top_srcdir)/mex/mex-aggregate-model.h			\
@@ -147,6 +148,7 @@ mex_private_headers =			\
 
 mex_sources =					\
 	mex-action-button.c			\
+	mex-action-list.c			\
 	mex-action-manager.c			\
 	mex-action-provider.c			\
 	mex-aggregate-model.c			\

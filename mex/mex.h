@@ -22,6 +22,7 @@
 
 #include <glib.h>
 
+#include <mex/mex-action-list.h>
 #include <mex/mex-action-manager.h>
 #include <mex/mex-action-provider.h>
 #include <mex/mex-aggregate-model.h>
