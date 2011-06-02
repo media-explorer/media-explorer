@@ -73,6 +73,8 @@ void mex_tracker_model_set_filter (MexTrackerModel *model,
 void mex_tracker_model_set_metadata (MexTrackerModel *model,
                                      GList *metadata);
 
+void mex_tracker_model_start (MexTrackerModel *model);
+
 G_END_DECLS
 
 #endif /* _MEX_TRACKER_MODEL_H */

@@ -183,6 +183,8 @@ add_model (MexTrackerPlugin *self, MexTrackerCategory category)
   info = mex_model_info_new_with_sort_funcs (model, cat_name,
                                              priority);
 
+  mex_tracker_model_start (MEX_TRACKER_MODEL (model));
+
   /* Set 'Newest' as the default sort function */
   info->default_sort_index = 2;
 

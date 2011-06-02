@@ -40,14 +40,15 @@ enum
 {
   PROP_0,
 
-  PROP_FILTER
+  PROP_FILTER,
+  PROP_MAX_RESULTS
 };
 
 struct _MexTrackerModelPrivate
 {
   gchar *sparql_filter;
 
-  guint max_count;
+  guint max_results;
 
   GList *queries;
 };
@@ -66,6 +67,10 @@ mex_tracker_model_get_property (GObject    *object,
       g_value_set_string (value, priv->sparql_filter);
       break;
 
+    case PROP_MAX_RESULTS:
+      g_value_set_uint (value, priv->max_results);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -77,12 +82,17 @@ mex_tracker_model_set_property (GObject      *object,
                                 const GValue *value,
                                 GParamSpec   *pspec)
 {
-  MexTrackerModel *model = MEX_TRACKER_MODEL (object);
+  MexTrackerModel        *model = (MexTrackerModel *) object;
+  MexTrackerModelPrivate *priv  = model->priv;
 
   switch (property_id)
     {
     case PROP_FILTER:
       mex_tracker_model_set_filter (model, g_value_get_string (value));
+      break;
+
+    case PROP_MAX_RESULTS:
+      priv->max_results = g_value_get_uint (value);
       break;
 
     default:
@@ -136,6 +146,14 @@ mex_tracker_model_class_init (MexTrackerModelClass *klass)
                                G_PARAM_STATIC_STRINGS |
                                G_PARAM_CONSTRUCT);
   g_object_class_install_property (object_class, PROP_FILTER, pspec);
+
+  pspec = g_param_spec_uint ("max-results", "Max results",
+                             "Maximum results to be returned by Tracker",
+                             0, G_MAXUINT, G_MAXUINT,
+                             G_PARAM_READWRITE |
+                             G_PARAM_STATIC_STRINGS |
+                             G_PARAM_CONSTRUCT);
+  g_object_class_install_property (object_class, PROP_MAX_RESULTS, pspec);
 }
 
 static void
@@ -143,13 +161,57 @@ mex_tracker_model_init (MexTrackerModel *self)
 {
   self->priv = TRACKER_MODEL_PRIVATE (self);
 
-  self->priv->max_count = G_MAXUINT;
+  /* self->priv->max_count = G_MAXUINT; */
 }
 
 MexTrackerModel *
 mex_tracker_model_new (void)
 {
   return g_object_new (MEX_TYPE_TRACKER_MODEL, NULL);
+}
+
+static void
+mex_tracker_model_notif_cb (MexTrackerNotifications *notifs,
+                            GArray                  *items,
+                            MexTrackerModel         *model)
+{
+  g_message ("notify model=%p items=%u !", model, items->len);
+}
+
+void
+mex_tracker_model_set_filter (MexTrackerModel *model,
+                              const gchar *sparql_filter)
+
+{
+  MexTrackerModelPrivate *priv;
+  MexTrackerNotifications *notifs;
+
+  g_return_if_fail (model != NULL);
+  g_return_if_fail (sparql_filter != NULL);
+
+  priv = model->priv;
+  notifs = mex_tracker_notifications_get ();
+
+  if (priv->sparql_filter)
+    {
+      /* Stop dbus callback */
+      g_signal_handlers_disconnect_by_func (notifs,
+            G_CALLBACK (mex_tracker_model_notif_cb),
+            model);
+
+      g_free (priv->sparql_filter);
+      priv->sparql_filter = NULL;
+    }
+
+  if (sparql_filter)
+    {
+      priv->sparql_filter = g_strdup (sparql_filter);
+
+      /* Reinstall dbus callback*/
+      g_signal_connect (notifs, "updated",
+                        G_CALLBACK (mex_tracker_model_notif_cb),
+                        model);
+    }
 }
 
 static void
@@ -226,8 +288,8 @@ mex_tracker_model_query_cb (GObject      *source_object,
              (gpointer) os);
 }
 
-static void
-mex_tracker_model_query (MexTrackerModel *model)
+void
+mex_tracker_model_start (MexTrackerModel *model)
 {
   MexTrackerModelPrivate *priv = model->priv;
   gchar                  *sparql_select, *sparql_final;
@@ -247,7 +309,7 @@ mex_tracker_model_query (MexTrackerModel *model)
                                   sparql_select,
                                   priv->sparql_filter,
                                   0,
-                                  priv->max_count);
+                                  priv->max_results);
   g_free (sparql_select);
 
   g_message ("select : '%s'", sparql_final);
@@ -257,54 +319,8 @@ mex_tracker_model_query (MexTrackerModel *model)
                                       model);
 
   os->skip  = 0;
-  os->count = priv->max_count;
+  os->count = priv->max_results;
   os->data  = model;
 
   mex_tracker_queue_push (mex_tracker_get_queue (), os);
-}
-
-static void
-mex_tracker_model_notif_cb (MexTrackerNotifications *notifs,
-                            GArray                  *items,
-                            MexTrackerModel         *model)
-{
-  g_message ("notify model=%p items=%u !", model, items->len);
-}
-
-void
-mex_tracker_model_set_filter (MexTrackerModel *model,
-                              const gchar *sparql_filter)
-
-{
-  MexTrackerModelPrivate *priv;
-  MexTrackerNotifications *notifs;
-
-  g_return_if_fail (model != NULL);
-  g_return_if_fail (sparql_filter != NULL);
-
-  priv = model->priv;
-  notifs = mex_tracker_notifications_get ();
-
-  if (priv->sparql_filter)
-    {
-      /* Stop dbus callback */
-      g_signal_handlers_disconnect_by_func (notifs,
-            G_CALLBACK (mex_tracker_model_notif_cb),
-            model);
-
-      g_free (priv->sparql_filter);
-      priv->sparql_filter = NULL;
-    }
-
-  if (sparql_filter)
-    {
-      priv->sparql_filter = g_strdup (sparql_filter);
-
-      /* Reinstall dbus callback*/
-      g_signal_connect (notifs, "updated",
-                        G_CALLBACK (mex_tracker_model_notif_cb),
-                        model);
-
-      mex_tracker_model_query (model);
-    }
 }
