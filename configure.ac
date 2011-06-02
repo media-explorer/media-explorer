@@ -72,7 +72,7 @@ modules="glib-2.0 >= 2.26          \
          gio-unix-2.0              \
          gdk-pixbuf-2.0            \
          libsoup-2.4         \
-         mx-1.0 >= 1.1.11          \
+         mx-1.0 >= 1.1.12          \
          clutter-gst-1.0 >= 1.3.8  \
          rest-0.7                  \
          dbus-glib-1               \
