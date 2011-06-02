@@ -1215,6 +1215,7 @@ static void
 mex_grid_pick (ClutterActor *actor, const ClutterColor *color)
 {
   gint i;
+  gboolean draw_focus;
   MexGridPrivate *priv = MEX_GRID (actor)->priv;
 
   CLUTTER_ACTOR_CLASS (mex_grid_parent_class)->pick (actor, color);
@@ -1222,11 +1223,19 @@ mex_grid_pick (ClutterActor *actor, const ClutterColor *color)
   if (priv->first_visible == -1)
     return;
 
+  draw_focus = FALSE;
+
   for (i = priv->first_visible; i <= priv->last_visible; i++)
     {
       ClutterActor *child = g_array_index (priv->children, ClutterActor *, i);
-      clutter_actor_paint (child);
+      if (priv->has_focus && (child == priv->current_focus))
+        draw_focus = TRUE;
+      else
+        clutter_actor_paint (child);
     }
+
+  if (draw_focus)
+    clutter_actor_paint (priv->current_focus);
 }
 
 static void
