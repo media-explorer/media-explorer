@@ -510,20 +510,29 @@ mex_tracker_update_content (MexContent *content, TrackerSparqlCursor *cursor)
 MexContent *
 mex_tracker_build_content (TrackerSparqlCursor *cursor)
 {
+  MexTrackerCache *cache;
   MexContent *content = NULL;
   const gchar *urn;
 
   g_return_val_if_fail (TRACKER_SPARQL_IS_CURSOR (cursor), NULL);
 
+  cache = mex_tracker_get_cache ();
+
   urn = tracker_sparql_cursor_get_string (cursor, 0, NULL);
   if (urn != NULL)
-    content = mex_tracker_cache_lookup (mex_tracker_get_cache (), urn);
+    content = mex_tracker_cache_lookup (cache, urn);
 
   if (!content)
-    content = mex_tracker_content_new ();
-
-  mex_tracker_update_content (content, cursor);
-  mex_tracker_content_set_in_setup (MEX_TRACKER_CONTENT (content), FALSE);
+    {
+      content = mex_tracker_content_new ();
+      mex_tracker_update_content (content, cursor);
+      mex_tracker_content_set_in_setup (MEX_TRACKER_CONTENT (content), FALSE);
+      mex_tracker_cache_add (cache, content);
+    }
+  else
+    {
+      mex_tracker_update_content (content, cursor);
+    }
 
   return content;
 }
