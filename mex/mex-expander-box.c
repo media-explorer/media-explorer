@@ -215,8 +215,13 @@ mex_expander_box_move_focus (MxFocusable      *focusable,
   gboolean switch_focus = FALSE;
 
   if (!priv->primary || !priv->secondary ||
+      !CLUTTER_ACTOR_IS_VISIBLE (priv->primary) ||
+      !CLUTTER_ACTOR_IS_VISIBLE (priv->secondary) ||
       !MX_IS_FOCUSABLE (priv->primary) ||
       !MX_IS_FOCUSABLE (priv->secondary))
+    return NULL;
+
+  if ((current == priv->primary) && !priv->open)
     return NULL;
 
   switch (direction)
