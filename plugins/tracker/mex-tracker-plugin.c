@@ -50,6 +50,7 @@ typedef enum {
   MEX_TRACKER_CATEGORY_VIDEO,
   MEX_TRACKER_CATEGORY_MUSIC,
   MEX_TRACKER_CATEGORY_SERIES,
+  MEX_TRACKER_CATEGORY_LASTSEEN,
 } MexTrackerCategory;
 
 static void
@@ -166,6 +167,13 @@ add_model (MexTrackerPlugin *self, MexTrackerCategory category)
       /* models = self->priv->video_models; */
       metadata_keys = self->priv->video_keys;
       break;
+
+    case MEX_TRACKER_CATEGORY_LASTSEEN:
+      cat_name = "lastseen";
+      query = "?u a nmm:Video . ?u tracker:available true . FILTER(bound(nie:contentAccessed(?u)))";
+      /* models = self->priv->video_models; */
+      metadata_keys = self->priv->video_keys;
+      break;
     }
 
   model = (MexModel *) g_object_new (MEX_TYPE_TRACKER_MODEL, "filter", query, NULL);
@@ -223,6 +231,11 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                   "icon-panelheader-videos",
                                   20,
                                   _("Connect an external drive or update your network settings to see Series here.") };
+  MexModelCategoryInfo lastseen = { "lastseen",
+                                    _("Last Seen"),
+                                    "icon-panelheader-videos",
+                                    45,
+                                    _("No last seen content yet... Go watch something !") };
 
 
   priv = self->priv = GET_PRIVATE (self);
@@ -281,11 +294,13 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
   priv->manager = mex_model_manager_get_default ();
 
   mex_model_manager_add_category (priv->manager, &series);
+  mex_model_manager_add_category (priv->manager, &lastseen);
 
   add_model (self, MEX_TRACKER_CATEGORY_VIDEO);
   add_model (self, MEX_TRACKER_CATEGORY_SERIES);
   add_model (self, MEX_TRACKER_CATEGORY_IMAGE);
   add_model (self, MEX_TRACKER_CATEGORY_MUSIC);
+  add_model (self, MEX_TRACKER_CATEGORY_LASTSEEN);
 }
 
 MexTrackerPlugin *
