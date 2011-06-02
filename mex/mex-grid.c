@@ -1034,8 +1034,12 @@ mex_grid_allocate (ClutterActor           *actor,
   /* Set the adjustment values */
   if (priv->vadjust)
     {
+      /* This is only an estimate of the total height, but by the time the
+       * container is scrolled near it, it becomes visible and is more accurate.
+       */
       if (priv->last_visible != priv->children->len - 1)
-        bottom = ((priv->children->len - 1) / priv->stride + 1) * basic_height;
+        bottom = ((priv->children->len - 1) / priv->stride + 1) *
+          (basic_height / pow (1.5, 2.0));
 
       g_object_set (G_OBJECT (priv->vadjust),
                     "lower", 0.0,
