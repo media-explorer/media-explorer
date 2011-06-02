@@ -1108,7 +1108,7 @@ mex_grid_paint (ClutterActor *actor)
    * it's visible.
    */
   clipped = FALSE;
-  if (priv->current_focus)
+  if (priv->current_focus && priv->has_focus)
     {
       ClutterActorBox child_box;
 
@@ -1155,7 +1155,7 @@ mex_grid_paint (ClutterActor *actor)
       ClutterActor *child = g_array_index (priv->children, ClutterActor *, i);
 
       /* Paint child */
-      if (child == priv->current_focus)
+      if (priv->has_focus && (child == priv->current_focus))
         draw_focus = TRUE;
       else
         mex_grid_draw_child_with_lowlight (self, child, row);
