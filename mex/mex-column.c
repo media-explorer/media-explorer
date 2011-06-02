@@ -327,7 +327,7 @@ mex_column_set_adjustments (MxScrollable *scrollable,
   if (priv->adjustment)
     {
       g_signal_handlers_disconnect_by_func (priv->adjustment,
-                                            clutter_actor_queue_redraw,
+                                            clutter_actor_queue_relayout,
                                             scrollable);
       g_object_unref (priv->adjustment);
     }
@@ -338,7 +338,7 @@ mex_column_set_adjustments (MxScrollable *scrollable,
     {
       g_object_ref (priv->adjustment);
       g_signal_connect_swapped (priv->adjustment, "notify::value",
-                                G_CALLBACK (clutter_actor_queue_redraw),
+                                G_CALLBACK (clutter_actor_queue_relayout),
                                 scrollable);
     }
 
@@ -816,6 +816,7 @@ mex_column_allocate (ClutterActor          *actor,
   gfloat header_pref_height, pref_h, pref_w;
   ClutterActorBox child_box;
   MxPadding padding;
+  gdouble value;
   GList *c;
 
   MexColumn *column = MEX_COLUMN (actor);
@@ -826,9 +827,14 @@ mex_column_allocate (ClutterActor          *actor,
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
 
   /* Allocate header */
+  if (priv->adjustment)
+    value = mx_adjustment_get_value (priv->adjustment);
+  else
+    value = 0.0;
+
   child_box.x1 = padding.left;
   child_box.x2 = box->x2 - box->x1 - padding.right;
-  child_box.y1 = padding.top;
+  child_box.y1 = padding.top + value;
 
   clutter_actor_get_preferred_height (priv->header,
                                       child_box.x2 - child_box.x1,
@@ -840,7 +846,7 @@ mex_column_allocate (ClutterActor          *actor,
   clutter_actor_allocate (priv->header, &child_box, flags);
 
   /* Allocate placeholder actor */
-  child_box.y1 = child_box.y2;
+  child_box.y1 = padding.top + header_pref_height;
 
   /* keep the aspect ratio of the palceholder actor */
   clutter_actor_get_preferred_size (priv->placeholder_actor, NULL, NULL,
@@ -940,11 +946,27 @@ static void
 mex_column_paint (ClutterActor *actor)
 {
   GList *c;
+  gdouble value;
+  MxPadding padding;
+  ClutterActorBox box;
 
   MexColumn *self = MEX_COLUMN (actor);
   MexColumnPrivate *priv = self->priv;
 
   CLUTTER_ACTOR_CLASS (mex_column_parent_class)->paint (actor);
+
+  mx_widget_get_padding (MX_WIDGET (actor), &padding);
+  clutter_actor_get_allocation_box (actor, &box);
+  if (priv->adjustment)
+    value = mx_adjustment_get_value (priv->adjustment);
+  else
+    value = 0;
+
+  cogl_clip_push_rectangle (padding.left,
+                            clutter_actor_get_height (priv->header) +
+                              padding.top + value,
+                            box.x2 - box.x1 - padding.right,
+                            box.y2 - box.y1 - padding.bottom + value);
 
   if (priv->n_items < 1 && priv->placeholder_actor)
     clutter_actor_paint (priv->placeholder_actor);
@@ -963,6 +985,8 @@ mex_column_paint (ClutterActor *actor)
         clutter_actor_paint (priv->current_focus);
     }
 
+  cogl_clip_pop ();
+
   clutter_actor_paint (priv->header);
 }
 
@@ -970,6 +994,9 @@ static void
 mex_column_pick (ClutterActor *actor, const ClutterColor *color)
 {
   GList *c;
+  gdouble value;
+  MxPadding padding;
+  ClutterActorBox box;
 
   MexColumn *self = MEX_COLUMN (actor);
   MexColumnPrivate *priv = self->priv;
@@ -980,8 +1007,24 @@ mex_column_pick (ClutterActor *actor, const ClutterColor *color)
   if (!priv->has_focus)
     return;
 
+  mx_widget_get_padding (MX_WIDGET (actor), &padding);
+  clutter_actor_get_allocation_box (actor, &box);
+  if (priv->adjustment)
+    value = mx_adjustment_get_value (priv->adjustment);
+  else
+    value = 0;
+
+  cogl_clip_push_rectangle (padding.left,
+                            clutter_actor_get_height (priv->header) +
+                              padding.top + value,
+                            box.x2 - box.x1 - padding.right,
+                            box.y2 - box.y1 - padding.bottom + value);
+
   for (c = priv->children; c; c = c->next)
     clutter_actor_paint (c->data);
+
+  cogl_clip_pop ();
+
   clutter_actor_paint (priv->header);
 }
 
