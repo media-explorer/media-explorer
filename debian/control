@@ -3,7 +3,7 @@ Section: gnome
 Priority: extra
 Maintainer: Lionel Landwerlin <llandwerlin@gmail.com>
 Build-Depends: libglib2.0-dev (>= 2.26.0), libclutter-gst-dev (>= 1.3.6),
- libmx-dev (>= 1.1.11), libsoup2.4-dev, libtracker-sparql-0.10-dev,
+ libmx-dev (>= 1.1.12), libsoup2.4-dev, libtracker-sparql-0.10-dev,
  libgdk-pixbuf2.0-dev, librest-dev (>= 0.7.0),
  libdbus-glib-1-dev, libgrilo-0.1-dev (>= 0.1.15),
 Standards-Version: 3.7.2
