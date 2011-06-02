@@ -647,3 +647,22 @@ mex_get_data_dir ()
 
   return datadir;
 }
+
+gboolean
+mex_actor_has_focus (MxFocusManager *manager,
+                     ClutterActor   *actor)
+{
+  ClutterActor *parent;
+  ClutterActor *focus = (ClutterActor *)mx_focus_manager_get_focused (manager);
+
+  while (focus)
+    {
+      parent = clutter_actor_get_parent (focus);
+      if (focus == actor)
+        return TRUE;
+      focus = parent;
+    }
+
+  return FALSE;
+}
+

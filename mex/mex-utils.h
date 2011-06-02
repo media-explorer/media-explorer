@@ -110,4 +110,8 @@ void mex_replace_border_image (CoglHandle     *texture_p,
                                CoglHandle     *material_p);
 
 const char* mex_get_data_dir ();
+
+gboolean mex_actor_has_focus (MxFocusManager *manager,
+                              ClutterActor   *actor);
+
 #endif /* _MEX_UTILS_H */
