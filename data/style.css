@@ -94,7 +94,7 @@ MxEntry
 /* Action-list, MexMenu and MexContentButton styling */
 /* Further MexMenu styling later */
 
-MxBoxLayout.ActionList > MxButton,
+MexActionList MxButton,
 MxBoxLayout.Menu > MxButton,
 MexContentButton
 {
@@ -102,9 +102,9 @@ MexContentButton
   border-image: url("details-actions-separator.png") 0 15 1;
 }
 
-MxBoxLayout.ActionList > MxButton:hover,
-MxBoxLayout.ActionList > MxButton:focus,
-MxBoxLayout.ActionList > MxButton:active,
+MexActionList MxButton:hover,
+MexActionList MxButton:focus,
+MexActionList MxButton:active,
 MxBoxLayout.Menu > MxButton:hover,
 MxBoxLayout.Menu > MxButton:focus,
 MxBoxLayout.Menu > MxButton:focus:checked,
@@ -113,12 +113,13 @@ MexContentButton:hover,
 MexContentButton:focus,
 MexContentButton:active
 {
+  padding: 11 15;
   border-image: url("highlight-bg.png") 0;
 }
 
-MxBoxLayout.ActionList > MxButton:hover MxLabel,
-MxBoxLayout.ActionList > MxButton:focus MxLabel,
-MxBoxLayout.ActionList > MxButton:active MxLabel
+MexActionList MxButton:hover MxLabel,
+MexActionList MxButton:focus MxLabel,
+MexActionList MxButton:active MxLabel
 {
   color: #464541;
 }

@@ -19,6 +19,7 @@
 
 #include "mex-content-box.h"
 #include "mex-action-button.h"
+#include "mex-action-list.h"
 #include "mex-action-manager.h"
 #include "mex-content-view.h"
 #include "mex-main.h"
@@ -61,15 +62,13 @@ enum
 
 struct _MexContentBoxPrivate
 {
-  guint         created_menu    : 1;
-
   MexContent   *content;
   GList        *bindings;
 
   MexModel     *model;
 
   ClutterActor *box;
-  ClutterActor *menu_layout; /* ref sinked actor */
+  ClutterActor *action_list;
   ClutterActor *tile;
   ClutterActor *panel;
 
@@ -111,6 +110,7 @@ mex_content_box_set_content (MexContentView *view,
     return;
 
   mex_content_view_set_content (MEX_CONTENT_VIEW (priv->tile), content);
+  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list), content);
 
   if (priv->content)
     {
@@ -193,6 +193,7 @@ mex_content_box_set_context (MexContentView *view,
     g_object_unref (priv->model);
 
   priv->model = g_object_ref (model);
+  mex_content_view_set_context (MEX_CONTENT_VIEW (priv->action_list), model);
 }
 
 static MexModel*
@@ -360,12 +361,6 @@ mex_content_box_dispose (GObject *object)
       priv->model = NULL;
     }
 
-  if (priv->menu_layout)
-    {
-      g_object_unref (priv->menu_layout);
-      priv->menu_layout = NULL;
-    }
-
   G_OBJECT_CLASS (mex_content_box_parent_class)->dispose (object);
 }
 
@@ -386,95 +381,44 @@ static void
 mex_content_box_notify_open_cb (MexExpanderBox *box,
                                 GParamSpec     *pspec)
 {
-  ClutterStage *stage;
-  MxFocusManager *fmanager;
+  GList *actions;
 
+  ClutterStage *stage = CLUTTER_STAGE (
+                          clutter_actor_get_stage (CLUTTER_ACTOR (box)));
+  MxFocusManager *fmanager = mx_focus_manager_get_for_stage (stage);
   MexActionManager *manager = mex_action_manager_get_default ();
   MexContentBoxPrivate *priv = MEX_CONTENT_BOX (box)->priv;
   gboolean open = mex_expander_box_get_open (box);
 
   if (!open)
     {
-      mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (priv->box), NULL);
-      priv->created_menu = FALSE;
+      /* If the action list has focus, push it back onto the tile */
+      if (mex_actor_has_focus (fmanager, priv->action_list))
+        mx_focus_manager_push_focus (fmanager, MX_FOCUSABLE (priv->tile));
       return;
     }
 
-  stage = (ClutterStage *)clutter_actor_get_stage (CLUTTER_ACTOR (box));
-  fmanager = mx_focus_manager_get_for_stage (stage);
+  /* Refresh the info panel and the action list */
+  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->panel), priv->content);
+  mex_action_list_refresh (MEX_ACTION_LIST (priv->action_list));
 
-  if (!priv->created_menu)
+  /* See if we have any actions */
+  actions = mex_action_manager_get_actions_for_content (manager,
+                                                        priv->content);
+
+  /* Push focus onto the action list if we have actions, otherwise onto
+   * the tile.
+   */
+  if (actions)
     {
-      GList *actions;
-
-      priv->created_menu = TRUE;
-
-      mex_content_view_set_content (MEX_CONTENT_VIEW (priv->panel),
-                                    priv->content);
-
-      actions = mex_action_manager_get_actions_for_content (manager,
-                                                            priv->content);
-
-      if (actions)
-        {
-          GList *a;
-          ClutterActor *layout = priv->menu_layout;
-          ClutterActor *hline;
-
-          /* Clear old menu contents */
-          clutter_container_foreach (CLUTTER_CONTAINER (layout),
-                                     (ClutterCallback)clutter_actor_destroy,
-                                     NULL);
-
-
-          /* separator */
-          hline = clutter_rectangle_new_with_color (&hline_color);
-          clutter_actor_set_height (hline, 1);
-          clutter_container_add_actor (CLUTTER_CONTAINER (layout), hline);
-
-          /* Fill in new menu contents */
-          for (a = actions; a; a = a->next)
-            {
-              MxAction *action = a->data;
-              ClutterActor *button;
-
-              /* We treat the queue action specially .. we don't turn the
-               * action into an action button we instead use the special queue
-               * action button which allows our special effects
-               */
-              if (g_str_equal (mx_action_get_name (action), "enqueue"))
-                {
-                  button = mex_queue_button_new ();
-                  mex_content_view_set_content (MEX_CONTENT_VIEW (button),
-                                                priv->content);
-                }
-              else
-                {
-                  button = mex_action_button_new (action);
-
-                  mx_bin_set_fill (MX_BIN (button), TRUE, FALSE);
-                  mex_action_set_content (action, priv->content);
-                  mex_action_set_context (action, priv->model);
-                }
-
-                clutter_container_add_actor (CLUTTER_CONTAINER (layout),
-                                             button);
-                g_object_set (G_OBJECT (button), "min-width", 240.0, NULL);
-            }
-
-          mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (priv->box),
-                                               layout);
-
-          mx_focus_manager_push_focus (fmanager, MX_FOCUSABLE (layout));
-
-          g_list_free (actions);
-        }
-
-      /* Make sure the menu box is open */
-      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->box), TRUE);
+      clutter_actor_show (priv->action_list);
+      mx_focus_manager_push_focus (fmanager,
+                                   MX_FOCUSABLE (priv->action_list));
+      g_list_free (actions);
     }
   else
     {
+      clutter_actor_hide (priv->action_list);
       mx_focus_manager_push_focus (fmanager, MX_FOCUSABLE (priv->tile));
     }
 }
@@ -755,11 +699,10 @@ mex_content_box_init (MexContentBox *self)
   mex_expander_box_set_primary_child (MEX_EXPANDER_BOX (self), priv->box);
   mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (self), box);
 
-  /* Create menu layout (but only reference, don't parent) */
-  priv->menu_layout = g_object_ref_sink (mx_box_layout_new ());
-  mx_stylable_set_style_class (MX_STYLABLE (priv->menu_layout), "ActionList");
-  mx_box_layout_set_orientation (MX_BOX_LAYOUT (priv->menu_layout),
-                                 MX_ORIENTATION_VERTICAL);
+  /* Create the action list */
+  priv->action_list = mex_action_list_new ();
+  mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (priv->box),
+                                        priv->action_list);
 
   /* Connect to the open notify signal */
   g_signal_connect (self, "notify::open",
@@ -783,7 +726,7 @@ ClutterActor *
 mex_content_box_get_menu (MexContentBox *box)
 {
   g_return_val_if_fail (MEX_IS_CONTENT_BOX (box), NULL);
-  return box->priv->menu_layout;
+  return box->priv->action_list;
 }
 
 ClutterActor *
