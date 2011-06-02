@@ -2216,7 +2216,7 @@ static GOptionEntry entries[] =
   { "full-screen", 'f', 0, G_OPTION_ARG_NONE, &opt_fullscreen,
     "Start full screen", NULL },
   { "show-version", 0, 0, G_OPTION_ARG_NONE, &opt_version,
-    "Do not dispay the version", NULL },
+    "Dispay the version", NULL },
   { "ignore-resolution", 'r', 0, G_OPTION_ARG_NONE, &opt_ignore_res,
     "Don't warn if the screen size isn't sufficient", NULL },
   { "touch-mode", 't', 0, G_OPTION_ARG_NONE, &opt_touch,
