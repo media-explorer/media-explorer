@@ -1391,16 +1391,20 @@ on_volume_changed (ClutterActor *volume,
 }
 
 static void
-mex_enable_touch_events (MexData *data)
+mex_enable_touch_events (MexData  *data,
+                         gboolean  on)
 {
   MxSettings *settings;
 
-  opt_touch = TRUE;
-  mex_explorer_set_touch_mode (MEX_EXPLORER (data->explorer), TRUE);
+  opt_touch = on;
+  mex_explorer_set_touch_mode (MEX_EXPLORER (data->explorer), on);
 
   /* FIXME: This value is arbitrary and should be set by the platform */
-  settings = mx_settings_get_default ();
-  g_object_set (G_OBJECT (settings), "drag-threshold", (guint)10, NULL);
+  if (on)
+    {
+      settings = mx_settings_get_default ();
+      g_object_set (G_OBJECT (settings), "drag-threshold", (guint)10, NULL);
+    }
 }
 
 static gboolean
@@ -1418,7 +1422,7 @@ mex_captured_event_cb (ClutterActor *actor,
           /* don't respond to any mouse events */
         case CLUTTER_BUTTON_PRESS:
         case CLUTTER_BUTTON_RELEASE:
-          mex_enable_touch_events (data);
+          mex_enable_touch_events (data, TRUE);
           break;
 
         case CLUTTER_ENTER:
@@ -1443,6 +1447,13 @@ mex_captured_event_cb (ClutterActor *actor,
   /* Check for keys that should always work first */
   switch (key_event->keyval)
     {
+    case CLUTTER_KEY_Left :
+    case CLUTTER_KEY_Right :
+    case CLUTTER_KEY_Up :
+    case CLUTTER_KEY_Down :
+      mex_enable_touch_events (data, FALSE);
+      break;
+
     case MEX_KEY_HOME :
       /* stop all playing content and show the home screen */
       mex_show_home_screen (data);
@@ -2677,7 +2688,7 @@ main (int argc, char **argv)
   if (!opt_ignore_res)
     check_resolution (&data);
   if (opt_touch)
-    mex_enable_touch_events (&data);
+    mex_enable_touch_events (&data, TRUE);
 
   mx_application_run (app);
 
