@@ -79,6 +79,14 @@ mex_tracker_metadatas_set_property (GObject      *object,
 static void
 mex_tracker_metadatas_dispose (GObject *object)
 {
+  MexTrackerMetadatasPrivate *priv = TRACKER_METADATAS_PRIVATE (object);
+
+  if (priv->metadata_list)
+    {
+      g_list_free (priv->metadata_list);
+      priv->metadata_list = NULL;
+    }
+
   G_OBJECT_CLASS (mex_tracker_metadatas_parent_class)->dispose (object);
 }
 

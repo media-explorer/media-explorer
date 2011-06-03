@@ -73,6 +73,14 @@ mex_tracker_connection_set_property (GObject      *object,
 static void
 mex_tracker_connection_dispose (GObject *object)
 {
+  MexTrackerConnectionPrivate *priv = TRACKER_CONNECTION_PRIVATE (object);
+
+  if (priv->connection)
+    {
+      g_object_unref (priv->connection);
+      priv->connection = NULL;
+    }
+
   G_OBJECT_CLASS (mex_tracker_connection_parent_class)->dispose (object);
 }
 

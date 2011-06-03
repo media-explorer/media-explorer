@@ -37,6 +37,12 @@ struct _MexTrackerCachePrivate
   GHashTable *content_to_item;  /* content -> MexTrackerCacheItem */
 };
 
+static void
+mex_tracker_cache_item_free (MexTrackerCacheItem *item)
+{
+  g_free (item->urn);
+  g_slice_free (MexTrackerCacheItem, item);
+}
 
 static void
 mex_tracker_cache_get_property (GObject    *object,
@@ -67,6 +73,24 @@ mex_tracker_cache_set_property (GObject      *object,
 static void
 mex_tracker_cache_dispose (GObject *object)
 {
+  MexTrackerCachePrivate *priv = TRACKER_CACHE_PRIVATE (object);
+  GHashTableIter iter;
+  MexTrackerCacheItem *item;
+
+  if (priv->urn_to_item)
+    {
+      g_hash_table_iter_init (&iter, priv->urn_to_item);
+      while (g_hash_table_iter_next (&iter, NULL, (gpointer *) &item))
+        mex_tracker_cache_item_free (item);
+      g_hash_table_unref (priv->urn_to_item);
+    }
+
+  if (priv->content_to_item)
+    {
+      g_hash_table_unref (priv->content_to_item);
+      priv->content_to_item = NULL;
+    }
+
   G_OBJECT_CLASS (mex_tracker_cache_parent_class)->dispose (object);
 }
 
@@ -137,7 +161,7 @@ mex_tracker_cache_weak_notify (MexTrackerCache *cache,
   g_hash_table_remove (priv->content_to_item, freed_object);
   g_hash_table_remove (priv->urn_to_item, item->urn);
 
-  g_slice_free (MexTrackerCacheItem, item);
+  mex_tracker_cache_item_free (item);
 }
 
 void

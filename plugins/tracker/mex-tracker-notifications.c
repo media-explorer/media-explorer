@@ -123,6 +123,20 @@ mex_tracker_notifications_set_property (GObject      *object,
 static void
 mex_tracker_notifications_dispose (GObject *object)
 {
+  MexTrackerNotificationsPrivate *priv = TRACKER_NOTIFICATIONS_PRIVATE (object);
+
+  if (priv->signal_id)
+    {
+      g_dbus_connection_signal_unsubscribe (priv->connection, priv->signal_id);
+      priv->signal_id = 0;
+    }
+
+  if (priv->connection)
+    {
+      g_object_unref (priv->connection);
+      priv->connection = NULL;
+    }
+
   G_OBJECT_CLASS (mex_tracker_notifications_parent_class)->dispose (object);
 }
 

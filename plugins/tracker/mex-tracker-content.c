@@ -104,6 +104,14 @@ mex_tracker_content_set_property (GObject      *object,
 static void
 mex_tracker_content_dispose (GObject *object)
 {
+  MexTrackerContentPrivate *priv = TRACKER_CONTENT_PRIVATE (object);
+
+  if (priv->modified_keys)
+    {
+      g_list_free (priv->modified_keys);
+      priv->modified_keys = NULL;
+    }
+
   G_OBJECT_CLASS (mex_tracker_content_parent_class)->dispose (object);
 }
 
@@ -231,6 +239,7 @@ mex_tracker_content_save_metadata (MexContent *content)
                                   urn, sparql_cdelete,
                                   urn, sparql_insert);
 
+  /* TODO? : Should hold a ref till the operation is finished ? */
   os = mex_tracker_op_initiate_set_metadata (sparql_final,
           (GAsyncReadyCallback) mex_tracker_content_save_metadata_cb,
           content);
