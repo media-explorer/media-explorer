@@ -18,6 +18,7 @@
 
 #include "mex-debug.h"
 #include "mex-tracker-model.h"
+#include "mex-tracker-metadatas.h"
 #include "mex-tracker-notifications.h"
 #include "mex-tracker-queue.h"
 #include "mex-tracker-utils.h"
@@ -41,16 +42,18 @@ enum
   PROP_0,
 
   PROP_FILTER,
-  PROP_MAX_RESULTS
+  PROP_MAX_RESULTS,
+  PROP_INITIAL_METADATAS,
+  PROP_COMPLETE_METADATAS
 };
 
 struct _MexTrackerModelPrivate
 {
   gchar *sparql_filter;
+  guint  max_results;
 
-  guint max_results;
-
-  GList *queries;
+  MexTrackerMetadatas *initial_metadatas;
+  MexTrackerMetadatas *complete_metadatas;
 };
 
 static void
@@ -69,6 +72,14 @@ mex_tracker_model_get_property (GObject    *object,
 
     case PROP_MAX_RESULTS:
       g_value_set_uint (value, priv->max_results);
+      break;
+
+    case PROP_INITIAL_METADATAS:
+      g_value_set_object (value, priv->initial_metadatas);
+      break;
+
+    case PROP_COMPLETE_METADATAS:
+      g_value_set_object (value, priv->complete_metadatas);
       break;
 
     default:
@@ -95,6 +106,18 @@ mex_tracker_model_set_property (GObject      *object,
       priv->max_results = g_value_get_uint (value);
       break;
 
+    case PROP_INITIAL_METADATAS:
+      if (priv->initial_metadatas)
+        g_object_unref (priv->initial_metadatas);
+      priv->initial_metadatas = g_object_ref_sink (g_value_get_object (value));
+      break;
+
+    case PROP_COMPLETE_METADATAS:
+      if (priv->complete_metadatas)
+        g_object_unref (priv->initial_metadatas);
+      priv->complete_metadatas = g_object_ref_sink (g_value_get_object (value));
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -111,10 +134,16 @@ mex_tracker_model_dispose (GObject *object)
       mex_tracker_model_set_filter (model, NULL);
     }
 
-  if (priv->queries)
+  if (priv->initial_metadatas)
     {
-      g_list_free (priv->queries);
-      priv->queries = NULL;
+      g_object_unref (priv->initial_metadatas);
+      priv->initial_metadatas = NULL;
+    }
+
+  if (priv->complete_metadatas)
+    {
+      g_object_unref (priv->complete_metadatas);
+      priv->complete_metadatas = NULL;
     }
 
   G_OBJECT_CLASS (mex_tracker_model_parent_class)->dispose (object);
@@ -154,6 +183,24 @@ mex_tracker_model_class_init (MexTrackerModelClass *klass)
                              G_PARAM_STATIC_STRINGS |
                              G_PARAM_CONSTRUCT);
   g_object_class_install_property (object_class, PROP_MAX_RESULTS, pspec);
+
+  pspec = g_param_spec_object ("initial-metadatas", "Initial metadatas",
+                               "Metadatas to query in first request "
+                               "to populate the model",
+                               MEX_TYPE_TRACKER_METADATAS,
+                               G_PARAM_READWRITE |
+                               G_PARAM_STATIC_STRINGS |
+                               G_PARAM_CONSTRUCT);
+  g_object_class_install_property (object_class, PROP_INITIAL_METADATAS, pspec);
+
+  pspec = g_param_spec_object ("complete-metadatas", "Complete metadatas",
+                               "Metadatas to query in a second request "
+                               "to populate one item's metadatas",
+                               MEX_TYPE_TRACKER_METADATAS,
+                               G_PARAM_READWRITE |
+                               G_PARAM_STATIC_STRINGS |
+                               G_PARAM_CONSTRUCT);
+  g_object_class_install_property (object_class, PROP_COMPLETE_METADATAS, pspec);
 }
 
 static void
@@ -165,9 +212,13 @@ mex_tracker_model_init (MexTrackerModel *self)
 }
 
 MexTrackerModel *
-mex_tracker_model_new (void)
+mex_tracker_model_new (MexTrackerMetadatas *initial_metadatas,
+                       MexTrackerMetadatas  *complete_metadatas)
 {
-  return g_object_new (MEX_TYPE_TRACKER_MODEL, NULL);
+  return g_object_new (MEX_TYPE_TRACKER_MODEL,
+                       "initial-metadatas", initial_metadatas,
+                       "complete-metadatas", complete_metadatas,
+                       NULL);
 }
 
 static void
@@ -187,7 +238,6 @@ mex_tracker_model_set_filter (MexTrackerModel *model,
   MexTrackerNotifications *notifs;
 
   g_return_if_fail (model != NULL);
-  g_return_if_fail (sparql_filter != NULL);
 
   priv = model->priv;
   notifs = mex_tracker_notifications_get ();
@@ -294,7 +344,7 @@ mex_tracker_model_start (MexTrackerModel *model)
   MexTrackerModelPrivate *priv = model->priv;
   gchar                  *sparql_select, *sparql_final;
   MexTrackerOp           *os;
-  const GList *supported_keys;
+  const GList            *keys;
 
   if (!priv->sparql_filter)
     {
@@ -302,9 +352,9 @@ mex_tracker_model_start (MexTrackerModel *model)
       return;
     }
 
-  supported_keys = mex_tracker_get_supported_keys ();
+  keys = mex_tracker_metadatas_get_metadata_list (priv->initial_metadatas);
 
-  sparql_select = mex_tracker_get_select_string (supported_keys);
+  sparql_select = mex_tracker_get_select_string (keys);
   sparql_final = g_strdup_printf (TRACKER_QUERY_REQUEST,
                                   sparql_select,
                                   priv->sparql_filter,

@@ -38,6 +38,8 @@ BUILT_SOURCES += $(MARSHAL_SOURCES)
 	mex-tracker-connection.h \
 	mex-tracker-content.c \
 	mex-tracker-content.h \
+	mex-tracker-metadatas.c \
+	mex-tracker-metadatas.h \
 	mex-tracker-model.c \
 	mex-tracker-model.h \
 	mex-tracker-notifications.c \

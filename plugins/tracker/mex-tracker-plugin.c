@@ -30,19 +30,19 @@ G_DEFINE_TYPE (MexTrackerPlugin, mex_tracker_plugin, G_TYPE_OBJECT)
 
 #define MAX_TRACKER_RESULTS G_MAXINT
 
-#define GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_TRACKER_PLUGIN, MexTrackerPluginPrivate))
+#define GET_PRIVATE(o)                                          \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o),                            \
+                                MEX_TYPE_TRACKER_PLUGIN,        \
+                                MexTrackerPluginPrivate))
 
 struct _MexTrackerPluginPrivate {
   MexModelManager *manager;
-  GHashTable *video_models;
-  GHashTable *image_models;
-  GHashTable *music_models;
+  GHashTable *models;
 
-  GList *query_keys;
-  GList *video_keys;
-  GList *image_keys;
-  GList *music_keys;
+  MexTrackerMetadatas *initial_metadatas;
+  MexTrackerMetadatas *video_metadatas;
+  MexTrackerMetadatas *image_metadatas;
+  MexTrackerMetadatas *music_metadatas;
 };
 
 typedef enum {
@@ -68,49 +68,35 @@ mex_tracker_plugin_finalize (GObject *gobject)
   MexTrackerPlugin *self = MEX_TRACKER_PLUGIN (gobject);
   MexTrackerPluginPrivate *priv = self->priv;
 
-  if (priv->query_keys)
+  if (priv->initial_metadatas)
     {
-      g_list_free (priv->query_keys);
-      priv->query_keys = NULL;
+      g_object_unref (priv->initial_metadatas);
+      priv->initial_metadatas = NULL;
     }
 
-  if (priv->video_keys)
+  if (priv->video_metadatas)
     {
-      g_list_free (priv->video_keys);
-      priv->video_keys = NULL;
+      g_object_unref (priv->video_metadatas);
+      priv->video_metadatas = NULL;
     }
 
-  if (priv->image_keys)
+  if (priv->image_metadatas)
     {
-      g_list_free (priv->image_keys);
-      priv->image_keys = NULL;
+      g_object_unref (priv->image_metadatas);
+      priv->image_metadatas = NULL;
     }
 
-  if (priv->music_keys)
+  if (priv->music_metadatas)
     {
-      g_list_free (priv->music_keys);
-      priv->music_keys = NULL;
+      g_object_unref (priv->music_metadatas);
+      priv->music_metadatas = NULL;
     }
 
-  if (priv->video_models)
+  if (priv->models)
     {
-      g_hash_table_foreach (priv->video_models, remove_model, self);
-      g_hash_table_destroy (priv->video_models);
-      priv->video_models = NULL;
-    }
-
-  if (priv->image_models)
-    {
-      g_hash_table_foreach (priv->image_models, remove_model, self);
-      g_hash_table_destroy (priv->image_models);
-      priv->image_models = NULL;
-    }
-
-  if (priv->music_models)
-    {
-      g_hash_table_foreach (priv->music_models, remove_model, self);
-      g_hash_table_destroy (priv->music_models);
-      priv->music_models = NULL;
+      g_hash_table_foreach (priv->models, remove_model, self);
+      g_hash_table_destroy (priv->models);
+      priv->models = NULL;
     }
 
   G_OBJECT_CLASS (mex_tracker_plugin_parent_class)->finalize (gobject);
@@ -131,11 +117,11 @@ mex_tracker_plugin_class_init (MexTrackerPluginClass *klass)
 static void
 add_model (MexTrackerPlugin *self, MexTrackerCategory category)
 {
-  GList *metadata_keys;
-  MexModel *model;
+  MexTrackerPluginPrivate *priv = self->priv;
+  MexTrackerMetadatas *metadata_keys;
+  MexTrackerModel *model;
   MexModelInfo *info;
   gchar *query, *cat_name;
-  /* GHashTable *models; */
   gint priority;
 
   switch (category)
@@ -143,83 +129,53 @@ add_model (MexTrackerPlugin *self, MexTrackerCategory category)
     case MEX_TRACKER_CATEGORY_IMAGE:
       cat_name = "pictures";
       query = "?u a nmm:Photo . ?u tracker:available true";
-      /* models = self->priv->image_models; */
-      metadata_keys = self->priv->image_keys;
+      metadata_keys = priv->image_metadatas;
       break;
 
     case MEX_TRACKER_CATEGORY_VIDEO:
       cat_name = "videos";
       query = "?u a nmm:Video . ?u tracker:available true";
-      /* models = self->priv->video_models; */
-      metadata_keys = self->priv->video_keys;
+      metadata_keys = priv->video_metadatas;
       break;
 
     case MEX_TRACKER_CATEGORY_MUSIC:
       cat_name = "music";
       query = "?u a nmm:MusicPiece . ?u tracker:available true";
-      /* models = self->priv->music_models; */
-      metadata_keys = self->priv->music_keys;
+      metadata_keys = priv->music_metadatas;
       break;
 
     case MEX_TRACKER_CATEGORY_SERIES:
       cat_name = "series";
       query = "?u a nmm:Video . ?u tracker:available true . FILTER(bound(nmm:episodeNumber(?u)))";
-      /* models = self->priv->video_models; */
-      metadata_keys = self->priv->video_keys;
+      metadata_keys = priv->video_metadatas;
       break;
 
     case MEX_TRACKER_CATEGORY_LASTSEEN:
       cat_name = "lastseen";
       query = "?u a nmm:Video . ?u tracker:available true . FILTER(bound(nie:contentAccessed(?u)))";
-      /* models = self->priv->video_models; */
-      metadata_keys = self->priv->video_keys;
+      metadata_keys = priv->video_metadatas;
       break;
     }
 
-  model = (MexModel *) g_object_new (MEX_TYPE_TRACKER_MODEL, "filter", query, NULL);
+  model = mex_tracker_model_new (priv->initial_metadatas, metadata_keys);
+
+  g_hash_table_insert (priv->models, model, model);
+
+  mex_tracker_model_set_filter (model, query);
+  mex_tracker_model_start (model);
 
   priority = -100;
 
-  info = mex_model_info_new_with_sort_funcs (model, cat_name,
+  info = mex_model_info_new_with_sort_funcs (MEX_MODEL (model),
+                                             cat_name,
                                              priority);
 
-  mex_tracker_model_start (MEX_TRACKER_MODEL (model));
 
   /* Set 'Newest' as the default sort function */
   info->default_sort_index = 2;
 
-  mex_model_manager_add_model (self->priv->manager, info);
+  mex_model_manager_add_model (priv->manager, info);
   mex_model_info_free (info);
-}
-
-static void
-registry_source_removed_cb (GrlPluginRegistry *registry,
-                            GrlMediaPlugin *source,
-                            MexTrackerPlugin *self)
-{
-  MexTrackerPluginPrivate *priv = self->priv;
-  MexModel *model;
-
-  model = g_hash_table_lookup (priv->video_models, source);
-  if (model)
-    {
-      mex_model_manager_remove_model (priv->manager, model);
-      g_hash_table_remove (priv->video_models, source);
-    }
-
-  model = g_hash_table_lookup (priv->image_models, source);
-  if (model)
-    {
-      mex_model_manager_remove_model (priv->manager, model);
-      g_hash_table_remove (priv->image_models, source);
-    }
-
-  model = g_hash_table_lookup (priv->music_models, source);
-  if (model)
-    {
-      mex_model_manager_remove_model (priv->manager, model);
-      g_hash_table_remove (priv->music_models, source);
-    }
 }
 
 static void
@@ -242,56 +198,55 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
 
   priv = self->priv = GET_PRIVATE (self);
 
-  priv->image_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                              g_object_unref, NULL);
-  priv->video_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                              g_object_unref, NULL);
-  priv->music_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                              g_object_unref, NULL);
+  priv->models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                                        g_object_unref, NULL);
 
-  priv->query_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
-                                                GRL_METADATA_KEY_TITLE,
-                                                GRL_METADATA_KEY_MIME,
-                                                GRL_METADATA_KEY_URL,
-                                                GRL_METADATA_KEY_DATE,
-                                                GRL_METADATA_KEY_THUMBNAIL,
-                                                NULL);
+  priv->initial_metadatas =
+    mex_tracker_metadatas_new (MEX_CONTENT_METADATA_ID,
+                               MEX_CONTENT_METADATA_TITLE,
+                               MEX_CONTENT_METADATA_MIMETYPE,
+                               MEX_CONTENT_METADATA_STREAM,
+                               MEX_CONTENT_METADATA_DATE,
+                               MEX_CONTENT_METADATA_STREAM,
+                               MEX_CONTENT_METADATA_INVALID);
 
-  priv->image_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
-                                                GRL_METADATA_KEY_DESCRIPTION,
-                                                GRL_METADATA_KEY_THUMBNAIL,
-                                                GRL_METADATA_KEY_WIDTH,
-                                                GRL_METADATA_KEY_HEIGHT,
-                                                GRL_METADATA_KEY_PLAY_COUNT,
-                                                GRL_METADATA_KEY_LAST_PLAYED,
-                                                GRL_METADATA_KEY_CAMERA_MODEL,
-                                                GRL_METADATA_KEY_EXPOSURE_TIME,
-                                                GRL_METADATA_KEY_ISO_SPEED,
-                                                GRL_METADATA_KEY_FLASH_USED,
-                                                GRL_METADATA_KEY_ORIENTATION,
-                                                GRL_METADATA_KEY_CREATION_DATE,
-                                                NULL);
+  priv->image_metadatas =
+    mex_tracker_metadatas_new (MEX_CONTENT_METADATA_ID,
+                               MEX_CONTENT_METADATA_STILL,
+                               MEX_CONTENT_METADATA_WIDTH,
+                               MEX_CONTENT_METADATA_HEIGHT,
+                               MEX_CONTENT_METADATA_PLAY_COUNT,
+                               MEX_CONTENT_METADATA_LAST_PLAYED_DATE,
+                               MEX_CONTENT_METADATA_CAMERA_MODEL,
+                               MEX_CONTENT_METADATA_EXPOSURE_TIME,
+                               MEX_CONTENT_METADATA_ISO_SPEED,
+                               MEX_CONTENT_METADATA_FLASH_USED,
+                               MEX_CONTENT_METADATA_ORIENTATION,
+                               MEX_CONTENT_METADATA_CREATION_DATE,
+                               MEX_CONTENT_METADATA_INVALID);
 
-  priv->video_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
-                                                GRL_METADATA_KEY_DESCRIPTION,
-                                                GRL_METADATA_KEY_DURATION,
-                                                GRL_METADATA_KEY_THUMBNAIL,
-                                                GRL_METADATA_KEY_WIDTH,
-                                                GRL_METADATA_KEY_HEIGHT,
-                                                GRL_METADATA_KEY_LAST_POSITION,
-                                                GRL_METADATA_KEY_PLAY_COUNT,
-                                                GRL_METADATA_KEY_LAST_PLAYED,
-                                                NULL);
+  priv->video_metadatas =
+    mex_tracker_metadatas_new (MEX_CONTENT_METADATA_ID,
+                               MEX_CONTENT_METADATA_SYNOPSIS,
+                               MEX_CONTENT_METADATA_DURATION,
+                               MEX_CONTENT_METADATA_STREAM,
+                               MEX_CONTENT_METADATA_WIDTH,
+                               MEX_CONTENT_METADATA_HEIGHT,
+                               MEX_CONTENT_METADATA_LAST_POSITION,
+                               MEX_CONTENT_METADATA_PLAY_COUNT,
+                               MEX_CONTENT_METADATA_LAST_PLAYED_DATE,
+                               MEX_CONTENT_METADATA_INVALID);
 
-  priv->music_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
-                                                GRL_METADATA_KEY_DURATION,
-                                                GRL_METADATA_KEY_THUMBNAIL,
-                                                GRL_METADATA_KEY_LAST_POSITION,
-                                                GRL_METADATA_KEY_PLAY_COUNT,
-                                                GRL_METADATA_KEY_LAST_PLAYED,
-                                                GRL_METADATA_KEY_ARTIST,
-                                                GRL_METADATA_KEY_ALBUM,
-                                                NULL);
+  priv->music_metadatas =
+    mex_tracker_metadatas_new (MEX_CONTENT_METADATA_ID,
+                               MEX_CONTENT_METADATA_DURATION,
+                               MEX_CONTENT_METADATA_STREAM,
+                               MEX_CONTENT_METADATA_LAST_POSITION,
+                               MEX_CONTENT_METADATA_PLAY_COUNT,
+                               MEX_CONTENT_METADATA_LAST_PLAYED_DATE,
+                               MEX_CONTENT_METADATA_ARTIST,
+                               MEX_CONTENT_METADATA_ALBUM,
+                               MEX_CONTENT_METADATA_INVALID);
 
   priv->manager = mex_model_manager_get_default ();
 

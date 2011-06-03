@@ -23,6 +23,8 @@
 
 #include <mex/mex-generic-model.h>
 
+#include "mex-tracker-metadatas.h"
+
 G_BEGIN_DECLS
 
 #define MEX_TYPE_TRACKER_MODEL mex_tracker_model_get_type()
@@ -65,7 +67,8 @@ struct _MexTrackerModelClass
 
 GType mex_tracker_model_get_type (void) G_GNUC_CONST;
 
-MexTrackerModel *mex_tracker_model_new (void);
+MexTrackerModel *mex_tracker_model_new (MexTrackerMetadatas *initial_metadatas,
+                                        MexTrackerMetadatas *complete_metadatas);
 
 void mex_tracker_model_set_filter (MexTrackerModel *model,
                                    const gchar *sparql_filter);
