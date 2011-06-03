@@ -414,11 +414,26 @@ mex_player_captured_event (ClutterActor *actor,
   /* If a mouse button was pressed and the controls aren't visible, show them,
    * otherwise restart the control-showing timer.
    */
-  if ((event->type == CLUTTER_BUTTON_PRESS) &&
-      !priv->controls_visible)
-    mex_player_set_controls_visible (self, TRUE);
-  else
-    mex_player_restart_timer (MEX_PLAYER (actor));
+  switch (event->type)
+    {
+    case CLUTTER_BUTTON_PRESS:
+      if (!priv->controls_visible)
+        mex_player_set_controls_visible (self, TRUE);
+      else
+        mex_player_restart_timer (MEX_PLAYER (actor));
+      break;
+
+    case CLUTTER_BUTTON_RELEASE:
+      if (event->button.click_count == 2)
+        mex_set_fullscreen (!mex_get_fullscreen ());
+      else
+        mex_player_restart_timer (MEX_PLAYER (actor));
+      break;
+
+    default:
+      mex_player_restart_timer (MEX_PLAYER (actor));
+      break;
+    }
 
   return FALSE;
 }

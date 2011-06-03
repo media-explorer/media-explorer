@@ -22,6 +22,8 @@
 
 #include <glib.h>
 #include <clutter/clutter.h>
+#include <mx/mx.h>
+#include <mex/mex-mmkeys.h>
 
 G_BEGIN_DECLS
 
@@ -72,6 +74,14 @@ gboolean    mex_init_with_args          (int            *argc,
                                          GError        **error);
 
 void        mex_deinit                  ();
+
+void          mex_set_main_window (MxWindow *main_window);
+void          mex_set_fullscreen  (gboolean fullscreen);
+gboolean      mex_get_fullscreen  (void);
+ClutterActor *mex_get_stage       (void);
+MexMMkeys    *mex_get_mmkeys      (void);
+
+
 
 G_END_DECLS
 

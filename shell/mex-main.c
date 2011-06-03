@@ -28,7 +28,6 @@
 #include <mex/mex-grilo-feed.h>
 #include <mex/mex-grilo-tracker-feed.h>
 #include <mex/mex-plugin-manager.h>
-#include <mex/mex-mmkeys.h>
 #include <clutter-gst/clutter-gst.h>
 #include <gio/gdesktopappinfo.h>
 #include <string.h>
@@ -89,8 +88,6 @@ typedef struct
   gboolean    folder_opened;
 
   gint busy_count;
-
-  MexMMkeys *mmkeys;
 } MexData;
 
 static void mex_show_actor (MexData *data, ClutterActor *actor);
@@ -1516,18 +1513,7 @@ mex_captured_event_cb (ClutterActor *actor,
 
     case CLUTTER_KEY_F11 :
       /* Toggle full-screen */
-      fullscreen = !mx_window_get_fullscreen (data->window);
-      mx_window_set_fullscreen (data->window, fullscreen);
-      if (fullscreen)
-        {
-          mex_mmkeys_grab_keys (data->mmkeys);
-          clutter_stage_hide_cursor (data->stage);
-        }
-      else
-        {
-          mex_mmkeys_ungrab_keys (data->mmkeys);
-          clutter_stage_show_cursor (data->stage);
-        }
+      mex_set_fullscreen (!mex_get_fullscreen ());
       return TRUE;
     }
 
@@ -2404,6 +2390,8 @@ main (int argc, char **argv)
   data.stage = mx_window_get_clutter_stage (window);
 #endif
 
+  mex_set_main_window (window);
+
   if (opt_fullscreen)
     clutter_stage_hide_cursor (data.stage);
 
@@ -2464,10 +2452,6 @@ main (int argc, char **argv)
 
   /* A stack is the top level actor in the window */
   data.stack = mx_stack_new ();
-
-  data.mmkeys = mex_mmkeys_new ();
-
-  mex_mmkeys_set_stage (data.mmkeys, CLUTTER_ACTOR (data.stage));
 
   /* It's possible that MexPlayer does not provide an actor that will display
    * the video. This happens on STB hardware when the video is displayed in
@@ -2541,8 +2525,9 @@ main (int argc, char **argv)
   mx_window_set_has_toolbar (window, FALSE);
   mx_window_set_window_size (window, 1280, 720);
   mx_window_show (window);
+
   if (opt_fullscreen)
-    mx_window_set_fullscreen (window, TRUE);
+    mex_set_fullscreen (TRUE);
 
   /* Attach key-handler to stage */
   g_signal_connect (data.stage, "captured-event",

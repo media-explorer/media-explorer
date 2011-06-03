@@ -421,3 +421,99 @@ mex_init_with_args (int            *argc,
 
   return TRUE;
 }
+
+/**/
+
+#define MEX_HIDE_CURSOR_TIMEOUT (4)
+
+static MxWindow *mex_main_window = NULL;
+static ClutterActor *mex_stage = NULL;
+
+ClutterActor *
+mex_get_stage (void)
+{
+  return mex_stage;
+}
+
+MexMMkeys *
+mex_get_mmkeys (void)
+{
+  static MexMMkeys *mmkeys = NULL;
+
+  if (G_UNLIKELY (mmkeys == NULL))
+    mmkeys = mex_mmkeys_new ();
+
+  return mmkeys;
+}
+
+void
+mex_set_main_window (MxWindow *window)
+{
+  MexMMkeys *mmkeys;
+
+  if (mex_main_window)
+    g_object_unref (mex_main_window);
+
+  if (window)
+    {
+      mex_main_window = g_object_ref (window);
+      mex_stage =
+        (ClutterActor *) mx_window_get_clutter_stage (mex_main_window);
+      mmkeys = mex_get_mmkeys ();
+      mex_mmkeys_set_stage (mmkeys, mex_stage);
+    }
+  else
+    {
+      mex_main_window = NULL;
+      mex_stage = NULL;
+    }
+}
+
+gboolean
+mex_get_fullscreen (void)
+{
+  if (!mex_main_window)
+    return FALSE;
+
+  return mx_window_get_fullscreen (mex_main_window);
+}
+
+static guint hide_cursor_id = 0;
+
+static gboolean
+hide_cursor_cb (gpointer data)
+{
+  clutter_stage_hide_cursor (CLUTTER_STAGE (mex_get_stage ()));
+  mex_mmkeys_grab_keys (mex_get_mmkeys ());
+  hide_cursor_id = 0;
+
+  return FALSE;
+}
+
+void
+mex_set_fullscreen (gboolean fullscreen)
+{
+  if (!mex_main_window)
+    return;
+
+  if (mex_get_fullscreen () == fullscreen)
+    return;
+
+  mx_window_set_fullscreen (mex_main_window, fullscreen);
+  if (fullscreen)
+    {
+      hide_cursor_id = g_timeout_add_seconds (MEX_HIDE_CURSOR_TIMEOUT,
+                                              hide_cursor_cb,
+                                              NULL);
+    }
+  else
+    {
+      if (hide_cursor_id)
+        {
+          g_source_remove (hide_cursor_id);
+          hide_cursor_id = 0;
+        }
+      clutter_stage_show_cursor (CLUTTER_STAGE (mex_get_stage ()));
+      mex_mmkeys_ungrab_keys (mex_get_mmkeys ());
+    }
+}
