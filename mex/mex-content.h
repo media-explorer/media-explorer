@@ -83,7 +83,8 @@ typedef enum {
 
     MEX_CONTENT_METADATA_PRIVATE_ID,
 
-    MEX_CONTENT_METADATA_LAST_ID
+    MEX_CONTENT_METADATA_LAST_ID,
+    MEX_CONTENT_METADATA_INVALID
 } MexContentMetadata;
 
 typedef void (*MexContentMetadataCb) (MexContentMetadata key,
