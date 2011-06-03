@@ -452,8 +452,29 @@ set_metadata_from_media (MexContent          *content,
   switch (G_PARAM_SPEC (grl_key)->value_type) {
   case G_TYPE_STRING:
     cstring = grl_data_get_string (GRL_DATA (media), grl_key);
+
     if (cstring)
-      mex_grilo_program_set_metadata (content, mex_key, cstring);
+      {
+        if (mex_key == MEX_CONTENT_METADATA_TITLE)
+          {
+            GRegex *regex;
+            gchar *replacement;
+
+            /* strip off any file extensions */
+
+            regex = g_regex_new ("\\.....?$", 0, 0, NULL);
+            replacement = g_regex_replace (regex, cstring, -1, 0, "", 0, NULL);
+
+            g_regex_unref (regex);
+
+            if (!replacement)
+              replacement = g_strdup ("");
+
+            mex_grilo_program_set_metadata (content, mex_key, replacement);
+          }
+        else
+          mex_grilo_program_set_metadata (content, mex_key, cstring);
+      }
     break;
 
   case G_TYPE_INT:
