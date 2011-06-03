@@ -186,15 +186,12 @@ mex_generic_content_set_property (GObject      *object,
 {
   MexGenericContentPrivate *priv = GET_PRIVATE (object);
 
-#if 0
-  MexGenericContent *self = (MexGenericContent *) object;
-
   /* For all dynamic properties, just pass them to the subclass */
   if (prop_id < MEX_CONTENT_METADATA_LAST_ID) {
-    mex_content_set_metadata (content, prop_id);
+    mex_content_set_metadata (MEX_CONTENT (object), prop_id,
+                              g_value_get_string (value));
     return;
   }
-#endif
 
   switch (prop_id) {
   case PROP_LAST_POSITION_START:
