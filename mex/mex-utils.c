@@ -96,7 +96,7 @@ mex_style_load_default ()
   MxIconTheme *theme = mx_icon_theme_get_default ();
 
   /* Set the icon theme */
-  dirs = g_list_copy (mx_icon_theme_get_search_paths (theme));
+  dirs = g_list_copy ((GList *) mx_icon_theme_get_search_paths (theme));
 
   for (d = dirs; d; d = d->next)
     d->data = g_strdup (d->data);

@@ -134,9 +134,6 @@ mex_resizing_hbox_child_class_init (MexResizingHBoxChildClass *klass)
 static void
 mex_resizing_hbox_child_init (MexResizingHBoxChild *self)
 {
-  ClutterActor *actor =
-    clutter_child_meta_get_actor (CLUTTER_CHILD_META (self));
-
   self->expand = TRUE;
   self->push = FALSE;
 }

@@ -95,9 +95,9 @@ struct _MexResizingHBoxPrivate
 static GQuark mex_resizing_hbox_meta_quark = 0;
 
 static void mex_resizing_hbox_start_animation (MexResizingHBox *self);
-static void mex_resizing_hbox_get_allocation (MexResizingHBox *self,
-                                              ClutterActor    *child,
-                                              ClutterActorBox *box);
+static void mex_resizing_hbox_get_allocation (MexScrollableContainer *self,
+                                              ClutterActor           *child,
+                                              ClutterActorBox        *box);
 
 /* ClutterContainerIface */
 
@@ -1146,9 +1146,9 @@ mex_resizing_hbox_allocate (ClutterActor           *actor,
 }
 
 static void
-mex_resizing_hbox_get_allocation (MexResizingHBox *self,
-                                  ClutterActor    *child,
-                                  ClutterActorBox *box)
+mex_resizing_hbox_get_allocation (MexScrollableContainer *self,
+                                  ClutterActor           *child,
+                                  ClutterActorBox        *box)
 {
   ClutterActorBox self_box;
 
@@ -1157,7 +1157,8 @@ mex_resizing_hbox_get_allocation (MexResizingHBox *self,
   g_return_if_fail (box != NULL);
 
   clutter_actor_get_allocation_box (CLUTTER_ACTOR (self), &self_box);
-  mex_resizing_hbox_allocate_children (self, &self_box, 0, 1.0, child, box);
+  mex_resizing_hbox_allocate_children ((MexResizingHBox *) self,
+                                       &self_box, 0, 1.0, child, box);
 }
 
 static void
