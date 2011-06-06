@@ -23,6 +23,7 @@
 
 #include <glib-object.h>
 #include <mx/mx.h>
+#include "mex-notification-source.h"
 
 G_BEGIN_DECLS
 
@@ -67,6 +68,9 @@ struct _MexNotificationAreaClass
 GType mex_notification_area_get_type (void) G_GNUC_CONST;
 
 ClutterActor *mex_notification_area_new (void);
+
+void mex_notification_area_add_source (MexNotificationArea *area,
+                                       MexNotificationSource *source);
 
 G_END_DECLS
 

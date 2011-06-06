@@ -19,7 +19,7 @@
 /* mex-notification-area.c */
 
 #include "mex-notification-area.h"
-#include "mex-dummy-notification-source.h"
+#include "mex-generic-notification-source.h"
 #include "mex-gio-notification-source.h"
 #include "mex-network-notification-source.h"
 
@@ -32,11 +32,12 @@ G_DEFINE_TYPE (MexNotificationArea, mex_notification_area, MX_TYPE_STACK)
 
 struct _MexNotificationAreaPrivate
 {
-  MexNotificationSource **sources;
+  GPtrArray *sources;
   GHashTable *notification_to_actor, *notification_to_timeout_id;
 
   GQueue *stack;
 };
+
 
 static void
 mex_notification_area_get_property (GObject    *object,
@@ -65,8 +66,23 @@ mex_notification_area_set_property (GObject      *object,
 }
 
 static void
+_ptr_items_free_cb (gpointer data, gpointer userdata)
+{
+  g_object_unref (data);
+}
+
+static void
 mex_notification_area_dispose (GObject *object)
 {
+  MexNotificationAreaPrivate *priv = GET_PRIVATE (object);
+
+  if (priv->sources)
+    {
+      g_ptr_array_foreach (priv->sources, _ptr_items_free_cb, NULL);
+      g_ptr_array_unref (priv->sources);
+      priv->sources = NULL;
+    }
+
   G_OBJECT_CLASS (mex_notification_area_parent_class)->dispose (object);
 }
 
@@ -281,11 +297,34 @@ _source_notification_added_cb (MexNotificationSource *source,
     }
 }
 
+void
+mex_notification_area_add_source (MexNotificationArea *area,
+                                  MexNotificationSource *source)
+{
+  MexNotificationAreaPrivate *priv = GET_PRIVATE (area);
+
+  g_ptr_array_add (priv->sources, source);
+
+  g_signal_connect (source,
+                    "notification-added",
+                    (GCallback)_source_notification_added_cb,
+                    area);
+
+  g_signal_connect (source,
+                    "notification-removed",
+                    (GCallback)_source_notification_removed_cb,
+                    area);
+}
+
 static void
 mex_notification_area_init (MexNotificationArea *self)
 {
   MexNotificationAreaPrivate *priv;
   gint i;
+
+  /* Autonomous sources
+   * TODO: MEX_TYPE_DBUS_NOTIFICATION_SOURCE
+   */
   GType source_types[] = { MEX_TYPE_NETWORK_NOTIFICATION_SOURCE,
                            MEX_TYPE_GIO_NOTIFICATION_SOURCE };
 
@@ -298,21 +337,15 @@ mex_notification_area_init (MexNotificationArea *self)
   /* notification pointer -> actor */
   priv->notification_to_actor = g_hash_table_new (NULL, NULL);
 
-  priv->sources = g_new0 (MexNotificationSource *, G_N_ELEMENTS (source_types));
+  priv->sources = g_ptr_array_new ();
 
   for (i = 0; i < G_N_ELEMENTS (source_types); i++)
     {
-      priv->sources[i] = g_object_new (source_types[i],
-                                       NULL);
-      g_signal_connect (priv->sources[i],
-                        "notification-added",
-                        (GCallback)_source_notification_added_cb,
-                        self);
+      MexNotificationSource *new_source;
+      new_source = g_object_new (source_types[i], NULL);
 
-      g_signal_connect (priv->sources[i],
-                        "notification-removed",
-                        (GCallback)_source_notification_removed_cb,
-                        self);
+      mex_notification_area_add_source (MEX_NOTIFICATION_AREA (self),
+                                        MEX_NOTIFICATION_SOURCE (new_source));
     }
   priv->stack = g_queue_new ();
 }

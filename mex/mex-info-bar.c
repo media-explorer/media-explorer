@@ -18,6 +18,7 @@
 
 #include "mex-info-bar.h"
 #include "mex-tile.h"
+#include "mex-generic-notification-source.h"
 
 #include <config.h>
 #include <glib/gi18n-lib.h>
@@ -45,6 +46,8 @@ struct _MexInfoBarPrivate
 
   gboolean power_dialog_parented;
   gboolean settings_dialog_parented;
+
+  MexGenericNotificationSource *notification_source;
 };
 
 enum
@@ -566,10 +569,23 @@ _show_power_dialog_cb (ClutterActor *actor, MexInfoBar *self)
   return TRUE;
 }
 
+void
+mex_info_bar_new_notification (MexInfoBar *self,
+                               const gchar *message,
+                               gint timeout)
+{
+  MexInfoBarPrivate *priv = self->priv;
+
+  mex_generic_notification_new_notification (priv->notification_source,
+                                             message,
+                                             timeout);
+}
+
 static void
 mex_info_bar_init (MexInfoBar *self)
 {
   ClutterScript *script;
+  ClutterActor *notification_area;
   GError *err = NULL;
   gchar *tmp;
 
@@ -599,6 +615,15 @@ mex_info_bar_init (MexInfoBar *self)
 
   priv->power_button =
     CLUTTER_ACTOR (clutter_script_get_object (script, "power-button"));
+
+  priv->notification_source = mex_generic_notification_source_new ();
+
+  notification_area =
+    CLUTTER_ACTOR (clutter_script_get_object (priv->script,
+                                              "notification-area"));
+
+  mex_notification_area_add_source (MEX_NOTIFICATION_AREA (notification_area),
+                                    MEX_NOTIFICATION_SOURCE (priv->notification_source));
 
   g_signal_connect (priv->settings_button,
                     "clicked",
