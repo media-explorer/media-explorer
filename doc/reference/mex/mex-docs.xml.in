@@ -148,7 +148,7 @@
       <title>Notifications</title>
 
       <xi:include href="xml/mex-notification-source.xml"/>
-      <xi:include href="xml/mex-dummy-notification-source.xml"/>
+      <xi:include href="xml/mex-generic-notification-source.xml"/>
       <xi:include href="xml/mex-gio-notification-source.xml"/>
       <xi:include href="xml/mex-network-notification-source.xml"/>
       <xi:include href="xml/mex-online.xml"/>
