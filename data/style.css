@@ -305,26 +305,6 @@ MexSearchColumn MxBoxLayout.Search
   background-color: #14020080;
 }
 
-/* MexKeyboard styling */
-
-MexKeyboard
-{
-  border-image: url("keyboard-background.png") 1 0;
-}
-
-MexKeyboard > MxButton
-{
-  padding: 0;
-  border-image: none;
-}
-
-MexKeyboard > MxButton:hover,
-MexKeyboard > MxButton:focus,
-MexKeyboard > MxButton:checked
-{
-  border-image: url("highlight-bg.png") 0;
-}
-
 /* MexScrollView styling */
 
 MexScrollIndicator
