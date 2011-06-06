@@ -2104,12 +2104,15 @@ rebinder_quit (void)
 #endif
 
 static void
-out_of_box (MxWindow *window)
+out_of_box (MexData *data)
 {
   MexSettings *settings;
   GError *error = NULL;
   gchar *out_box_done;
   const gchar oob[] = "out-of-box-done";
+
+  MexNotificationSource *source;
+  MexNotification *help_message;
 
   settings = mex_settings_get_default ();
   out_box_done = mex_settings_find_config_file (settings, oob);
@@ -2120,8 +2123,19 @@ out_of_box (MxWindow *window)
       return;
     }
 
-  rebinder_configure_run (window);
+  rebinder_configure_run (data->window);
 
+  /* Add a help hint for usage of the columns */
+  if (data->info_bar)
+    {
+      mex_info_bar_new_notification (MEX_INFO_BAR (data->info_bar),
+                                     _("Activate the column headers for more content"),
+                                     15);
+    }
+
+  /* All out of box actions are complete, create an empty file to keep
+   * the state.
+   */
   out_box_done = g_build_filename (mex_settings_get_config_dir (settings),
                                    oob,
                                    NULL);
@@ -2398,8 +2412,12 @@ main (int argc, char **argv)
   /* Must set color after set use_alpha */
   clutter_stage_set_color (data.stage, &black);
 
+  data.info_bar = mex_info_bar_new ();
+
+  g_signal_connect_swapped (data.info_bar, "close-request",
+                            G_CALLBACK (mx_application_quit), app);
   /* Out of the box experience */
-  out_of_box (data.window);
+  out_of_box (&data);
 
   /* Create bindings pool */
   data.bindings = clutter_binding_pool_new ("Media Explorer");
@@ -2432,10 +2450,7 @@ main (int argc, char **argv)
   mx_box_layout_set_orientation (MX_BOX_LAYOUT (data.layout),
                                  MX_ORIENTATION_VERTICAL);
 
-  data.info_bar = mex_info_bar_new ();
 
-  g_signal_connect_swapped (data.info_bar, "close-request",
-                            G_CALLBACK (mx_application_quit), app);
 
   /* Pack info bar into layout */
   mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (data.layout),
