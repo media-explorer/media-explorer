@@ -1168,7 +1168,7 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
 
           offset += increment;
         }
-      else
+      else if (priv->has_focus)
         mex_expander_box_set_important (MEX_EXPANDER_BOX (child), TRUE);
     }
 
