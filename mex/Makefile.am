@@ -254,6 +254,7 @@ common_includes =					\
 	-DPKGDATADIR=\""$(pkgdatadir)/common"\"		\
 	-DPKGJSONDIR=\""$(pkgdatadir)/json"\"		\
 	-DPKGSYSCONFDIR=\""$(datadir)/$(PACKAGE)"\"	\
+	-DLIBEXECDIR=\""$(libexecdir)"\"		\
 	$(NULL)
 
 libmex_@MEX_API_VERSION@_la_CPPFLAGS =	\

@@ -1,7 +1,7 @@
 /*
  * Mex - a media explorer
  *
- * Copyright © 2010, 2011 Intel Corporation.
+ * Copyright © 2008, 2009, 2010, 2011 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -19,13 +19,129 @@
 #include <config.h>
 #include <gio/gio.h>
 #include <dbus/dbus-glib.h>
+#include <clutter/clutter.h>
 #include "mex-thumbnailer.h"
 #include "mex-marshal.h"
 
+#ifdef WITH_THUMBNAILER_TUMBLER
 static DBusGProxy *thumb_proxy = NULL;
 /* Hash of integer handles to callback data */
 static GHashTable *pending = NULL;
+#endif
 
+#ifdef WITH_THUMBNAILER_INTERNAL
+/* internal thumbnailer */
+static GThreadPool *thumbnail_thread_pool = NULL;
+
+static char * get_mime_type (const char *uri);
+
+/* thumbnail data */
+typedef struct
+{
+  gchar *uri;
+  gchar *mime;
+  MexThumbnailCallback  finished;
+  gpointer user_data;
+} ThumbnailData;
+
+static ThumbnailData*
+thumbnail_data_new (const gchar          *uri,
+                    MexThumbnailCallback  finished,
+                    gpointer              user_data)
+{
+  ThumbnailData *data;
+
+  data = g_slice_new (ThumbnailData);
+
+  data->uri = g_strdup (uri);
+  data->finished = finished;
+  data->user_data = user_data;
+  data->mime = get_mime_type (uri);
+
+  return data;
+}
+
+static void
+thumbnail_data_free (ThumbnailData *data)
+{
+  g_free (data->uri);
+  g_free (data->mime);
+  g_slice_free (ThumbnailData, data);
+}
+
+static gboolean
+mex_internal_thumbnail_finished (gpointer user_data)
+{
+  ThumbnailData *data = user_data;
+
+  data->finished (data->uri, data->user_data);
+  thumbnail_data_free (data);
+
+  return FALSE;
+}
+
+static void
+mex_internal_thumbnail_start (ThumbnailData *data,
+                              gpointer       foo)
+
+{
+  int status;
+  gchar *argv[4], *output;
+  GError *err = NULL;
+
+  if (g_str_has_prefix (data->mime, "image/")
+      || g_str_has_prefix (data->mime, "video/"))
+    {
+      argv[0] = LIBEXECDIR "/mex-thumbnailer";
+      argv[1] = data->mime;
+      argv[2] = data->uri;
+      argv[3] = NULL;
+
+      g_spawn_sync (NULL, argv, NULL, 0, NULL, NULL, NULL, &output, &status,
+                    &err);
+
+      if (err)
+        {
+          g_warning ("Error: %s", err->message);
+          g_clear_error (&err);
+        }
+    }
+
+  clutter_threads_add_timeout (0, mex_internal_thumbnail_finished, data);
+}
+
+void
+mex_internal_thumbnail (const gchar          *uri,
+                        MexThumbnailCallback  finished,
+                        gpointer              data)
+{
+  GError *err = NULL;
+
+  if (!thumbnail_thread_pool)
+    thumbnail_thread_pool = g_thread_pool_new ((GFunc)mex_internal_thumbnail_start,
+                                               NULL,
+                                               sysconf (_SC_NPROCESSORS_ONLN),
+                                               FALSE, &err);
+
+  if (err)
+    {
+      g_warning (G_STRLOC ": %s", err->message);
+      g_clear_error (&err);
+      return;
+    }
+
+  g_thread_pool_push (thumbnail_thread_pool,
+                      thumbnail_data_new (uri, finished, data), &err);
+  if (err)
+    {
+      g_warning (G_STRLOC ": %s", err->message);
+      g_clear_error (&err);
+      return;
+    }
+}
+#endif
+
+#ifdef WITH_THUMBNAILER_TUMBLER
 typedef struct {
   MexThumbnailCallback callback;
   gpointer user_data;
@@ -106,6 +222,7 @@ mex_thumbnailer_init (void)
 
   return TRUE;
 }
+#endif
 
 static char *
 get_mime_type (const char *uri)
@@ -134,6 +251,7 @@ get_mime_type (const char *uri)
   return mime;
 }
 
+#ifdef WITH_THUMBNAILER_TUMBLER
 static void
 on_queue (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
 {
@@ -149,6 +267,7 @@ on_queue (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
     g_free (data);
   }
 }
+#endif
 
 /**
  * mex_thumbnailer_generate:
@@ -165,6 +284,12 @@ on_queue (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
 void
 mex_thumbnailer_generate (const char *url, const char *mime_type, MexThumbnailCallback callback, gpointer user_data)
 {
+#ifdef WITH_THUMBNAILER_INTERNAL
+  mex_internal_thumbnail (url, callback, user_data);
+  return;
+#endif
+
+#ifdef WITH_THUMBNAILER_TUMBLER
   char *uris[2], *mimes[2];
   gboolean free_mime = FALSE;
   ClosureData *data;
@@ -201,4 +326,5 @@ mex_thumbnailer_generate (const char *url, const char *mime_type, MexThumbnailCa
 
   if (free_mime)
     g_free (mimes[0]);
+#endif
 }
