@@ -142,3 +142,22 @@ mex_content_view_get_context (MexContentView *view)
              g_type_name (G_OBJECT_TYPE (view)));
   return NULL;
 }
+
+void
+mex_content_view_set_visible (MexContentView *view,
+                              gboolean        visible)
+{
+  MexContentViewIface *iface;
+
+  g_return_if_fail (MEX_IS_CONTENT_VIEW (view));
+
+  iface = MEX_CONTENT_VIEW_GET_IFACE (view);
+
+  if (G_LIKELY (iface->set_visible))
+    {
+      iface->set_visible (view, visible);
+    }
+  else
+    g_warning ("MexContentView of type '%s' does not implement set_visible()",
+               g_type_name (G_OBJECT_TYPE (view)));
+}

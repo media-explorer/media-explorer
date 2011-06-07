@@ -38,15 +38,18 @@ typedef struct _MexContentViewIface MexContentViewIface;
 
 struct _MexContentViewIface
 {
-    GTypeInterface g_iface;
+  GTypeInterface g_iface;
 
-    void        (*set_content) (MexContentView *view,
-                                MexContent     *content);
-    MexContent* (*get_content) (MexContentView *view);
+  void        (*set_content) (MexContentView *view,
+                              MexContent     *content);
+  MexContent* (*get_content) (MexContentView *view);
 
-    void        (*set_context) (MexContentView *view,
-                                MexModel       *content);
-    MexModel*   (*get_context) (MexContentView *view);
+  void        (*set_context) (MexContentView *view,
+                              MexModel       *content);
+  MexModel*   (*get_context) (MexContentView *view);
+
+  void        (*set_visible) (MexContentView *view,
+                              gboolean        visible);
 };
 
 GType mex_content_view_get_type (void) G_GNUC_CONST;
@@ -54,9 +57,13 @@ GType mex_content_view_get_type (void) G_GNUC_CONST;
 void        mex_content_view_set_content (MexContentView *view,
                                           MexContent     *content);
 MexContent* mex_content_view_get_content (MexContentView *view);
+
 void        mex_content_view_set_context (MexContentView *view,
                                           MexModel       *model);
 MexModel*   mex_content_view_get_context (MexContentView *view);
+
+void        mex_content_view_set_visible (MexContentView *view,
+                                          gboolean        visible);
 G_END_DECLS
 
 #endif
