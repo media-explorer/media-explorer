@@ -283,6 +283,19 @@ libmex_@MEX_API_VERSION@_la_LIBADD =					\
 	$(NM_LIBS)							\
 	$(NULL)
 
+libexec_PROGRAMS = mex-thumbnailer
+
+mex_thumbnailer_SOURCES = mex-thumbnailer-internal.c
+mex_thumbnailer_CFLAGS = $(MEX_CFLAGS)			\
+			 $(MEX_MAINTAINER_CFLAGS)	\
+			 $(MEX_DEBUG_CFLAGS)		\
+			 $(NULL)
+mex_thumbnailer_LDFLAGS = 				\
+			$(MEX_LIBS)			\
+			$(TRACKER_LIBS)			\
+			$(NM_LIBS)			\
+			$(NULL)
+
 #
 # Internal tests
 #
