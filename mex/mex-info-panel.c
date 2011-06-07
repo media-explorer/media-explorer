@@ -50,7 +50,6 @@ struct _MexInfoPanelPrivate
   ClutterActor *watch_button;
 
   MxLabel *metadata_row1;
-/*  MxLabel *metadata_row2; */
 
   MexContent *content;
 
@@ -401,43 +400,47 @@ mex_info_panel_set_content (MexContentView *view, MexContent *content)
     {
       if (strncmp (mimetype, "image/", 6) == 0)
         {
+          /* We don't want any buttons on the image info panel */
           if (priv->buttons_container)
-            clutter_actor_hide (priv->buttons_container);
+              clutter_actor_hide (priv->buttons_container);
           _set_metadata (self, IMAGE);
         }
-      else if (strncmp (mimetype, "audio/", 6) == 0)
-        {
-          /* TODO fix this properly we need it to be a watch button*/
-
-          if (priv->watch_button)
-            clutter_actor_show (priv->watch_button);
-
-          _set_metadata (self, MUSIC);
-        }
-      /* At the moment we only have images or video */
       else
         {
-          MexContent *player_content;
-          MexPlayer *player;
-
-          if (priv->buttons_container)
-            clutter_actor_show (priv->buttons_container);
-
-          player = mex_player_get_default ();
-          player_content =
-            mex_content_view_get_content (MEX_CONTENT_VIEW (player));
-
-          /* if we're displaying info about the current playing content */
-          if (priv->watch_button)
+          /* Set the metadata info and update the watch button label */
+          if (strncmp (mimetype, "video/", 6) == 0)
             {
+              if (priv->watch_button)
+                mx_button_set_label (MX_BUTTON (priv->watch_button),
+                                     _("Watch"));
+              _set_metadata (self, VIDEO);
+            }
+          else if (strncmp (mimetype, "audio/", 6) == 0)
+            {
+              if (priv->watch_button)
+                mx_button_set_label (MX_BUTTON (priv->watch_button),
+                                     _("Listen"));
+              _set_metadata (self, MUSIC);
+            }
+
+          /* for all other than the image mime type we want to have buttons */
+          if (priv->buttons_container)
+            {
+              MexContent *player_content;
+              MexPlayer *player;
+
+              clutter_actor_show (priv->buttons_container);
+
+              player = mex_player_get_default ();
+              player_content =
+                mex_content_view_get_content (MEX_CONTENT_VIEW (player));
+
+              /* if we're displaying info about the current playing content */
               if (content == player_content)
                 clutter_actor_hide (priv->watch_button);
               else
                 clutter_actor_show (priv->watch_button);
             }
-
-          /* set the metadata labels */
-          _set_metadata (self, VIDEO);
         }
     }
 

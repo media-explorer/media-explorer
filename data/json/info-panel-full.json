@@ -46,7 +46,8 @@
                 "important" : true,
                 "disabled" : true,
                 "header-visible" : false,
-                "thumb-width" : 152
+                "thumb-width" : 152,
+                "thumb-height" : 100
               },
               {
                 "type" : "MxTable",
@@ -84,6 +85,7 @@
             "style-class" : "Watch",
             "label" : "Watch",
             "visible" : false,
+            "height": 48,
             "child::x-fill" : true,
             "x-align" : "start"
           },
