@@ -23,6 +23,7 @@
 #include "mex-scroll-view.h"
 #include "mex-tile.h"
 #include "mex-shadow.h"
+#include "mex-scrollable-container.h"
 
 enum
 {
@@ -69,6 +70,7 @@ static void clutter_container_iface_init (ClutterContainerIface *iface);
 static void mx_scrollable_iface_init (MxScrollableIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 static void mx_stylable_iface_init (MxStylableIface *iface);
+static void mex_scrollable_iface_init (MexScrollableContainerInterface *iface);
 
 #define GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), MEX_TYPE_COLUMN, MexColumnPrivate))
 G_DEFINE_TYPE_WITH_CODE (MexColumn, mex_column, MX_TYPE_WIDGET,
@@ -79,9 +81,48 @@ G_DEFINE_TYPE_WITH_CODE (MexColumn, mex_column, MX_TYPE_WIDGET,
                          G_IMPLEMENT_INTERFACE (MX_TYPE_FOCUSABLE,
                                                 mx_focusable_iface_init)
                          G_IMPLEMENT_INTERFACE (MX_TYPE_STYLABLE,
-                                                mx_stylable_iface_init))
+                                                mx_stylable_iface_init)
+                         G_IMPLEMENT_INTERFACE (MEX_TYPE_SCROLLABLE_CONTAINER,
+                                                mex_scrollable_iface_init))
 
 static guint32 signals[LAST_SIGNAL] = { 0, };
+
+/* MexScrollableContainerInterface */
+static void
+mex_column_get_allocation (MexScrollableContainer *self,
+                           ClutterActor           *child,
+                           ClutterActorBox        *box)
+{
+  MexColumnPrivate *priv = MEX_COLUMN (self)->priv;
+  gfloat width, height;
+  gfloat child_height;
+  gint i;
+
+  box->y1 = clutter_actor_get_height (priv->header);
+
+  if (!priv->children)
+    return;
+
+  child_height = clutter_actor_get_height (priv->children->data);
+  i = g_list_index (priv->children, child);
+
+
+  if (i >= 0)
+    box->y1 += child_height * i;
+
+  clutter_actor_get_size (child, &width, &height);
+
+  box->x1 = 0;
+  box->x2 = width;
+  box->y2 = box->y1 + height;
+}
+
+
+static void
+mex_scrollable_iface_init (MexScrollableContainerInterface *iface)
+{
+  iface->get_allocation = mex_column_get_allocation;
+}
 
 static GQuark
 _item_shadow_quark ()
