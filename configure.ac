@@ -67,15 +67,15 @@ AM_PATH_GLIB_2_0
 # check for headers
 AC_HEADER_STDC
 
-modules="glib-2.0 >= 2.26          \
-         gio-2.0                   \
-         gio-unix-2.0              \
-         gdk-pixbuf-2.0            \
-         libsoup-2.4         \
-         mx-1.0 >= 1.2.0          \
-         clutter-gst-1.0 >= 1.3.8  \
-         rest-0.7                  \
-         dbus-glib-1               \
+modules="glib-2.0 >= 2.26           \
+         gio-2.0                    \
+         gio-unix-2.0               \
+         gdk-pixbuf-2.0             \
+         libsoup-2.4                \
+         mx-1.0 >= 1.2.0            \
+         clutter-gst-1.0 >= 1.3.12  \
+         rest-0.7                   \
+         dbus-glib-1                \
          grilo-0.1 >= 0.1.14"
 
 PKG_CHECK_EXISTS(libsoup-gnome-2.4,
