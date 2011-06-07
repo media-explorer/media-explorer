@@ -22,6 +22,7 @@
 #include "mex-content-view.h"
 #include "mex-scrollable-container.h"
 #include "mex-shadow.h"
+#include "mex-visibility-manager.h"
 #include <math.h>
 
 static void clutter_container_iface_init (ClutterContainerIface *iface);
@@ -53,11 +54,12 @@ struct _MexGridPrivate
   guint            tile_height_changed : 1;
   guint            focus_waiting;
 
-  GArray          *children;
-  ClutterActor    *current_focus;
-  gint             focused_row;
-  MexActorSortFunc sort_func;
-  gpointer         sort_data;
+  MexVisibilityManager *visible_manager;
+  GArray               *children;
+  ClutterActor         *current_focus;
+  gint                  focused_row;
+  MexActorSortFunc      sort_func;
+  gpointer              sort_data;
 
   gint             stride;
 
@@ -225,6 +227,9 @@ mex_grid_remove (ClutterContainer *container,
         continue;
 
       g_object_ref (actor);
+
+      mex_visibility_manager_pop (priv->visible_manager,
+                                  MEX_CONTENT_VIEW (actor));
 
       mex_grid_child_remove_shadow (actor);
 
@@ -1013,6 +1018,9 @@ mex_grid_allocate (ClutterActor           *actor,
             }
 
           clutter_actor_allocate (child, &child_box, flags);
+
+          mex_visibility_manager_push (priv->visible_manager,
+                                       MEX_CONTENT_VIEW (child));
         }
 
       if (j >= priv->children->len)
@@ -1481,6 +1489,8 @@ static void
 mex_grid_init (MexGrid *self)
 {
   MexGridPrivate *priv = self->priv = GRID_PRIVATE (self);
+
+  priv->visible_manager = mex_visibility_manager_new ();
 
   priv->children = g_array_new (FALSE, FALSE, sizeof (ClutterActor *));
   priv->first_visible = priv->last_visible = -1;
