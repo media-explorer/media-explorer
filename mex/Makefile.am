@@ -133,6 +133,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-tool-provider.h			\
 	$(top_srcdir)/mex/mex-uri-channel-provider.h		\
 	$(top_srcdir)/mex/mex-utils.h				\
+	$(top_srcdir)/mex/mex-visibility-manager.h		\
 	$(top_srcdir)/mex/mex-volume-control.h			\
 	$(NULL)
 
@@ -230,6 +231,7 @@ mex_sources =					\
 	mex-tool-provider.c			\
 	mex-utils.c				\
 	mex-uri-channel-provider.c		\
+	mex-visibility-manager.c		\
 	mex-volume-control.c			\
 	$(NULL)
 
