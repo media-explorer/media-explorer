@@ -174,73 +174,46 @@ _update_thumbnail_from_image (MexContentTile *tile,
   priv->image_set = TRUE;
 }
 
-static void
-_reset_thumbnail (MexContentTile *tile)
+static gchar *
+_get_placeholder (MexContent *content)
 {
-  MexContentTilePrivate *priv = tile->priv;
-  MexDownloadQueue *queue = mex_download_queue_get_default ();
   const gchar *mime = NULL;
-  gchar *placeholder_filename = NULL;
+  const gchar *placeholder = NULL;
 
-  queue = mex_download_queue_get_default ();
+  mime = mex_content_get_metadata (content,
+                                   MEX_CONTENT_METADATA_MIMETYPE);
 
-  /* cancel any download already in progress */
-  if (priv->download_id)
+  if (mime)
     {
-      mex_download_queue_cancel (queue, priv->download_id);
-      priv->download_id = NULL;
+      if (g_str_has_prefix (mime, "image/"))
+        {
+          placeholder = "thumb-image.png";
+        }
+      else if (g_str_has_prefix (mime, "video/") ||
+               g_str_equal (mime, "x-mex/media"))
+        {
+          placeholder = "thumb-video.png";
+        }
+      else if (g_str_has_prefix (mime, "audio/"))
+        {
+          placeholder = "thumb-music.png";
+        }
+      else if (g_str_equal (mime, "x-grl/box") ||
+               g_str_equal (mime, "x-mex/box"))
+        {
+          placeholder = "folder-tile.png";
+        }
+
+      if (placeholder)
+        {
+          const gchar *dir = mex_get_data_dir ();
+
+          return g_build_filename (dir, "common",
+                                   placeholder, NULL);
+        }
     }
 
-  priv->thumbnail_loaded = FALSE;
-
-  /* Load placeholder image */
-  if (priv->content)
-    mime = mex_content_get_metadata (priv->content,
-                                     MEX_CONTENT_METADATA_MIMETYPE);
-
-  if (mime && g_str_has_prefix (mime, "image/"))
-    {
-      placeholder_filename = "thumb-image.png";
-    }
-  else if (mime && (g_str_has_prefix (mime, "video/") ||
-                    g_str_equal (mime, "x-mex/media")))
-    {
-      placeholder_filename = "thumb-video.png";
-    }
-  else if (mime && (g_str_has_prefix (mime, "audio/")))
-    {
-      placeholder_filename = "thumb-music.png";
-    }
-  else if (mime && g_str_equal (mime, "x-grl/box"))
-    {
-      placeholder_filename = "folder-tile.png";
-    }
-
-  if (placeholder_filename)
-    {
-      gchar *tmp;
-      const gchar *dir = mex_get_data_dir ();
-
-      tmp = g_build_filename (dir, "common",
-                              placeholder_filename, NULL);
-      _update_thumbnail_from_image (tile, tmp);
-      g_free (tmp);
-    }
-  else
-    {
-      mx_image_clear (MX_IMAGE (priv->image));
-
-      /* Reset the height - really, we ought to reset the width and height,
-       * but for all our use-cases, we want to keep the set width.
-       */
-      clutter_actor_set_height (priv->image, -1);
-      priv->image_set = FALSE;
-
-      return;
-    }
-
-  clutter_actor_set_size (priv->image,
-                          priv->thumb_width, priv->thumb_height);
+  return NULL;
 }
 
 static void
@@ -274,6 +247,78 @@ _update_thumbnail (MexContentTile *tile)
 }
 
 static void
+_refresh_thumbnail (MexContentTile *tile, gboolean force_placeholder)
+{
+  MexContentTilePrivate *priv = tile->priv;
+  MexDownloadQueue *queue = mex_download_queue_get_default ();
+  gchar *file_to_load = NULL;
+
+  queue = mex_download_queue_get_default ();
+
+  /* cancel any download already in progress */
+  if (priv->download_id)
+    {
+      mex_download_queue_cancel (queue, priv->download_id);
+      priv->download_id = NULL;
+    }
+
+  priv->thumbnail_loaded = FALSE;
+
+  if (!priv->content)
+    goto load_image;
+
+  /* Load placeholder image */
+  if (force_placeholder)
+    {
+      file_to_load = _get_placeholder (priv->content);
+    }
+  else
+    {
+      const gchar *still =
+        mex_content_get_metadata (priv->content,
+                                  MEX_CONTENT_METADATA_STILL);
+
+      if (still)
+        {
+          if (!priv->thumbnail_loaded && !priv->download_id &&
+              g_str_has_prefix (still, "http://"))
+            {
+              _update_thumbnail (tile);
+              /* TODO?: or just no placeholder and we wait for the
+                 thumbnail to be loaded. */
+              file_to_load = _get_placeholder (priv->content);
+            }
+          else
+            file_to_load = g_strdup (still);
+        }
+      else
+        file_to_load = _get_placeholder (priv->content);
+    }
+
+ load_image:
+  if (file_to_load)
+    {
+      _update_thumbnail_from_image (tile, file_to_load);
+      g_free (file_to_load);
+    }
+  else
+    {
+      mx_image_clear (MX_IMAGE (priv->image));
+
+      /* Reset the height - really, we ought to reset the width and height,
+       * but for all our use-cases, we want to keep the set width.
+       */
+      clutter_actor_set_height (priv->image, -1);
+      priv->image_set = FALSE;
+
+      return;
+    }
+
+  clutter_actor_set_size (priv->image,
+                          priv->thumb_width, priv->thumb_height);
+}
+
+static void
 _content_notify (MexContent     *content,
                  GParamSpec     *pspec,
                  MexContentTile *tile)
@@ -288,13 +333,13 @@ _content_notify (MexContent     *content,
 
   if (!g_strcmp0 (pspec->name, still_prop_name))
     {
-      _reset_thumbnail (tile);
+      priv->thumbnail_loaded = FALSE;
+      _refresh_thumbnail (tile, FALSE);
     }
   else if (!g_strcmp0 (pspec->name, title_prop_name))
     {
       _update_title (tile);
     }
-
 }
 
 static void
@@ -326,7 +371,7 @@ mex_content_tile_set_content (MexContentView *view,
 
   /* Update title/thumbnail display */
   _update_title (tile);
-  _reset_thumbnail (tile);
+  _refresh_thumbnail (tile, FALSE);
 
   /* TODO: use g_object_bind_property */
   priv->changed_id = g_signal_connect (priv->content,
@@ -367,6 +412,19 @@ mex_content_tile_get_context (MexContentView *view)
 }
 
 static void
+mex_content_tile_set_visible (MexContentView *view,
+                              gboolean        visible)
+{
+  MexContentTile *tile = MEX_CONTENT_TILE (view);
+  MexContentTilePrivate *priv = tile->priv;
+
+  if (priv->content && MEX_IS_PROGRAM (priv->content))
+    _mex_program_complete (MEX_PROGRAM (priv->content));
+
+  _refresh_thumbnail (tile, !visible);
+}
+
+static void
 mex_content_view_iface_init (MexContentViewIface *iface)
 {
   iface->set_content = mex_content_tile_set_content;
@@ -374,6 +432,8 @@ mex_content_view_iface_init (MexContentViewIface *iface)
 
   iface->set_context = mex_content_tile_set_context;
   iface->get_context = mex_content_tile_get_context;
+
+  iface->set_visible = mex_content_tile_set_visible;
 }
 
 
@@ -471,11 +531,11 @@ mex_content_tile_paint (ClutterActor *actor)
 {
   MexContentTilePrivate *priv = MEX_CONTENT_TILE (actor)->priv;
 
-  if (priv->content && MEX_IS_PROGRAM (priv->content))
-    _mex_program_complete (MEX_PROGRAM (priv->content));
+  /* if (priv->content && MEX_IS_PROGRAM (priv->content)) */
+  /*   _mex_program_complete (MEX_PROGRAM (priv->content)); */
 
-  if (!priv->thumbnail_loaded && !priv->download_id)
-    _update_thumbnail (MEX_CONTENT_TILE (actor));
+  /* if (!priv->thumbnail_loaded && !priv->download_id) */
+  /*   _update_thumbnail (MEX_CONTENT_TILE (actor)); */
 
   CLUTTER_ACTOR_CLASS (mex_content_tile_parent_class)->paint (actor);
 }

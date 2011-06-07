@@ -206,6 +206,16 @@ mex_content_box_get_context (MexContentView *view)
 }
 
 static void
+mex_content_box_set_visible (MexContentView *view,
+                             gboolean        visible)
+{
+  MexContentBox *box = MEX_CONTENT_BOX (view);
+  MexContentBoxPrivate *priv = box->priv;
+
+  mex_content_view_set_visible (MEX_CONTENT_VIEW (priv->tile), visible);
+}
+
+static void
 mex_content_view_iface_init (MexContentViewIface *iface)
 {
   iface->set_content = mex_content_box_set_content;
@@ -213,6 +223,8 @@ mex_content_view_iface_init (MexContentViewIface *iface)
 
   iface->set_context = mex_content_box_set_context;
   iface->get_context = mex_content_box_get_context;
+
+  iface->set_visible = mex_content_box_set_visible;
 }
 
 static void
