@@ -125,6 +125,12 @@ mex_scroll_indicator_dispose (GObject *object)
 {
   MexScrollIndicatorPrivate *priv = MEX_SCROLL_INDICATOR (object)->priv;
 
+  if (priv->adjustment)
+    {
+      g_object_unref (priv->adjustment);
+      priv->adjustment = NULL;
+    }
+
   if (priv->handle)
     {
       cogl_handle_unref (priv->handle);
