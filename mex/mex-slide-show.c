@@ -811,8 +811,12 @@ mex_slide_show_init (MexSlideShow *self)
 
   priv->image = (ClutterActor*) clutter_script_get_object (priv->script,
                                                            "viewer");
+  clutter_actor_set_reactive (priv->image, TRUE);
   g_signal_connect (priv->image, "image-loaded", G_CALLBACK (image_loaded),
                     self);
+  g_signal_connect_swapped (priv->image, "button-press-event",
+                            G_CALLBACK (mex_slide_show_show), self);
+
   priv->controls = (ClutterActor*) clutter_script_get_object (priv->script,
                                                               "controls");
   priv->info_panel = (ClutterActor*) clutter_script_get_object (priv->script,
