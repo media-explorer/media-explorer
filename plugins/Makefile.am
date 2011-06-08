@@ -27,3 +27,7 @@ endif
 if USE_PLUGIN_TRACKER
 SUBDIRS += tracker
 endif
+
+if USE_PLUGIN_DBUSINPUT
+SUBDIRS += dbus-input
+endif

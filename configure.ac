@@ -315,7 +315,7 @@ PKG_CHECK_EXISTS(clutter-x11-1.0, [AC_DEFINE(HAVE_CLUTTER_X11,
                  [])
 
 # Default list of plugins to compile
-WITH_PLUGINS="search,queue,tracker"
+WITH_PLUGINS="search,queue,tracker,dbusinput"
 
 # Provide a --with-plugins/--without-plugins configure option
 AS_MEX_ARG_WITH_PLUGINS
@@ -328,6 +328,7 @@ AS_MEX_PLUGIN(queue)
 AS_MEX_PLUGIN(applications)
 AS_MEX_PLUGIN(upnp)
 AS_MEX_PLUGIN(tracker)
+AS_MEX_PLUGIN(dbusinput)
 
 AC_CONFIG_FILES([
   Makefile
@@ -354,6 +355,7 @@ AC_CONFIG_FILES([
   plugins/applications/Makefile
   plugins/upnp/Makefile
   plugins/tracker/Makefile
+  plugins/dbus-input/Makefile
   po/Makefile.in
   shell/Makefile
   tests/Makefile
