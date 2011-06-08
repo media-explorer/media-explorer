@@ -229,7 +229,7 @@ mex_generic_model_get_controller (MexModel *model)
 {
   MexGenericModel *gm = (MexGenericModel *) model;
 
-  return g_object_ref (gm->priv->controller);
+  return gm->priv->controller;
 }
 
 static MexContent *
