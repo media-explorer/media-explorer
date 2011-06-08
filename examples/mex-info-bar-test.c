@@ -24,15 +24,17 @@ main (int argc, char **argv)
   const ClutterColor grey = { 0x40, 0x40, 0x40, 0xff };
 
   ClutterActor *stage, *info_bar;
-  MxApplication *app;
   ClutterConstraint *constraint;
+  MxApplication *app;
+  MxWindow *window;
 
   mex_init (&argc, &argv);
 
   app = mx_application_new (&argc, &argv, "mex-media-controls-test", 0);
   mex_style_load_default ();
 
-  stage = clutter_stage_get_default ();
+  window = mx_application_create_window (app);
+  stage = (ClutterActor *)mx_window_get_clutter_stage (window);
   clutter_stage_set_color (CLUTTER_STAGE (stage), &grey);
   clutter_stage_set_user_resizable (CLUTTER_STAGE (stage), TRUE);
 
