@@ -1,6 +1,5 @@
 applets/networks/mtn-app.c
 mex/mex-content.c
-mex/mex-dummy-notification-source.c
 mex/mex-gio-notification-source.c
 mex/mex-info-bar.c
 mex/mex-info-panel.c
