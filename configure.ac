@@ -209,6 +209,18 @@ AS_CASE(["$with_online"],
         [AC_MSG_ERROR([Unknown argument "$with_online" to --with-online])]
 )
 
+# enable idle video
+AC_ARG_ENABLE([idle-video],
+              [AC_HELP_STRING([--enable-idle-video=@<:@no/yes@:>@],
+                              [Play the idle video in the background @<:@default=yes@:>@])],
+              [],
+              [enable_idle_video=yes])
+
+AS_IF([test "x$enable_idle_video" = "xyes"],
+      [AC_DEFINE([ENABLE_IDLE_VIDEO], 1,
+                 [Play the idle video in the background])])
+AM_CONDITIONAL([ENABLE_IDLE_VIDEO], [test "x$enable_idle_video" = "xyes"])
+
 # enable strict compiler flags
 AC_ARG_ENABLE([maintainer-flags],
               [AC_HELP_STRING([--enable-maintainer-flags=@<:@no/yes@:>@],
@@ -404,5 +416,6 @@ echo "        Webremote   : ${enable_webremote}"
 echo ""
 echo " • Extra:"
 echo "        Enable LIRC support: ${enable_lirc}"
+echo "        Play the idle video: ${enable_idle_video}"
 echo "        Media playback     : ${with_player}"
 echo ""

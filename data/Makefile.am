@@ -36,10 +36,13 @@ dist_style_DATA = \
 		  style/queue-spinner-highlight.png \
 		  style/scroll-bg.png \
 		  style/scroll-bar.png \
-		  style/background-loop.mkv \
 		  style/thumb-noContent.png \
 		  style/spinner.png \
 		  style.css
+
+if ENABLE_IDLE_VIDEO
+dist_style_DATA +=style/background-loop.mkv
+endif
 
 shellstyledir = $(pkgdatadir)/shell/style
 dist_shellstyle_DATA =		\
