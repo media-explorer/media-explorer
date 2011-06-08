@@ -1,0 +1,85 @@
+<!-- 
+/* -*- mode: C; c-file-style: "gnu"; indent-tabs-mode: nil; -*- */
+/*
+ * Copyright 2011 Intel Corporation.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU Lesser General Public License,
+ * version 2.1, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+ * Boston, MA 02111-1307, USA.
+ *
+ */
+-->
+<html>
+<head>
+<title>Media explorer 5-way</title>
+<script src="http://code.jquery.com/jquery-1.6.1.min.js" type="text/javascript"></script>
+<!-- JS version of clutter key value mappings clutter/clutter-keysyms.h -->
+<script src="clutter-keysyms.js" type="text/javascript"></script>
+
+<!-- Media explorer mappings mex/mex-main.h -->
+<script type="text/javascript">
+var MEX_KEY_BACK = CLUTTER_KEY_Escape;
+var MEX_KEY_HOME = CLUTTER_KEY_Super_L;
+var MEX_KEY_INFO = CLUTTER_KEY_Menu;
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=2, maximum-scale=1, user-scalable=no">
+<style type="text/css">
+input
+{
+  width: 5em;
+  height: 5em;
+  color: #ffffff;
+  background-color: #464541;
+  border: none;
+}
+input:hover
+{
+  color: #000000;
+  background-color: #e1c549;
+}
+body
+{
+  background-color: #000000;
+}
+</style>
+</head>
+
+<body>
+<center>
+<form method="POST" action="">
+<table>
+<tr>
+<td></td>
+<!-- uses the names from clutter-keysyms.h -->
+<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Up})" value="Up" /></td>
+<td><td>
+</tr>
+<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Left})" value="Left" /></td>
+<td><input name="keyvalue" class="button"type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Return})" value="Enter" /></td>
+<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Right})" value="Right" /></td>
+<tr>
+<td></td>
+<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Down})" value="Down" /></td>
+<td><td>
+</tr>
+</table>
+<br />
+<!-- this is tricky... hmm need to add the defines mex-main.h -->
+<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_INFO})" value="Info" /></td>
+<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_BACK})" value="Back" /></td>
+<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_HOME})" value="Home" /></td>
+</center>
+</form>
+</body>
+</html>
+

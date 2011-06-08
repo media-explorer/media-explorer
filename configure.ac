@@ -287,6 +287,19 @@ AS_IF([test "x$enable_networks" = "xyes"],
       [])
 AM_CONDITIONAL(ENABLE_NETWORKS, test "x$enable_networks" = "xyes")
 
+# Check the dependencies of webremote daemon
+AC_ARG_ENABLE([webremote],
+              [AC_HELP_STRING([--enable-webremote=@<:@yes/no@:>@],
+                              [Enable the webremote daemon @<:@default=yes@:>@])],
+              [],
+              [enable_webremote=yes])
+
+AS_IF([test "x$enable_webremote" = "xyes"],
+      [PKG_CHECK_MODULES(WEBREMOTE, [glib-2.0 gio-2.0 libsoup-2.4 gssdp-1.0])],
+      [])
+AM_CONDITIONAL(ENABLE_WEBREMOTE, test "x$enable_webremote" = "xyes")
+# End webremote
+
 # Check the dependencies of displayconf
 AC_ARG_ENABLE([displayconf],
               [AC_HELP_STRING([--enable-displayconf=@<:@yes/no@:>@],
@@ -347,6 +360,7 @@ AC_CONFIG_FILES([
   applets/displayconf/Makefile
   applets/rebinder/Makefile
   applets/networks/Makefile
+  applets/webremote/Makefile
   plugins/Makefile
   plugins/library/Makefile
   plugins/recommended/Makefile
@@ -386,6 +400,7 @@ echo " • Configuration Applets:"
 echo "        Displayconf : ${enable_displayconf}"
 echo "        Rebinder    : ${enable_rebinder}"
 echo "        Networks    : ${enable_networks}"
+echo "        Webremote   : ${enable_webremote}"
 echo ""
 echo " • Extra:"
 echo "        Enable LIRC support: ${enable_lirc}"
