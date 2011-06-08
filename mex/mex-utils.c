@@ -624,7 +624,7 @@ mex_get_data_dir ()
 
   if (!datadir)
     {
-      static gchar** system_data_dirs;
+      static const gchar* const * system_data_dirs;
 
       system_data_dirs = g_get_system_data_dirs ();
 
