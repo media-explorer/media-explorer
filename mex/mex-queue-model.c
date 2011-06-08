@@ -79,7 +79,6 @@ mex_queue_model_dispose (GObject *object)
       g_signal_handlers_disconnect_by_func (priv->controller,
                                             _controller_changed_cb,
                                             model);
-      g_object_unref (priv->controller);
       priv->controller = NULL;
     }
 
