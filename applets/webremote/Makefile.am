@@ -22,6 +22,4 @@ mex_webremote_DATA = \
 		index.html \
 		clutter-keysyms.js
 
-EXTRA_DIST = \
-		webremote/index.html \
-		webremote/clutter-keysyms.js
+EXTRA_DIST = index.html clutter-keysyms.js
