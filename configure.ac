@@ -233,6 +233,8 @@ AS_CASE(["$with_thumbnailer"],
         ["internal"],
         [
         AC_DEFINE([WITH_THUMBNAILER_INTERNAL], 1, [Use internal thumbnailer])
+        PKG_CHECK_MODULES(MEX_THUMBNAILER,
+                          "gdk-pixbuf-2.0 glib-2.0 gstreamer-0.10")
         ],
 
         ["tumbler"],
@@ -240,8 +242,10 @@ AS_CASE(["$with_thumbnailer"],
         AC_DEFINE([WITH_THUMBNAILER_TUMBLER], 1, [Use Tumbler for thumbnailing])
         ],
 
-        [AC_MSG_ERROR([Unknown argument "$with_online" to --with-thumbnailer])]
+        [AC_MSG_ERROR([Unknown argument "$with_thumbnailer" to --with-thumbnailer])]
 )
+AM_CONDITIONAL([ENABLE_INTERNAL_THUMBNAILER],
+               [test "x$with_thumbnailer" = "xinternal"])
 
 
 # enable strict compiler flags
