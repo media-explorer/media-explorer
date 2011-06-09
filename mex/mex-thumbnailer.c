@@ -29,6 +29,37 @@ static DBusGProxy *thumb_proxy = NULL;
 static GHashTable *pending = NULL;
 #endif
 
+gchar *
+mex_get_thumbnail_path_for_uri (const gchar *uri)
+{
+  char *basepath;
+  char *md5;
+  char *file;
+  char *path;
+
+  md5 = g_compute_checksum_for_string (G_CHECKSUM_MD5, uri, -1);
+
+#ifdef WITH_THUMBNAILER_INTERNAL
+  basepath = g_build_filename (g_get_user_cache_dir (), "mex", "thumbnails",
+                               NULL);
+  file = g_strconcat (md5, ".jpg", NULL);
+#else
+  basepath = g_build_filename (g_get_home_dir (), ".thumbnails", "x-huge",
+                               NULL);
+  file = g_strconcat (md5, ".png", NULL);
+#endif
+  g_free (md5);
+
+  g_mkdir_with_parents (basepath, 0777);
+
+  path = g_build_filename (basepath, file, NULL);
+
+  g_free (basepath);
+  g_free (file);
+
+  return path;
+}
+
 #ifdef WITH_THUMBNAILER_INTERNAL
 /* internal thumbnailer */
 static GThreadPool *thumbnail_thread_pool = NULL;
@@ -40,7 +71,8 @@ typedef struct
 {
   gchar *uri;
   gchar *mime;
-  MexThumbnailCallback  finished;
+  gchar *thumbnail_path;
+  MexThumbnailCallback finished;
   gpointer user_data;
 } ThumbnailData;
 
@@ -56,6 +88,7 @@ thumbnail_data_new (const gchar          *uri,
   data->uri = g_strdup (uri);
   data->finished = finished;
   data->user_data = user_data;
+  data->thumbnail_path = mex_get_thumbnail_path_for_uri (uri);
   data->mime = get_mime_type (uri);
 
   return data;
@@ -66,6 +99,7 @@ thumbnail_data_free (ThumbnailData *data)
 {
   g_free (data->uri);
   g_free (data->mime);
+  g_free (data->thumbnail_path);
   g_slice_free (ThumbnailData, data);
 }
 
@@ -86,7 +120,7 @@ mex_internal_thumbnail_start (ThumbnailData *data,
 
 {
   int status;
-  gchar *argv[4], *output;
+  gchar *argv[5], *output;
   GError *err = NULL;
 
   if (g_str_has_prefix (data->mime, "image/")
@@ -95,11 +129,11 @@ mex_internal_thumbnail_start (ThumbnailData *data,
       argv[0] = LIBEXECDIR "/mex-thumbnailer";
       argv[1] = data->mime;
       argv[2] = data->uri;
-      argv[3] = NULL;
+      argv[3] = data->thumbnail_path;
+      argv[4] = NULL;
 
       g_spawn_sync (NULL, argv, NULL, 0, NULL, NULL, NULL, &output, &status,
                     &err);
-
       if (err)
         {
           g_warning ("Error: %s", err->message);

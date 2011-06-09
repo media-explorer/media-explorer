@@ -26,3 +26,5 @@ void mex_thumbnailer_generate (const char *uri,
                                const char *mime_type,
                                MexThumbnailCallback callback,
                                gpointer user_data);
+
+gchar * mex_get_thumbnail_path_for_uri (const gchar *uri);

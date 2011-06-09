@@ -23,15 +23,15 @@
 
 #define THUMBNAIL_SIZE 512
 
-static void mex_internal_thumbnail_image (const gchar *uri);
-static void mex_internal_thumbnail_video (const gchar *uri);
+static void mex_internal_thumbnail_image (const gchar *uri, const gchar *path);
+static void mex_internal_thumbnail_video (const gchar *uri, const gchar *path);
 
 int
 main (int argc, char **argv)
 {
   gchar *mime;
 
-  if (argc != 3)
+  if (argc != 4)
     return 1;
 
   g_type_init ();
@@ -39,48 +39,21 @@ main (int argc, char **argv)
   mime = argv[1];
 
   if (g_str_has_prefix (mime, "image/"))
-    mex_internal_thumbnail_image (argv[2]);
+    mex_internal_thumbnail_image (argv[2], argv[3]);
   else if (g_str_has_prefix (mime, "video/"))
     {
       gst_init (&argc, &argv);
 
-      mex_internal_thumbnail_video (argv[2]);
+      mex_internal_thumbnail_video (argv[2], argv[3]);
     }
   else
     return 1;
 }
 
-static char *
-get_thumbnail_path_for_uri (const char *uri)
-{
-  char *basepath;
-  char *md5;
-  char *file;
-  char *path;
-
-  basepath = g_build_filename (g_get_home_dir (),
-                               ".thumbnails",
-                               "x-huge",
-                               NULL);
-  g_mkdir_with_parents (basepath, 0777);
-
-  md5 = g_compute_checksum_for_string (G_CHECKSUM_MD5, uri, -1);
-  file = g_strconcat (md5, ".png", NULL);
-  g_free (md5);
-
-  path = g_build_filename (basepath,
-                           file,
-                           NULL);
-
-  g_free (basepath);
-  g_free (file);
-
-  return path;
-}
-
 /* image thumbnailer */
 static void
-mex_internal_thumbnail_image (const gchar *uri)
+mex_internal_thumbnail_image (const gchar *uri,
+                              const gchar *thumbnail_path)
 {
   GError *err = NULL;
   gchar *filename;
@@ -98,11 +71,7 @@ mex_internal_thumbnail_image (const gchar *uri)
     }
   else
     {
-      gchar *path;
-
-      path = get_thumbnail_path_for_uri (uri);
-
-      gdk_pixbuf_save (pixbuf, path, "png", &err, NULL);
+      gdk_pixbuf_save (pixbuf, thumbnail_path, "jpeg", &err, NULL);
 
       if (err)
         {
@@ -458,7 +427,8 @@ is_interesting (GdkPixbuf *pixbuf)
 }
 
 void
-mex_internal_thumbnail_video (const gchar *uri)
+mex_internal_thumbnail_video (const gchar *uri,
+                              const gchar *thumbnail_path)
 {
   GdkPixbuf *shot = NULL;
   gboolean interesting = FALSE;
@@ -483,16 +453,13 @@ mex_internal_thumbnail_video (const gchar *uri)
       w = gdk_pixbuf_get_width (shot);
       h = gdk_pixbuf_get_height (shot);
 
-      fullname = get_thumbnail_path_for_uri (uri);
-
-      if (gdk_pixbuf_save (shot, fullname, "png", &error, NULL) == FALSE)
+      if (gdk_pixbuf_save (shot, thumbnail_path, "jpeg", &error, NULL) == FALSE)
         {
           g_warning ("Error writing file %s for %s: %s", fullname, uri,
                      error->message);
           g_error_free (error);
         }
 
-      g_free (fullname);
       g_object_unref (shot);
     }
 }
