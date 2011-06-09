@@ -32,7 +32,7 @@ httpdbus_send_keyvalue (HTTPDBusInterface *dbus_interface, gint keyval)
    */
   GError *error=NULL;
 
-  g_dbus_proxy_call_sync (dbus_interface->proxy,
+  g_dbus_proxy_call_sync (dbus_interface->dbusinput_proxy,
                           "ControlKey",
                           g_variant_new ("(u)", keyval),
                           0,
@@ -45,7 +45,6 @@ httpdbus_send_keyvalue (HTTPDBusInterface *dbus_interface, gint keyval)
       g_error_free (error);
     }
 }
-
 
 HTTPDBusInterface *httpdbus_interface_new (void)
 {
@@ -64,7 +63,7 @@ HTTPDBusInterface *httpdbus_interface_new (void)
     }
   else
     {
-      dbus_interface->proxy =
+      dbus_interface->dbusinput_proxy =
         g_dbus_proxy_new_sync (dbus_interface->connection,
                                G_DBUS_PROXY_FLAGS_NONE,
                                NULL,
@@ -75,8 +74,8 @@ HTTPDBusInterface *httpdbus_interface_new (void)
                                &error);
       if (error)
         {
-          g_warning ("Could not create dbus proxy: %s", error->message);
-          g_error_free (error);
+          g_warning ("Could not create dbus input proxy: %s", error->message);
+          g_clear_error (&error);
         }
     }
   return dbus_interface;
@@ -86,6 +85,6 @@ HTTPDBusInterface *httpdbus_interface_new (void)
 void httpdbus_interface_free (HTTPDBusInterface *dbus_interface)
 {
   g_object_unref (dbus_interface->connection);
-  g_object_unref (dbus_interface->proxy);
+  g_object_unref (dbus_interface->dbusinput_proxy);
   g_free (dbus_interface);
 }

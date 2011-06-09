@@ -31,7 +31,7 @@ typedef struct _HTTPDBusInterface HTTPDBusInterface;
 struct _HTTPDBusInterface 
 {
   GDBusConnection *connection;
-  GDBusProxy *proxy;
+  GDBusProxy *dbusinput_proxy;
 };
 
 HTTPDBusInterface *httpdbus_interface_new (void);
