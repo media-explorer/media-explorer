@@ -1356,6 +1356,9 @@ mex_resizing_hbox_notify_focused_cb (MxFocusManager  *manager,
         {
           if (parent == (ClutterActor *)self)
             {
+              if (priv->current_focus == focused)
+                return;
+
               if (priv->fade && priv->current_focus)
                 clutter_actor_animate (priv->current_focus,
                                        CLUTTER_EASE_OUT_QUAD, 250,
