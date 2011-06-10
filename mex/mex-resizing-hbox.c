@@ -1424,6 +1424,31 @@ mex_resizing_hbox_unmap (ClutterActor *actor)
   CLUTTER_ACTOR_CLASS (mex_resizing_hbox_parent_class)->unmap (actor);
 }
 
+static gboolean
+mex_resizing_hbox_get_paint_volume (ClutterActor       *actor,
+                                    ClutterPaintVolume *volume)
+{
+  MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (actor)->priv;
+  GList *l;
+
+  if (priv->children == NULL)
+    return clutter_paint_volume_set_from_allocation (volume, actor);
+
+  for (l = priv->children; l != NULL; l = l->next)
+    {
+      ClutterActor *child = l->data;
+      const ClutterPaintVolume *child_volume;
+
+      child_volume = clutter_actor_get_transformed_paint_volume (child, actor);
+      if (!child_volume)
+        return FALSE;
+
+      clutter_paint_volume_union (volume, child_volume);
+    }
+
+  return TRUE;
+}
+
 static void
 mex_resizing_hbox_class_init (MexResizingHBoxClass *klass)
 {
@@ -1448,6 +1473,7 @@ mex_resizing_hbox_class_init (MexResizingHBoxClass *klass)
   actor_class->pick = mex_resizing_hbox_pick;
   actor_class->map = mex_resizing_hbox_map;
   actor_class->unmap = mex_resizing_hbox_unmap;
+  actor_class->get_paint_volume = mex_resizing_hbox_get_paint_volume;
 
   pspec = g_param_spec_boolean ("resizing-enabled",
                                 "Resizing enabled",
