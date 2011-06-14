@@ -32,10 +32,18 @@ struct _HTTPDBusInterface
 {
   GDBusConnection *connection;
   GDBusProxy *dbusinput_proxy;
+  GDBusProxy *mediaplayer_proxy;
 };
 
 HTTPDBusInterface *httpdbus_interface_new (void);
 void httpdbus_interface_free (HTTPDBusInterface *dbus_interface);
+
+gchar *httpdbus_media_player_get (HTTPDBusInterface *dbus_interface,
+                                  gchar *get);
+
+void
+httpdbus_media_player_set_uri (HTTPDBusInterface *dbus_interface,
+                               gchar *uri);
 
 void
 httpdbus_send_keyvalue (HTTPDBusInterface *dbus_interface, gint keyval);
