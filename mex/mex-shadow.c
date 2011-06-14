@@ -23,7 +23,7 @@
 #include <mx/mx.h>
 #include <math.h>
 
-G_DEFINE_TYPE (MexShadow, mex_shadow, G_TYPE_OBJECT)
+G_DEFINE_TYPE (MexShadow, mex_shadow, CLUTTER_TYPE_EFFECT)
 
 #define SHADOW_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_SHADOW, MexShadowPrivate))
@@ -33,7 +33,6 @@ struct _MexShadowPrivate
   guint                     needs_regen  : 1;
   MexPaintTextureFrameFlags paint_flags;
 
-  ClutterActor *actor;
   CoglHandle    material;
   ClutterColor  color;
   gint          radius_x;
@@ -46,7 +45,6 @@ enum
 {
   PROP_0,
 
-  PROP_ACTOR,
   PROP_COLOR,
   PROP_RADIUS_X,
   PROP_RADIUS_Y,
@@ -72,10 +70,6 @@ mex_shadow_get_property (GObject    *object,
 
   switch (property_id)
     {
-    case PROP_ACTOR:
-      g_value_set_object (value, (GObject *)mex_shadow_get_actor (shadow));
-      break;
-
     case PROP_COLOR:
       clutter_value_set_color (value, mex_shadow_get_color (shadow));
       break;
@@ -105,23 +99,17 @@ mex_shadow_get_property (GObject    *object,
     }
 }
 
-static void
-mex_shadow_actor_weak_notify (MexShadow    *self,
-                              ClutterActor *old_actor)
+static gboolean
+mex_shadow_paint_cb (ClutterEffect *shadow)
 {
-  MexShadowPrivate *priv = self->priv;
-  priv->actor = NULL;
-  g_object_unref (self);
-}
-
-static void
-mex_shadow_paint_cb (ClutterActor *actor, MexShadow *shadow)
-{
+  ClutterActor *actor = clutter_actor_meta_get_actor (CLUTTER_ACTOR_META (shadow));
   ClutterActorBox box;
   gfloat radius_x, radius_y, tex_width, tex_height;
 
-  MexShadowPrivate *priv = shadow->priv;
+  MexShadowPrivate *priv = MEX_SHADOW (shadow)->priv;
   gfloat alpha_mult = clutter_actor_get_paint_opacity (actor) / 255.f;
+
+  mex_shadow_regenerate (MEX_SHADOW (shadow));
 
   /* Get coordinates for texture frame */
   radius_x = MAX (1.f, priv->radius_x);
@@ -151,17 +139,39 @@ mex_shadow_paint_cb (ClutterActor *actor, MexShadow *shadow)
                            radius_y,
                            radius_x,
                            priv->paint_flags);
+
+  return TRUE;
 }
 
-static void
-mex_shadow_mapped_cb (ClutterActor *actor,
-                      GParamSpec   *pspec,
-                      MexShadow    *shadow)
+static gboolean
+mex_shadow_get_paint_volume (ClutterEffect      *effect,
+                             ClutterPaintVolume *volume)
 {
-  MexShadowPrivate *priv = shadow->priv;
+  MexShadowPrivate *priv = MEX_SHADOW (effect)->priv;
+  ClutterActor *actor;
+  ClutterActorBox box;
+  ClutterVertex origin;
+  gfloat width, height;
 
-  if (CLUTTER_ACTOR_IS_MAPPED (actor) && priv->needs_regen)
-    mex_shadow_regenerate (shadow);
+  actor = clutter_actor_meta_get_actor (CLUTTER_ACTOR_META (effect));
+  clutter_actor_get_allocation_box (actor, &box);
+
+
+  clutter_paint_volume_get_origin (volume, &origin);
+  width = clutter_paint_volume_get_width (volume);
+  height = clutter_paint_volume_get_height (volume);
+
+  width += priv->radius_x * 2;
+  height += priv->radius_y * 2;
+
+  origin.x += - priv->radius_x + priv->offset_x;
+  origin.y += - priv->radius_y + priv->offset_y;
+
+  clutter_paint_volume_set_origin (volume, &origin);
+  clutter_paint_volume_set_width (volume, width);
+  clutter_paint_volume_set_height (volume, height);
+
+  return TRUE;
 }
 
 static void
@@ -171,21 +181,9 @@ mex_shadow_set_property (GObject      *object,
                          GParamSpec   *pspec)
 {
   MexShadow *shadow = MEX_SHADOW (object);
-  MexShadowPrivate *priv = shadow->priv;
 
   switch (property_id)
     {
-    case PROP_ACTOR:
-      priv->actor = (ClutterActor *)g_value_get_object (value);
-      g_object_weak_ref ((GObject *)priv->actor,
-                         (GWeakNotify)mex_shadow_actor_weak_notify,
-                         shadow);
-      g_signal_connect (priv->actor, "paint",
-                        G_CALLBACK (mex_shadow_paint_cb), shadow);
-      g_signal_connect (priv->actor, "notify::mapped",
-                        G_CALLBACK (mex_shadow_mapped_cb), shadow);
-      break;
-
     case PROP_COLOR:
       mex_shadow_set_color (shadow, clutter_value_get_color (value));
       break;
@@ -220,20 +218,6 @@ mex_shadow_dispose (GObject *object)
 {
   MexShadowPrivate *priv = MEX_SHADOW (object)->priv;
 
-  if (priv->actor)
-    {
-      g_signal_handlers_disconnect_by_func (priv->actor,
-                                            mex_shadow_paint_cb,
-                                            object);
-      g_signal_handlers_disconnect_by_func (priv->actor,
-                                            mex_shadow_mapped_cb,
-                                            object);
-      g_object_weak_unref ((GObject *)priv->actor,
-                           (GWeakNotify)mex_shadow_actor_weak_notify,
-                           object);
-      priv->actor = NULL;
-    }
-
   if (priv->material)
     {
       cogl_handle_unref (priv->material);
@@ -250,17 +234,12 @@ mex_shadow_finalize (GObject *object)
 }
 
 static void
-mex_shadow_constructed (GObject *object)
-{
-  mex_shadow_regenerate ((MexShadow *) object);
-}
-
-static void
 mex_shadow_class_init (MexShadowClass *klass)
 {
   GParamSpec *pspec;
 
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  ClutterEffectClass *effect_class = CLUTTER_EFFECT_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (MexShadowPrivate));
 
@@ -268,15 +247,9 @@ mex_shadow_class_init (MexShadowClass *klass)
   object_class->set_property = mex_shadow_set_property;
   object_class->dispose = mex_shadow_dispose;
   object_class->finalize = mex_shadow_finalize;
-  object_class->constructed = mex_shadow_constructed;
 
-  pspec = g_param_spec_object ("actor",
-                               "Actor",
-                               "ClutterActor to display a shadow under.",
-                               CLUTTER_TYPE_ACTOR,
-                               G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-                               G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_ACTOR, pspec);
+  effect_class->pre_paint = mex_shadow_paint_cb;
+  effect_class->get_paint_volume = mex_shadow_get_paint_volume;
 
   pspec = g_param_spec_int ("radius-x",
                             "X Radius",
@@ -412,11 +385,9 @@ mex_shadow_regenerate (MexShadow *shadow)
 
   MexShadowPrivate *priv = shadow->priv;
 
-  if (!priv->actor || !CLUTTER_ACTOR_IS_MAPPED (priv->actor))
-    {
-      priv->needs_regen = TRUE;
-      return;
-    }
+  if (!priv->needs_regen)
+    return;
+
   priv->needs_regen = FALSE;
 
   radius_x = MAX (1, priv->radius_x);
@@ -503,16 +474,9 @@ mex_shadow_init (MexShadow *self)
 }
 
 MexShadow *
-mex_shadow_new (ClutterActor *actor)
+mex_shadow_new (void)
 {
-  return g_object_new (MEX_TYPE_SHADOW, "actor", actor, NULL);
-}
-
-ClutterActor *
-mex_shadow_get_actor (MexShadow *shadow)
-{
-  g_return_val_if_fail (MEX_IS_SHADOW (shadow), NULL);
-  return shadow->priv->actor;
+  return g_object_new (MEX_TYPE_SHADOW, NULL);
 }
 
 void
@@ -532,8 +496,7 @@ mex_shadow_set_color (MexShadow *shadow, const ClutterColor *color)
       priv->color = *color;
       g_object_notify (G_OBJECT (shadow), "color");
 
-      if (priv->actor)
-        clutter_actor_queue_redraw (priv->actor);
+      priv->needs_regen = TRUE;
     }
 }
 
@@ -561,8 +524,7 @@ mex_shadow_set_radius_x (MexShadow *shadow, gint radius)
 
       g_object_notify (G_OBJECT (shadow), "radius-x");
 
-      if (priv->actor)
-        clutter_actor_queue_redraw (priv->actor);
+      priv->needs_regen = TRUE;
     }
 }
 
@@ -590,8 +552,7 @@ mex_shadow_set_radius_y (MexShadow *shadow, gint radius)
 
       g_object_notify (G_OBJECT (shadow), "radius-y");
 
-      if (priv->actor)
-        clutter_actor_queue_redraw (priv->actor);
+      priv->needs_regen = TRUE;
     }
 }
 
@@ -617,8 +578,7 @@ mex_shadow_set_offset_x (MexShadow *shadow, gint offset)
 
       g_object_notify (G_OBJECT (shadow), "offset-x");
 
-      if (priv->actor)
-        clutter_actor_queue_redraw (priv->actor);
+      priv->needs_regen = TRUE;
     }
 }
 
@@ -644,8 +604,7 @@ mex_shadow_set_offset_y (MexShadow *shadow, gint offset)
 
       g_object_notify (G_OBJECT (shadow), "offset-y");
 
-      if (priv->actor)
-        clutter_actor_queue_redraw (priv->actor);
+      priv->needs_regen = TRUE;
     }
 }
 
@@ -672,8 +631,7 @@ mex_shadow_set_paint_flags (MexShadow                 *shadow,
 
       g_object_notify (G_OBJECT (shadow), "paint-flags");
 
-      if (priv->actor)
-        clutter_actor_queue_redraw (priv->actor);
+      priv->needs_regen = TRUE;
     }
 }
 

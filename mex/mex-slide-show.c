@@ -938,34 +938,26 @@ tile_focus_in_cb (ClutterActor *actor,
 static void
 notify_pseudo_class (MxBin *actor)
 {
-  MexShadow *shadow;
-  ClutterActor *shadow_actor;
-  ClutterColor color = { 0, 0, 0, 60 };
-
-  shadow = g_object_get_qdata (G_OBJECT (actor), mex_tile_shadow_quark ());
-
-  if (shadow)
-    g_object_unref (shadow);
-
+  ClutterEffect *shadow;
+  ClutterActor *enable_shadow, *disable_shadow;
 
   if (mx_stylable_style_pseudo_class_contains (MX_STYLABLE (actor), "active")
       || mx_stylable_style_pseudo_class_contains (MX_STYLABLE (actor), "focus"))
     {
-      shadow_actor = (ClutterActor*) actor;
+      enable_shadow = (ClutterActor*) actor;
+      disable_shadow = mx_bin_get_child (actor);
     }
   else
     {
-      shadow_actor = mx_bin_get_child (actor);
+      enable_shadow = mx_bin_get_child (actor);
+      disable_shadow = (ClutterActor*) actor;
     }
 
-  shadow = g_object_new (MEX_TYPE_SHADOW,
-                         "actor", shadow_actor,
-                         "radius-x", 15,
-                         "radius-y", 15,
-                         "color", &color,
-                         NULL);
+  shadow = clutter_actor_get_effect (enable_shadow, "shadow");
+  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (shadow), TRUE);
 
-  g_object_set_qdata (G_OBJECT (actor), mex_tile_shadow_quark(), shadow);
+  shadow = clutter_actor_get_effect (disable_shadow, "shadow");
+  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (shadow), FALSE);
 }
 
 static void
@@ -974,6 +966,9 @@ tile_created_cb (MexProxy *proxy,
                  GObject  *object,
                  gpointer  slideshow)
 {
+  ClutterEffect *shadow;
+  ClutterColor color = { 0, 0, 0, 60 };
+
   /* remove any content from the slide show that is not an image */
   if (!allowed_content (MEX_CONTENT (content)))
     {
@@ -988,6 +983,21 @@ tile_created_cb (MexProxy *proxy,
 
   g_signal_connect (object, "focus-in", G_CALLBACK (tile_focus_in_cb),
                     slideshow);
+
+  shadow = g_object_new (MEX_TYPE_SHADOW,
+                         "radius-x", 15,
+                         "radius-y", 15,
+                         "color", &color,
+                         NULL);
+  clutter_actor_add_effect_with_name (CLUTTER_ACTOR (object), "shadow",
+                                      CLUTTER_EFFECT (shadow));
+  shadow = g_object_new (MEX_TYPE_SHADOW,
+                         "radius-x", 15,
+                         "radius-y", 15,
+                         "color", &color,
+                         NULL);
+  clutter_actor_add_effect_with_name (mx_bin_get_child (MX_BIN (object)),
+                                      "shadow", CLUTTER_EFFECT (shadow));
 
   g_signal_connect (object, "notify::style-pseudo-class",
                     G_CALLBACK (notify_pseudo_class), NULL);

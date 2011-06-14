@@ -90,8 +90,6 @@ enum
   PROP_TILE_HEIGHT
 };
 
-static GQuark mex_grid_shadow_quark = 0;
-
 static void mex_grid_start_animation (MexGrid *self);
 
 /* ClutterContainerIface */
@@ -152,29 +150,16 @@ mex_grid_insert_sorted (MexGrid      *self,
 static void
 mex_grid_child_add_shadow (ClutterActor *child)
 {
-  MexShadow *shadow = mex_shadow_new (child);
+  MexShadow *shadow = mex_shadow_new ();
+
+  clutter_actor_add_effect_with_name (child, "shadow", CLUTTER_EFFECT (shadow));
 
   mex_shadow_set_radius_y (shadow, 24);
   mex_shadow_set_paint_flags (shadow,
                               MEX_TEXTURE_FRAME_TOP |
                               MEX_TEXTURE_FRAME_BOTTOM);
-
-  g_object_set_qdata (G_OBJECT (child), mex_grid_shadow_quark, shadow);
 }
 
-static MexShadow *
-mex_grid_child_get_shadow (ClutterActor *child)
-{
-  return g_object_get_qdata (G_OBJECT (child), mex_grid_shadow_quark);
-}
-
-static void
-mex_grid_child_remove_shadow (ClutterActor *child)
-{
-  MexShadow *shadow = mex_grid_child_get_shadow (child);
-  g_object_set_qdata (G_OBJECT (child), mex_grid_shadow_quark, NULL);
-  g_object_unref (shadow);
-}
 
 static void
 mex_grid_add (ClutterContainer *container,
@@ -225,8 +210,6 @@ mex_grid_remove (ClutterContainer *container,
         continue;
 
       g_object_ref (actor);
-
-      mex_grid_child_remove_shadow (actor);
 
       g_array_remove_index (priv->children, i);
       clutter_actor_unparent (actor);
@@ -485,7 +468,9 @@ mex_grid_move_focus (MxFocusable      *focusable,
       /* Update the shadow properties */
       if (priv->current_focus)
         {
-          MexShadow *shadow = mex_grid_child_get_shadow (priv->current_focus);
+          MexShadow *shadow;
+          shadow = (MexShadow *) clutter_actor_get_effect (priv->current_focus,
+                                                           "shadow");
           mex_shadow_set_radius_y (shadow, 24);
           mex_shadow_set_paint_flags (shadow,
                                       MEX_TEXTURE_FRAME_TOP |
@@ -494,7 +479,8 @@ mex_grid_move_focus (MxFocusable      *focusable,
 
       if (child)
         {
-          MexShadow *shadow = mex_grid_child_get_shadow (child);
+          MexShadow *shadow;
+          shadow = (MexShadow *) clutter_actor_get_effect (child, "shadow");
           mex_shadow_set_radius_y (shadow, 16);
           mex_shadow_set_paint_flags (shadow,
                                       MEX_TEXTURE_FRAME_TOP |
@@ -1408,8 +1394,6 @@ mex_grid_class_init (MexGridClass *klass)
   g_object_class_override_property (object_class,
                                     PROP_VADJUST,
                                     "vertical-adjustment");
-
-  mex_grid_shadow_quark = g_quark_from_static_string ("mex-grid-shadow");
 }
 
 /* Following function copied from MexDrawersBox */

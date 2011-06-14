@@ -54,19 +54,19 @@ typedef struct _MexShadowPrivate MexShadowPrivate;
 
 struct _MexShadow
 {
-  GObject parent;
+  ClutterEffect parent;
 
   MexShadowPrivate *priv;
 };
 
 struct _MexShadowClass
 {
-  GObjectClass parent_class;
+  ClutterEffectClass parent_class;
 };
 
 GType mex_shadow_get_type (void) G_GNUC_CONST;
 
-MexShadow *mex_shadow_new (ClutterActor *actor);
+MexShadow *mex_shadow_new (void);
 
 ClutterActor *mex_shadow_get_actor (MexShadow *shadow);
 

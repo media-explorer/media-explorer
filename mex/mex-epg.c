@@ -533,7 +533,8 @@ mex_epg_init (MexEpg *self)
   clutter_container_add_actor (CLUTTER_CONTAINER (viewport), priv->grid);
 
   /* Add shadows */
-  mex_shadow_new (priv->channel_box);
+  clutter_actor_add_effect (priv->channel_box,
+                            CLUTTER_EFFECT (mex_shadow_new ()));
 
   /* selection_indicator */
   priv->selection_indicator = clutter_rectangle_new_with_color (&color);

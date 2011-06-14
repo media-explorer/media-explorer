@@ -124,17 +124,6 @@ mex_scrollable_iface_init (MexScrollableContainerInterface *iface)
   iface->get_allocation = mex_column_get_allocation;
 }
 
-static GQuark
-_item_shadow_quark ()
-{
-  static GQuark quark = 0;
-
-  if (G_UNLIKELY (!quark))
-    quark = g_quark_from_static_string ("mex-column-item-shadow");
-
-  return quark;
-}
-
 static void
 expander_box_open_notify (MexExpanderBox *box,
                           GParamSpec     *pspec,
@@ -142,8 +131,7 @@ expander_box_open_notify (MexExpanderBox *box,
 {
   MexColumnPrivate *priv = MEX_COLUMN (column)->priv;
   GList *l;
-  MexShadow *shadow;
-  ClutterColor shadow_color = { 0, 0, 0, 128 };
+  ClutterActorMeta *shadow;
 
   if (mex_expander_box_get_open (box))
     {
@@ -156,17 +144,13 @@ expander_box_open_notify (MexExpanderBox *box,
       clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
                              "opacity", 56, NULL);
 
+      shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (box),
+                                                             "shadow");
+      clutter_actor_meta_set_enabled (shadow, TRUE);
+
       /* Restore the opened box to full opacity */
       clutter_actor_animate (CLUTTER_ACTOR (box), CLUTTER_EASE_IN_OUT_QUAD, 200,
                              "opacity", 255, NULL);
-
-      shadow = mex_shadow_new (CLUTTER_ACTOR (box));
-      mex_shadow_set_paint_flags (shadow,
-                                  MEX_TEXTURE_FRAME_TOP | MEX_TEXTURE_FRAME_BOTTOM);
-      mex_shadow_set_radius_y (shadow, 25);
-      mex_shadow_set_color (shadow, &shadow_color);
-
-      g_object_set_qdata (G_OBJECT (box), _item_shadow_quark (), shadow);
 
       priv->open_boxes ++;
     }
@@ -186,12 +170,9 @@ expander_box_open_notify (MexExpanderBox *box,
       clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
                              "opacity", 255, NULL);
 
-      shadow = g_object_get_qdata (G_OBJECT (box), _item_shadow_quark ());
-      if (shadow)
-        {
-          g_object_unref (shadow);
-          g_object_set_qdata (G_OBJECT (box), _item_shadow_quark (), NULL);
-        }
+      shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (box),
+                                                             "shadow");
+      clutter_actor_meta_set_enabled (shadow, FALSE);
     }
 }
 
@@ -217,6 +198,19 @@ mex_column_add (ClutterContainer *container,
   /* Expand/collapse any drawer that gets added as appropriate */
   if (MEX_IS_EXPANDER_BOX (actor))
     {
+      MexShadow *shadow;
+      ClutterColor shadow_color = { 0, 0, 0, 128 };
+
+      shadow = mex_shadow_new ();
+      mex_shadow_set_paint_flags (shadow,
+                                  MEX_TEXTURE_FRAME_TOP
+                                  | MEX_TEXTURE_FRAME_BOTTOM);
+      mex_shadow_set_radius_y (shadow, 25);
+      mex_shadow_set_color (shadow, &shadow_color);
+      clutter_actor_add_effect_with_name (CLUTTER_ACTOR (actor), "shadow",
+                                          CLUTTER_EFFECT (shadow));
+      clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (shadow), FALSE);
+
       g_signal_connect (actor, "notify::open",
                         G_CALLBACK (expander_box_open_notify), container);
 

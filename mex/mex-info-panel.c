@@ -246,7 +246,7 @@ mex_info_panel_constructed (GObject *object)
   mx_bin_set_child (MX_BIN (self), root);
 
   if (priv->mode == MEX_INFO_PANEL_MODE_FULL)
-    mex_shadow_new (root);
+    clutter_actor_add_effect (root, CLUTTER_EFFECT (mex_shadow_new ()));
   else
     mx_bin_set_fill (MX_BIN (self), TRUE, TRUE);
 }

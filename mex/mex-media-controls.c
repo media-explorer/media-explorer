@@ -581,47 +581,35 @@ button_release_event_cb (ClutterActor       *actor,
   return TRUE;
 }
 
-static MexShadow*
-tile_shadow_new (ClutterActor *actor)
-{
-  ClutterColor color = { 0, 0, 0, 60 };
-
-  return g_object_new (MEX_TYPE_SHADOW,
-                       "actor", actor,
-                       "radius-x", 15,
-                       "radius-y", 15,
-                       "color", &color,
-                       NULL);
-}
-
 static void
 tile_focus_in_cb (MxBin *actor)
 {
-  MexShadow *shadow;
+  ClutterActorMeta *shadow;
 
-  shadow = g_object_get_qdata (G_OBJECT (actor), mex_tile_shadow_quark ());
+  shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (actor),
+                                                         "shadow");
+  clutter_actor_meta_set_enabled (shadow, TRUE);
 
-  if (shadow)
-    g_object_unref (shadow);
-
-  shadow = tile_shadow_new (CLUTTER_ACTOR (actor));
-
-  g_object_set_qdata (G_OBJECT (actor), mex_tile_shadow_quark (), shadow);
+  shadow =
+    (ClutterActorMeta*) clutter_actor_get_effect (mx_bin_get_child (actor),
+                                                  "shadow");
+  clutter_actor_meta_set_enabled (shadow, FALSE);
 }
 
 static void
 tile_focus_out_cb (MxBin *actor)
 {
-  MexShadow *shadow;
+  ClutterActorMeta *shadow;
 
-  shadow = g_object_get_qdata (G_OBJECT (actor), mex_tile_shadow_quark ());
+  shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (actor),
+                                                         "shadow");
+  clutter_actor_meta_set_enabled (shadow, FALSE);
 
-  if (shadow)
-    g_object_unref (shadow);
+  shadow =
+    (ClutterActorMeta*) clutter_actor_get_effect (mx_bin_get_child (actor),
+                                                  "shadow");
+  clutter_actor_meta_set_enabled (shadow, TRUE);
 
-  shadow = tile_shadow_new (mx_bin_get_child (actor));
-
-  g_object_set_qdata (G_OBJECT (actor), mex_tile_shadow_quark (), shadow);
 }
 
 static void
@@ -631,6 +619,8 @@ tile_created_cb (MexProxy *proxy,
                  gpointer  controls)
 {
   const gchar *mime_type;
+  ClutterEffect *effect;
+  ClutterColor color = { 0, 0, 0, 60 };
 
   /* filter out folders */
   mime_type = mex_content_get_metadata (MEX_CONTENT (content),
@@ -651,6 +641,22 @@ tile_created_cb (MexProxy *proxy,
                     controls);
   g_signal_connect (object, "button-release-event",
                     G_CALLBACK (button_release_event_cb), controls);
+
+  effect = g_object_new (MEX_TYPE_SHADOW,
+                         "radius-x", 15,
+                         "radius-y", 15,
+                         "color", &color,
+                         "enabled", FALSE,
+                         NULL);
+  clutter_actor_add_effect_with_name (CLUTTER_ACTOR (object), "shadow", effect);
+
+  effect = g_object_new (MEX_TYPE_SHADOW,
+                         "radius-x", 15,
+                         "radius-y", 15,
+                         "color", &color,
+                         NULL);
+  clutter_actor_add_effect_with_name (mx_bin_get_child (MX_BIN (object)),
+                                      "shadow", effect);
 
   g_signal_connect (object, "focus-in", G_CALLBACK (tile_focus_in_cb), NULL);
   g_signal_connect (object, "focus-out", G_CALLBACK (tile_focus_out_cb), NULL);
@@ -693,7 +699,7 @@ mex_media_controls_init (MexMediaControls *self)
   /* add shadow to media controls box */
   actor = (ClutterActor *) clutter_script_get_object (script,
                                                       "media-controls-box");
-  mex_shadow_new (actor);
+  clutter_actor_add_effect (actor, CLUTTER_EFFECT (mex_shadow_new ()));
 
 
   /* vertical fade effect */
