@@ -3,6 +3,7 @@ bin_PROGRAMS = mex-webremote
 mex_webremote_SOURCES = \
 		mex-webremote.c \
 		dbus-interface.c dbus-interface.h \
+		tracker-interface.c tracker-interface.h \
 		ssdp.c ssdp.h
 
 mex_webremote_CFLAGS = \

@@ -203,6 +203,8 @@ int main (int argc, char **argv)
 
   webremote.dbus_interface = httpdbus_interface_new ();
 
+  webremote.tracker_interface = tracker_interface_new ();
+
   GOptionEntry entries[] =
     {
         { "bind", 'b', 0, G_OPTION_ARG_STRING, &opt_interface,

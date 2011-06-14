@@ -307,7 +307,7 @@ AC_ARG_ENABLE([webremote],
               [enable_webremote=yes])
 
 AS_IF([test "x$enable_webremote" = "xyes"],
-      [PKG_CHECK_MODULES(WEBREMOTE, [glib-2.0 gio-2.0 libsoup-2.4 gssdp-1.0])],
+      [PKG_CHECK_MODULES(WEBREMOTE, [glib-2.0 json-glib-1.0 gio-2.0 libsoup-2.4 gssdp-1.0 tracker-sparql-0.10])],
       [])
 AM_CONDITIONAL(ENABLE_WEBREMOTE, test "x$enable_webremote" = "xyes")
 # End webremote
