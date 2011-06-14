@@ -31,55 +31,245 @@
 var MEX_KEY_BACK = CLUTTER_KEY_Escape;
 var MEX_KEY_HOME = CLUTTER_KEY_Super_L;
 var MEX_KEY_INFO = CLUTTER_KEY_Menu;
+
+var current;
+
+function media_player_get (thingtoget)
+{
+  var result;
+
+  $.ajax ({
+          url: "/",
+          type: "POST",
+          dataType: "text",
+          timeout: 5000,
+          data: 'mediaplayerget='+thingtoget,
+          success: function (data) {
+            if (thingtoget == "uri") {
+              $("#currentplaying").html (data);
+            }
+          }
+   });
+}
+
+function open_div (div)
+{
+  if (current)
+    {
+      $(current).hide ('slow');
+    }
+
+  if (div == "#mediaplayer")
+    {
+      media_player_get ("uri");
+    }
+
+  $(div).show('slow');
+  current = div;
+}
+
+function media_player_action (action)
+{
+  $.post ("/", { playeraction: action });
+}
+
+function media_player_set_uri (uri)
+{
+  $.post ("/", { setmedia: uri });
+}
+
+
+function clear_search_results ()
+{
+  /* remove any existing results */
+
+  $("#results > button").each (function (i) {
+                               $(this).remove();
+                               });
+  $("#results > br").each (function (i) {
+                           $(this).remove();
+                           });
+
+  $("#clearbutton").attr ("style", "display: none");
+}
+
+
+function add_result_to_page (element)
+{
+  /* create new html element to add to page */
+  $("<button />", {
+    "class": "result",
+    text: element.title,
+    click: function(){
+    media_player_set_uri (element.url);
+  }
+  }).appendTo("#results");
+
+  $("#results").append ("<br />");
+
+  }
+
+
+function run_search ()
+{
+  var searchterm;
+  var results;
+
+  clear_search_results ();
+
+  searchterm = $("#searchwords").val();
+
+
+  $.ajax ({
+          url: "/",
+          type: "POST",
+          dataType: "text",
+          timeout: 5000,
+          data: 'trackersearch='+searchterm,
+          success: function (data)
+          {
+            var results = $.parseJSON (data);
+            $.each (results, function (index, element)
+                    {
+                      add_result_to_page (element);
+                    }
+                    );
+          }
+   });
+
+  /* Add a button to clear the results */
+
+  $("#clearbutton").attr ("style", "display: inline");
+
+}
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=2, maximum-scale=1, user-scalable=no">
 <style type="text/css">
+
+body
+{
+  margin: 0 auto;
+  color: #ffffff;
+  background-color: #000000;
+}
+
+
+button,
 input
 {
-  width: 5em;
-  height: 5em;
   color: #ffffff;
-  background-color: #464541;
+  background: url("/DATADIR/style/panel-header-bg.png");
+  background-repeat: repeat-x;
   border: none;
+  padding: 1.2em;
 }
+
+.remote-button
+{
+  width: 5em;
+}
+
+.result
+{
+  width: 100%;
+  margin: 0 0 0.5em 0;
+}
+
+button:hover,
 input:hover
 {
   color: #000000;
-  background-color: #e1c549;
+  background: url("/DATADIR/style/highlight-bg.png");
+  background-repeat: repeat-x;
 }
-body
+
+#remote,
+#search,
+#mediaplayer
 {
-  background-color: #000000;
+  display: none;
 }
+
+a
+{
+  color: #ffffff;
+}
+
+#mediaplayer > button
+{
+  padding: 0 0 1em 0;
+}
+
+#menu
+{
+  width: 100%;
+  background: url("/DATADIR/style/item-title-bg.png");
+  background-repeat: repeat-x;
+  padding: 1em;
+}
+
 </style>
 </head>
 
 <body>
+<div id="menu">
+<a href="#" OnClick="open_div ('#remote');">5-Way remote</a>
+  <a href="#" OnClick="open_div ('#search');">Search</a>
+  <a href="#" OnClick="open_div ('#mediaplayer');">Media Player</a>
+</div>
+<hr />
+
+<div id="remote">
 <center>
 <form method="POST" action="">
 <table>
 <tr>
 <td></td>
 <!-- uses the names from clutter-keysyms.h -->
-<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Up})" value="Up" /></td>
+<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Up})" value="Up" /></td>
 <td><td>
 </tr>
-<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Left})" value="Left" /></td>
-<td><input name="keyvalue" class="button"type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Return})" value="Enter" /></td>
-<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Right})" value="Right" /></td>
+<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Left})" value="Left" /></td>
+<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Return})" value="Enter" /></td>
+<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Right})" value="Right" /></td>
 <tr>
 <td></td>
-<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Down})" value="Down" /></td>
+<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Down})" value="Down" /></td>
 <td><td>
 </tr>
 </table>
 <br />
-<!-- this is tricky... hmm need to add the defines mex-main.h -->
-<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_INFO})" value="Info" /></td>
-<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_BACK})" value="Back" /></td>
-<td><input name="keyvalue" class="button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_HOME})" value="Home" /></td>
+<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_INFO})" value="Info" /></td>
+<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_BACK})" value="Back" /></td>
+<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_HOME})" value="Home" /></td>
 </center>
 </form>
+</div>
+
+<div id="search">
+<img src="/DATADIR/style/icons/mex/26x26/icon-panelheader-search.png" alt="search icon" />
+<input type="text" name="trackersearch" id="searchwords" style="width: 10em" />
+<button onClick="run_search ();" >Search</button>
+<button id="clearbutton" style="display: none;" onClick="clear_search_results ();">Clear</button>
+<br />
+<br />
+<div id="results">
+</div>
+
+</div>
+
+<div id="mediaplayer">
+
+<p id="currentplaying"></p>
+<input type="button" value="Back" OnClick="media_player_action ('seekbk');" />
+
+<input type="button" value="Play/Pause" OnClick="media_player_action ('playpause');" />
+<input type="button" value="Fwd" OnClick="media_player_action ('seekfwd');" />
+<br />
+<br />
+</div>
+
+
 </body>
 </html>
 
