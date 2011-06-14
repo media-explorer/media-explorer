@@ -542,7 +542,7 @@ g_controller_reference_get_index_uint (GControllerReference *ref,
  *
  * Return value: a string index at the given position
  */
-G_CONST_RETURN gchar *
+const gchar *
 g_controller_reference_get_index_string (GControllerReference *ref,
                                          gint                  pos)
 {

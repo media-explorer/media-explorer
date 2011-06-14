@@ -70,7 +70,7 @@ gint                  g_controller_reference_get_index_int     (GControllerRefer
                                                                 gint                  pos);
 guint                 g_controller_reference_get_index_uint    (GControllerReference *ref,
                                                                 gint                  pos);
-G_CONST_RETURN gchar *g_controller_reference_get_index_string  (GControllerReference *ref,
+const gchar *         g_controller_reference_get_index_string  (GControllerReference *ref,
                                                                 gint                  pos);
 gpointer              g_controller_reference_get_index_pointer (GControllerReference *ref,
                                                                 gint                  pos);
