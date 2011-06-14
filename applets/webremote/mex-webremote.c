@@ -72,11 +72,8 @@ send_response (SoupServer   *server,
       g_utf8_strncpy (token, path, 8);
 
       if (g_strcmp0 (token, "/DATADIR") == 0)
-        {
-          g_debug ("using data dir");
           uri = g_strconcat (mex_get_data_dir(), "/common/",
                              (path + sizeof ("DATADIR/")), NULL);
-        }
       else
         uri = g_strconcat (mex_get_data_dir(), "/webremote/", path, NULL);
 
