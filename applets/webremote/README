@@ -1,0 +1,27 @@
+Media Explorer Web Remote
+------------------------
+
+Prototype of a webremote for media explorer.
+
+Features:
+
+ * Allows you to search your local media and play it.
+ * Navigate media explorer
+ * Control the media player
+
+Usage:
+  mex-webremote [OPTION...] - Media explorer web remote
+
+Help Options:
+  -h, --help       Show help options
+
+Application Options:
+  -b, --bind       Bind to a particular ip address
+  -p, --port       Port to listen to http requests on
+  -d, --debug      Dispay debugging info
+  -a, --auth       username:password
+
+
+Open your browser to http://<hostname or ip address>:port/
+
+All api is subject to change.
