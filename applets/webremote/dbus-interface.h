@@ -22,7 +22,6 @@
 #define __DBUS_INTERFACE_H__
 
 #include <glib.h>
-#include <dbus/dbus-glib.h>
 
 G_BEGIN_DECLS
 
