@@ -1259,6 +1259,23 @@ mex_column_button_release_event (ClutterActor       *actor,
   return returnval;
 }
 
+static gboolean
+mex_column_get_paint_volume (ClutterActor       *self,
+                             ClutterPaintVolume *volume)
+{
+  MexColumnPrivate *priv = MEX_COLUMN (self)->priv;
+  ClutterVertex v;
+
+  if (!clutter_paint_volume_set_from_allocation (volume, self))
+    return FALSE;
+
+  clutter_paint_volume_get_origin (volume, &v);
+  v.y += mx_adjustment_get_value (priv->adjustment),
+  clutter_paint_volume_set_origin (volume, &v);
+
+  return TRUE;
+}
+
 static void
 mex_column_class_init (MexColumnClass *klass)
 {

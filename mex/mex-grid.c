@@ -1338,6 +1338,23 @@ mex_grid_unmap (ClutterActor *actor)
   CLUTTER_ACTOR_CLASS (mex_grid_parent_class)->unmap (actor);
 }
 
+static gboolean
+mex_grid_get_paint_volume (ClutterActor       *actor,
+                           ClutterPaintVolume *volume)
+{
+  MexGridPrivate *priv = MEX_GRID (actor)->priv;
+  ClutterVertex v;
+
+  if (!clutter_paint_volume_set_from_allocation (volume, actor))
+    return FALSE;
+
+  clutter_paint_volume_get_origin (volume, &v);
+  v.y += mx_adjustment_get_value (priv->vadjust),
+  clutter_paint_volume_set_origin (volume, &v);
+
+  return TRUE;
+}
+
 static void
 mex_grid_class_init (MexGridClass *klass)
 {
@@ -1362,6 +1379,7 @@ mex_grid_class_init (MexGridClass *klass)
   actor_class->destroy = mex_grid_destroy;
   actor_class->map = mex_grid_map;
   actor_class->unmap = mex_grid_unmap;
+  actor_class->get_paint_volume = mex_grid_get_paint_volume;
 
   pspec = g_param_spec_int ("stride",
                             "Stride",
