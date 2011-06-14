@@ -201,10 +201,11 @@ add_pictures (MexGrid *grid)
       g_free (file);
       files = g_list_delete_link (files, files);
 
-      shadow = mex_shadow_new (drawer);
+      shadow = mex_shadow_new ();
       mex_shadow_set_radius_y (shadow, 24);
       mex_shadow_set_radius_x (shadow, 0);
       mex_shadow_set_color (shadow, &shadow_color);
+      clutter_actor_add_effect (drawer, CLUTTER_EFFECT (shadow));
     }
 }
 
