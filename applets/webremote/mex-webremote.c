@@ -23,59 +23,95 @@
 #include <string.h>
 #include <libsoup/soup.h>
 #include "dbus-interface.h"
+#include "tracker-interface.h"
 #include <mex/mex.h>
+
+/* TODO #ifdef HAVE_TRACKER etc */
 
 typedef struct
 {
   HTTPDBusInterface *dbus_interface;
+  TrackerInterface *tracker_interface;
   gboolean opt_debug;
   guint userpass;
+  gchar *data;
 } MexWebRemote;
+
+typedef enum
+{
+  NORMAL,
+
+  CUSTOM,
+
+  LAST
+} MexWebRemoteResponseType;
+
 
 /* Send response after having done an HTTP post/get */
 static void
 send_response (SoupServer   *server,
                SoupMessage  *msg,
                const gchar  *path,
-               MexWebRemote *self)
+               MexWebRemote *self,
+               MexWebRemoteResponseType response_type)
 {
-  gchar *file_contents, *uri;
-  gsize file_size;
+  SoupBuffer *buffer;
   GError *error=NULL;
 
-  SoupBuffer *buffer;
+  gchar *processed_data;
+  gsize data_size;
 
-  if (g_strcmp0 (path, "/") == 0)
-    path = "/index.html";
-
-  uri = g_strconcat (mex_get_data_dir(), "/webremote/", path, NULL);
-
-  if (self->opt_debug)
-    g_debug ("Requested: %s", uri);
-
-  g_file_get_contents (uri, &file_contents, &file_size, &error);
-  g_free (uri);
-
-  if (error)
+  if (response_type == NORMAL || !response_type)
     {
+      gchar *uri;
+      char token[sizeof ("/DATADIR")+1];
+
+      if (g_strcmp0 (path, "/") == 0)
+        path = "/index.html";
+
+      g_utf8_strncpy (token, path, 8);
+
+      if (g_strcmp0 (token, "/DATADIR") == 0)
+        {
+          g_debug ("using data dir");
+          uri = g_strconcat (mex_get_data_dir(), "/common/",
+                             (path + sizeof ("DATADIR/")), NULL);
+        }
+      else
+        uri = g_strconcat (mex_get_data_dir(), "/webremote/", path, NULL);
+
       if (self->opt_debug)
-        g_debug ("404: No such file or directory: %s", error->message);
+        g_debug ("Requested: %s", uri);
 
-      g_error_free (error);
+      g_file_get_contents (uri, &processed_data, &data_size, &error);
+      g_free (uri);
 
-      if (file_contents)
-        g_free (file_contents);
+      if (error)
+        {
+          if (self->opt_debug)
+            g_debug ("404: No such file or directory: %s", error->message);
 
-      soup_message_set_status (msg, SOUP_STATUS_NOT_FOUND);
-      return;
+          g_error_free (error);
+
+          if (processed_data)
+            g_free (processed_data);
+
+          soup_message_set_status (msg, SOUP_STATUS_NOT_FOUND);
+          return;
+        }
+    }
+  else if (response_type == CUSTOM)
+    {
+      processed_data = self->data;
+      data_size = strlen (processed_data);
     }
 
   if (error)
     g_error ("ERROR: %s\n", error->message);
 
-  buffer = soup_buffer_new (SOUP_MEMORY_TAKE, file_contents,
-                            strlen (file_contents));
+  buffer = soup_buffer_new (SOUP_MEMORY_TAKE, processed_data, data_size);
 
+  soup_message_body_truncate (msg->response_body);
   soup_message_body_append_buffer (msg->response_body, buffer);
 
   soup_buffer_free (buffer);
@@ -99,6 +135,10 @@ http_post (SoupServer   *server,
 
   post_request = msg->request_body->data;
 
+  /* prefix is "="
+   * so we get send something like cats=cool where the prefix would be cats
+   * Currently we can't handle mutiple values like ?this=that&then=cat
+   */
   if (g_str_has_prefix (post_request, "keyvalue"))
       {
         gint keyvalue;
@@ -107,7 +147,99 @@ http_post (SoupServer   *server,
         httpdbus_send_keyvalue (self->dbus_interface, keyvalue);
       }
 
-  send_response (server, msg, path, self);
+  if (g_str_has_prefix (post_request, "trackersearch"))
+    {
+      gchar *search_term;
+      gchar *sparql_request;
+      gchar *result;
+
+      search_term = g_strdup (post_request + strlen ("trackersearch="));
+
+      if (self->opt_debug)
+        g_debug ("Got Search request: %s", search_term);
+
+      sparql_request =
+        g_strdup_printf ("SELECT ?title ?url {"
+                         "?urn a nfo:Media ."
+                         "?urn tracker:available true ."
+                         "?urn fts:match '*%s*'."
+                         "?urn nie:title ?title ."
+                         "?urn nie:url ?url }",
+                         search_term);
+
+      g_free (search_term);
+
+      result = tracker_interface_query (self->tracker_interface,
+                                        sparql_request);
+
+      /* we shouldn't ever get a null result as we normally return empty json
+       * but for safety here is an empty string that can be freed by soup.
+       */
+      if (!result)
+        result = g_strdup ("{}");
+
+      self->data = result;
+
+      if (self->opt_debug)
+        g_debug ("Search result\n%s", result);
+
+      g_free (sparql_request);
+      send_response (server, msg, path, self, CUSTOM);
+      return;
+    }
+
+  if (g_str_has_prefix (post_request, "setmedia"))
+    {
+      gchar *media_uri;
+
+      media_uri = soup_uri_decode (post_request + strlen ("setmedia="));
+
+      if (self->opt_debug)
+        g_debug ("Resquesting setmedia = %s", media_uri);
+
+
+      httpdbus_media_player_set_uri (self->dbus_interface, media_uri);
+
+      g_free (media_uri);
+    }
+
+  if (g_str_has_prefix (post_request, "mediaplayerget"))
+    {
+      gchar *get;
+
+      get = g_strdup (post_request + strlen ("mediaplayerget="));
+
+      if (self->opt_debug)
+        g_debug ("mediaplayerget = %s", get);
+
+      self->data = httpdbus_media_player_get (self->dbus_interface, get);
+      g_free (get);
+
+      if (self->opt_debug)
+        g_debug ("result %s", self->data);
+
+      if (!self->data)
+        self->data = g_strdup ("");
+
+      send_response (server, msg, path, self, CUSTOM);
+      return;
+    }
+
+  if (g_str_has_prefix (post_request, "playeraction"))
+    {
+      gchar *action;
+
+      action = g_strdup (post_request + strlen ("playeraction="));
+
+      if (self->opt_debug)
+        g_debug ("playeraction = %s", action);
+
+      httpdbus_media_player_action (self->dbus_interface, action);
+
+      g_free (action);
+    }
+
+  send_response (server, msg, path, self, NORMAL);
   return;
 }
 
@@ -129,7 +261,7 @@ server_cb (SoupServer        *server,
   if (msg->method == SOUP_METHOD_POST)
     http_post (server, msg, path, self);
   else if (msg->method == SOUP_METHOD_GET || msg->method == SOUP_METHOD_HEAD)
-    send_response (server, msg, path, self);
+    send_response (server, msg, path, self, NORMAL);
   else
     soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
 }
