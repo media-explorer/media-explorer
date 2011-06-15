@@ -95,6 +95,7 @@ MxEntry
 /* Further MexMenu styling later */
 
 MexActionList MxButton,
+MexActionList MexQueueButton:checked,
 MxBoxLayout.Menu > MxButton,
 MexContentButton
 {
@@ -505,7 +506,7 @@ MexQueueButton:checked MxIcon
   -mx-icon-name: "media-removefromqueue-mex";
 }
 
-MexQueueButton MxSpinner,
+MexQueueButton MxSpinner
 {
   -mx-spinner-image: url('queue-spinner.png');
   -mx-spinner-frames: 16;
@@ -513,7 +514,7 @@ MexQueueButton MxSpinner,
 }
 
 
-MexQueueButton:focus MxSpinner,
+MexQueueButton:focus MxSpinner
 {
   -mx-spinner-image: url('queue-spinner-highlight.png');
   -mx-spinner-frames: 16;
