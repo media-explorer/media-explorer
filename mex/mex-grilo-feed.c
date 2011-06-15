@@ -35,7 +35,7 @@ struct _MexGriloFeedPrivate {
   GrlMediaSource *source;
   GrlMedia *root;
 
-  MexGriloOperation *op;
+  MexGriloFeedOperation *op;
   GList *query_keys;
   GList *metadata_keys;
 
@@ -91,7 +91,7 @@ mex_grilo_feed_finalize (GObject *object)
   MexGriloFeedPrivate *priv = self->priv;
 
   if (priv->op) {
-    g_slice_free (MexGriloOperation, priv->op);
+    g_slice_free (MexGriloFeedOperation, priv->op);
     priv->op = NULL;
   }
 
@@ -474,7 +474,7 @@ mex_grilo_feed_free_op (MexGriloFeed *feed)
     g_free (priv->op->text);
   }
 
-  priv->op = g_slice_new0 (MexGriloOperation);
+  priv->op = g_slice_new0 (MexGriloFeedOperation);
 }
 
 static void
@@ -484,7 +484,7 @@ mex_grilo_feed_init_op (MexGriloFeed *feed)
 
   /* Cancel any previous operation */
   if (!priv->op) {
-    priv->op = g_slice_new0 (MexGriloOperation);
+    priv->op = g_slice_new0 (MexGriloFeedOperation);
   } else if (priv->op->op_id) {
     mex_grilo_feed_stop_op (feed);
   }
@@ -619,7 +619,7 @@ mex_grilo_feed_query (MexGriloFeed *feed,
   mex_grilo_feed_start_op (feed);
 }
 
-const MexGriloOperation *
+const MexGriloFeedOperation *
 mex_grilo_feed_get_operation (MexGriloFeed *feed)
 {
   MexGriloFeedPrivate *priv;

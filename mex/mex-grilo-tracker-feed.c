@@ -237,7 +237,7 @@ item_cb (GrlMediaSource *source,
 static gchar *
 get_filter_from_operation (MexGriloTrackerFeed *feed,
                            const gchar *input_text,
-                           MexGriloOperationType operation)
+                           MexGriloFeedOperationType operation)
 {
   MexGriloTrackerFeedPrivate *priv = feed->priv;
   gchar *text = NULL;
@@ -305,7 +305,7 @@ static void
 filter_media (MexGriloTrackerFeed *feed, GrlMedia *media)
 {
   MexGriloTrackerFeedPrivate *priv = feed->priv;
-  const MexGriloOperation *op;
+  const MexGriloFeedOperation *op;
   gchar *query_text = NULL, *query_final = NULL;
   const gchar *str_id = grl_media_get_id (media);
 

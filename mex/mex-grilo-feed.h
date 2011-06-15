@@ -60,10 +60,10 @@ typedef enum {
   MEX_GRILO_FEED_OPERATION_BROWSE,
   MEX_GRILO_FEED_OPERATION_QUERY,
   MEX_GRILO_FEED_OPERATION_SEARCH
-} MexGriloOperationType;
+} MexGriloFeedOperationType;
 
 typedef struct {
-  MexGriloOperationType type;
+  MexGriloFeedOperationType type;
 
   char    *text;
   guint32  limit;
@@ -71,7 +71,7 @@ typedef struct {
   guint32  offset;
 
   guint32 op_id;
-} MexGriloOperation;
+} MexGriloFeedOperation;
 
 struct _MexGriloFeed
 {
@@ -127,7 +127,7 @@ void mex_grilo_feed_query (MexGriloFeed   *feed,
                            int             offset,
                            int             limit);
 
-const MexGriloOperation *mex_grilo_feed_get_operation (MexGriloFeed *feed);
+const MexGriloFeedOperation *mex_grilo_feed_get_operation (MexGriloFeed *feed);
 
 gboolean mex_grilo_feed_get_completed (MexGriloFeed *feed);
 
