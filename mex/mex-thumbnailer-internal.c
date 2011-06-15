@@ -48,6 +48,8 @@ main (int argc, char **argv)
     }
   else
     return 1;
+
+  return 0;
 }
 
 /* image thumbnailer */
@@ -131,7 +133,6 @@ convert_buffer_to_pixbuf (GstBuffer    *buffer)
   GstElement *src, *sink, *colorspace, *scale, *filter;
   GstBus *bus;
   GstMessage *msg;
-  GstStateChangeReturn state;
   gboolean ret;
   int width, height, dw, dh, i;
   GstStructure *s;
@@ -224,7 +225,7 @@ convert_buffer_to_pixbuf (GstBuffer    *buffer)
     }
 
   bus = gst_element_get_bus (GST_ELEMENT (pipeline));
-  state = gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
+  gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PLAYING);
 
   i = 0;
   msg = NULL;
@@ -446,16 +447,11 @@ mex_internal_thumbnail_video (const gchar *uri,
 
   if (shot)
     {
-      char *fullname;
-      guint w, h;
       GError *error = NULL;
-
-      w = gdk_pixbuf_get_width (shot);
-      h = gdk_pixbuf_get_height (shot);
 
       if (gdk_pixbuf_save (shot, thumbnail_path, "jpeg", &error, NULL) == FALSE)
         {
-          g_warning ("Error writing file %s for %s: %s", fullname, uri,
+          g_warning ("Error writing file %s for %s: %s", thumbnail_path, uri,
                      error->message);
           g_error_free (error);
         }
