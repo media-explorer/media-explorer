@@ -1298,6 +1298,7 @@ mex_column_class_init (MexColumnClass *klass)
   a_class->map = mex_column_map;
   a_class->unmap = mex_column_unmap;
   a_class->button_release_event = mex_column_button_release_event;
+  a_class->get_paint_volume = mex_column_get_paint_volume;
 
   g_type_class_add_private (klass, sizeof (MexColumnPrivate));
 
