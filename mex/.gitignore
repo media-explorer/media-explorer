@@ -3,3 +3,4 @@ mex-enum-types.h
 mex-marshal.c
 mex-marshal.h
 test-libmex-internal
+mex-thumbnailer
