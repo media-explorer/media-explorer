@@ -59,14 +59,6 @@ httpdbus_media_player_set_uri (HTTPDBusInterface *dbus_interface,
                           -1,
                           NULL,
                           &error);
-
-  g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
-                          "SetPlaying",
-                          g_variant_new ("(b)", 1),
-                          0,
-                          -1,
-                          NULL,
-                          &error);
   if (error)
     {
       g_warning ("Problem calling SetUri: %s", error->message);
