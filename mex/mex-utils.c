@@ -27,6 +27,7 @@
 #include <dbus/dbus-glib.h>
 
 #include <mex/mex-content-view.h>
+#include <mex/mex-program.h>
 
 #ifdef HAVE_COGL_GLES2
 
@@ -666,3 +667,50 @@ mex_actor_has_focus (MxFocusManager *manager,
   return FALSE;
 }
 
+MexContent *
+mex_content_from_uri (const gchar *uri)
+{
+  MexProgram *program;
+  gchar *mime_guess;
+  gchar *filename;
+  gchar *basename;
+
+  mime_guess = g_content_type_guess (uri, NULL, 0, NULL);
+
+  if (mime_guess)
+    {
+      if (!g_str_has_prefix (mime_guess, "video/") &&
+          !g_str_has_prefix (mime_guess, "audio") &&
+          !g_str_has_prefix (mime_guess, "image/"))
+        return NULL;
+    }
+
+  program = mex_program_new (NULL);
+
+  mex_content_set_metadata (MEX_CONTENT (program),
+                            MEX_CONTENT_METADATA_MIMETYPE, mime_guess);
+
+  mex_content_set_metadata (MEX_CONTENT (program),
+                            MEX_CONTENT_METADATA_STREAM, uri);
+
+  mex_content_set_metadata (MEX_CONTENT (program),
+                            MEX_CONTENT_METADATA_URL, uri);
+
+  g_free (mime_guess);
+
+  filename = g_filename_from_uri (uri, NULL, NULL);
+  basename = g_filename_display_basename (filename);
+
+  g_free (filename);
+
+  mex_content_set_metadata (MEX_CONTENT (program),
+                            MEX_CONTENT_METADATA_TITLE, basename);
+
+  g_free (basename);
+
+  mex_content_set_metadata (MEX_CONTENT (program),
+                            MEX_CONTENT_METADATA_SYNOPSIS,
+                            uri);
+
+  return MEX_CONTENT (program);
+}

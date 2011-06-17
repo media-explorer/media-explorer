@@ -114,4 +114,6 @@ const char* mex_get_data_dir ();
 gboolean mex_actor_has_focus (MxFocusManager *manager,
                               ClutterActor   *actor);
 
+MexContent *mex_content_from_uri (const gchar *uri);
+
 #endif /* _MEX_UTILS_H */
