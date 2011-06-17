@@ -341,6 +341,17 @@ mex_play_from_begin_cb (MxAction *action, MexData *data)
 }
 
 static void
+mex_player_content_set_externally_cb (MexData *data)
+{
+  /* hide other actors */
+  mex_hide_actor (data, data->explorer);
+  mex_hide_actor (data, data->slide_show);
+
+  /* show the video player */
+  mex_show_actor (data, data->player);
+}
+
+static void
 mex_show_cb (MxAction *action, MexData *data)
 {
   MexContent *content = mex_action_get_content (action);
@@ -2474,6 +2485,10 @@ main (int argc, char **argv)
   data.player = (ClutterActor *) mex_player_get_default ();
   g_signal_connect_swapped (data.player, "close-request",
                             G_CALLBACK (mex_go_back), &data);
+  g_signal_connect_swapped (data.player, "open-request",
+                            G_CALLBACK (mex_player_content_set_externally_cb),
+                            &data);
+
   clutter_container_add_actor (CLUTTER_CONTAINER (data.stack),
                                data.player);
 
