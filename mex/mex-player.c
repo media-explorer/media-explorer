@@ -806,6 +806,10 @@ mex_player_init (MexPlayer *self)
         g_warning (G_STRLOC ": Error registering player on D-BUS");
         g_clear_error (&error);
       }
+    else
+      {
+        g_object_set (priv->bridge, "player", self, NULL);
+      }
   }
 #endif
 
