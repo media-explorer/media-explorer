@@ -940,11 +940,15 @@ mex_media_controls_set_content (MexMediaControls *self,
 
   mex_media_controls_update_header (self);
 
-  /* update the related strip */
-  mex_proxy_stop (priv->proxy);
-  g_object_set (G_OBJECT (priv->proxy), "model", context, NULL);
+  /* We may not have a context if we're launched by something like SetUri*/
+  if (context)
+    {
+      /* update the related strip */
+      mex_proxy_stop (priv->proxy);
+      g_object_set (G_OBJECT (priv->proxy), "model", context, NULL);
 
-  mex_proxy_start_at (priv->proxy, priv->content, TRUE);
+      mex_proxy_start_at (priv->proxy, priv->content, TRUE);
+    }
 
   /* Work out if the context was a queue */
  if (MEX_IS_PROXY_MODEL (context))
