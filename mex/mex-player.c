@@ -95,6 +95,7 @@ struct _MexPlayerPrivate
 enum
 {
   CLOSE_REQUEST,
+  OPEN_REQUEST,
 
   LAST_SIGNAL
 };
@@ -549,6 +550,13 @@ mex_player_class_init (MexPlayerClass *klass)
                                          0, NULL, NULL,
                                          g_cclosure_marshal_VOID__VOID,
                                          G_TYPE_NONE, 0);
+
+  signals[OPEN_REQUEST] = g_signal_new ("open-request",
+                                        G_TYPE_FROM_CLASS (klass),
+                                        G_SIGNAL_RUN_LAST,
+                                        0, NULL, NULL,
+                                        g_cclosure_marshal_VOID__VOID,
+                                        G_TYPE_NONE, 0);
 
   pspec = g_param_spec_boolean ("idle-mode",
                                 "Idle Mode",
