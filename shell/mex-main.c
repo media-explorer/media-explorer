@@ -103,6 +103,7 @@ static gboolean opt_fullscreen = FALSE;
 static gboolean opt_version    = FALSE;
 static gboolean opt_ignore_res = FALSE;
 static gboolean opt_touch      = FALSE;
+static gchar **opt_file = NULL;
 
 static void
 mex_header_activated_cb (MexExplorer *explorer,
@@ -2232,6 +2233,8 @@ static GOptionEntry entries[] =
     "Don't warn if the screen size isn't sufficient", NULL },
   { "touch-mode", 't', 0, G_OPTION_ARG_NONE, &opt_touch,
     "Enable touch-screen mode", NULL },
+  { G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_file,
+    "File to play", NULL },
   { NULL }
 };
 
@@ -2704,6 +2707,44 @@ main (int argc, char **argv)
     check_resolution (&data);
   if (opt_touch)
     mex_enable_touch_events (&data, TRUE);
+
+  if (opt_file)
+    {
+      MexContent *first_content = NULL;
+      MexModel *queue_model;
+      GList *queue_models = NULL;
+      gboolean first_done = FALSE;
+      gint i;
+
+      queue_models = mex_model_manager_get_models_for_category (mmanager,
+                                                               "queue");
+
+      queue_model = MEX_MODEL (queue_models->data);
+
+      for (i=0; opt_file[i]; i++)
+        {
+          gchar *uri;
+          MexContent *content;
+
+          uri = g_filename_to_uri (opt_file[i], NULL, NULL);
+          content = mex_content_from_uri (uri);
+          g_free (uri);
+
+          if (content)
+            {
+              if (!first_done)
+                first_content = content;
+              mex_model_add_content (queue_model, content);
+            }
+        }
+
+      mex_content_view_set_context (MEX_CONTENT_VIEW (data.player),
+                                    queue_model);
+      mex_content_view_set_content (MEX_CONTENT_VIEW (data.player),
+                                    first_content);
+
+      mex_player_content_set_externally_cb (&data);
+    }
 
   mx_application_run (app);
 
