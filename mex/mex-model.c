@@ -62,6 +62,10 @@ mex_model_base_init (gpointer g_iface)
                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
       g_object_interface_install_property (g_iface, pspec);
 
+      pspec = g_param_spec_string ("title", "Title", "The title of the feed", "",
+                                   G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+      g_object_interface_install_property (g_iface, pspec);
+
       initialised = TRUE;
     }
 }

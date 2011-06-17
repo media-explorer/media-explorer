@@ -448,10 +448,6 @@ mex_generic_model_class_init (MexGenericModelClass *klass)
   o_class->set_property = mex_generic_model_set_property;
   o_class->get_property = mex_generic_model_get_property;
 
-  pspec = g_param_spec_string ("title", "Title", "The title of the feed", "",
-                               G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
-  g_object_class_install_property (o_class, PROP_TITLE, pspec);
-
   pspec = g_param_spec_string ("placeholder-text", "placeholder-text",
                                "Text to use when the model is empty", "",
                                G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
@@ -479,6 +475,7 @@ mex_generic_model_class_init (MexGenericModelClass *klass)
   g_object_class_install_property (o_class, PROP_DISPLAY_ITEM_COUNT, pspec);
 
   /* MexModel properties */
+  g_object_class_override_property (o_class, PROP_TITLE, "title");
   g_object_class_override_property (o_class, PROP_SORT_FUNC, "sort-function");
   g_object_class_override_property (o_class, PROP_SORT_DATA, "sort-data");
 
