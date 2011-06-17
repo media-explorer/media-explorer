@@ -1096,3 +1096,32 @@ mex_player_previous (MexPlayer *player)
 
   clutter_media_set_progress (priv->media, 0.0);
 }
+
+void
+mex_player_set_uri (MexPlayer *player, const gchar *uri)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  MexContent *content;
+
+  content = mex_content_from_uri (uri);
+
+  if (content)
+    {
+      mex_content_view_set_content (MEX_CONTENT_VIEW (player),
+                                    content);
+
+      mex_media_controls_set_content (MEX_MEDIA_CONTROLS (priv->controls),
+                                      content,
+                                      NULL);
+    }
+  else
+    {
+      /* Try reallly really hard to play it, if it fails we at least will get
+       * gstreamer's error dialog.
+       */
+      clutter_media_set_uri (priv->media, uri);
+    }
+
+  g_signal_emit (player, signals[OPEN_REQUEST], 0);
+}
