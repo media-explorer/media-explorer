@@ -101,6 +101,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-media-dbus-bridge.h		\
 	$(top_srcdir)/mex/mex-menu.h				\
 	$(top_srcdir)/mex/mex-metadata-utils.h			\
+	$(top_srcdir)/mex/mex-metadatas.h			\
 	$(top_srcdir)/mex/mex-mmkeys.h				\
 	$(top_srcdir)/mex/mex-model.h				\
 	$(top_srcdir)/mex/mex-model-manager.h			\
@@ -199,6 +200,7 @@ mex_sources =					\
 	mex-media-dbus-bridge.c			\
 	mex-menu.c				\
 	mex-metadata-utils.c			\
+	mex-metadatas.c				\
 	mex-mmkeys.c				\
 	mex-model.c				\
 	mex-model-manager.c			\
