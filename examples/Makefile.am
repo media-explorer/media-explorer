@@ -3,6 +3,7 @@ noinst_PROGRAMS = 			\
 	mex-expander-box-test		\
 	mex-grid-test			\
 	mex-grilo-model-test		\
+	mex-grilo-operation-test	\
 	mex-info-panel-test		\
 	mex-info-bar-test		\
 	mex-media-controls-test		\
@@ -32,6 +33,7 @@ mex_epg_test_SOURCES = mex-epg-test.c
 mex_expander_box_test_SOURCES = mex-expander-box-test.c
 mex_grid_test_SOURCES = mex-grid-test.c
 mex_grilo_model_test_SOURCES = mex-grilo-model-test.c
+mex_grilo_operation_test_SOURCES = mex-grilo-operation-test.c
 mex_info_panel_test_SOURCES = mex-info-panel-test.c
 mex_info_bar_test_SOURCES = mex-info-bar-test.c
 mex_media_controls_test_SOURCES = mex-media-controls-test.c
