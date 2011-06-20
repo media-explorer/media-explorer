@@ -616,7 +616,14 @@ mex_replace_border_image (CoglHandle     *texture_p,
     }
 }
 
-
+/**
+ * mex_get_data_dir:
+ *
+ * Gets the data directory for media explorer.
+ * Use this rather than anything else as this ensures greater compatibility.
+ *
+ * Return value: Path to mex data directory
+ */
 const char*
 mex_get_data_dir ()
 {
@@ -649,6 +656,15 @@ mex_get_data_dir ()
   return datadir;
 }
 
+/**
+* mex_actor_has_focus:
+* @manager: The current MxFocusManager
+* @actor: The actor that you wish query if it is focused
+*
+* Evaluates whether the actor has focus or not.
+*
+* Return value: True if the @actor is focused
+*/
 gboolean
 mex_actor_has_focus (MxFocusManager *manager,
                      ClutterActor   *actor)
@@ -667,6 +683,15 @@ mex_actor_has_focus (MxFocusManager *manager,
   return FALSE;
 }
 
+/**
+ * mex_content_from_uri:
+ * @uri: A valid uri for some media
+ *
+ * Creates a new MexContent from any given uri and tries to guess
+ * at some metadata.
+ *
+ * Return value: A new MexContent
+ */
 MexContent *
 mex_content_from_uri (const gchar *uri)
 {
