@@ -73,7 +73,6 @@ modules="glib-2.0 >= 2.26           \
          gdk-pixbuf-2.0             \
          libsoup-2.4                \
          mx-1.0 >= 1.2.0            \
-         clutter-gst-1.0 >= 1.3.12  \
          rest-0.7                   \
          dbus-glib-1                \
          grilo-0.1 >= 0.1.14"
@@ -83,7 +82,38 @@ PKG_CHECK_EXISTS(libsoup-gnome-2.4,
                  AC_DEFINE([HAVE_LIBSOUP_GNOME], [1], ["Defined if libsoup-gnome is available"])],
                  modules="$modules libsoup-2.4")
 
-PKG_CHECK_MODULES(MEX, $modules)
+AC_ARG_WITH([player],
+              [AC_HELP_STRING([--with-player=@<:@d-bus/clutter-gst/surface@:>@].
+                              [Set mode for media playback @<:@default=clutter-gst@:>@])],
+              [],
+              [with_player=clutter-gst])
+
+player_deps=""
+
+AS_CASE([$with_player],
+        [clutter-gst],
+        [
+          AC_DEFINE([USE_PLAYER_CLUTTER_GST], 1, [Use "clutter-gst" for
+                     playback])
+          player_deps="clutter-gst-1.0 >= 1.3.12"
+        ],
+
+        [d-bus],
+        [
+          AC_DEFINE([USE_PLAYER_DBUS], 1, [Use "d-bus" for playback])
+          player_deps="gstreamer-0.10"
+        ],
+
+        [surface],
+        [
+          AC_DEFINE([USE_PLAYER_SURFACE], 1, [Use "surface" for playback])
+          player_deps="clutter-gst-1.0 >= 1.3.12"
+        ],
+
+        [AC_MSG_ERROR([Invalid value for --with-player])]
+)
+
+PKG_CHECK_MODULES(MEX, "$modules $player_deps")
 
 PKG_CHECK_MODULES(GCONTROLLER, [gobject-2.0 >= 2.20])
 
@@ -151,32 +181,6 @@ AS_CASE([$enable_debug],
 )
 
 AC_SUBST(MEX_DEBUG_CFLAGS)
-
-AC_ARG_WITH([player],
-              [AC_HELP_STRING([--with-player=@<:@d-bus/clutter-gst/surface@:>@].
-                              [Set mode for media playback @<:@default=clutter-gst@:>@])],
-              [],
-              [with_player=clutter-gst])
-
-AS_CASE([$with_player],
-        [clutter-gst],
-        [
-          AC_DEFINE([USE_PLAYER_CLUTTER_GST], 1, [Use "clutter-gst" for
-                     playback])
-        ],
-
-        [d-bus],
-        [
-          AC_DEFINE([USE_PLAYER_DBUS], 1, [Use "d-bus" for playback])
-        ],
-
-        [surface],
-        [
-          AC_DEFINE([USE_PLAYER_SURFACE], 1, [Use "surface" for playback])
-        ],
-
-        [AC_MSG_ERROR([Invalid value for --with-player])]
-)
 
 AC_MSG_CHECKING([how to detect we are online])
 AC_ARG_WITH([online],

@@ -28,7 +28,9 @@
 #include <mex/mex-grilo-feed.h>
 #include <mex/mex-grilo-tracker-feed.h>
 #include <mex/mex-plugin-manager.h>
+#ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
+#endif
 #include <gio/gdesktopappinfo.h>
 #include <string.h>
 #include <stdlib.h>
@@ -37,9 +39,11 @@
 #include <glib/gi18n.h>
 
 #include "mex-version.h"
+#if HAVE_CLUTTER_X11
+#include <clutter/x11/clutter-x11.h>
+#endif
 #if HAVE_REBINDER
 #include "rebinder.h"
-#include <clutter/x11/clutter-x11.h>
 #endif
 
 #include "mex-debug.h"
@@ -2307,7 +2311,9 @@ main (int argc, char **argv)
   /* Initialisation */
   mex_init (&argc, &argv);
 
+#ifdef USE_PLAYER_CLUTTER_GST
   clutter_gst_init (&argc, &argv);
+#endif
   grl_init (&argc, &argv);
 
   clutter_set_font_flags (clutter_get_font_flags () & ~CLUTTER_FONT_MIPMAPPING);
