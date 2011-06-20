@@ -18,6 +18,8 @@
 
 #include <config.h>
 
+#include <stdlib.h>
+
 #ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
 #include <mex/mex-media-dbus-bridge.h>

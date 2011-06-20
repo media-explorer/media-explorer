@@ -20,6 +20,7 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <gst/gst.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define THUMBNAIL_SIZE 512
 
@@ -124,7 +125,7 @@ pull_buffer (GstElement *element,
   *out_buffer = gst_buffer_ref (in_buffer);
 }
 
-GdkPixbuf *
+static GdkPixbuf *
 convert_buffer_to_pixbuf (GstBuffer    *buffer)
 {
   GstCaps *pb_caps;
