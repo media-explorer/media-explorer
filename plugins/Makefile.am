@@ -308,3 +308,21 @@ mex_bg_backdrop_la_CFLAGS = 				\
 	-DMEX_DATA_PLUGIN_DIR=\"$(mex_bg_backdropdir)\"
 mex_bg_backdrop_la_LIBADD = $(_libadd)
 endif
+
+if USE_PLUGIN_TRANSMISSION
+plugins_LTLIBRARIES += mex-transmission.la
+
+mex_transmissiondir = $(plugin_datadir)/transmission
+dist_mex_transmission_DATA =
+
+mex_transmission_la_SOURCES =			\
+	transmission/mex-transmission-plugin.c	\
+	transmission/mex-transmission-plugin.h	\
+	transmission/mex-torrent.c		\
+	transmission/mex-torrent.h		\
+	$(NULL)
+mex_transmission_la_CFLAGS  = 			\
+	-DG_LOG_DOMAIN=\"Mex-Transmission\"	\
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_transmissiondir)\"
+mex_transmission_la_LIBADD = $(_libadd)
+endif

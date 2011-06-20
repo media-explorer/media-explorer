@@ -525,6 +525,7 @@ AS_MEX_PLUGIN(telepathy,
 AS_MEX_PLUGIN(debug-buddy)
 AS_MEX_PLUGIN(gnome-dvb)
 AS_MEX_PLUGIN(opticaldisc)
+AS_MEX_PLUGIN(transmission)
 
 # The debug plugin needs libunwind that does not provide a pkg-config file
 AS_IF([test "x$mex_use_debug_buddy_plugin" = "xyes"],
