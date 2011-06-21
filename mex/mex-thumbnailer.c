@@ -144,7 +144,7 @@ mex_internal_thumbnail_start (ThumbnailData *data,
   clutter_threads_add_timeout (0, mex_internal_thumbnail_finished, data);
 }
 
-void
+static void
 mex_internal_thumbnail (const gchar          *uri,
                         MexThumbnailCallback  finished,
                         gpointer              data)

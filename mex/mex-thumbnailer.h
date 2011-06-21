@@ -22,10 +22,6 @@
 
 typedef void (*MexThumbnailCallback) (const char *uri, gpointer user_data);
 
-void mex_internal_thumbnail (const gchar          *uri,
-                             MexThumbnailCallback  finished,
-                             gpointer              data);
-
 void mex_thumbnailer_generate (const char *uri,
                                const char *mime_type,
                                MexThumbnailCallback callback,
