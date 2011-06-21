@@ -623,6 +623,15 @@ _mex_grilo_program_save_metadata (MexContent *content)
 }
 
 static void
+_mex_grilo_program_open (MexContent *content, MexModel *context)
+{
+  MexGriloFeed *feed =
+    (MexGriloFeed *) mex_program_get_feed ((MexProgram *) content);
+
+  mex_grilo_feed_open (feed, (MexGriloProgram *) content);
+}
+
+static void
 mex_grilo_program_class_init (MexGriloProgramClass *klass)
 {
   GParamSpec *pspec;
@@ -661,6 +670,8 @@ mex_content_iface_init (MexContentIface *iface)
 {
   iface->set_metadata = _mex_grilo_program_set_metadata;
   iface->save_metadata = _mex_grilo_program_save_metadata;
+
+  iface->open = _mex_grilo_program_open;
 }
 
 MexProgram *

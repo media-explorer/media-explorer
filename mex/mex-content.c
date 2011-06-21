@@ -284,6 +284,32 @@ mex_content_foreach_metadata (MexContent           *content,
              g_type_name (G_OBJECT_TYPE (content)));
 }
 
+/**
+ * mex_content_open:
+ * @content: a #MexContent
+ *
+ * Open a content.
+ *
+ * Since: 0.2
+ */
+void
+mex_content_open (MexContent *content, MexModel *context)
+{
+  MexContentIface *iface;
+
+  g_return_if_fail (MEX_IS_CONTENT (content));
+
+  iface = MEX_CONTENT_GET_IFACE (content);
+
+  if (iface->open) {
+    iface->open (content, context);
+    return;
+  }
+
+  g_warning ("MexContent of type '%s' does not implement open()",
+             g_type_name (G_OBJECT_TYPE (content)));
+}
+
 void
 mex_content_set_last_used_metadatas (MexContent *content)
 {

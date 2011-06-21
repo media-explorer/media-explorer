@@ -35,6 +35,8 @@ typedef struct _MexContent         MexContent;
 typedef struct _MexContentIface    MexContentIface;
 typedef struct _MexContentProperty MexContentProperty;
 
+#include <mex/mex-model.h>
+
 typedef enum {
     MEX_CONTENT_METADATA_NONE,
     MEX_CONTENT_METADATA_SERIES_NAME,
@@ -113,6 +115,9 @@ struct _MexContentIface
   void          (*foreach_metadata)       (MexContent           *content,
                                            MexContentMetadataCb  callback,
                                            gpointer              data);
+
+  void          (*open)                   (MexContent *content,
+                                           MexModel   *context);
 };
 
 GType         mex_content_get_type                (void) G_GNUC_CONST;
@@ -131,6 +136,9 @@ void          mex_content_save_metadata           (MexContent         *list);
 void          mex_content_foreach_metadata        (MexContent           *content,
                                                    MexContentMetadataCb  callback,
                                                    gpointer              data);
+
+void          mex_content_open                    (MexContent         *content,
+                                                   MexModel           *context);
 
 const char *  mex_content_get_property_name       (MexContent         *content,
                                                    MexContentMetadata  key);

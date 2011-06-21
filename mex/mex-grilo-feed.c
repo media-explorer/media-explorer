@@ -20,7 +20,9 @@
 
 #include <string.h>
 
+#include "mex-content-view.h"
 #include "mex-grilo-feed.h"
+#include "mex-player.h"
 
 enum {
   PROP_0,
@@ -42,6 +44,8 @@ struct _MexGriloFeedPrivate {
   guint        completed : 1;
 
   GHashTable *programs;
+
+  MexGriloFeedOpenCb open_callback;
 };
 
 #define BROWSE_LIMIT 100
@@ -83,6 +87,8 @@ static void _mex_grilo_feed_content_updated (GrlMediaSource           *source,
                                              gboolean                  known_location,
                                              MexGriloFeed             *feed);
 
+static void mex_grilo_feed_open_default (MexGriloProgram *program,
+                                         MexGriloFeed    *feed);
 
 static void
 mex_grilo_feed_finalize (GObject *object)
@@ -306,6 +312,8 @@ mex_grilo_feed_init (MexGriloFeed *self)
 
   priv->programs = g_hash_table_new_full (g_str_hash, g_str_equal,
                                           NULL, g_object_unref);
+
+  priv->open_callback = mex_grilo_feed_open_default;
 }
 
 MexFeed *
@@ -780,4 +788,44 @@ mex_aggregate_model_get_grilo_feed (MexAggregateModel *model)
   g_return_val_if_fail (MEX_IS_AGGREGATE_MODEL (model), NULL);
   return g_object_get_qdata (G_OBJECT (model),
                              mex_grilo_feed_aggregate_model_quark);
+}
+
+void
+mex_grilo_feed_set_open_callback (MexGriloFeed       *feed,
+                                  MexGriloFeedOpenCb  callback)
+{
+  MexGriloFeedPrivate *priv;
+
+  g_return_if_fail (MEX_IS_GRILO_FEED (feed));
+
+  priv = feed->priv;
+
+  priv->open_callback = callback;
+}
+
+static void
+mex_grilo_feed_open_default (MexGriloProgram *program, MexGriloFeed *feed)
+{
+  MexPlayer *player = mex_player_get_default ();
+
+  mex_content_view_set_context (MEX_CONTENT_VIEW (player),
+                                MEX_MODEL (feed));
+  mex_content_view_set_content (MEX_CONTENT_VIEW (player),
+                                MEX_CONTENT (program));
+}
+
+
+void
+mex_grilo_feed_open (MexGriloFeed    *feed,
+                     MexGriloProgram *program)
+{
+  MexGriloFeedPrivate *priv;
+
+  g_return_if_fail (MEX_IS_GRILO_FEED (feed));
+  g_return_if_fail (MEX_IS_GRILO_PROGRAM (program));
+
+  priv = feed->priv;
+
+  if (priv->open_callback)
+    priv->open_callback (program, feed);
 }

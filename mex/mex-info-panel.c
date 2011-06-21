@@ -52,6 +52,7 @@ struct _MexInfoPanelPrivate
   MxLabel *metadata_row1;
 
   MexContent *content;
+  MexModel   *model;
 
   MexInfoPanelMode mode;
 
@@ -67,6 +68,28 @@ mex_info_panel_get_content (MexContentView *view)
     MexInfoPanelPrivate *priv = self->priv;
 
     return priv->content;
+}
+
+static MexModel *
+mex_info_panel_get_context (MexContentView *view)
+{
+  MexInfoPanelPrivate *priv = INFO_PANEL_PRIVATE (view);
+
+  return priv->model;
+}
+
+static void
+mex_info_panel_set_context (MexContentView *view, MexModel *context)
+{
+  MexInfoPanelPrivate *priv = INFO_PANEL_PRIVATE (view);
+
+  if (priv->model)
+    {
+      g_object_unref (priv->model);
+      priv->model = NULL;
+    }
+  if (context)
+    priv->model = g_object_ref (context);
 }
 
 typedef enum
@@ -85,9 +108,10 @@ static void mex_info_panel_set_content (MexContentView *self,
 static void
 mex_content_view_iface_init (MexContentViewIface *iface)
 {
-  /* not implementing model/context */
   iface->set_content = mex_info_panel_set_content;
   iface->get_content = mex_info_panel_get_content;
+  iface->set_context = mex_info_panel_set_context;
+  iface->get_context = mex_info_panel_get_context;
 }
 
 static void
@@ -175,11 +199,8 @@ static void
 _watch_button_pressed_cb (ClutterActor *actor, MexInfoPanel *self)
 {
   MexInfoPanelPrivate *priv = self->priv = INFO_PANEL_PRIVATE (self);
-  MexPlayer *player;
 
-  player = mex_player_get_default ();
-
-  mex_content_view_set_content (MEX_CONTENT_VIEW (player), priv->content);
+  mex_content_open (priv->content, priv->model);
 }
 
 static void

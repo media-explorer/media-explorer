@@ -62,6 +62,9 @@ typedef enum {
   MEX_GRILO_FEED_OPERATION_SEARCH
 } MexGriloOperationType;
 
+typedef void (*MexGriloFeedOpenCb) (MexGriloProgram *content,
+                                    MexGriloFeed    *feed);
+
 typedef struct {
   MexGriloOperationType type;
 
@@ -136,6 +139,12 @@ MexAggregateModel * mex_grilo_feed_to_aggregate_model (MexGriloFeed *feed,
                                                        int           limit);
 
 MexGriloFeed * mex_aggregate_model_get_grilo_feed (MexAggregateModel *model);
+
+void mex_grilo_feed_set_open_callback (MexGriloFeed       *feed,
+                                       MexGriloFeedOpenCb  callback);
+
+void mex_grilo_feed_open (MexGriloFeed    *feed,
+                          MexGriloProgram *program);
 
 G_END_DECLS
 

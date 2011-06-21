@@ -22,7 +22,6 @@
 
 #include <glib-object.h>
 #include <glib-controller/glib-controller.h>
-#include <mex/mex-content.h>
 
 G_BEGIN_DECLS
 
@@ -35,6 +34,8 @@ G_BEGIN_DECLS
 
 typedef struct _MexModel      MexModel;
 typedef struct _MexModelIface MexModelIface;
+
+#include <mex/mex-content.h>
 
 typedef gint (*MexModelSortFunc) (MexContent *a,
                                   MexContent *b,
