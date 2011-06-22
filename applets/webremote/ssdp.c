@@ -47,12 +47,8 @@ ssdp_advertise_server (void)
 
   gssdp_resource_group_set_available (resource_group, TRUE);
 
-  loop = g_main_loop_new (NULL, FALSE);
-  g_main_loop_run (loop);
-  g_main_loop_unref (loop);
-
   g_object_unref (resource_group);
   g_object_unref (client);
-  
+
   return;
 }
