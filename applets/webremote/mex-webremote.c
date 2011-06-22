@@ -225,10 +225,10 @@ http_post (SoupServer   *server,
       g_free (get);
 
       if (self->opt_debug)
-        g_debug ("result %s", self->data);
+        g_debug ("result \"%s\"", self->data);
 
-      if (!self->data)
-        self->data = g_strdup ("");
+      if (strlen (self->data) == 0)
+        self->data = g_strdup ("Unknown");
 
       send_response (server, msg, path, self, CUSTOM);
       return;
