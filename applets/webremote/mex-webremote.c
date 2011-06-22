@@ -63,6 +63,7 @@ send_response (SoupServer   *server,
 
   gchar *processed_data;
   gsize data_size;
+  gchar *mime_type;
 
   if (response_type == NORMAL || !response_type)
     {
@@ -79,6 +80,9 @@ send_response (SoupServer   *server,
                              (path + sizeof ("DATADIR/")), NULL);
       else
         uri = g_strconcat (mex_get_data_dir(), "/webremote/", path, NULL);
+
+
+      mime_type = g_content_type_guess (uri, NULL, 0, NULL);
 
       if (self->opt_debug)
         g_debug ("Requested: %s", uri);
@@ -104,6 +108,7 @@ send_response (SoupServer   *server,
     {
       processed_data = self->data;
       data_size = strlen (processed_data);
+      mime_type = g_content_type_guess (NULL, processed_data, data_size, NULL);
     }
 
   if (error)
@@ -113,6 +118,11 @@ send_response (SoupServer   *server,
 
   soup_message_body_truncate (msg->response_body);
   soup_message_body_append_buffer (msg->response_body, buffer);
+
+  soup_message_headers_set_content_type (msg->response_headers,
+                                         mime_type,
+                                         NULL);
+  g_free (mime_type);
 
   soup_buffer_free (buffer);
   soup_message_set_status (msg, SOUP_STATUS_OK);
@@ -196,7 +206,6 @@ http_post (SoupServer   *server,
 
       if (self->opt_debug)
         g_debug ("Resquesting setmedia = %s", media_uri);
-
 
       httpdbus_media_player_set_uri (self->dbus_interface, media_uri);
 
