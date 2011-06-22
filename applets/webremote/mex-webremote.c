@@ -330,9 +330,6 @@ int main (int argc, char **argv)
 
   GError *error=NULL;
 
-  webremote.dbus_interface = httpdbus_interface_new ();
-
-  webremote.tracker_interface = tracker_interface_new ();
 
   GOptionEntry entries[] =
     {
@@ -353,9 +350,10 @@ int main (int argc, char **argv)
   if (!g_option_context_parse (context, &argc, &argv, &error))
     {
       g_print ("Failed to parse options: %s\n", error->message);
-      g_error_free (error);
-      exit (1);
     }
+
+  webremote.dbus_interface = httpdbus_interface_new ();
+  webremote.tracker_interface = tracker_interface_new ();
 
   if (opt_interface)
     {
@@ -378,8 +376,9 @@ int main (int argc, char **argv)
         }
       else
         {
-          g_error ("Sorry, could not swan server.. exiting");
-          return EXIT_FAILURE;
+          g_error ("Sorry, could not spawn server with %s address",
+                   opt_interface);
+          goto clean_up;
         }
     }
   else
@@ -392,12 +391,12 @@ int main (int argc, char **argv)
   if (!server)
     {
       g_error ("Sorry, unable to start server on port %d", opt_port);
-      return EXIT_FAILURE;
+      goto clean_up;
     }
 
   soup_server_run_async (server);
 
-  g_message ("Server started..\nResolving our address");
+  g_message ("WebServer started");
 
   g_object_get (server, "interface", &address, NULL);
 
@@ -409,14 +408,14 @@ int main (int argc, char **argv)
     {
      webremote.userpass = g_str_hash (opt_auth);
 
-      domain = soup_auth_domain_basic_new (SOUP_AUTH_DOMAIN_REALM,
-                                           "Authenticate",
-                                           SOUP_AUTH_DOMAIN_BASIC_AUTH_CALLBACK,
-                                           auth_cb,
-                                           SOUP_AUTH_DOMAIN_BASIC_AUTH_DATA,
-                                           (gpointer)&webremote,
-                                           SOUP_AUTH_DOMAIN_ADD_PATH, "/",
-                                           NULL);
+     domain = soup_auth_domain_basic_new (SOUP_AUTH_DOMAIN_REALM,
+                                          "Authenticate",
+                                          SOUP_AUTH_DOMAIN_BASIC_AUTH_CALLBACK,
+                                          auth_cb,
+                                          SOUP_AUTH_DOMAIN_BASIC_AUTH_DATA,
+                                          (gpointer)&webremote,
+                                          SOUP_AUTH_DOMAIN_ADD_PATH, "/",
+                                          NULL);
 
       soup_server_add_auth_domain (server, domain);
       g_object_unref (domain);
@@ -431,7 +430,17 @@ int main (int argc, char **argv)
   loop = g_main_loop_new (NULL, TRUE);
   g_main_loop_run (loop);
 
-  httpdbus_interface_free (webremote.dbus_interface);
+clean_up:
+
+  if (error)
+    g_error_free (error);
+
+  if (webremote.dbus_interface)
+    httpdbus_interface_free (webremote.dbus_interface);
+
+  if (webremote.tracker_interface)
+    tracker_interface_free (webremote.tracker_interface);
+
   g_option_context_free (context);
 
   return EXIT_SUCCESS;
