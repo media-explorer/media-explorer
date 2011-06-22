@@ -4,6 +4,7 @@ mex_webremote_SOURCES = \
 		mex-webremote.c \
 		dbus-interface.c dbus-interface.h \
 		tracker-interface.c tracker-interface.h \
+		mdns.c mdns.h \
 		ssdp.c ssdp.h
 
 mex_webremote_CFLAGS = \

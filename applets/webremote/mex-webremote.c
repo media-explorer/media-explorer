@@ -24,6 +24,7 @@
 #include <libsoup/soup.h>
 #include "dbus-interface.h"
 #include "tracker-interface.h"
+#include "mdns.h"
 #include <mex/mex.h>
 
 /* TODO #ifdef HAVE_TRACKER etc */
@@ -32,6 +33,8 @@ typedef struct
 {
   HTTPDBusInterface *dbus_interface;
   TrackerInterface *tracker_interface;
+  MdnsServiceInfo *mdns_service;
+
   gboolean opt_debug;
   guint userpass;
   gchar *data;
@@ -352,8 +355,10 @@ int main (int argc, char **argv)
       g_print ("Failed to parse options: %s\n", error->message);
     }
 
+  /* We want to talk to dbus, tracker and avahi/mdns */
   webremote.dbus_interface = httpdbus_interface_new ();
   webremote.tracker_interface = tracker_interface_new ();
+  webremote.mdns_service = mdns_service_info_new ();
 
   if (opt_interface)
     {
@@ -395,6 +400,14 @@ int main (int argc, char **argv)
     }
 
   soup_server_run_async (server);
+
+  /* Avahi/mdns advertise server */
+  webremote.mdns_service->port = opt_port;
+  webremote.mdns_service->type = "_http._tcp";
+  webremote.mdns_service->name = "Mex Webremote";
+
+  /* Edit /etc/avahi/avahi-daemon.conf for further configuration */
+  mdns_service_start (webremote.mdns_service);
 
   g_message ("WebServer started");
 
@@ -440,6 +453,9 @@ clean_up:
 
   if (webremote.tracker_interface)
     tracker_interface_free (webremote.tracker_interface);
+
+  if (webremote.mdns_service)
+    mdns_service_info_free (webremote.mdns_service);
 
   g_option_context_free (context);
 
