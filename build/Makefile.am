@@ -3,6 +3,7 @@ EXTRA_DIST =			\
 	Makefile.am.enums	\
 	Makefile.am.gtester	\
 	Makefile.am.marshal	\
+	Makefile.am.release	\
 	stringify.sh		\
 	$(NULL)
 

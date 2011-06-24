@@ -28,3 +28,5 @@ release: distcheck
 	@echo "**************************"
 	@echo "Tag & tarball created: $(VERSION)"
 	@echo "**************************"
+
+include $(top_srcdir)/build/Makefile.am.release

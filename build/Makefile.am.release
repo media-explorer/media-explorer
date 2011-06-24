@@ -1,0 +1,95 @@
+# To make real stable releases or devel snapshots, use either:
+# 	make release-check
+# or	make release-publish
+
+TAR_OPTIONS = --owner=0 --group=0
+
+GIT_URL = git://github.com/media-explorer/media-explorer.git
+
+RELEASE_UPLOAD_HOST = clutter-project.org
+RELEASE_UPLOAD_USER = clutter
+RELEASE_UPLOAD_DIR  = $(RELEASE_UPLOAD_USER)@$(RELEASE_UPLOAD_HOST):upload-source
+
+RELEASE_URL_BASE = http://source.clutter-project.org/sources/$(PACKAGE)
+RELEASE_URL      = $(RELEASE_URL_BASE)/$(MEX_MAJOR_VERSION).$(MEX_MINOR_VERSION)
+
+RELEASE_API_URL = http://docs.clutter-project.org/docs/$(PACKAGE)
+
+RELEASE_ANNOUNCE_LIST = clutter-announce@clutter-project.org (Cc: gnome-announce-list@gnome.org)
+
+tar_file = $(distdir).tar.bz2
+sha256_file = $(distdir).sha256sum
+
+$(sha256_file): $(tar_file)
+	$(AM_V_GEN)sha256sum $^ > $@
+
+release-check: release-verify-news
+	TAR_OPTIONS="$(TAR_OPTIONS)" $(MAKE) $(AM_MAKEFLAGS) distcheck
+
+release-verify-news:
+	@echo -n "Checking that the NEWS file has been updated..."
+	@if ! grep -q "$(MEX_VERSION)" $(top_srcdir)/NEWS; then \
+	  (echo "Ouch." && \
+	   echo "The version in the NEWS file does not match $(MEX_VERSION)." && \
+	   echo "This probably means you haven't updated the NEWS file." && \
+	   false); else :; fi
+	@echo "Good."
+
+release-upload: $(sha256_file)
+	@echo "Uploading to $(RELEASE_UPLOAD_HOST)..."
+	@scp $(tar_file) $(RELEASE_UPLOAD_DIR)
+	@echo "Done."
+
+release-message: $(sha256_file)
+	@echo "Release URL: $(RELEASE_URL)/$(tar_file)"
+	@echo "Release checksum: $(RELEASE_URL)/$(sha256_file)"
+	@echo "Send an email to: $(RELEASE_ANNOUNCE_LIST)"
+	@echo "  Subject: $(PACKAGE) $(MEX_VERSION) ($(MEX_RELEASE_STATUS))"
+	@echo "Contents:"
+	@echo "--- CUT HERE ---"
+	@echo "Hi,"
+	@echo ""
+	@echo "A new $(PACKAGE) $(MEX_RELEASE_STATUS) is now available at:"
+	@echo ""
+	@echo "  $(RELEASE_URL)/$(tar_file)"
+	@echo ""
+	@echo "SHA256 Checksum:"
+	@echo ""
+	@cat $(top_builddir)/$(sha256_file)
+	@echo ""
+	@echo "Additionally, a git clone of the source tree:"
+	@echo ""
+	@echo "  git clone $(GIT_URL)"
+	@echo ""
+	@echo "will include a signed $(MEX_VERSION) tag which points to a commit named:"
+	@echo "  `git cat-file tag $(MEX_VERSION) | grep ^object | $(SED) -e 's,object ,,'`"
+	@echo ""
+	@echo "which can be verified with:"
+	@echo "  git verify-tag $(MEX_VERSION)"
+	@echo ""
+	@echo "and can be checked out with a command such as:"
+	@echo "  git checkout -b build $(MEX_VERSION)"
+	@echo ""
+	@echo "Media explorer is a media centre application for Linux"
+	@echo ""
+	@echo "Mex depends on:"
+	@echo ""
+	@echo "  • GLib ≥ $(GLIB_REQ_VERSION)"
+	@echo "  • Gdk-pixbuf"
+	@echo "  • Soup-2.4"
+	@echo "  • Mx ≥ $(MX_REQ_VERSION)"
+	@echo "  • Clutter-Gst ≥ $(CLUTTER_GST_REQ_VERSION)"
+	@echo "  • Rest ≥ 0.7"
+	@echo "  • Dbus-glib"
+	@echo "  • Grilo 0.1.x"
+	@echo "  • GStreamer-0.10"
+	@echo ""
+	@$(SED) -n '1bend;/^Mex /q;:end;4,$$p' $(top_srcdir)/NEWS
+	@echo "--- CUT HERE ---"
+
+release-publish: release-check
+	$(MAKE) $(AM_MAKEFLAGS) release-upload
+	$(MAKE) $(AM_MAKEFLAGS) release-message
+
+.PHONY: release-check release-verify-news release-upload release-message \
+	release-publish

@@ -46,6 +46,13 @@ MEX_LT_LDFLAGS="-version-info $MEX_LT_VERSION"
 AC_SUBST(MEX_LT_VERSION)
 AC_SUBST(MEX_LT_LDFLAGS)
 
+# release status (development snapshot or stable release)
+m4_define([mex_release_status],
+          [m4_if(m4_eval(mex_micro % 2), [1], [git],
+                 [m4_if(m4_eval(mex_minor % 2), [1], [snapshot],
+                       [release])])])
+AC_SUBST([MEX_RELEASE_STATUS], [mex_release_status])
+
 # i18n
 AS_ALL_LINGUAS
 IT_PROG_INTLTOOL([0.40.0], [no-xml])
@@ -67,15 +74,23 @@ AM_PATH_GLIB_2_0
 # check for headers
 AC_HEADER_STDC
 
-modules="glib-2.0 >= 2.26           \
-         gio-2.0                    \
-         gio-unix-2.0               \
-         gdk-pixbuf-2.0             \
-         libsoup-2.4                \
-         mx-1.0 >= 1.2.0            \
-         rest-0.7                   \
-         dbus-glib-1                \
-         grilo-0.1 >= 0.1.14"
+GLIB_REQ_VERSION=2.26
+MX_REQ_VERSION=1.2.0
+GRILO_REQ_VERSION=0.1.14
+
+AC_SUBST(GLIB_REQ_VERSION)
+AC_SUBST(MX_REQ_VERSION)
+AC_SUBST(GRILO_REQ_VERSION)
+
+modules="glib-2.0 >= $GLIB_REQ_VERSION    \
+         gio-2.0                          \
+         gio-unix-2.0                     \
+         gdk-pixbuf-2.0                   \
+         libsoup-2.4                      \
+         mx-1.0 >= $MX_REQ_VERSION        \
+         rest-0.7                         \
+         dbus-glib-1                      \
+         grilo-0.1 >= $GRILO_REQ_VERSION"
 
 PKG_CHECK_EXISTS(libsoup-gnome-2.4,
                  [modules="$modules libsoup-gnome-2.4"
@@ -90,12 +105,15 @@ AC_ARG_WITH([player],
 
 player_deps=""
 
+CLUTTER_GST_REQ_VERSION=1.3.12
+AC_SUBST(CLUTTER_GST_REQ_VERSION)
+
 AS_CASE([$with_player],
         [clutter-gst],
         [
           AC_DEFINE([USE_PLAYER_CLUTTER_GST], 1, [Use "clutter-gst" for
                      playback])
-          player_deps="clutter-gst-1.0 >= 1.3.12"
+          player_deps="clutter-gst-1.0 >= $CLUTTER_GST_REQ_VERSION"
         ],
 
         [d-bus],
