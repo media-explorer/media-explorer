@@ -17,7 +17,7 @@ AC_CONFIG_MACRO_DIR([build])
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_HEADERS([config.h])
 
-AM_INIT_AUTOMAKE([1.9 foreign -Wno-portability no-define])
+AM_INIT_AUTOMAKE([1.9 foreign -Wno-portability no-define no-dist-gzip dist-bzip2])
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 LT_PREREQ([2.2.6])
