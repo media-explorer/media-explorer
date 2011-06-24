@@ -1,0 +1,35 @@
+Mex 0.1.2                                                            2011-06-23
+===============================================================================
+
+  • List of changes since Mex 0.1.0
+
+    » Addition of a "touch mode". This adds some mouse navigation but also
+      a bunch of touch friendly behaviours to Mex for it's use on tablet for
+      instance,
+
+    » Add a first pass on handling music files. There's is now a new column
+      for music and it uses a visualisation plugin from GStreamer,
+
+    » New dbusinput plugin that exposes a DBus API to send key events to the
+      application,
+
+    » New webremove applet, a separate HTTP daemon to control mex from a
+      secondary screen,
+
+    » Addition of an internal thumbnailer instead of using tumbler. With this,
+      the thumbnails created by mex are private to the application (their size
+      wasn't part of the thumbnailing spec anyway) and we use JPEG to store
+      them (saves a lot of space). This thumbnailer is now the default option,
+
+    » Lot of work on the grid to improve its behaviour and corner cases,
+
+    » The usual bulk of small adjustments in the ui and content framework,
+      various fixes (leaks/performance) and maintainance work.
+
+Contributors to this release:
+
+  Michael Wood, Chris Lord, Thomas Wood, Lionel Landwerlin, Damien Lespiau,
+  Juan A. Suarez Romero, Olivier Le Thanh Duong, Ross Burton.
+
+
+===============================================================================
