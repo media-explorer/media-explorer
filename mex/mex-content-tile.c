@@ -248,7 +248,8 @@ _update_thumbnail (MexContentTile *tile)
 {
   MexContentTilePrivate *priv = tile->priv;
   MexDownloadQueue *queue;
-  const gchar *file;
+  const gchar *uri;
+  GFile *file;
 
   queue = mex_download_queue_get_default ();
 
@@ -260,15 +261,40 @@ _update_thumbnail (MexContentTile *tile)
     }
 
   /* update thumbnail */
-  file = mex_content_get_metadata (priv->content,
-                                   MEX_CONTENT_METADATA_STILL);
+  uri = mex_content_get_metadata (priv->content,
+                                  MEX_CONTENT_METADATA_STILL);
+  if (uri)
+    {
+      file = g_file_new_for_uri (uri);
 
-  /* TODO: Display a spinner? */
-  if (file)
-    priv->download_id =
-      mex_download_queue_enqueue (queue, file,
-                                  download_queue_completed,
-                                  tile);
+      /* TODO: Display a spinner? */
+      if (file)
+        {
+          gchar *path = g_file_get_path (file);
+
+          if (path)
+            {
+              mx_image_set_from_file_at_size (MX_IMAGE (priv->image), path,
+                                              priv->thumb_width,
+                                              priv->thumb_height,
+                                              NULL);
+              priv->thumbnail_loaded = TRUE;
+              priv->image_set = TRUE;
+              clutter_actor_set_size (priv->image,
+                                      priv->thumb_width, priv->thumb_height);
+              g_free (path);
+            }
+          else
+            {
+              priv->download_id =
+                mex_download_queue_enqueue (queue, uri,
+                                            download_queue_completed,
+                                            tile);
+            }
+
+          g_object_unref (file);
+        }
+    }
   else
     priv->thumbnail_loaded = TRUE;
 }
