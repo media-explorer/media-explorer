@@ -339,9 +339,9 @@ AM_CONDITIONAL(ENABLE_REBINDER, test "x$enable_rebinder" = "xyes")
 # Check the dependencies of network configuration ui
 AC_ARG_ENABLE([networks],
               [AC_HELP_STRING([--enable-networks=@<:@yes/no@:>@],
-                              [Enable the network configuration UI @<:@default=yes@:>@])],
+                              [Enable the network configuration UI @<:@default=no@:>@])],
               [],
-              [enable_networks=yes])
+              [enable_networks=no])
 
 AS_IF([test "x$enable_networks" = "xyes"],
       [PKG_CHECK_MODULES(NETWORKS, [glib-2.0 mx-1.0])],
@@ -364,9 +364,9 @@ AM_CONDITIONAL(ENABLE_WEBREMOTE, test "x$enable_webremote" = "xyes")
 # Check the dependencies of displayconf
 AC_ARG_ENABLE([displayconf],
               [AC_HELP_STRING([--enable-displayconf=@<:@yes/no@:>@],
-                              [Enable the displayconf utility @<:@default=yes@:>@])],
+                              [Enable the displayconf utility @<:@default=no@:>@])],
               [],
-              [enable_displayconf=yes])
+              [enable_displayconf=no])
 AS_IF([test "x$enable_displayconf" = "xyes"],
       [PKG_CHECK_MODULES(DISPLAYCONF, [glib-2.0 gnome-desktop-2.0 clutter-1.0])],
       [])
