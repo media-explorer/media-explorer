@@ -338,9 +338,11 @@ Mex_0_2_gir_PACKAGES = 	\
 
 Mex_0_2_gir_LIBS = libmex-@MEX_API_VERSION@.la
 Mex_0_2_gir_FILES = $(mex_headers) $(mex_sources) $(mex_built_sources)
-Mex_0_2_gir_SCANNERFLAGS = \
-	--strip-prefix=Mex \
-	--add-include-path=$(builddir)/glib-controller
+Mex_0_2_gir_SCANNERFLAGS = 				\
+	--identifier-prefix=Mex 			\
+	--symbol-prefix=mex				\
+	--add-include-path=$(builddir)/glib-controller	\
+	$(NULL)
 Mex_0_2_gir_CFLAGS = $(common_includes) $(MEX_CFLAGS)
 Mex_0_2_gir_INCLUDES =	\
 	GObject-2.0	\

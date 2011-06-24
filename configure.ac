@@ -148,7 +148,7 @@ AM_CONDITIONAL([HAVE_LIRC], [test "x$enable_lirc" = "xyes"])
 # marshals
 AC_PATH_PROG([GLIB_GENMARSHAL], [glib-genmarshal])
 
-GOBJECT_INTROSPECTION_CHECK([0.6.7])
+GOBJECT_INTROSPECTION_CHECK([0.9.5])
 
 # enable debug level
 m4_define([debug_default],
