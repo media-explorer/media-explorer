@@ -218,7 +218,6 @@ endif
 applicationsdir = $(datadir)/applications
 dist_applications_DATA =			\
 	mex.desktop			\
-	mex-shutdown.desktop		\
 	$(NULL)
 
 if ENABLE_REBINDER
