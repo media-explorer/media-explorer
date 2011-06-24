@@ -17,9 +17,15 @@ CLEANFILES = $(BUILT_SOURCES)
 .FORCE:
 
 mex-version.h:.FORCE
-	-@test -d $(top_srcdir)/.git && echo \#define MEX_VERSION_GIT \"`git describe --always`\" > xversiongen && \
-	(cmp -s xversiongen $@ || cp -f xversiongen $@) && \
-	rm -f xversiongen
+	-@if [ -d $(top_srcdir)/.git ]; then \
+	  echo \#define MEX_VERSION_GIT \"`git describe --always`\" \
+	    > xversiongen && \
+	  (cmp -s xversiongen $@ || cp -f xversiongen $@) && \
+	  rm -f xversiongen; \
+	else \
+	  test ! -f $@ && \
+	  echo \#define MEX_VERSION_GIT \"$(PACKAGE_VERSION)\" > $@; \
+	fi
 
 mex_SOURCES   =		\
 	mex-main.c	\
