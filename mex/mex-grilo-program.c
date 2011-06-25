@@ -347,6 +347,7 @@ mex_grilo_program_thumbnail (MexContent *content, GrlMedia *media)
 {
   const char *url;
   char *thumb_path;
+  static gchar *folder_thumb_uri = NULL;
 
   /* If the media isn't local, then we'll ignore it for now */
   url = grl_media_get_url (media);
@@ -355,12 +356,17 @@ mex_grilo_program_thumbnail (MexContent *content, GrlMedia *media)
 
   if (GRL_IS_MEDIA_BOX (media))
     {
-      gchar *tmp;
+      if (G_UNLIKELY (folder_thumb_uri == NULL))
+        {
+          thumb_path = g_build_filename (mex_get_data_dir (),
+                                         "common", "folder-tile.png",
+                                         NULL);
+          folder_thumb_uri = g_filename_to_uri (thumb_path, NULL, NULL);
+          g_free (thumb_path);
+        }
 
-      tmp = g_build_filename (mex_get_data_dir (), "common", "folder-tile.png",
-                              NULL);
-      mex_grilo_program_set_metadata (content, MEX_CONTENT_METADATA_STILL, tmp);
-      g_free (tmp);
+      mex_grilo_program_set_metadata (content, MEX_CONTENT_METADATA_STILL,
+                                      folder_thumb_uri);
       return;
     }
 
