@@ -16,11 +16,14 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-info-bar.h"
 #include "mex-tile.h"
 #include "mex-generic-notification-source.h"
 
-#include <config.h>
 #include <glib/gi18n-lib.h>
 #include <gio/gdesktopappinfo.h>
 

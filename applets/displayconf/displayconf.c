@@ -16,7 +16,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#include <config.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 #define GNOME_DESKTOP_USE_UNSTABLE_API
 #include <libgnomeui/gnome-rr.h>

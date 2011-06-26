@@ -16,11 +16,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-/* mex-generic-notification-source.c */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "mex-generic-notification-source.h"
 
-#include <config.h>
 #include <glib/gi18n-lib.h>
 
 G_DEFINE_TYPE (MexGenericNotificationSource, mex_generic_notification_source, MEX_TYPE_NOTIFICATION_SOURCE)

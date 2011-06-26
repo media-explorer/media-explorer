@@ -16,9 +16,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-queue-model.h"
 
-#include <config.h>
 #include <glib/gi18n.h>
 
 G_DEFINE_TYPE (MexQueueModel, mex_queue_model, MEX_TYPE_GENERIC_MODEL)

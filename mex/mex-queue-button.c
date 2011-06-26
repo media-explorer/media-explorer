@@ -16,15 +16,18 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-queue-button.h"
 #include "mex-content-view.h"
 #include "mex-program.h"
 #include "mex-queue-model.h"
 
-#include <config.h>
 #include <glib/gi18n-lib.h>
-
 #include <grilo.h>
+
 #include "mex-grilo-tracker-feed.h"
 
 static void

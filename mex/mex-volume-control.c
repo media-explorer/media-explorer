@@ -16,6 +16,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-volume-control.h"
 #include "mex-player.h"
 
@@ -23,7 +27,6 @@
 #include <string.h>
 #include <math.h>
 
-#include <config.h>
 #include <glib/gi18n-lib.h>
 
 G_DEFINE_TYPE (MexVolumeControl, mex_volume_control, MX_TYPE_FRAME)

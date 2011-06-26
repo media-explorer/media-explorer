@@ -16,6 +16,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-info-panel.h"
 #include "mex-shadow.h"
 #include "mex-player.h"
@@ -25,7 +29,6 @@
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <string.h>
 
-#include <config.h>
 #include <glib/gi18n-lib.h>
 
 static void mex_content_view_iface_init (MexContentViewIface *iface);

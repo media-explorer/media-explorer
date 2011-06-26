@@ -16,11 +16,14 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-queue-plugin.h"
 
 #include <mex/mex.h>
 
-#include <config.h>
 #include <glib/gi18n-lib.h>
 #include <gmodule.h>
 

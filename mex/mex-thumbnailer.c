@@ -16,10 +16,14 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#include <config.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <gio/gio.h>
 #include <dbus/dbus-glib.h>
 #include <clutter/clutter.h>
+
 #include "mex-thumbnailer.h"
 #include "mex-marshal.h"
 

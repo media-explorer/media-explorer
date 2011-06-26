@@ -16,17 +16,20 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#include <gio/gdesktopappinfo.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "mex-applications-plugin.h"
+
 #include <mex/mex-model-provider.h>
 #include <mex/mex-action-provider.h>
 #include <mex/mex-generic-model.h>
 #include <mex/mex-utils.h>
 #include <mex/mex-application.h>
 
-#include <config.h>
 #include <glib/gi18n-lib.h>
+#include <gio/gdesktopappinfo.h>
 #include <gmodule.h>
 
 static void model_provider_iface_init (MexModelProviderInterface *iface);

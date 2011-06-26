@@ -16,8 +16,9 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
-#include <config.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "mex-slide-show.h"
 
@@ -31,6 +32,7 @@
 #include "mex-content-tile.h"
 #include "mex-content-proxy.h"
 #include "mex-download-queue.h"
+
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include <stdlib.h>

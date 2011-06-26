@@ -16,11 +16,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-/* mex-gio-notification-source.c */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "mex-gio-notification-source.h"
 
-#include <config.h>
 #include <glib/gi18n.h>
 #include <gio/gio.h>
 

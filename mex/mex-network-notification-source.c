@@ -16,12 +16,13 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-/* mex-network-notification-source.c */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "mex-network-notification-source.h"
 #include "mex-online.h"
 
-#include <config.h>
 #include <glib/gi18n-lib.h>
 
 G_DEFINE_TYPE (MexNetworkNotificationSource, mex_network_notification_source, MEX_TYPE_NOTIFICATION_SOURCE)
