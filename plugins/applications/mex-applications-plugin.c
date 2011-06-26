@@ -57,7 +57,8 @@ struct _MexApplicationsPluginPrivate {
 static void
 mex_applications_plugin_dispose (GObject *object)
 {
-  MexApplicationsPluginPrivate *priv = GET_PRIVATE (object);
+  MexApplicationsPlugin *self = MEX_APPLICATIONS_PLUGIN (object);
+  MexApplicationsPluginPrivate *priv = self->priv;
 
   while (priv->models)
     {
@@ -150,7 +151,7 @@ _application_new_from_desktop_file (const gchar *desktop_file_id)
 static void
 _populate_model (MexApplicationsPlugin *self)
 {
-  MexApplicationsPluginPrivate *priv = GET_PRIVATE (self);
+  MexApplicationsPluginPrivate *priv = self->priv;
   MexApplication *application;
 
   application = _application_new_from_desktop_file ("mex-networks.desktop");
@@ -177,7 +178,7 @@ _populate_model (MexApplicationsPlugin *self)
 static void
 mex_applications_plugin_init (MexApplicationsPlugin *self)
 {
-  MexApplicationsPluginPrivate *priv = GET_PRIVATE (self);
+  MexApplicationsPluginPrivate *priv = self->priv;
   MexActionInfo *action_info;
   MexModelInfo *model_info;
 
@@ -206,7 +207,8 @@ mex_applications_plugin_init (MexApplicationsPlugin *self)
 static const GList *
 mex_applications_plugin_get_actions (MexActionProvider *action_provider)
 {
-  MexApplicationsPluginPrivate *priv = GET_PRIVATE (action_provider);
+  MexApplicationsPlugin *self = MEX_APPLICATIONS_PLUGIN (action_provider);
+  MexApplicationsPluginPrivate *priv = self->priv;
 
   return priv->actions;
 }
@@ -214,7 +216,8 @@ mex_applications_plugin_get_actions (MexActionProvider *action_provider)
 static const GList *
 mex_applications_plugin_get_models (MexModelProvider *model_provider)
 {
-  MexApplicationsPluginPrivate *priv = GET_PRIVATE (model_provider);
+  MexApplicationsPlugin *self = MEX_APPLICATIONS_PLUGIN (action_provider);
+  MexApplicationsPluginPrivate *priv = self->priv;
 
   return priv->models;
 }

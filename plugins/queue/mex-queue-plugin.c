@@ -40,8 +40,6 @@ G_DEFINE_TYPE_WITH_CODE (MexQueuePlugin,
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_QUEUE_PLUGIN, MexQueuePluginPrivate))
 
-typedef struct _MexQueuePluginPrivate MexQueuePluginPrivate;
-
 struct _MexQueuePluginPrivate {
   GList *models;
   GList *actions;
@@ -50,7 +48,8 @@ struct _MexQueuePluginPrivate {
 static void
 mex_queue_plugin_dispose (GObject *object)
 {
-  MexQueuePluginPrivate *priv = GET_PRIVATE (object);
+  MexQueuePlugin *self = MEX_QUEUE_PLUGIN (object);
+  MexQueuePluginPrivate *priv = self->priv;
 
   while (priv->models)
     {
@@ -94,10 +93,12 @@ static const gchar *all_data_mimetypes[] = { "audio/" , "x-grl/box", "video/", "
 static void
 mex_queue_plugin_init (MexQueuePlugin *self)
 {
-  MexQueuePluginPrivate *priv = GET_PRIVATE (self);
+  MexQueuePluginPrivate *priv;
   MexActionInfo *action_info;
   MexModelInfo *model_info;
   MexModel *queue_model;
+
+  priv = self->priv = GET_PRIVATE (self);
 
   queue_model = mex_queue_model_dup_singleton ();
 
@@ -125,7 +126,8 @@ mex_queue_plugin_init (MexQueuePlugin *self)
 static const GList *
 mex_queue_plugin_get_actions (MexActionProvider *action_provider)
 {
-  MexQueuePluginPrivate *priv = GET_PRIVATE (action_provider);
+  MexQueuePlugin *self = MEX_QUEUE_PLUGIN (action_provider);
+  MexQueuePluginPrivate *priv = self->priv;
 
   return priv->actions;
 }
@@ -133,7 +135,8 @@ mex_queue_plugin_get_actions (MexActionProvider *action_provider)
 static const GList *
 mex_queue_plugin_get_models (MexModelProvider *model_provider)
 {
-  MexQueuePluginPrivate *priv = GET_PRIVATE (model_provider);
+  MexQueuePlugin *self = MEX_QUEUE_PLUGIN (model_provider);
+  MexQueuePluginPrivate *priv = self->priv;
 
   return priv->models;
 }

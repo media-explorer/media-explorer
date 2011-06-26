@@ -40,11 +40,16 @@ G_BEGIN_DECLS
 #define MEX_QUEUE_PLUGIN_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), MEX_TYPE_QUEUE_PLUGIN, MexQueuePluginClass))
 
-typedef struct {
+typedef struct _MexQueuePluginPrivate MexQueuePluginPrivate;
+
+typedef struct
+{
   GObject parent;
+  MexQueuePluginPrivate *priv;
 } MexQueuePlugin;
 
-typedef struct {
+typedef struct
+{
   GObjectClass parent_class;
 } MexQueuePluginClass;
 

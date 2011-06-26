@@ -31,10 +31,8 @@ static void clutter_media_iface_init (ClutterMediaIface *iface);
 G_DEFINE_TYPE_WITH_CODE (MexPlayerClient, mex_player_client, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (CLUTTER_TYPE_MEDIA, clutter_media_iface_init))
 
-#define PLAYER_CLIENT_PRIVATE(o) \
+#define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_PLAYER_CLIENT, MexPlayerClientPrivate))
-
-#define GET_PRIVATE(o) ((MexPlayerClient *)o)->priv
 
 enum {
   PROP_0,
@@ -80,7 +78,8 @@ mex_player_client_get_property (GObject    *object,
                                 GValue     *value,
                                 GParamSpec *pspec)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (object);
+  MexPlayerClient *self = MEX_PLAYER_CLIENT (object);
+  MexPlayerClientPrivate *priv = self->priv;
 
   switch (property_id)
     {
@@ -134,7 +133,7 @@ _set_uri_call_cb (DBusGProxy *proxy,
                   gpointer    userdata)
 {
   MexPlayerClient        *client = (MexPlayerClient *) userdata;
-  MexPlayerClientPrivate *priv   = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv   = client->priv;
 
   if (error) {
     g_warning (G_STRLOC ": Error making SetUri call: %s",
@@ -149,7 +148,7 @@ static void
 mex_player_client_set_uri (MexPlayerClient *client,
                            const gchar     *uri)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   g_free (priv->uri);
   priv->uri = NULL;
@@ -166,7 +165,7 @@ static void
 mex_player_client_set_progress (MexPlayerClient *client,
                                 gdouble          progress)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   priv->progress = progress;
 
@@ -180,7 +179,7 @@ static void
 mex_player_client_set_audio_volume (MexPlayerClient *client,
                                     gdouble          audio_volume)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   priv->audio_volume = audio_volume;
 
@@ -194,7 +193,7 @@ static void
 mex_player_client_set_playing (MexPlayerClient *client,
                                gboolean         playing)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   priv->playing = playing;
 
@@ -238,7 +237,8 @@ mex_player_client_set_property (GObject      *object,
 static void
 mex_player_client_dispose (GObject *object)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (object);
+  MexPlayerClient *self = MEX_PLAYER_CLIENT (object);
+  MexPlayerClientPrivate *priv = self->priv;
 
   if (priv->connection)
     {
@@ -309,7 +309,7 @@ _progress_changed_cb (DBusGProxy      *proxy,
                       gdouble          progress,
                       MexPlayerClient *client)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   priv->progress = progress;
 
@@ -321,7 +321,7 @@ _audio_volume_changed_cb (DBusGProxy      *proxy,
                           gdouble          audio_volume,
                           MexPlayerClient *client)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   priv->audio_volume = audio_volume;
 
@@ -333,7 +333,7 @@ _duration_changed_cb (DBusGProxy      *proxy,
                       gdouble          duration,
                       MexPlayerClient *client)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   priv->duration = duration;
 
@@ -345,7 +345,7 @@ _playing_changed_cb (DBusGProxy      *proxy,
                      gboolean         playing,
                      MexPlayerClient *client)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   priv->playing = playing;
 
@@ -357,7 +357,7 @@ _can_seek_changed_cb (DBusGProxy      *proxy,
                       gboolean         can_seek,
                       MexPlayerClient *client)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   priv->can_seek = can_seek;
 
@@ -369,7 +369,7 @@ _buffer_fill_changed_cb (DBusGProxy      *proxy,
                          gdouble          buffer,
                          MexPlayerClient *client)
 {
-  MexPlayerClientPrivate *priv = GET_PRIVATE (client);
+  MexPlayerClientPrivate *priv = client->priv;
 
   priv->buffer_fill = buffer;
 
@@ -382,7 +382,7 @@ mex_player_client_init (MexPlayerClient *self)
   MexPlayerClientPrivate *priv;
   GError *error = NULL;
 
-  self->priv = PLAYER_CLIENT_PRIVATE (self);
+  self->priv = GET_PRIVATE (self);
   priv = self->priv;
 
   priv->connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);

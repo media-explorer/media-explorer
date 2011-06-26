@@ -63,7 +63,8 @@ static void _mex_grilo_tracker_feed_content_updated (GrlMediaSource           *s
 static void
 mex_grilo_tracker_feed_finalize (GObject *object)
 {
-  MexGriloTrackerFeedPrivate *priv = GET_PRIVATE (object);
+  MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (object);
+  MexGriloTrackerFeedPrivate *priv = self->priv;
 
   if (priv->filter) {
     g_free (priv->filter);
@@ -91,7 +92,8 @@ mex_grilo_tracker_feed_set_property (GObject      *object,
                                      const GValue *value,
                                      GParamSpec   *pspec)
 {
-  MexGriloTrackerFeedPrivate *priv = GET_PRIVATE (object);
+  MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (object);
+  MexGriloTrackerFeedPrivate *priv = self->priv;
 
   switch (prop_id) {
   case PROP_FILTER:
@@ -111,7 +113,8 @@ mex_grilo_tracker_feed_get_property (GObject    *object,
                                      GValue     *value,
                                      GParamSpec *pspec)
 {
-  MexGriloTrackerFeedPrivate *priv = GET_PRIVATE (object);
+  MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (object);
+  MexGriloTrackerFeedPrivate *priv = self->priv;
 
   switch (prop_id) {
   case PROP_FILTER:
@@ -126,7 +129,8 @@ mex_grilo_tracker_feed_get_property (GObject    *object,
 static void
 mex_grilo_tracker_feed_constructed (GObject *object)
 {
-  MexGriloTrackerFeedPrivate *priv = GET_PRIVATE (object);
+  MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (object);
+  MexGriloTrackerFeedPrivate *priv = self->priv;
 
   G_OBJECT_CLASS (mex_grilo_tracker_feed_parent_class)->constructed (object);
 
@@ -168,9 +172,9 @@ mex_grilo_tracker_feed_class_init (MexGriloTrackerFeedClass *klass)
 static void
 mex_grilo_tracker_feed_init (MexGriloTrackerFeed *self)
 {
-  MexGriloTrackerFeedPrivate *priv = GET_PRIVATE (self);
+  MexGriloTrackerFeedPrivate *priv;
 
-  self->priv = priv;
+  self->priv = priv = GET_PRIVATE (self);
 }
 
 MexFeed *
@@ -339,11 +343,14 @@ _mex_grilo_tracker_feed_browse (MexGriloFeed           *feed,
                                 int                     limit,
                                 GrlMediaSourceResultCb  callback)
 {
+  MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (feed);
+  MexGriloTrackerFeedPrivate *priv = self->priv;
+  gchar *text;
   guint id;
-  gchar *text = get_filter_from_operation (MEX_GRILO_TRACKER_FEED (feed),
-                                           NULL,
-                                           MEX_GRILO_FEED_OPERATION_BROWSE);
-  MexGriloTrackerFeedPrivate *priv = GET_PRIVATE (feed);
+
+  text = get_filter_from_operation (MEX_GRILO_TRACKER_FEED (feed),
+                                    NULL,
+                                    MEX_GRILO_FEED_OPERATION_BROWSE);
 
   id = grl_media_source_query (priv->source, text, priv->keys,
                                offset, limit,
@@ -361,11 +368,14 @@ _mex_grilo_tracker_feed_query (MexGriloFeed           *feed,
                                int                     limit,
                                GrlMediaSourceResultCb  callback)
 {
+  MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (feed);
+  MexGriloTrackerFeedPrivate *priv = self->priv;
+  gchar *text;
   guint id;
-  gchar *text = get_filter_from_operation (MEX_GRILO_TRACKER_FEED (feed),
-                                           query,
-                                           MEX_GRILO_FEED_OPERATION_QUERY);
-  MexGriloTrackerFeedPrivate *priv = GET_PRIVATE (feed);
+
+  text = get_filter_from_operation (MEX_GRILO_TRACKER_FEED (feed),
+                                    query,
+                                    MEX_GRILO_FEED_OPERATION_QUERY);
 
   id = grl_media_source_query (priv->source, text,  priv->keys,
                                offset, limit,
@@ -383,11 +393,14 @@ _mex_grilo_tracker_feed_search (MexGriloFeed           *feed,
                                 int                     limit,
                                 GrlMediaSourceResultCb  callback)
 {
+  MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (feed);
+  MexGriloTrackerFeedPrivate *priv = self->priv;
+  gchar *text;
   guint id;
-  gchar *text = get_filter_from_operation (MEX_GRILO_TRACKER_FEED (feed),
-                                           search_text,
-                                           MEX_GRILO_FEED_OPERATION_SEARCH);
-  MexGriloTrackerFeedPrivate *priv = GET_PRIVATE (feed);
+
+  text = get_filter_from_operation (MEX_GRILO_TRACKER_FEED (feed),
+                                    search_text,
+                                    MEX_GRILO_FEED_OPERATION_SEARCH);
 
   id = grl_media_source_query (priv->source, text, priv->keys,
                                offset, limit,

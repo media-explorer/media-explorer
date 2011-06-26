@@ -25,10 +25,8 @@
 
 G_DEFINE_TYPE (MexNotificationArea, mex_notification_area, MX_TYPE_STACK)
 
-#define NOTIFICATION_AREA_PRIVATE(o) \
+#define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_NOTIFICATION_AREA, MexNotificationAreaPrivate))
-
-#define GET_PRIVATE(o) MEX_NOTIFICATION_AREA(o)->priv
 
 struct _MexNotificationAreaPrivate
 {
@@ -74,7 +72,8 @@ _ptr_items_free_cb (gpointer data, gpointer userdata)
 static void
 mex_notification_area_dispose (GObject *object)
 {
-  MexNotificationAreaPrivate *priv = GET_PRIVATE (object);
+  MexNotificationArea *self = MEX_NOTIFICATION_AREA (object);
+  MexNotificationAreaPrivate *priv = self->priv;
 
   if (priv->sources)
     {
@@ -148,7 +147,7 @@ _expire_notification (MexNotificationArea *area,
                       MexNotification     *notification,
                       ClutterActor        *actor)
 {
-  MexNotificationAreaPrivate *priv = GET_PRIVATE (area);
+  MexNotificationAreaPrivate *priv = area->priv;
   ClutterAnimation *animation;
   ClutterActor *last_top_actor;
 
@@ -209,7 +208,7 @@ _source_notification_removed_cb (MexNotificationSource *source,
                                  MexNotification       *notification,
                                  MexNotificationArea   *area)
 {
-  MexNotificationAreaPrivate *priv = GET_PRIVATE (area);
+  MexNotificationAreaPrivate *priv = area->priv;
   ClutterActor *actor;
 
   actor = g_hash_table_lookup (priv->notification_to_actor, notification);
@@ -221,7 +220,7 @@ _source_notification_added_cb (MexNotificationSource *source,
                                MexNotification       *notification,
                                MexNotificationArea   *area)
 {
-  MexNotificationAreaPrivate *priv = GET_PRIVATE (area);
+  MexNotificationAreaPrivate *priv = area->priv;
   ClutterActor *actor;
   ClutterActor *last_top_actor;
   ClutterAnimation *animation;
@@ -301,7 +300,7 @@ void
 mex_notification_area_add_source (MexNotificationArea *area,
                                   MexNotificationSource *source)
 {
-  MexNotificationAreaPrivate *priv = GET_PRIVATE (area);
+  MexNotificationAreaPrivate *priv = area->priv;
 
   g_ptr_array_add (priv->sources, source);
 
@@ -328,7 +327,7 @@ mex_notification_area_init (MexNotificationArea *self)
   GType source_types[] = { MEX_TYPE_NETWORK_NOTIFICATION_SOURCE,
                            MEX_TYPE_GIO_NOTIFICATION_SOURCE };
 
-  self->priv = NOTIFICATION_AREA_PRIVATE (self);
+  self->priv = GET_PRIVATE (self);
   priv = self->priv;
 
   /* notification pointer -> timeout_id */

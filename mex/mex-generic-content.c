@@ -184,7 +184,8 @@ mex_generic_content_set_property (GObject      *object,
                                   const GValue *value,
                                   GParamSpec   *pspec)
 {
-  MexGenericContentPrivate *priv = GET_PRIVATE (object);
+  MexGenericContent *self = MEX_GENERIC_CONTENT (object);
+  MexGenericContentPrivate *priv = self->priv;
 
   /* For all dynamic properties, just pass them to the subclass */
   if (prop_id < MEX_CONTENT_METADATA_LAST_ID) {
@@ -213,8 +214,8 @@ mex_generic_content_get_property (GObject    *object,
                                   GValue     *value,
                                   GParamSpec *pspec)
 {
-  MexGenericContent *self = (MexGenericContent *) object;
-  MexGenericContentPrivate *priv = GET_PRIVATE (object);
+  MexGenericContent *self = MEX_GENERIC_CONTENT (object);
+  MexGenericContentPrivate *priv = self->priv;
   MexContent *content = MEX_CONTENT (self);
 
   /* For all dynamic properties, just pass them to the subclass */
@@ -279,9 +280,9 @@ mex_generic_content_class_init (MexGenericContentClass *klass)
 static void
 mex_generic_content_init (MexGenericContent *self)
 {
-  MexGenericContentPrivate *priv = GET_PRIVATE (self);
+  MexGenericContentPrivate *priv;
 
-  self->priv = priv;
+  self->priv = priv = GET_PRIVATE (self);
 
   priv->metadata = g_hash_table_new_full (NULL, NULL, NULL, g_free);
 
