@@ -16,19 +16,20 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 /* required by glibc for strptime from time.h */
 #define _XOPEN_SOURCE 600
 #include <time.h>
 #include <math.h>
 #include <stdlib.h>
+
 #include <glib.h>
-
-
-#include "mex-metadata-utils.h"
-
-#include "config.h"
 #include <glib/gi18n-lib.h>
 
+#include "mex-metadata-utils.h"
 
 #define TV_REGEX "(?<showname>.*)\\.(?<season>(?:\\d{1,2})|(?:[sS]\\K\\d{1,2}))(?<episode>(?:\\d{2})|(?:[eE]\\K\\d{1,2}))\\.?(?<name>.*)?"
 #define MOVIE_REGEX "(?<name>.*)\\.?[\\(\\[](?<year>[12][90]\\d{2})[\\)\\]]"
