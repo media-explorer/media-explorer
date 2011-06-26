@@ -292,11 +292,9 @@ mex_generic_content_init (MexGenericContent *self)
 gboolean
 mex_generic_content_get_last_position_start (MexGenericContent *self)
 {
-  MexGenericContentPrivate *priv;
+  MexGenericContentPrivate *priv = self->priv;
 
   g_return_val_if_fail (IS_MEX_GENERIC_CONTENT (self), FALSE);
-
-  priv = GET_PRIVATE (self);
 
   return priv->last_position_start;
 }
@@ -304,30 +302,9 @@ mex_generic_content_get_last_position_start (MexGenericContent *self)
 gboolean
 mex_generic_content_get_save_last_position (MexGenericContent *self)
 {
-  MexGenericContentPrivate *priv;
+  MexGenericContentPrivate *priv = self->priv;
 
   g_return_val_if_fail (IS_MEX_GENERIC_CONTENT (self), FALSE);
 
-  priv = GET_PRIVATE (self);
-
   return priv->save_last_position;
 }
-
-/* void */
-/* mex_generic_content_set_last_position_start (MexGenericContent *self, */
-/*                                              gboolean from_last) */
-/* { */
-/*   MexGenericContentPrivate *priv = GET_PRIVATE (self); */
-
-/*   priv->last_position_start = from_last; */
-/* } */
-
-/* void */
-/* mex_generic_content_set_save_last_position (MexGenericContent *self, */
-/*                                             gboolean save_last) */
-/* { */
-/*   MexGenericContentPrivate *priv = GET_PRIVATE (self); */
-
-/*   priv->save_last_position = save_last; */
-/* } */
-
