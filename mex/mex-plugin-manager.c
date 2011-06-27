@@ -211,7 +211,6 @@ mex_plugin_manager_class_init (MexPluginManagerClass *klass)
 static void
 mex_plugin_manager_init (MexPluginManager *self)
 {
-  gchar *cwd;
   MexPluginManagerPrivate *priv = self->priv = PLUGIN_MANAGER_PRIVATE (self);
 
   priv->search_paths = g_new0 (gchar *, 4);
@@ -220,11 +219,7 @@ mex_plugin_manager_init (MexPluginManager *self)
                                             "mex",
                                             "plugins",
                                             NULL);
-  cwd = g_get_current_dir ();
-  priv->search_paths[2] = g_build_filename (cwd, "plugins", NULL);
-  g_free (cwd);
-
-  priv->search_paths[3] = g_strdup (getenv ("MEX_PLUGIN_PATH"));
+  priv->search_paths[2] = g_strdup (getenv ("MEX_PLUGIN_PATH"));
 
 
   priv->plugins = g_hash_table_new_full (g_str_hash,
