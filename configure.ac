@@ -423,14 +423,6 @@ AC_CONFIG_FILES([
   applets/networks/Makefile
   applets/webremote/Makefile
   plugins/Makefile
-  plugins/library/Makefile
-  plugins/recommended/Makefile
-  plugins/search/Makefile
-  plugins/queue/Makefile
-  plugins/applications/Makefile
-  plugins/upnp/Makefile
-  plugins/tracker/Makefile
-  plugins/dbus-input/Makefile
   po/Makefile.in
   shell/Makefile
   tests/Makefile
