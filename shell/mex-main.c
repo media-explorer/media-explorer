@@ -1545,6 +1545,21 @@ mex_captured_event_cb (ClutterActor *actor,
 }
 
 static void
+on_fullscreen_set (ClutterStage *stage,
+                   GParamSpec   *pspec,
+                   MexData      *data)
+{
+  gboolean fullscreen;
+
+  g_object_get (stage, "fullscreen-set", &fullscreen, NULL);
+
+  if (fullscreen)
+    clutter_stage_hide_cursor (stage);
+  else
+    clutter_stage_show_cursor (stage);
+}
+
+static void
 mex_remove_model_provider_cb (MexData *data,
                               GObject *old_object)
 {
@@ -2447,8 +2462,9 @@ main (int argc, char **argv)
 
   mex_set_main_window (window);
 
-  if (opt_fullscreen)
-    clutter_stage_hide_cursor (data.stage);
+  g_signal_connect (data.stage, "notify::fullscreen-set",
+                    G_CALLBACK (on_fullscreen_set), &data);
+  on_fullscreen_set (data.stage, NULL, &data);
 
   /* Must set color after set use_alpha */
   clutter_stage_set_color (data.stage, &black);
