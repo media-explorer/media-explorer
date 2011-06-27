@@ -21,6 +21,11 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+#include <stdlib.h>
+#include <libgen.h>
+#include <signal.h>
+
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
 #include <grilo.h>
@@ -32,9 +37,6 @@
 #include <clutter-gst/clutter-gst.h>
 #endif
 #include <gio/gdesktopappinfo.h>
-#include <string.h>
-#include <stdlib.h>
-#include <libgen.h>
 
 #include <glib/gi18n.h>
 
@@ -2226,6 +2228,21 @@ mex_go_back_cb (MxAction *action,
   mex_go_back (data);
 }
 
+static void
+cleanup_before_exit (void)
+{
+#if HAVE_REBINDER
+  rebinder_quit ();
+#endif
+}
+
+static MxApplication *application_for_signal;
+static void
+on_int_term_signaled (int sig)
+{
+  cleanup_before_exit ();
+  mx_application_quit (application_for_signal);
+}
 
 static GOptionEntry entries[] =
 {
@@ -2412,6 +2429,10 @@ main (int argc, char **argv)
       g_warning (G_STRLOC ": Error loading style: %s", error->message);
       g_clear_error (&error);
     }
+
+  application_for_signal = app;
+  signal (SIGINT, on_int_term_signaled);
+  signal (SIGTERM, on_int_term_signaled);
 
 #ifdef HAVE_CLUTTER_CEX100
   /* If we're on CEX100, use the default stage and make it semi-transparent */
@@ -2754,9 +2775,7 @@ main (int argc, char **argv)
 
   mx_application_run (app);
 
-#if HAVE_REBINDER
-  rebinder_quit ();
-#endif
+  cleanup_before_exit ();
 
   if (error)
     g_error_free (error);
