@@ -89,10 +89,11 @@ mex_model_provider_iface_init (MexModelProviderInterface *iface)
 static void
 mex_recommended_plugin_mimetype_set_cb (MexProgram *program)
 {
-  const gchar *mime = mex_program_get_metadata (program,
+  const gchar *mime = mex_content_get_metadata (MEX_CONTENT (program),
                                                 MEX_CONTENT_METADATA_MIMETYPE);
   if (!mime || !(*mime))
-    mex_program_set_metadata (program, MEX_CONTENT_METADATA_MIMETYPE,
+    mex_content_set_metadata (MEX_CONTENT (program),
+                              MEX_CONTENT_METADATA_MIMETYPE,
                               "x-mex/media");
 }
 
