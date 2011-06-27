@@ -69,7 +69,7 @@ release-message: $(sha256_file)
 	@echo "which can be checked out with a command such as:"
 	@echo "  git checkout -b build $(MEX_VERSION)"
 	@echo ""
-	@echo "The core of Mex dependsl on:"
+	@echo "The core of Mex depends on:"
 	@echo ""
 	@echo "  • GLib ≥ $(GLIB_REQ_VERSION)"
 	@echo "  • Gdk-pixbuf"

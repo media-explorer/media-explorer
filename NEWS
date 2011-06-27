@@ -13,7 +13,7 @@ Mex 0.1.2                                                            2011-06-24
     » New dbusinput plugin that exposes a DBus API to send key events to the
       application,
 
-    » New webremove applet, a separate HTTP daemon to control mex from a
+    » New webremote applet, a separate HTTP daemon to control mex from a
       secondary screen,
 
     » Addition of an internal thumbnailer instead of using tumbler. With this,
