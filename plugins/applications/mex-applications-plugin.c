@@ -45,8 +45,6 @@ G_DEFINE_TYPE_WITH_CODE (MexApplicationsPlugin,
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_APPLICATIONS_PLUGIN, MexApplicationsPluginPrivate))
 
-typedef struct _MexApplicationsPluginPrivate MexApplicationsPluginPrivate;
-
 struct _MexApplicationsPluginPrivate {
   GList *models;
   GList *actions;
@@ -178,9 +176,11 @@ _populate_model (MexApplicationsPlugin *self)
 static void
 mex_applications_plugin_init (MexApplicationsPlugin *self)
 {
-  MexApplicationsPluginPrivate *priv = self->priv;
+  MexApplicationsPluginPrivate *priv;
   MexActionInfo *action_info;
   MexModelInfo *model_info;
+
+  priv = self->priv = GET_PRIVATE (self);
 
   priv->applications_model = mex_generic_model_new (_("Applications"),
                                                     "icon-applications");
@@ -216,7 +216,7 @@ mex_applications_plugin_get_actions (MexActionProvider *action_provider)
 static const GList *
 mex_applications_plugin_get_models (MexModelProvider *model_provider)
 {
-  MexApplicationsPlugin *self = MEX_APPLICATIONS_PLUGIN (action_provider);
+  MexApplicationsPlugin *self = MEX_APPLICATIONS_PLUGIN (model_provider);
   MexApplicationsPluginPrivate *priv = self->priv;
 
   return priv->models;

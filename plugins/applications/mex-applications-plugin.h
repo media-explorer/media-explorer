@@ -40,8 +40,11 @@ G_BEGIN_DECLS
 #define MEX_APPLICATIONS_PLUGIN_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS ((obj), MEX_TYPE_APPLICATIONS_PLUGIN, MexApplicationsPluginClass))
 
+typedef struct _MexApplicationsPluginPrivate MexApplicationsPluginPrivate;
+
 typedef struct {
   GObject parent;
+  MexApplicationsPluginPrivate *priv;
 } MexApplicationsPlugin;
 
 typedef struct {
