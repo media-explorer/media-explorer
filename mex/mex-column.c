@@ -64,6 +64,7 @@ struct _MexColumnPrivate
   gint              open_boxes;
 
   MxAdjustment *adjustment;
+  gdouble       adjustment_value;
 };
 
 static void clutter_container_iface_init (ClutterContainerIface *iface);
@@ -357,6 +358,9 @@ clutter_container_iface_init (ClutterContainerIface *iface)
 static void
 mex_column_adjustment_changed_cb (MexColumn *self)
 {
+  MexColumnPrivate *priv = self->priv;
+
+  priv->adjustment_value = mx_adjustment_get_value (priv->adjustment);
   mex_column_allocate_header (self, NULL, CLUTTER_ALLOCATION_NONE);
   clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
 }
@@ -874,7 +878,7 @@ mex_column_allocate_header (MexColumn              *self,
     }
 
   if (priv->adjustment)
-    value = mx_adjustment_get_value (priv->adjustment);
+    value = priv->adjustment_value;
   else
     value = 0.0;
 
@@ -1018,7 +1022,7 @@ mex_column_apply_transform (ClutterActor *actor,
 
   if (priv->adjustment)
     cogl_matrix_translate (matrix, 0,
-                           -mx_adjustment_get_value (priv->adjustment), 0);
+                           -priv->adjustment_value, 0);
 }
 
 static void
@@ -1037,7 +1041,7 @@ mex_column_paint (ClutterActor *actor)
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   clutter_actor_get_allocation_box (actor, &box);
   if (priv->adjustment)
-    value = mx_adjustment_get_value (priv->adjustment);
+    value = priv->adjustment_value;
   else
     value = 0;
 
@@ -1089,7 +1093,7 @@ mex_column_pick (ClutterActor *actor, const ClutterColor *color)
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   clutter_actor_get_allocation_box (actor, &box);
   if (priv->adjustment)
-    value = mx_adjustment_get_value (priv->adjustment);
+    value = priv->adjustment_value;
   else
     value = 0;
 
@@ -1313,9 +1317,12 @@ mex_column_get_paint_volume (ClutterActor       *self,
   if (!clutter_paint_volume_set_from_allocation (volume, self))
     return FALSE;
 
-  clutter_paint_volume_get_origin (volume, &v);
-  v.y += mx_adjustment_get_value (priv->adjustment),
-  clutter_paint_volume_set_origin (volume, &v);
+  if (priv->adjustment)
+    {
+      clutter_paint_volume_get_origin (volume, &v);
+      v.y += priv->adjustment_value,
+      clutter_paint_volume_set_origin (volume, &v);
+    }
 
   return TRUE;
 }
