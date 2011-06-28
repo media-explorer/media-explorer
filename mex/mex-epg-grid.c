@@ -118,8 +118,7 @@ create_header (MexEpgGrid *grid)
   diff = g_date_time_difference (priv->last_date, priv->first_date);
   n_headers = (diff * 1e-6 / 60. / 30) + 1; /* number of 30mins slices */
 
-#if 0
-  if (MEX_DEBUG_ENABLED (EPG))
+  if (MEX_DEBUG_ENABLED)
     {
       gchar *first_str, *last_str;
 
@@ -130,7 +129,6 @@ create_header (MexEpgGrid *grid)
       g_free (first_str);
       g_free (last_str);
     }
-#endif
 
   g_ptr_array_set_size (priv->header, n_headers);
 

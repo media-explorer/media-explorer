@@ -263,10 +263,62 @@ MEX_DEBUG (MexLogDomain *domain, const char *format, ...)
 
 #endif /* G_HAVE_ISO_VARARGS */
 
+/**
+ * MEX_DEBUG_ENABLED:
+ *
+ * Evaluates to true if the debug level is enabled for the default log domain.
+ *
+ * Since: 0.2
+ */
+#define MEX_DEBUG_ENABLED \
+  mex_log_enabled(MEX_LOG_DOMAIN_DEFAULT, MEX_LOG_LEVEL_DEBUG)
+
+/**
+ * MEX_INFO_ENABLED:
+ *
+ * Evaluates to true if the info level is enabled for the default log domain.
+ *
+ * Since: 0.2
+ */
+#define MEX_INFO_ENABLED \
+  mex_log_enabled(MEX_LOG_DOMAIN_DEFAULT, MEX_LOG_LEVEL_INFO)
+
+/**
+ * MEX_MESSAGE_ENABLED:
+ *
+ * Evaluates to true if the message level is enabled for the default log domain.
+ *
+ * Since: 0.2
+ */
+#define MEX_MESSAGE_ENABLED \
+  mex_log_enabled(MEX_LOG_DOMAIN_DEFAULT, MEX_LOG_LEVEL_MESSAGE)
+
+/**
+ * MEX_WARNING_ENABLED:
+ *
+ * Evaluates to true if the warning level is enabled for the default log domain.
+ *
+ * Since: 0.2
+ */
+#define MEX_WARNING_ENABLED \
+  mex_log_enabled(MEX_LOG_DOMAIN_DEFAULT, MEX_LOG_LEVEL_WARNING)
+
+/**
+ * MEX_ERROR_ENABLED:
+ *
+ * Evaluates to true if the error level is enabled for the default log domain.
+ *
+ * Since: 0.2
+ */
+#define MEX_ERROR_ENABLED \
+  mex_log_enabled(MEX_LOG_DOMAIN_DEFAULT, MEX_LOG_LEVEL_ERROR)
+
 MexLogDomain *  mex_log_domain_new    (const gchar *name);
 void            mex_log_domain_free   (MexLogDomain *domain);
 
 void            mex_log_configure     (const gchar  *config);
+gboolean        mex_log_enabled       (MexLogDomain *domain,
+                                       MexLogLevel   level);
 void            mex_log               (MexLogDomain *domain,
                                        MexLogLevel   level,
                                        const gchar  *strloc,

@@ -137,8 +137,7 @@ mex_epg_provider_get_events (MexEpgProvider      *provider,
 
   iface = MEX_EPG_PROVIDER_GET_IFACE (provider);
 
-#if 0
-  if (MEX_DEBUG_ENABLED (EPG))
+  if (MEX_DEBUG_ENABLED)
     {
       gchar *start, *end;
 
@@ -148,7 +147,6 @@ mex_epg_provider_get_events (MexEpgProvider      *provider,
       g_free (start);
       g_free (end);
     }
-#endif
 
   if (G_LIKELY (iface->get_events))
     {

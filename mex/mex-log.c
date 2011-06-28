@@ -398,3 +398,26 @@ mex_log_configure (const gchar *config)
 {
   configure_log_domains (config);
 }
+
+/**
+ * mex_log_enabled:
+ * @domain: a log domain
+ * @level: a #MexLogLevel
+ *
+ * Checks if the @domain has the @level "enabled", ie. if the user has
+ * configured the log domain to output @level messages.
+ *
+ * Return: %TRUE if @domain has its verbosity setup to print @level message,
+ * %FALSE otherwise
+ *
+ * Since: 0.2
+ */
+gboolean
+mex_log_enabled (MexLogDomain *domain,
+                 MexLogLevel   level)
+{
+  g_return_val_if_fail (domain, FALSE);
+  g_return_val_if_fail (level > 0 && level < MEX_LOG_LEVEL_LAST, FALSE);
+
+  return level <= domain->log_level;
+}
