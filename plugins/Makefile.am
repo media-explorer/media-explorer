@@ -116,3 +116,13 @@ plugins_LTLIBRARIES += 40mex-bliptv.la
 40mex_bliptv_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Bliptv\"
 40mex_bliptv_la_LIBADD = $(_libadd)
 endif
+
+if USE_PLUGIN_JUSTINTV
+plugins_LTLIBRARIES += 40mex-justintv.la
+
+40mex_justintv_la_SOURCES = 		\
+	justintv/mex-justintv-plugin.c 	\
+	justintv/mex-justintv-plugin.h
+40mex_justintv_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Justintv\"
+40mex_justintv_la_LIBADD = $(_libadd)
+endif

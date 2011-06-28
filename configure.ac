@@ -389,7 +389,7 @@ PKG_CHECK_EXISTS(clutter-x11-1.0, [AC_DEFINE(HAVE_CLUTTER_X11,
                  [])
 
 # Default list of plugins to compile
-WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv"
+WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv"
 
 # Provide a --with-plugins/--without-plugins configure option
 AS_MEX_ARG_WITH_PLUGINS
@@ -404,6 +404,7 @@ AS_MEX_PLUGIN(upnp)
 AS_MEX_PLUGIN(tracker)
 AS_MEX_PLUGIN(dbusinput)
 AS_MEX_PLUGIN(bliptv)
+AS_MEX_PLUGIN(justintv)
 
 AC_CONFIG_FILES([
   Makefile
