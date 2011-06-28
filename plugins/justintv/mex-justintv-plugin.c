@@ -116,7 +116,6 @@ handle_new_source_plugin (MexJustintvPlugin *self, GrlMediaPlugin *plugin)
   GrlMetadataSource *meta = GRL_METADATA_SOURCE (plugin);
   const char *id;
 
-  g_print ("%s\n", grl_media_plugin_get_id (plugin));
   id = grl_media_plugin_get_id (plugin);
   if (g_strcmp0 (id,"grl-justintv") != 0)
     return;
