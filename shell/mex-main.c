@@ -30,9 +30,6 @@
 #include <dbus/dbus-glib-bindings.h>
 #include <grilo.h>
 #include <mex/mex.h>
-#include <mex/mex-grilo-feed.h>
-#include <mex/mex-grilo-tracker-feed.h>
-#include <mex/mex-plugin-manager.h>
 #ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
 #endif
@@ -41,6 +38,7 @@
 #include <glib/gi18n.h>
 
 #include "mex-version.h"
+
 #if HAVE_CLUTTER_X11
 #include <clutter/x11/clutter-x11.h>
 #endif

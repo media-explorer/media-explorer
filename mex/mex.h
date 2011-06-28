@@ -56,6 +56,8 @@
 #include <mex/mex-generic-model.h>
 #include <mex/mex-generic-proxy.h>
 #include <mex/mex-grid.h>
+#include <mex/mex-grilo-feed.h>
+#include <mex/mex-grilo-tracker-feed.h>
 #include <mex/mex-info-bar.h>
 #include <mex/mex-info-panel.h>
 #include <mex/mex-log.h>
