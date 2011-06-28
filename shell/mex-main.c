@@ -2040,18 +2040,6 @@ start_service_reply (DBusGProxy *proxy,
                  error->message);
       return;
     }
-
-
-  /* FIXME: Enabled this code once we have MEX_NOTE() as public API and we
-   can register a debug category at run time */
-#if 0
-  if (success == DBUS_START_REPLY_SUCCESS)
-    g_debug ("service started");
-  else if (success == DBUS_START_REPLY_ALREADY_RUNNING)
-    g_debug ("service already running");
-  else
-    g_warning ("%s: Unexpected return value %d", __func__, success);
-#endif
 }
 
 static void
