@@ -208,7 +208,7 @@ on_audio_volume_changed (ClutterMedia *media,
   if (fabs (priv->vol_value - new_volume) < 0.01)
     return;
 
-  priv->vol_value = new_volume;
+  priv->vol_value = CLAMP (new_volume, 0.0, 1.0);
   update_style_class (self);
 
   /* Pulse audio sends a notification when playing a stream for the first
