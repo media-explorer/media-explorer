@@ -106,3 +106,13 @@ plugins_LTLIBRARIES += 50mex-dbusinput.la
 50mex_dbusinput_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Dbusinput\"
 50mex_dbusinput_la_LIBADD  = $(_libadd)
 endif
+
+if USE_PLUGIN_BLIPTV
+plugins_LTLIBRARIES += 40mex-bliptv.la
+
+40mex_bliptv_la_SOURCES = 		\
+	bliptv/mex-bliptv-plugin.c 	\
+	bliptv/mex-bliptv-plugin.h
+40mex_bliptv_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Bliptv\"
+40mex_bliptv_la_LIBADD = $(_libadd)
+endif
