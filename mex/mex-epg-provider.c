@@ -29,8 +29,11 @@
 #include "config.h"
 #endif
 
-#include "mex-debug.h"
+#include "mex-log.h"
 #include "mex-epg-provider.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  epg_log_domain
+MEX_LOG_DOMAIN_EXTERN(epg_log_domain);
 
 G_DEFINE_INTERFACE (MexEpgProvider, mex_epg_provider, G_TYPE_INVALID);
 
@@ -134,16 +137,18 @@ mex_epg_provider_get_events (MexEpgProvider      *provider,
 
   iface = MEX_EPG_PROVIDER_GET_IFACE (provider);
 
+#if 0
   if (MEX_DEBUG_ENABLED (EPG))
     {
       gchar *start, *end;
 
       start = g_date_time_format (start_date, "%d/%m/%y %H:%M");
       end = g_date_time_format (end_date, "%d/%m/%y %H:%M");
-      MEX_NOTE (EPG, "Asking for events between %s and %s", start, end);
+      MEX_DEBUG ("Asking for events between %s and %s", start, end);
       g_free (start);
       g_free (end);
     }
+#endif
 
   if (G_LIKELY (iface->get_events))
     {

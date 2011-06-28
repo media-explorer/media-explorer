@@ -29,10 +29,11 @@
 #include <libsoup/soup.h>
 #endif
 
+#include "mex-log.h"
+#include "mex-download-queue.h"
 
-#include <mex-download-queue.h>
-
-#include <mex-debug.h>
+#define MEX_LOG_DOMAIN_DEFAULT  download_queue_log_domain
+MEX_LOG_DOMAIN(download_queue_log_domain);
 
 enum
 {
@@ -171,8 +172,8 @@ mex_download_queue_cache_insert (MexDownloadQueue *queue,
 
   queue->priv->cache_size += item->length;
 
-  MEX_NOTE (DOWNLOAD_QUEUE, "cache (%'" G_GSSIZE_FORMAT "): added: %s",
-            queue->priv->cache_size, uri);
+  MEX_DEBUG ("cache (%'" G_GSSIZE_FORMAT "): added: %s",
+             queue->priv->cache_size, uri);
 
   /* keep cache size under MAX_CACHE_SIZE */
   while (queue->priv->cache_size > MAX_CACHE_SIZE && iterations < 3)
@@ -199,9 +200,8 @@ mex_download_queue_cache_insert (MexDownloadQueue *queue,
         {
           queue->priv->cache_size -= value_to_remove->length;
 
-          MEX_NOTE (DOWNLOAD_QUEUE,
-                    "cache (%'" G_GSSIZE_FORMAT "): removed: %s",
-                    queue->priv->cache_size, key_to_remove);
+          MEX_DEBUG ("cache (%'" G_GSSIZE_FORMAT "): removed: %s",
+                     queue->priv->cache_size, key_to_remove);
 
           g_hash_table_remove (queue->priv->cache, key_to_remove);
         }
@@ -635,23 +635,21 @@ process_queue (MexDownloadQueue *self)
 
       if (cached)
         {
-          MEX_NOTE (DOWNLOAD_QUEUE, "cache: hit: %s", task->any.uri);
+          MEX_DEBUG ("cache: hit: %s", task->any.uri);
 
           task->type = MEX_DQ_TYPE_CACHED;
           process_cached (self, task);
         }
       else if (is_http)
         {
-          MEX_NOTE (DOWNLOAD_QUEUE, "cache miss, using soup: %s",
-                    task->any.uri);
+          MEX_DEBUG ("cache miss, using soup: %s", task->any.uri);
 
           task->type = MEX_DQ_TYPE_SOUP;
           process_soup (self, task);
         }
       else
         {
-          MEX_NOTE (DOWNLOAD_QUEUE, "cache miss, using gio: %s",
-                    task->any.uri);
+          MEX_DEBUG ("cache miss, using gio: %s", task->any.uri);
 
           task->type = MEX_DQ_TYPE_GIO;
           process_gio (self, task);
@@ -728,7 +726,7 @@ mex_download_queue_enqueue (MexDownloadQueue               *queue,
   task->any.callback = reply;
   task->any.userdata = userdata;
 
-  MEX_NOTE (DOWNLOAD_QUEUE, "queueing download: %s", uri);
+  MEX_DEBUG ("queueing download: %s", uri);
 
   if (g_str_has_prefix (uri, "http://"))
     g_queue_push_tail (priv->queue, task);
@@ -767,7 +765,7 @@ mex_download_queue_cancel (MexDownloadQueue *queue,
 
   priv = queue->priv;
 
-  MEX_NOTE (DOWNLOAD_QUEUE, "cancelling download: %s", task->any.uri);
+  MEX_DEBUG ("cancelling download: %s", task->any.uri);
 
   l = g_queue_find (priv->queue, task);
   if (l)

@@ -19,7 +19,10 @@
 
 #include "mex-applet-manager.h"
 #include "mex-marshal.h"
-#include "mex-debug.h"
+#include "mex-log.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  applet_manager_log_domain
+MEX_LOG_DOMAIN(applet_manager_log_domain);
 
 G_DEFINE_TYPE (MexAppletManager, mex_applet_manager, G_TYPE_OBJECT)
 
@@ -97,7 +100,7 @@ mex_applet_manager_init (MexAppletManager *self)
 {
   MexAppletManagerPrivate *priv = self->priv = APPLET_MANAGER_PRIVATE (self);
 
-  MEX_NOTE (APPLET_MANAGER, "Applet manager initialised");
+  MEX_DEBUG ("Applet manager initialised");
   priv->applets = g_hash_table_new_full (g_str_hash,
                                          g_str_equal,
                                          NULL,
@@ -139,8 +142,7 @@ mex_applet_manager_add_applet (MexAppletManager *manager,
       return;
     }
 
-  MEX_NOTE (APPLET_MANAGER, "Added applet with id %s",
-            mex_applet_get_id (applet));
+  MEX_DEBUG ("Added applet with id %s", mex_applet_get_id (applet));
 
   g_hash_table_insert (priv->applets,
                        (gpointer)mex_applet_get_id (applet),

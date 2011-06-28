@@ -48,10 +48,11 @@
 #include "rebinder.h"
 #endif
 
-#include "mex-debug.h"
-
 #define ALPHA CLUTTER_EASE_OUT_QUAD
 #define DURATION 400
+
+#define MEX_LOG_DOMAIN_DEFAULT  main_log_domain
+MEX_LOG_DOMAIN_STATIC(main_log_domain);
 
 typedef struct
 {
@@ -2390,9 +2391,14 @@ main (int argc, char **argv)
 #ifdef USE_PLAYER_CLUTTER_GST
   clutter_gst_init (&argc, &argv);
 #endif
-  grl_init (&argc, &argv);
 
   clutter_set_font_flags (clutter_get_font_flags () & ~CLUTTER_FONT_MIPMAPPING);
+
+  /* log domain */
+  MEX_LOG_DOMAIN_INIT (main_log_domain, "main");
+
+  /* grilo */
+  grl_init (&argc, &argv);
 
   registry = grl_plugin_registry_get_default ();
 
@@ -2445,7 +2451,7 @@ main (int argc, char **argv)
                 }
               else
                 {
-                  MEX_NOTE (MISC, "loaded: %s plugin", enabled_plugins[i]);
+                  MEX_DEBUG ("loaded: %s plugin", enabled_plugins[i]);
                 }
             }
           g_strfreev (enabled_plugins);
@@ -2454,7 +2460,7 @@ main (int argc, char **argv)
     }
   else
     {
-      MEX_NOTE (MISC, "No mex.conf found, loading default plugins");
+      MEX_DEBUG ("No mex.conf found, loading default plugins");
 
       /* Tracker is our first choice of plugin */
       if (!grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL))

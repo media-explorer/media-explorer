@@ -31,14 +31,17 @@
 #include "mex-column.h"
 #include "mex-content-box.h"
 #include "mex-content-view.h"
-#include "mex-debug.h"
 #include "mex-download-queue.h"
 #include "mex-epg-grid.h"
 #include "mex-epg-manager.h"
+#include "mex-log.h"
 #include "mex-marshal.h"
 #include "mex-private.h"
 #include "mex-scroll-view.h"
 #include "mex-shadow.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  epg_log_domain
+MEX_LOG_DOMAIN(epg_log_domain);
 
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 
@@ -125,15 +128,15 @@ on_get_events_reply (MexEpgProvider *provider,
 
   if (G_UNLIKELY (events == NULL))
     {
-      MEX_WARN (EPG, "Could not find EPG events for channel %s",
-                mex_channel_get_name (channel));
+      MEX_WARNING ("Could not find EPG events for channel %s",
+                   mex_channel_get_name (channel));
       /* signal the grid that we have no data for that row */
       mex_epg_grid_add_events (MEX_EPG_GRID (priv->grid), channel, NULL);
       return;
     }
 
-  MEX_NOTE (EPG, "Received %d events for %s", events->len,
-            mex_channel_get_name (channel));
+  MEX_DEBUG ("Received %d events for %s", events->len,
+             mex_channel_get_name (channel));
 
   mex_epg_grid_add_events (MEX_EPG_GRID (priv->grid), channel, events);
 }

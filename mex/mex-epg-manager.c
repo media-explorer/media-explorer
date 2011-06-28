@@ -16,10 +16,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
 #include "mex-epg-manager.h"
 
-#include "mex-debug.h"
+#include "mex-log.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  epg_log_domain
+MEX_LOG_DOMAIN_EXTERN(epg_log_domain);
 
 G_DEFINE_TYPE (MexEpgManager, mex_epg_manager, G_TYPE_OBJECT)
 
@@ -87,9 +89,9 @@ on_manager_ready (MexEpgManager *manager,
     {
       if (priv->providers->len > 1)
         {
-          MEX_WARN (EPG, "Having more than 1 EPG provider but don't know how "
-                    "to merge the results for multiple providers just yet. "
-                    "Using the first one");
+          MEX_WARNING ("Having more than 1 EPG provider but don't know how "
+                       "to merge the results for multiple providers just yet. "
+                       "Using the first one");
         }
 
       provider = g_ptr_array_index (priv->providers, 0);
@@ -201,7 +203,7 @@ on_provider_ready (MexEpgProvider *provider,
 
   if (G_UNLIKELY (priv->wait_for_providers == 0))
     {
-      MEX_WARN (EPG, "Unexpected provider ready");
+      MEX_WARNING ("Unexpected provider ready");
       return;
     }
 
@@ -266,9 +268,9 @@ mex_epg_manager_get_events (MexEpgManager      *manager,
     {
       if (priv->providers->len > 1)
         {
-          MEX_WARN (EPG, "Having more than 1 EPG provider but don't know how "
-                    "to merge the results for multiple providers just yet. "
-                    "Using the first one");
+          MEX_WARNING ("Having more than 1 EPG provider but don't know how "
+                       "to merge the results for multiple providers just yet. "
+                       "Using the first one");
         }
 
       provider = g_ptr_array_index (priv->providers, 0);

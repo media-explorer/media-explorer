@@ -20,11 +20,14 @@
 #include "mex-epg-grid.h"
 
 #include "mex-channel-manager.h"
-#include "mex-debug.h"
 #include "mex-epg-tile.h"
+#include "mex-log.h"
 #include "mex-marshal.h"
 #include "mex-private.h"
 #include "mex-utils.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  epg_log_domain
+MEX_LOG_DOMAIN_EXTERN(epg_log_domain);
 
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 
@@ -115,17 +118,19 @@ create_header (MexEpgGrid *grid)
   diff = g_date_time_difference (priv->last_date, priv->first_date);
   n_headers = (diff * 1e-6 / 60. / 30) + 1; /* number of 30mins slices */
 
+#if 0
   if (MEX_DEBUG_ENABLED (EPG))
     {
       gchar *first_str, *last_str;
 
       first_str = mex_date_to_string (priv->first_date);
       last_str = mex_date_to_string (priv->last_date);
-      MEX_NOTE (EPG, "Creating header between %s and %s (%d columns)",
-                first_str, last_str, n_headers);
+      MEX_DEBUG ("Creating header between %s and %s (%d columns)",
+                 first_str, last_str, n_headers);
       g_free (first_str);
       g_free (last_str);
     }
+#endif
 
   g_ptr_array_set_size (priv->header, n_headers);
 
@@ -747,8 +752,7 @@ row_loaded (MexEpgGrid *grid,
 
   if (G_UNLIKELY (priv->n_rows_to_load) == 0)
     {
-      MEX_WARN (EPG, "A new row was loaded, but we've already loaded every "
-                "row");
+      MEX_WARNING ("A new row was loaded, but we've already loaded every row");
       return;
     }
 
@@ -777,8 +781,8 @@ mex_epg_grid_add_events (MexEpgGrid *grid,
                                                        channel);
   if (G_UNLIKELY (position == -1))
     {
-      MEX_WARN (EPG, "Could not find position of channel %s",
-                mex_channel_get_name (channel));
+      MEX_WARNING ("Could not find position of channel %s",
+                   mex_channel_get_name (channel));
       return;
     }
 

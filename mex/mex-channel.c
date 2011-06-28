@@ -25,8 +25,12 @@
  */
 
 #include "mex-content.h"
+#include "mex-log.h"
 
 #include "mex-channel.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  channel_log_domain
+MEX_LOG_DOMAIN(channel_log_domain);
 
 static void mex_content_iface_init (MexContentIface *iface);
 

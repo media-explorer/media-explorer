@@ -97,12 +97,15 @@
 #include <gio/gio.h>
 
 #include "mex-content.h"
-#include "mex-debug.h"
 #include "mex-download-queue.h"
 #include "mex-epg-event.h"
+#include "mex-log.h"
 #include "mex-program.h"
 
 #include "mex-epg-radiotimes.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  epg_log_domain
+MEX_LOG_DOMAIN_EXTERN(epg_log_domain);
 
 static void mex_epg_provider_iface_init (MexEpgProviderInterface *iface);
 
@@ -255,7 +258,7 @@ on_channel_dat_received (MexDownloadQueue *queue,
   GError *error = NULL;
   gchar *line;
 
-  MEX_NOTE (EPG, "received %s, size %"G_GSIZE_FORMAT, uri, count);
+  MEX_DEBUG ("received %s, size %"G_GSIZE_FORMAT, uri, count);
 
   if (dq_error)
     {
@@ -386,7 +389,7 @@ parse_program (gchar *line)
       if (field2key[i] == MEX_CONTENT_METADATA_NONE)
         continue;
 
-      MEX_NOTE (EPG, "metadata %s: %s",
+      MEX_DEBUG ("metadata %s: %s",
                  mex_content_metadata_key_to_string (field2key[i]), field);
 
       mex_content_set_metadata (MEX_CONTENT (program), field2key[i], field);
@@ -477,22 +480,22 @@ parse_epg_dat_line (Request   *req,
   return TRUE;
 
 program_failed:
-  MEX_WARN (EPG, "could not create the program: %s", line);
+  MEX_WARNING ("could not create the program: %s", line);
   return FALSE;
 scanf_failed:
-  MEX_WARN (EPG, "could not parse date or time: %s", line);
+  MEX_WARNING ("could not parse date or time: %s", line);
   return FALSE;
 no_date:
-  MEX_WARN (EPG, "could not find the date: %s", line);
+  MEX_WARNING ("could not find the date: %s", line);
   return FALSE;
 no_start_time:
-  MEX_WARN (EPG, "could not find the start time: %s", line);
+  MEX_WARNING ("could not find the start time: %s", line);
   return FALSE;
 no_end_time:
-  MEX_WARN (EPG, "could not find the end time: %s", line);
+  MEX_WARNING ("could not find the end time: %s", line);
   return FALSE;
 no_duration:
-  MEX_WARN (EPG, "could not find the duration: %s", line);
+  MEX_WARNING ("could not find the duration: %s", line);
   return FALSE;
 }
 
@@ -517,7 +520,7 @@ on_epg_dat_received (MexDownloadQueue *queue,
       return;
     }
 
-  MEX_NOTE (EPG, "received %s, size %"G_GSIZE_FORMAT, uri, count);
+  MEX_DEBUG ("received %s, size %"G_GSIZE_FORMAT, uri, count);
 
   events = g_ptr_array_new_with_free_func (g_object_unref);
 

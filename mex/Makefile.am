@@ -95,6 +95,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-grilo-program.h			\
 	$(top_srcdir)/mex/mex-info-bar.h			\
 	$(top_srcdir)/mex/mex-info-panel.h			\
+	$(top_srcdir)/mex/mex-log.h				\
 	$(top_srcdir)/mex/mex-logo-provider.h			\
 	$(top_srcdir)/mex/mex-main.h				\
 	$(top_srcdir)/mex/mex-media-controls.h			\
@@ -142,7 +143,7 @@ mex_built_headers =			\
 	$(NULL)
 
 mex_private_headers =			\
-	mex-debug.h			\
+	mex-log-private.h		\
 	mex-private.h			\
 	$(NULL)
 
@@ -169,7 +170,6 @@ mex_sources =					\
 	mex-content-tile.c			\
 	mex-content-view.c			\
 	mex-content.c				\
-	mex-debug.c				\
 	mex-download-queue.c			\
 	mex-expander-box.c			\
 	mex-epg.c				\
@@ -192,6 +192,7 @@ mex_sources =					\
 	mex-grilo-program.c			\
 	mex-info-bar.c				\
 	mex-info-panel.c			\
+	mex-log.c				\
 	mex-logo-provider.c			\
 	mex-main.c				\
 	mex-media-controls.c			\

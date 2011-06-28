@@ -16,14 +16,16 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
 #include <gio/gio.h>
 
 #include "mex-channel.h"
 #include "mex-channel-provider.h"
-#include "mex-debug.h"
+#include "mex-log.h"
 
 #include "mex-uri-channel-provider.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  channel_log_domain
+MEX_LOG_DOMAIN_EXTERN(channel_log_domain);
 
 static void
 mex_channel_provider_iface_init (MexChannelProviderInterface *iface);
@@ -64,8 +66,8 @@ parse_line (MexUriChannelProvider *provider,
   fields = g_strsplit (line, "|", 0);
   if (!(fields[0] && fields[1]))
     {
-      MEX_WARN (CHANNEL, "Invalid channel definition in %s: %s",
-                priv->config_file, line);
+      MEX_WARNING ("Invalid channel definition in %s: %s",
+                   priv->config_file, line);
       g_strfreev (fields);
       return FALSE;
     }
@@ -102,8 +104,8 @@ parse_config (MexUriChannelProvider *provider)
   input = g_file_read (file, NULL, &error);
   if (G_UNLIKELY (error))
     {
-      MEX_WARN (CHANNEL, "Could not read config file %s: %s",
-                priv->config_file, error->message);
+      MEX_WARNING ("Could not read config file %s: %s",
+                   priv->config_file, error->message);
       g_clear_error (&error);
       goto read_error;
     }
@@ -119,7 +121,7 @@ parse_config (MexUriChannelProvider *provider)
     }
   if (G_UNLIKELY (error))
     {
-      MEX_WARN (CHANNEL, "Could not read line: %s", error->message);
+      MEX_WARNING ("Could not read line: %s", error->message);
       g_clear_error (&error);
     }
 

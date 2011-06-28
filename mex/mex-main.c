@@ -30,7 +30,7 @@
 
 #include <clutter/clutter.h>
 
-#include "mex-debug.h"
+#include "mex-log-private.h"
 #include "mex-utils.h"
 
 #include "mex-main.h"
@@ -295,7 +295,7 @@ mex_base_init (int *argc, char ***argv)
 {
   /* initialize debugging infrastructure */
 #ifdef MEX_ENABLE_DEBUG
-  _mex_debug_init ();
+  _mex_log_init_core_domains ();
 #endif
 
   /* Initialise LIRC */
