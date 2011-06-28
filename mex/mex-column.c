@@ -87,6 +87,11 @@ G_DEFINE_TYPE_WITH_CODE (MexColumn, mex_column, MX_TYPE_WIDGET,
 
 static guint32 signals[LAST_SIGNAL] = { 0, };
 
+static void mex_column_allocate_header (MexColumn              *self,
+                                        const ClutterActorBox  *box,
+                                        ClutterAllocationFlags  flags);
+
+
 /* MexScrollableContainerInterface */
 static void
 mex_column_get_allocation (MexScrollableContainer *self,
@@ -350,6 +355,13 @@ clutter_container_iface_init (ClutterContainerIface *iface)
 /* MxScrollableIface */
 
 static void
+mex_column_adjustment_changed_cb (MexColumn *self)
+{
+  mex_column_allocate_header (self, NULL, CLUTTER_ALLOCATION_NONE);
+  clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
+}
+
+static void
 mex_column_set_adjustments (MxScrollable *scrollable,
                             MxAdjustment *hadjust,
                             MxAdjustment *vadjust)
@@ -362,7 +374,7 @@ mex_column_set_adjustments (MxScrollable *scrollable,
   if (priv->adjustment)
     {
       g_signal_handlers_disconnect_by_func (priv->adjustment,
-                                            clutter_actor_queue_relayout,
+                                            mex_column_adjustment_changed_cb,
                                             scrollable);
       g_object_unref (priv->adjustment);
     }
@@ -373,7 +385,7 @@ mex_column_set_adjustments (MxScrollable *scrollable,
     {
       g_object_ref (priv->adjustment);
       g_signal_connect_swapped (priv->adjustment, "notify::value",
-                                G_CALLBACK (clutter_actor_queue_relayout),
+                                G_CALLBACK (mex_column_adjustment_changed_cb),
                                 scrollable);
     }
 
@@ -844,28 +856,29 @@ mex_column_get_preferred_height (ClutterActor *actor,
 }
 
 static void
-mex_column_allocate (ClutterActor          *actor,
-                     const ClutterActorBox *box,
-                     ClutterAllocationFlags flags)
+mex_column_allocate_header (MexColumn              *self,
+                            const ClutterActorBox  *box,
+                            ClutterAllocationFlags  flags)
 {
-  gfloat header_pref_height, pref_h, pref_w;
-  ClutterActorBox child_box;
-  MxPadding padding;
   gdouble value;
-  GList *c;
+  MxPadding padding;
+  gfloat header_pref_height;
+  ClutterActorBox box_data, child_box;
 
-  MexColumn *column = MEX_COLUMN (actor);
-  MexColumnPrivate *priv = column->priv;
+  MexColumnPrivate *priv = self->priv;
 
-  CLUTTER_ACTOR_CLASS (mex_column_parent_class)->allocate (actor, box, flags);
+  if (!box)
+    {
+      clutter_actor_get_allocation_box (CLUTTER_ACTOR (self), &box_data);
+      box = &box_data;
+    }
 
-  mx_widget_get_padding (MX_WIDGET (actor), &padding);
-
-  /* Allocate header */
   if (priv->adjustment)
     value = mx_adjustment_get_value (priv->adjustment);
   else
     value = 0.0;
+
+  mx_widget_get_padding (MX_WIDGET (self), &padding);
 
   child_box.x1 = padding.left;
   child_box.x2 = box->x2 - box->x1 - padding.right;
@@ -879,17 +892,48 @@ mex_column_allocate (ClutterActor          *actor,
   child_box.y2 = child_box.y1 + header_pref_height;
 
   clutter_actor_allocate (priv->header, &child_box, flags);
+}
+
+static void
+mex_column_allocate (ClutterActor          *actor,
+                     const ClutterActorBox *box,
+                     ClutterAllocationFlags flags)
+{
+  gfloat header_pref_height, pref_h, pref_w;
+  ClutterActorBox child_box;
+  MxPadding padding;
+  GList *c;
+
+  MexColumn *column = MEX_COLUMN (actor);
+  MexColumnPrivate *priv = column->priv;
+
+  CLUTTER_ACTOR_CLASS (mex_column_parent_class)->allocate (actor, box, flags);
+
+  mx_widget_get_padding (MX_WIDGET (actor), &padding);
+
+  /* Allocate header */
+  mex_column_allocate_header (column, box, flags);
 
   /* Allocate placeholder actor */
+  clutter_actor_get_preferred_height (priv->header,
+                                      child_box.x2 - child_box.x1,
+                                      NULL,
+                                      &header_pref_height);
   child_box.y1 = padding.top + header_pref_height;
 
-  /* keep the aspect ratio of the palceholder actor */
-  clutter_actor_get_preferred_size (priv->placeholder_actor, NULL, NULL,
-                                    &pref_w, &pref_h);
-  pref_h = pref_h * ((child_box.x2 - child_box.x1) / pref_w);
-  child_box.y2 = child_box.y1 + pref_h;
-  clutter_actor_allocate (priv->placeholder_actor, &child_box, flags);
+  if (priv->placeholder_actor)
+    {
+      child_box.x1 = padding.left;
+      child_box.x2 = box->x2 - box->x1 - padding.right;
 
+      /* keep the aspect ratio of the placeholder actor */
+      clutter_actor_get_preferred_size (priv->placeholder_actor, NULL, NULL,
+                                        &pref_w, &pref_h);
+      pref_h = pref_h * ((child_box.x2 - child_box.x1) / pref_w);
+      child_box.y2 = child_box.y1 + pref_h;
+
+      clutter_actor_allocate (priv->placeholder_actor, &child_box, flags);
+    }
 
   child_box.y2 = box->y2 - box->y1 - padding.bottom;
 
@@ -1462,16 +1506,20 @@ mex_column_set_placeholder_actor (MexColumn    *column,
   MexColumnPrivate *priv = column->priv;
 
   g_return_if_fail (MEX_IS_COLUMN (column));
-  g_return_if_fail (CLUTTER_IS_ACTOR (actor));
+  g_return_if_fail (actor == NULL || CLUTTER_IS_ACTOR (actor));
 
   /* placeholder label */
   if (priv->placeholder_actor)
     clutter_actor_unparent (priv->placeholder_actor);
 
   priv->placeholder_actor = actor;
-  clutter_actor_push_internal (CLUTTER_ACTOR (column));
-  clutter_actor_set_parent (priv->placeholder_actor, CLUTTER_ACTOR (column));
-  clutter_actor_pop_internal (CLUTTER_ACTOR (column));
+
+  if (actor)
+    {
+      clutter_actor_push_internal (CLUTTER_ACTOR (column));
+      clutter_actor_set_parent (priv->placeholder_actor, CLUTTER_ACTOR (column));
+      clutter_actor_pop_internal (CLUTTER_ACTOR (column));
+    }
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (column));
 }
