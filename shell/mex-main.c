@@ -94,6 +94,8 @@ typedef struct
   gboolean    folder_opened;
 
   gint busy_count;
+
+  guint cursor_timeout_source;
 } MexData;
 
 static void mex_show_actor (MexData *data, ClutterActor *actor);
@@ -1423,6 +1425,17 @@ mex_enable_touch_events (MexData  *data,
 }
 
 static gboolean
+hide_cursor (gpointer user_data)
+{
+  MexData *data = user_data;
+
+  clutter_stage_hide_cursor (data->stage);
+  data->cursor_timeout_source = 0;
+
+  return FALSE;
+}
+
+static gboolean
 mex_captured_event_cb (ClutterActor *actor,
                        ClutterEvent *event,
                        MexData      *data)
@@ -1430,11 +1443,31 @@ mex_captured_event_cb (ClutterActor *actor,
   gboolean handled, fullscreen;
   ClutterKeyEvent *key_event;
 
+  /* Motion events are used to show/hide the cursor when the application is
+   * full-screened */
+  if (event->type == CLUTTER_MOTION)
+    {
+      gboolean fullscreen, cursor_visible;
+
+      fullscreen = clutter_stage_get_fullscreen (data->stage);
+      g_object_get (data->stage, "cursor-visible", &cursor_visible, NULL);
+      if (fullscreen && !cursor_visible)
+        {
+          clutter_stage_show_cursor (data->stage);
+
+          if (data->cursor_timeout_source)
+            g_source_remove (data->cursor_timeout_source);
+          data->cursor_timeout_source = g_timeout_add (2000, hide_cursor, data);
+        }
+    }
+
+
+  /* Don't respond to any mouse events until we are in "touch mode". This mode
+   * is triggered by a BUTTON_RELEASE event. */
   if (!opt_touch)
     {
       switch (event->type)
         {
-          /* don't respond to any mouse events */
         case CLUTTER_BUTTON_PRESS:
         case CLUTTER_BUTTON_RELEASE:
           mex_enable_touch_events (data, TRUE);
@@ -1554,9 +1587,20 @@ on_fullscreen_set (ClutterStage *stage,
   g_object_get (stage, "fullscreen-set", &fullscreen, NULL);
 
   if (fullscreen)
-    clutter_stage_hide_cursor (stage);
+    {
+      clutter_stage_hide_cursor (stage);
+    }
   else
-    clutter_stage_show_cursor (stage);
+    {
+      /* if we have time out to hide the cursor in fullscreen, disable it */
+      if (data->cursor_timeout_source)
+        {
+          g_source_remove (data->cursor_timeout_source);
+          data->cursor_timeout_source = 0;
+        }
+
+      clutter_stage_show_cursor (stage);
+    }
 }
 
 static void
@@ -2605,7 +2649,7 @@ main (int argc, char **argv)
   if (opt_fullscreen)
     mex_set_fullscreen (TRUE);
 
-  /* Attach key-handler to stage */
+  /* Attach event handler to stage */
   g_signal_connect (data.stage, "captured-event",
                     G_CALLBACK (mex_captured_event_cb), &data);
 
