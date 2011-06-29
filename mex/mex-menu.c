@@ -477,7 +477,7 @@ mex_menu_item_new (MexMenu *self, MxAction *action, MexMenuActionType type)
 static ClutterActor *
 mex_menu_create_layout (MexMenu *menu, gboolean lower)
 {
-  ClutterActor *scroll, *layout;
+  ClutterActor *layout;
 
   MexMenuPrivate *priv = menu->priv;
 
@@ -489,25 +489,7 @@ mex_menu_create_layout (MexMenu *menu, gboolean lower)
                                  MX_ORIENTATION_VERTICAL);
   mx_stylable_set_style_class (MX_STYLABLE (layout), "Menu");
 
-  scroll = mex_scroll_view_new ();
-  mx_kinetic_scroll_view_set_scroll_policy (MX_KINETIC_SCROLL_VIEW (scroll),
-                                            MX_SCROLL_POLICY_VERTICAL);
-  mex_scroll_view_set_indicators_hidden (MEX_SCROLL_VIEW (scroll), TRUE);
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (scroll), layout);
-  clutter_container_add_actor (CLUTTER_CONTAINER (menu), scroll);
-
-  if (priv->layout)
-    {
-      if (lower)
-        clutter_actor_lower (scroll, clutter_actor_get_parent (priv->layout));
-      else
-        clutter_actor_raise (scroll, clutter_actor_get_parent (priv->layout));
-    }
-
-  mex_resizing_hbox_child_set_expand (MEX_RESIZING_HBOX (menu), scroll, FALSE);
-  if (priv->depth != 0)
-    mex_resizing_hbox_child_set_push (MEX_RESIZING_HBOX (menu), scroll, TRUE);
+  clutter_container_add_actor (CLUTTER_CONTAINER (menu), layout);
 
   return layout;
 }
@@ -837,7 +819,7 @@ mex_menu_push (MexMenu *menu)
         clutter_container_get_children (CLUTTER_CONTAINER (menu));
 
       l = g_list_find (children, clutter_actor_get_parent (priv->layout));
-      priv->layout = mx_bin_get_child (MX_BIN (l->next->data));
+      priv->layout = l->next->data;
       clutter_container_remove_actor (CLUTTER_CONTAINER (menu),
                                       CLUTTER_ACTOR (l->data));
       g_list_free (children);
@@ -887,8 +869,8 @@ mex_menu_pop (MexMenu *menu)
       GList *children =
         clutter_container_get_children (CLUTTER_CONTAINER (menu));
 
-      l = g_list_find (children, clutter_actor_get_parent (priv->layout));
-      priv->layout = mx_bin_get_child (MX_BIN (l->prev->data));
+      l = g_list_find (children, priv->layout);
+      priv->layout = l->prev->data;
       clutter_container_remove_actor (CLUTTER_CONTAINER (menu),
                                       CLUTTER_ACTOR (l->data));
       g_list_free (children);
@@ -984,9 +966,7 @@ mex_menu_set_min_width (MexMenu *menu,
       for (l = g_list_find (children, clutter_actor_get_parent (priv->layout));
            l; l = direction ? l->next : l->prev)
         {
-          ClutterActor *child = l->data;
-          ClutterActor *menu_layout = mx_bin_get_child (MX_BIN (child));
-          g_object_set (G_OBJECT (menu_layout),
+          g_object_set (G_OBJECT (l->data),
                         "min-width", priv->min_width, NULL);
           if (--depth == 0)
             break;
