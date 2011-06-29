@@ -76,7 +76,8 @@ mex_mmkeys_new (void)
 }
 
 void
-mex_mmkeys_set_stage (MexMMkeys *self, ClutterActor *stage)
+mex_mmkeys_set_stage (MexMMkeys    *self,
+                      ClutterActor *stage)
 {
   MexMMkeysPrivate *priv = MEX_MMKEYS (self)->priv;
 
@@ -87,7 +88,8 @@ mex_mmkeys_set_stage (MexMMkeys *self, ClutterActor *stage)
 }
 
 static void
-mex_mmkeys_control (MexMMkeys *self, const gchar *key)
+mex_mmkeys_control (MexMMkeys   *self,
+                    const gchar *key)
 {
   MexMMkeysPrivate *priv = MEX_MMKEYS (self)->priv;
 
@@ -177,10 +179,10 @@ end:
 
 static void
 mm_keys_pressed (GDBusProxy *proxy,
-                  const char *sender,
-                  const char *signalin,
-                  GVariant *parameters,
-                  MexMMkeys *self)
+                 const char *sender,
+                 const char *signalin,
+                 GVariant   *parameters,
+                 MexMMkeys  *self)
 {
   gchar *key;
   gchar *application;
@@ -202,9 +204,9 @@ mm_keys_pressed (GDBusProxy *proxy,
 }
 
 static void
-keys_ungrab_complete_cb (GObject *proxy,
+keys_ungrab_complete_cb (GObject      *proxy,
                          GAsyncResult *result,
-                         MexMMkeys *self)
+                         MexMMkeys    *self)
 {
   MexMMkeysPrivate *priv = MEX_MMKEYS (self)->priv;
   GError *error = NULL;
@@ -220,9 +222,9 @@ keys_ungrab_complete_cb (GObject *proxy,
 }
 
 static void
-keys_grab_complete_cb (GObject *proxy,
+keys_grab_complete_cb (GObject      *proxy,
                        GAsyncResult *result,
-                       MexMMkeys *self)
+                       MexMMkeys    *self)
 {
   MexMMkeysPrivate *priv = MEX_MMKEYS (self)->priv;
   GError *error = NULL;
