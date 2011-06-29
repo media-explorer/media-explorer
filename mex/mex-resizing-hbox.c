@@ -795,7 +795,7 @@ mex_resizing_hbox_start_animation (MexResizingHBox *self)
         focus = priv->depth_index;
     }
   else
-    focus = -1;
+    focus = priv->depth_index;
 
   progress = clutter_alpha_get_alpha (priv->alpha);
   anim_delay = 0;
@@ -825,7 +825,8 @@ mex_resizing_hbox_start_animation (MexResizingHBox *self)
           meta->initial_width = current_width;
           meta->initial_height = current_height;
 
-          if (!priv->current_focus && priv->resizing_enabled)
+          if (!priv->current_focus && priv->resizing_enabled &&
+              priv->depth_index < 0)
             {
               meta->target_width = 1.0 * pow (priv->hdepth,
                                               MIN (priv->max_depth, 2));
