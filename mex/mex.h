@@ -65,6 +65,7 @@
 #include <mex/mex-main.h>
 #include <mex/mex-media-controls.h>
 #include <mex/mex-menu.h>
+#include <mex/mex-mmkeys.h>
 #include <mex/mex-model.h>
 #include <mex/mex-model-manager.h>
 #include <mex/mex-model-provider.h>
