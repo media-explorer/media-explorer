@@ -793,6 +793,15 @@ mex_slide_show_show (MexSlideShow *self)
   clutter_state_set_state (self->priv->state, "controls");
 }
 
+static gboolean
+button_press_event_cb (ClutterActor *image,
+                       ClutterEvent *event,
+                       MexSlideShow *self)
+{
+  mex_slide_show_show (self);
+  return FALSE;
+}
+
 static void
 mex_slide_show_init (MexSlideShow *self)
 {
@@ -816,8 +825,8 @@ mex_slide_show_init (MexSlideShow *self)
   clutter_actor_set_reactive (priv->image, TRUE);
   g_signal_connect (priv->image, "image-loaded", G_CALLBACK (image_loaded),
                     self);
-  g_signal_connect_swapped (priv->image, "button-press-event",
-                            G_CALLBACK (mex_slide_show_show), self);
+  g_signal_connect (priv->image, "button-press-event",
+                    G_CALLBACK (button_press_event_cb), self);
 
   priv->controls = (ClutterActor*) clutter_script_get_object (priv->script,
                                                               "controls");
