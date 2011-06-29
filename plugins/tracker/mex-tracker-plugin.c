@@ -190,10 +190,9 @@ add_model (MexTrackerPlugin *self,
                                          self->priv->query_keys,
                                          metadata_keys,
                                          query, NULL);
-  g_object_set (G_OBJECT (dir_feed), "title",
-                _("Show Folders"), NULL);
   mex_grilo_feed_browse (MEX_GRILO_FEED (dir_feed), 0, G_MAXINT);
   info->alt_model = MEX_MODEL (dir_feed);
+  info->alt_model_string = g_strdup (_("Show Folders"));
 
   mex_model_manager_add_model (self->priv->manager, info);
   mex_model_info_free (info);

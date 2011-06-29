@@ -24,7 +24,7 @@
 #include "mex-content-proxy.h"
 #include "mex-content-view.h"
 #include "mex-expander-box.h"
-#include "mex-grid.h"
+#include "mex-grid-view.h"
 #include "mex-marshal.h"
 #include "mex-resizing-hbox.h"
 #include "mex-scroll-view.h"
@@ -466,17 +466,6 @@ mex_explorer_clear_cb (gpointer data, gpointer user_data)
     priv->to_destroy = g_list_prepend (priv->to_destroy, child);
 }
 
-static gboolean
-mex_explorer_shrink_tile_height_cb (GBinding     *binding,
-                                    const GValue *source,
-                                    GValue       *target,
-                                    gpointer      userdata)
-{
-  gfloat height = g_value_get_float (source) / 1.5f;
-  g_value_set_float (target, height);
-  return TRUE;
-}
-
 static void
 mex_explorer_column_object_created_cb (MexProxy     *proxy,
                                        MexContent   *content,
@@ -494,50 +483,6 @@ mex_explorer_column_object_created_cb (MexProxy     *proxy,
       g_signal_stop_emission_by_name (proxy, "object-created");
       return;
     }
-}
-
-static void
-mex_explorer_grid_box_notify_open_cb (MexExpanderBox *box,
-                                      GParamSpec    *pspec,
-                                      MexScrollView *view)
-{
-  mex_scroll_view_set_indicators_hidden (view, mex_expander_box_get_open (box));
-}
-
-static void
-mex_explorer_grid_object_created_cb (MexProxy      *proxy,
-                                     MexContent    *content,
-                                     GObject       *object,
-                                     gpointer       grid)
-{
-  MexContentBox *content_box = MEX_CONTENT_BOX (object);
-  ClutterActor *tile = mex_content_box_get_tile (content_box);
-  ClutterActor *menu = mex_content_box_get_menu (content_box);
-  ClutterActor *details = mex_content_box_get_details (content_box);
-
-  mex_tile_set_important (MEX_TILE (tile), TRUE);
-  mex_expander_box_set_important (MEX_EXPANDER_BOX (object), TRUE);
-
-  /* Make sure the tiles stay the correct size */
-  g_object_bind_property (grid, "tile-width",
-                          tile, "width",
-                          G_BINDING_SYNC_CREATE);
-
-  /* Make sure expanded grid tiles fill a nice-looking space */
-  g_object_bind_property (grid, "tile-width",
-                          menu, "width",
-                          G_BINDING_SYNC_CREATE);
-  g_object_bind_property_full (grid, "tile-height",
-                               details, "height",
-                               G_BINDING_SYNC_CREATE,
-                               mex_explorer_shrink_tile_height_cb,
-                               NULL,
-                               NULL,
-                               NULL);
-
-  g_signal_connect (object, "notify::open",
-                    G_CALLBACK (mex_explorer_grid_box_notify_open_cb),
-                    clutter_actor_get_parent (grid));
 }
 
 static void
@@ -883,47 +828,11 @@ mex_explorer_push_model (MexExplorer *explorer,
     }
   else
     {
-      MexProxy *proxy;
-      ClutterActor *scroll_view, *grid;
-
-      scroll_view = mex_scroll_view_new ();
-      mx_kinetic_scroll_view_set_scroll_policy (
-        MX_KINETIC_SCROLL_VIEW (scroll_view), MX_SCROLL_POLICY_VERTICAL);
-      mx_stylable_set_style_class (MX_STYLABLE (scroll_view), "Grid");
-      grid = mex_grid_new ();
-      clutter_container_add_actor (CLUTTER_CONTAINER (scroll_view), grid);
-
-      proxy = mex_content_proxy_new (model,
-                                     CLUTTER_CONTAINER (grid),
-                                     MEX_TYPE_CONTENT_BOX);
-      mex_content_proxy_set_stage (MEX_CONTENT_PROXY (proxy),
-                                   (ClutterStage *)clutter_actor_get_stage (
-                                     CLUTTER_ACTOR (explorer)));
-      g_object_weak_ref (G_OBJECT (grid), (GWeakNotify)g_object_unref, proxy);
-
-      g_signal_connect (proxy, "object-created",
-                        G_CALLBACK (mex_explorer_grid_object_created_cb),
-                        grid);
-      mex_proxy_start (proxy);
-
-      /* Store the container on the model */
-      g_object_set_qdata (G_OBJECT (model), mex_explorer_container_quark,
-                          grid);
-
-      /* Store the proxy on the model too */
-      g_object_set_qdata (G_OBJECT (model), mex_explorer_proxy_quark, proxy);
-
-      page = scroll_view;
-      container = grid;
+      page = mex_grid_view_new (model);
     }
 
   if (page)
     {
-      /* Fire signal to let user wrap their own chrome around pages */
-      g_signal_emit (explorer, signals[PAGE_CREATED], 0, model, &page);
-      if (!page)
-        return;
-
       g_object_weak_ref (G_OBJECT (page), (GWeakNotify)g_object_unref, model);
       g_object_set_qdata (G_OBJECT (page), mex_explorer_model_quark, model);
       g_object_set_qdata (G_OBJECT (page), mex_explorer_container_quark,

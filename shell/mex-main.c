@@ -103,9 +103,6 @@ static void mex_hide_actor (MexData *data, ClutterActor *actor);
 static void mex_push_busy (MexData *data);
 static void mex_pop_busy (MexData *data);
 
-static void mex_remove_notify_grilo_feed_completed (gpointer  userdata,
-                                                    GObject  *old_object);
-
 static gboolean opt_fullscreen = FALSE;
 static gboolean opt_version    = FALSE;
 static gboolean opt_ignore_res = FALSE;
@@ -445,6 +442,9 @@ mex_grilo_open_folder_cb (MxAction *action,
   MexFeed *feed;
   GrlMediaSource *source = NULL;
   gchar *filter = NULL;
+  MexModelInfo *model_info;
+  const MexModelInfo *parent_model_info;
+  MexModelManager *manager;
 
   MexProgram *program = MEX_PROGRAM (mex_action_get_content (action));
 
@@ -464,6 +464,19 @@ mex_grilo_open_folder_cb (MxAction *action,
 
   media = mex_grilo_program_get_grilo_media (MEX_GRILO_PROGRAM (program));
 
+  /* copy the "parent" model's info */
+  manager = mex_model_manager_get_default ();
+  parent_model_info = mex_model_manager_get_model_info (manager, MEX_MODEL (feed));
+  model_info = mex_model_info_copy (parent_model_info);
+
+  /* check if the model was the alt_model, and set alt_model of the new model
+   * accordingly */
+  if (parent_model_info->alt_model == MEX_MODEL (feed))
+    {
+      model_info->alt_model = parent_model_info->model;
+      model_info->alt_model_active = TRUE;
+    }
+
   /* FIXME: if only we had g_object_clone().. */
 
   if (filter)
@@ -482,6 +495,11 @@ mex_grilo_open_folder_cb (MxAction *action,
                          "grilo-box", media,
                          NULL);
     }
+
+  /* register the new model with the model manager */
+  model_info->alt_model = MEX_MODEL (feed);
+  mex_model_manager_add_model (manager, model_info);
+  mex_model_info_free (model_info);
 
   if (source)
     g_object_unref (source);
@@ -542,14 +560,6 @@ mex_header_activated_cb (MexExplorer *explorer,
     }
 }
 
-static void
-mex_set_detail_and_pop_cb (MxAction *action,
-                           MexMenu  *menu)
-{
-  mex_menu_action_set_detail (menu, "order",
-                              mx_action_get_display_name (action));
-  mex_menu_pop (menu);
-}
 
 static void
 mex_container_repopulating_cb (MxActorManager *manager,
@@ -594,524 +604,6 @@ mex_hide_repopulating_container (ClutterActor *container)
 
   if (MEX_IS_SCROLL_VIEW (parent))
     mex_scroll_view_set_indicators_hidden (MEX_SCROLL_VIEW (parent), TRUE);
-}
-
-static void
-mex_order_cb (MxAction *action,
-              MexData  *data)
-{
-  MexModel *model;
-  gpointer sort_data;
-  ClutterActor *container;
-  MexModelSortFunc sort_func;
-  MexModelSortFuncInfo *sort_info;
-
-  model = g_object_get_data (G_OBJECT (action), "model");
-  sort_info = g_object_get_data (G_OBJECT (action), "sort-info");
-  container = CLUTTER_ACTOR (
-    mex_explorer_get_container_for_model (MEX_EXPLORER (data->explorer), model));
-
-  g_object_get (G_OBJECT (model),
-                "sort-function", &sort_func,
-                "sort-data", &sort_data,
-                NULL);
-
-  /* This is a bit of a hack to get around being able to see the container
-   * get emptied by the actor-manager.
-   */
-  if (mex_model_get_length (model) &&
-      ((sort_func != sort_info->sort_func) || (sort_data != sort_info->userdata)))
-    mex_hide_repopulating_container (container);
-
-  mex_model_set_sort_func (model, sort_info->sort_func, sort_info->userdata);
-}
-
-static void
-mex_order_menu_cb (MxAction *action,
-                   MexData  *data)
-{
-  MexMenu *menu;
-  ClutterActor *label;
-  MxBoxLayout *menu_layout;
-  const MexModelInfo *info;
-
-  MexModel *model = mex_explorer_get_model (MEX_EXPLORER (data->explorer));
-
-  /* Push a new menu level */
-  menu = g_object_get_data (G_OBJECT (model), "menu");
-  mex_menu_push (menu);
-
-  /* Add header */
-  label = mx_label_new_with_text (_("Order by"));
-  mx_label_set_fade_out (MX_LABEL (label), TRUE);
-  mx_stylable_set_style_class (MX_STYLABLE (label), "Header");
-  mx_label_set_y_align (MX_LABEL (label), MX_ALIGN_MIDDLE);
-
-  menu_layout = mex_menu_get_layout (MEX_MENU (menu));
-  mx_box_layout_add_actor (menu_layout, label, 0);
-
-  /* Add sort function options */
-  if ((info = mex_get_toplevel_model_info (data, NULL)))
-    {
-      GList *i;
-
-      for (i = info->sort_infos; i; i = i->next)
-        {
-          MxAction *sort_action;
-          MexModelSortFuncInfo *sort_info = i->data;
-
-          sort_action =
-            mx_action_new_full (sort_info->name,
-                                sort_info->display_name,
-                                G_CALLBACK (mex_set_detail_and_pop_cb),
-                                menu);
-
-          /* TODO: We know that this will stay around as long as the model
-           *       is around, but maybe we should copy the sort-info here?
-           */
-          g_object_set_data (G_OBJECT (sort_action), "sort-info",
-                             sort_info);
-          g_object_set_data (G_OBJECT (sort_action), "model", model);
-          g_signal_connect (sort_action, "activated",
-                            G_CALLBACK (mex_order_cb), data);
-
-          mex_menu_add_action (menu, sort_action, MEX_MENU_NONE);
-        }
-    }
-}
-
-static void
-mex_alt_model_cb (MxAction *action,
-                  MexData  *data)
-{
-  MexMenu *menu;
-  GList *m, *models;
-  gpointer sort_data;
-  MexExplorer *explorer;
-  ClutterActor *container;
-  const MexModelInfo *info;
-  const gchar *action_name;
-  MexModelSortFunc sort_func;
-  gboolean toggled, found_model;
-  MexModel *old_model, *new_model, *model;
-
-  if (!(info = mex_get_toplevel_model_info (data, NULL)))
-    {
-      g_warning ("Model info not found for model that should have alternate");
-      return;
-    }
-
-  if (!info->alt_model)
-    {
-      g_warning ("Model info says there is no alternate model");
-      return;
-    }
-
-  /* Set the menu item toggle */
-  menu = g_object_get_data (G_OBJECT (action), "menu");
-  action_name = mx_action_get_name (action);
-  toggled = !mex_menu_action_get_toggled (menu, action_name);
-  mex_menu_action_set_toggled (menu, action_name, toggled);
-
-  /* Get the current model */
-  explorer = MEX_EXPLORER (data->explorer);
-  model = mex_explorer_get_model (explorer);
-
-  /* Determine which way we're switching */
-  if (toggled)
-    {
-      old_model = info->model;
-      new_model = g_object_ref (info->alt_model);
-    }
-  else
-    {
-      old_model = info->alt_model;
-      new_model = mex_proxy_model_new ();
-      mex_proxy_model_set_model (MEX_PROXY_MODEL (new_model), info->model);
-    }
-
-  /* Remove any models in the view between the current model and the model we're
-   * replacing.
-   */
-  found_model = FALSE;
-  models = mex_explorer_get_models (explorer);
-  for (m = models; m; m = m->next)
-    {
-      MexModel *child_model = mex_model_unwrap (m->data);
-
-      if (child_model == old_model)
-        found_model = TRUE;
-
-      if (m->data == model)
-        break;
-
-      if (found_model)
-        mex_explorer_remove_model (explorer, m->data);
-    }
-  g_list_free (models);
-
-  /* Make sure the sort function is set on the new model */
-  g_object_get (G_OBJECT (model),
-                "sort-function", &sort_func,
-                "sort-data", &sort_data,
-                NULL);
-  mex_model_set_sort_func (new_model, sort_func, sort_data);
-
-  /* Store a local variable to determine which model we're showing */
-  data->using_alt = toggled;
-
-  /* Hide the container until we start repopulating */
-  container =
-    CLUTTER_ACTOR (mex_explorer_get_container_for_model (explorer, model));
-  mex_hide_repopulating_container (container);
-
-  /* Replace the model */
-  mex_explorer_replace_model (explorer, new_model);
-}
-
-typedef struct
-{
-  MexGrid *grid;
-  gfloat   width;
-  gfloat   height;
-  guint    source;
-} MexGridSizeData;
-
-static void
-mex_free_grid_size_data (MexGridSizeData *data)
-{
-  if (data->grid)
-    {
-      g_object_remove_weak_pointer (G_OBJECT (data->grid),
-                                    (gpointer *)&data->grid);
-      data->grid = NULL;
-    }
-
-  if (data->source)
-    {
-      g_source_remove (data->source);
-      data->source = 0;
-    }
-}
-
-static gboolean
-mex_set_page_width_cb (MexGridSizeData *data)
-{
-  if (data->grid)
-    mex_grid_set_stride (data->grid, 3);
-
-  data->source = 0;
-
-  mex_free_grid_size_data (data);
-
-  return FALSE;
-}
-
-typedef struct
-{
-  MexGriloFeed *feed;
-  MexData      *data;
-  ClutterActor *page;
-} MexPageLoadData;
-
-static void
-mex_notify_grilo_feed_completed (MexGriloFeed    *feed,
-                                 GParamSpec      *pspec,
-                                 MexPageLoadData *pl_data)
-{
-  g_object_weak_unref (G_OBJECT (pl_data->page),
-                       mex_remove_notify_grilo_feed_completed, pl_data);
-  g_signal_handlers_disconnect_by_func (feed, mex_notify_grilo_feed_completed,
-                                        pl_data);
-
-  clutter_actor_animate (pl_data->page, CLUTTER_EASE_OUT_QUAD, 250,
-                         "opacity", 0xff, NULL);
-  mx_widget_set_disabled (MX_WIDGET (pl_data->page), FALSE);
-
-  mex_pop_busy (pl_data->data);
-
-  g_slice_free (MexPageLoadData, pl_data);
-}
-
-static void
-mex_remove_notify_grilo_feed_completed (gpointer  userdata,
-                                        GObject  *old_object)
-{
-  MexPageLoadData *pl_data = userdata;
-
-  mex_pop_busy (pl_data->data);
-  g_signal_handlers_disconnect_by_func (pl_data->feed,
-                                        mex_notify_grilo_feed_completed,
-                                        pl_data);
-
-  g_slice_free (MexPageLoadData, pl_data);
-}
-
-static void
-mex_page_created_cb (MexExplorer   *explorer,
-                     MexModel      *model,
-                     ClutterActor **page,
-                     MexData       *data)
-{
-  /* If it's not an aggregate model, it will be represented by
-   * a grid, so add filter/sort chrome around it.
-   */
-  if (!MEX_IS_AGGREGATE_MODEL (model))
-    {
-      MxBoxLayout *menu_layout;
-      const MexModelInfo *info;
-      MxAction *order, *alt_model;
-      ClutterActor *layout, *label, *icon, *title_box;
-      MexMenu *menu;
-
-      gchar *text = NULL;
-
-      /* Add the 'Back' tile for folders */
-      if (data->folder_opened)
-        {
-          /* FIXME: Most of this copied from MexExplorer... Maybe all
-           *        of this function (including the menu bits) should
-           *        be there...
-           */
-          MexShadow *shadow;
-
-          ClutterContainer *container =
-            mex_explorer_get_container_for_model (explorer, model);
-          ClutterActor *box = mex_content_box_new ();
-          ClutterActor *tile = mex_content_box_get_tile (MEX_CONTENT_BOX (box));
-
-          /* Set the content on the newly created box */
-          mex_content_view_set_content (MEX_CONTENT_VIEW (box),
-                                        data->folder_content);
-
-          /* Set it as important */
-          mex_expander_box_set_important (MEX_EXPANDER_BOX (box), TRUE);
-          mex_tile_set_important (MEX_TILE (tile), TRUE);
-
-          /* Make sure the tile stays the correct size */
-          g_object_bind_property (container, "tile-width",
-                                  tile, "width",
-                                  G_BINDING_SYNC_CREATE);
-
-          /* Add to the grid  */
-          clutter_container_add_actor (container, box);
-
-          /* Reset the 'folder-opened' boolean */
-          data->folder_opened = FALSE;
-        }
-
-      /* Create the menu */
-      menu = MEX_MENU (mex_menu_new ());
-      mex_menu_set_min_width (menu, 284);
-      mex_resizing_hbox_set_max_depth (MEX_RESIZING_HBOX (menu), 1);
-      g_object_set_data (G_OBJECT (model), "menu", menu);
-
-      /* Add a title/icon */
-      g_object_get (G_OBJECT (data->toplevel_model), "title", &text, NULL);
-      label = mx_label_new_with_text (text);
-      g_free (text);
-
-      g_object_get (G_OBJECT (data->toplevel_model), "icon-name", &text, NULL);
-      icon = mx_icon_new ();
-      mx_icon_set_icon_name (MX_ICON (icon), text);
-      g_free (text);
-
-      title_box = mx_box_layout_new ();
-      clutter_container_add (CLUTTER_CONTAINER (title_box), icon, label, NULL);
-
-      mx_stylable_set_style_class (MX_STYLABLE (title_box), "Header");
-      clutter_actor_set_name (title_box, "menu-header");
-
-      menu_layout = mex_menu_get_layout (MEX_MENU (menu));
-      mx_box_layout_add_actor (menu_layout, title_box, 0);
-
-      /* Add the order-by menu, if there are sort actions */
-      info = mex_get_toplevel_model_info (data, model);
-      if (info && info->sort_infos)
-        {
-          MexModelSortFuncInfo *sort_info;
-
-          order = mx_action_new_full ("order",
-                                      _("Order by"),
-                                      G_CALLBACK (mex_order_menu_cb),
-                                      data);
-          mex_menu_add_action (menu, order, MEX_MENU_RIGHT);
-
-          /* Set the default sort option */
-          sort_info = g_list_nth_data (info->sort_infos,
-                                       info->default_sort_index);
-
-          if (sort_info)
-            {
-              mex_model_set_sort_func (model, sort_info->sort_func,
-                                       sort_info->userdata);
-
-              mex_menu_action_set_detail (menu, "order",
-                                          sort_info->display_name);
-            }
-          else
-            mex_menu_action_set_detail (menu, "order", "Unsorted");
-        }
-      else if (!info)
-        g_warning ("Couldn't find any model info");
-
-      /* Add the alternate model menu item */
-      if (info && info->alt_model)
-        {
-          g_object_get (G_OBJECT (info->alt_model), "title", &text, NULL);
-          alt_model = mx_action_new_full ("alt-model",
-                                          text ? text : _("Alternate view"),
-                                          G_CALLBACK (mex_alt_model_cb),
-                                          data);
-          g_free (text);
-          g_object_set_data (G_OBJECT (alt_model), "menu", menu);
-
-          mex_menu_add_action (menu, alt_model, MEX_MENU_TOGGLE);
-          mex_menu_action_set_toggled (menu, "alt-model",
-                                       data->using_alt);
-        }
-
-      /* Add a header label to the grid */
-
-      /* If we have the path available, concatenate that onto the
-       * model title.
-       */
-
-      /* FIXME: Assumption that we're using MexGenericModel here - the 'title'
-       *        property should probably be moved to MexModel.
-       */
-      text = NULL;
-
-      if (MEX_IS_GRILO_FEED (model) && info)
-        {
-          GrlMedia *root = NULL;
-          GrlMedia *current = NULL;
-          GrlMediaSource *source = NULL;
-
-          g_object_get (G_OBJECT (info->model),
-                        "title", &text,
-                        "grilo-box", &root, NULL);
-          g_object_get (G_OBJECT (model),
-                        "grilo-source", &source,
-                        "grilo-box", &current, NULL);
-
-          /* If the model doesn't already have a root container, make one */
-          if (!root && source)
-            {
-              GError *error = NULL;
-              GList *keys =
-                grl_metadata_key_list_new (GRL_METADATA_KEY_URL, NULL);
-
-              root = grl_media_box_new ();
-              grl_media_set_id (root, NULL);
-              grl_media_source_metadata_sync (source, root, keys,
-                                              GRL_RESOLVE_FAST_ONLY,
-                                              &error);
-              g_list_free (keys);
-
-              if (error)
-                {
-                  g_warning ("Error retrieving root-container metadata: %s",
-                             error->message);
-                  g_error_free (error);
-                  g_object_unref (root);
-                  root = NULL;
-                }
-            }
-
-          if (root && current)
-            {
-              gchar *new_title;
-              const gchar *root_url, *current_url;
-
-              const gchar *sub_url = NULL;
-
-              root_url = grl_media_get_url (root);
-              current_url = grl_media_get_url (current);
-
-              if (current_url)
-                {
-                  if (root_url)
-                    {
-                      sub_url = g_strstr_len (current_url, -1, root_url);
-                      if (!sub_url)
-                        sub_url = current_url;
-                      else if (root_url)
-                        sub_url += strlen (root_url);
-
-                      if (text)
-                        new_title = g_strconcat (text, sub_url, NULL);
-                      else
-                        new_title = g_strdup (sub_url);
-                    }
-                  else
-                    new_title = g_strdup (current_url);
-
-                  g_free (text);
-                  text = new_title;
-                }
-            }
-
-          if (root)
-            g_object_unref (root);
-          if (current)
-            g_object_unref (current);
-        }
-      else
-        g_object_get (G_OBJECT (model), "title", &text, NULL);
-
-      label = mx_label_new_with_text (text ? text : _("Untitled model"));
-      g_free (text);
-      mx_stylable_set_style_class (MX_STYLABLE (label), "Header");
-      mx_label_set_y_align (MX_LABEL (label), MX_ALIGN_MIDDLE);
-
-      layout = mx_box_layout_new ();
-      mx_box_layout_set_orientation (MX_BOX_LAYOUT (layout),
-                                     MX_ORIENTATION_VERTICAL);
-      mx_box_layout_add_actor (MX_BOX_LAYOUT (layout), label, 0);
-      mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (layout),
-                                               *page, 1,
-                                               "expand", TRUE,
-                                               NULL);
-
-      /* Add the page to the menu. Menu children are set not to expand,
-       * so the layout will take the extra space.
-       */
-      clutter_container_add_actor (CLUTTER_CONTAINER (menu), layout);
-
-      /* Name actors so we can style */
-      clutter_actor_set_name (CLUTTER_ACTOR (menu), "grid-page");
-
-      /* Before we finally wrap the page, check if this model is a Grilo
-       * feed and low-light it slightly/prevent focus if it's still
-       * loading.
-       *
-       * Note, we don't do this if there isn't any sort-info, as otherwise
-       * there aren't any focusable actors on the page.
-       */
-      if (MEX_IS_GRILO_FEED (model) &&
-          !mex_grilo_feed_get_completed (MEX_GRILO_FEED (model)) &&
-          info && info->sort_infos)
-        {
-          MexPageLoadData *pl_data = g_slice_new (MexPageLoadData);
-
-          pl_data->feed = MEX_GRILO_FEED (model);
-          pl_data->data = data;
-          pl_data->page = *page;
-
-          mex_push_busy (data);
-          mx_widget_set_disabled (MX_WIDGET (*page), TRUE);
-          clutter_actor_set_opacity (*page, 0);
-
-          g_signal_connect (model, "notify::completed",
-                            G_CALLBACK (mex_notify_grilo_feed_completed),
-                            pl_data);
-          g_object_weak_ref (G_OBJECT (*page),
-                             mex_remove_notify_grilo_feed_completed, pl_data);
-        }
-
-      *page = CLUTTER_ACTOR (menu);
-    }
 }
 
 static void
@@ -2553,8 +2045,6 @@ main (int argc, char **argv)
   clutter_actor_set_name (data.tool_area, "tool-area");
   data.explorer = mex_explorer_new ();
   clutter_actor_set_name (data.explorer, "main-explorer");
-  g_signal_connect (data.explorer, "page-created",
-                    G_CALLBACK (mex_page_created_cb), &data);
   g_signal_connect (data.explorer, "notify::depth",
                     G_CALLBACK (mex_notify_depth_cb), &data);
   g_signal_connect (data.explorer, "header-activated",
