@@ -2148,11 +2148,12 @@ rebinder_quit (void)
   GError *error = NULL;
 
   connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-  if (connection == NULL) {
-    g_warning ("Failed to open connection to DBus: %s", error->message);
-    g_error_free (error);
-    return;
-  }
+  if (connection == NULL)
+    {
+      g_warning ("Failed to open connection to DBus: %s", error->message);
+      g_error_free (error);
+      return;
+    }
 
   proxy = dbus_g_proxy_new_for_name (connection,
                                      MEX_REBINDER_DBUS_SERVICE,
@@ -2164,16 +2165,7 @@ rebinder_quit (void)
       return;
     }
 
-  if (!dbus_g_proxy_call (proxy, "Quit", &error,
-			  G_TYPE_INVALID, G_TYPE_INVALID))
-    {
-      if (error)
-	{
-	  g_warning ("Failed to call %s: %s", "Quit", error->message);
-	  g_error_free (error);
-	}
-      return;
-  }
+  dbus_g_proxy_call_no_reply (proxy, "Quit", G_TYPE_INVALID);
 
   g_object_unref (proxy);
   dbus_g_connection_unref (connection);
