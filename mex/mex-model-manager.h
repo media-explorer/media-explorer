@@ -67,6 +67,8 @@ typedef struct
   GList    *sort_infos;
   gint      default_sort_index;
   MexModel *alt_model;
+  gchar    *alt_model_string;
+  guint     alt_model_active;
   gpointer  userdata;
 } MexModelInfo;
 

@@ -63,6 +63,8 @@ mex_model_info_free (MexModelInfo *info)
   if (info->alt_model)
     g_object_unref (info->alt_model);
 
+  g_free (info->alt_model_string);
+
   g_free (info->category);
 
   g_slice_free (MexModelInfo, info);
@@ -527,6 +529,9 @@ mex_model_info_copy (const MexModelInfo *info)
   info_copy->model = g_object_ref_sink (info->model);
   if (info->alt_model)
     info_copy->alt_model = g_object_ref_sink (info->alt_model);
+  if (info->alt_model_string)
+    info_copy->alt_model_string = g_strdup (info->alt_model_string);
+  info_copy->alt_model_active = info->alt_model_active;
   info_copy->category = g_strdup (info->category);
   info_copy->sort_infos = g_list_copy (info->sort_infos);
 
