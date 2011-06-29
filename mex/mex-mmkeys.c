@@ -210,6 +210,7 @@ keys_ungrab_complete_cb (GObject *proxy,
 
   if (error)
     {
+      priv->key_grab_active = TRUE;
       g_warning ("media player keys not released: %s", error->message);
       g_clear_error (&error);
     }
@@ -227,13 +228,13 @@ keys_grab_complete_cb (GObject *proxy,
 
   if (error)
     {
+      priv->key_grab_active = FALSE;
+
       g_warning ("media player keys not available: %s", error->message);
       g_clear_error (&error);
     }
   else
     {
-      priv->key_grab_active = TRUE;
-
       g_signal_connect_object (priv->proxy,
                                "g-signal",
                                G_CALLBACK (mm_keys_pressed),
@@ -290,6 +291,7 @@ mex_mmkeys_grab_keys (MexMMkeys *self)
                      (GAsyncReadyCallback)keys_grab_complete_cb,
                      self);
 
+  priv->key_grab_active = TRUE;
 }
 
 void
@@ -311,4 +313,6 @@ mex_mmkeys_ungrab_keys (MexMMkeys *self)
                      NULL,
                      (GAsyncReadyCallback) keys_ungrab_complete_cb,
                      self);
+
+  priv->key_grab_active = FALSE;
 }
