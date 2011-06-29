@@ -80,6 +80,9 @@ mex_mmkeys_set_stage (MexMMkeys *self, ClutterActor *stage)
 {
   MexMMkeysPrivate *priv = MEX_MMKEYS (self)->priv;
 
+  g_return_if_fail (MEX_IS_MMKEYS (self));
+  g_return_if_fail (CLUTTER_IS_STAGE (stage));
+
   priv->stage = stage;
 }
 
@@ -248,6 +251,8 @@ mex_mmkeys_grab_keys (MexMMkeys *self)
 {
   MexMMkeysPrivate *priv = MEX_MMKEYS (self)->priv;
 
+  g_return_if_fail (MEX_IS_MMKEYS (self));
+
   if (priv->key_grab_active)
     return;
 
@@ -298,6 +303,8 @@ void
 mex_mmkeys_ungrab_keys (MexMMkeys *self)
 {
   MexMMkeysPrivate *priv = MEX_MMKEYS (self)->priv;
+
+  g_return_if_fail (MEX_IS_MMKEYS (self));
 
   if (!priv->key_grab_active)
     return;
