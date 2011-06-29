@@ -219,6 +219,10 @@ mex_grid_remove (ClutterContainer *container,
       g_object_unref (actor);
       mex_grid_start_animation (self);
 
+      /* reset last_visible and first_visible */
+      priv->last_visible = -1;
+      priv->first_visible = -1;
+
       return;
     }
 
