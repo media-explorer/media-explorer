@@ -213,13 +213,6 @@ keys_ungrab_complete_cb (GObject *proxy,
       g_warning ("media player keys not released: %s", error->message);
       g_clear_error (&error);
     }
-  else
-    {
-      if (priv->proxy)
-        g_object_unref (priv->proxy);
-
-      priv->key_grab_active = FALSE;
-    }
 }
 
 static void
@@ -254,43 +247,49 @@ mex_mmkeys_grab_keys (MexMMkeys *self)
 {
   MexMMkeysPrivate *priv = MEX_MMKEYS (self)->priv;
 
-  GDBusConnection *connection;
-  GError *error = NULL;
-
   if (priv->key_grab_active)
     return;
 
-  connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
-  if (error)
+  if (priv->proxy == NULL)
     {
-      g_warning ("Could not connect to dbus %s\n", error->message);
-      g_clear_error (&error);
+      GDBusConnection *connection;
+      GError *error = NULL;
+
+      connection = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
+
+      if (error)
+        {
+          g_warning ("Could not connect to dbus %s\n", error->message);
+          g_clear_error (&error);
+          return;
+        }
+
+      priv->proxy =
+        g_dbus_proxy_new_sync (connection,
+                               G_DBUS_PROXY_FLAGS_NONE,
+                               NULL,
+                               "org.gnome.SettingsDaemon",
+                               "/org/gnome/SettingsDaemon/MediaKeys",
+                               "org.gnome.SettingsDaemon.MediaKeys",
+                               NULL,
+                               &error);
+      if (error)
+        {
+          g_warning ("Could not grab media player keys: %s\n", error->message);
+          g_clear_error (&error);
+          return;
+        }
     }
 
-    priv->proxy = g_dbus_proxy_new_sync (connection,
-                                         G_DBUS_PROXY_FLAGS_NONE,
-                                         NULL,
-                                         "org.gnome.SettingsDaemon",
-                                         "/org/gnome/SettingsDaemon/MediaKeys",
-                                         "org.gnome.SettingsDaemon.MediaKeys",
-                                         NULL,
-                                         &error);
-  if (error)
-    {
-      g_warning ("Could not grab media player keys: %s\n", error->message);
-      g_clear_error (&error);
-    }
-  else
-    {
-      g_dbus_proxy_call (priv->proxy,
-                         "GrabMediaPlayerKeys",
-                         g_variant_new ("(su)", "media-explorer", 0),
-                         G_DBUS_CALL_FLAGS_NONE,
-                         -1,
-                         NULL,
-                         (GAsyncReadyCallback)keys_grab_complete_cb,
-                         self);
-    }
+  g_dbus_proxy_call (priv->proxy,
+                     "GrabMediaPlayerKeys",
+                     g_variant_new ("(su)", "media-explorer", 0),
+                     G_DBUS_CALL_FLAGS_NONE,
+                     -1,
+                     NULL,
+                     (GAsyncReadyCallback)keys_grab_complete_cb,
+                     self);
+
 }
 
 void
@@ -301,18 +300,15 @@ mex_mmkeys_ungrab_keys (MexMMkeys *self)
   if (!priv->key_grab_active)
     return;
 
-  if (priv->proxy)
-    {
-      g_dbus_proxy_call (priv->proxy,
-                         "ReleaseMediaPlayerKeys",
-                         g_variant_new ("(s)", "media-explorer"),
-                         G_DBUS_PROXY_FLAGS_NONE,
-                         -1,
-                         NULL,
-                         (GAsyncReadyCallback) keys_ungrab_complete_cb,
-                         self);
+  if (priv->proxy == NULL)
+    return;
 
-      g_object_unref (priv->proxy);
-      priv->proxy = NULL;
-    }
+  g_dbus_proxy_call (priv->proxy,
+                     "ReleaseMediaPlayerKeys",
+                     g_variant_new ("(s)", "media-explorer"),
+                     G_DBUS_PROXY_FLAGS_NONE,
+                     -1,
+                     NULL,
+                     (GAsyncReadyCallback) keys_ungrab_complete_cb,
+                     self);
 }
