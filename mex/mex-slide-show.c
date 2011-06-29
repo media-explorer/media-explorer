@@ -802,6 +802,16 @@ button_press_event_cb (ClutterActor *image,
   return FALSE;
 }
 
+static gboolean
+button_release_event_cb (ClutterActor *image,
+                         ClutterEvent *event,
+                         MexSlideShow *self)
+{
+  if (event->button.click_count == 2)
+    mex_toggle_fullscreen ();
+  return TRUE;
+}
+
 static void
 mex_slide_show_init (MexSlideShow *self)
 {
@@ -827,6 +837,8 @@ mex_slide_show_init (MexSlideShow *self)
                     self);
   g_signal_connect (priv->image, "button-press-event",
                     G_CALLBACK (button_press_event_cb), self);
+  g_signal_connect (priv->image, "button-release-event",
+                    G_CALLBACK (button_release_event_cb), self);
 
   priv->controls = (ClutterActor*) clutter_script_get_object (priv->script,
                                                               "controls");
