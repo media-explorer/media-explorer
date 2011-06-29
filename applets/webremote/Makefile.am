@@ -21,7 +21,8 @@ mex_webremote_LDADD = \
 
 mex_webremotedir = $(pkgdatadir)/webremote
 mex_webremote_DATA = \
-		index.html \
-		clutter-keysyms.js
+		data/index.html \
+		data/mex-spinner.gif \
+		data/clutter-keysyms.js
 
 EXTRA_DIST = index.html clutter-keysyms.js

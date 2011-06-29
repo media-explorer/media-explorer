@@ -1,5 +1,4 @@
 <!-- 
-/* -*- mode: C; c-file-style: "gnu"; indent-tabs-mode: nil; -*- */
 /*
  * Copyright 2011 Intel Corporation.
  *
@@ -33,6 +32,7 @@ var MEX_KEY_HOME = CLUTTER_KEY_Super_L;
 var MEX_KEY_INFO = CLUTTER_KEY_Menu;
 
 var current;
+var playing = new String;
 
 function media_player_get (thingtoget)
 {
@@ -61,7 +61,16 @@ function open_div (div)
 
   if (div == "#mediaplayer")
     {
-      media_player_get ("uri");
+      if (playing.length > 0)
+        {
+          $("#currentplaying").html (playing);
+          playing = "";
+        }
+      else
+        {
+          /* fallback to the uri as the "current playing" */
+          media_player_get ("uri");
+        }
     }
 
   $(div).show('slow');
@@ -101,7 +110,11 @@ function add_result_to_page (element)
     "class": "result",
     text: element.title,
     click: function(){
+
+    playing = element.title;
     media_player_set_uri (element.url);
+
+    open_div ("#mediaplayer");
   }
   }).appendTo("#results");
 
@@ -119,6 +132,8 @@ function run_search ()
 
   searchterm = $("#searchwords").val();
 
+  $("#results").append ('<span id="spinner">Searching... <img src="./mex-spinner.gif" alt="searching.." /></span>');
+
 
   $.ajax ({
           url: "/",
@@ -128,6 +143,8 @@ function run_search ()
           data: 'trackersearch='+searchterm,
           success: function (data)
           {
+            $("#spinner").remove();
+
             var results = $.parseJSON (data);
             $.each (results, function (index, element)
                     {
@@ -211,7 +228,7 @@ a
 </style>
 </head>
 
-<body>
+<body OnLoad="open_div ('#remote');" >
 <div id="menu">
 <a href="#" OnClick="open_div ('#remote');">5-Way remote</a>
   <a href="#" OnClick="open_div ('#search');">Search</a>
