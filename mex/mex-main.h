@@ -63,25 +63,24 @@ G_BEGIN_DECLS
  */
 #define MEX_KEY_OK    CLUTTER_KEY_Return
 
-gboolean    mex_init                    (int    *argc,
-                                         char ***argv);
+gboolean        mex_init                    (int    *argc,
+                                             char ***argv);
 
-gboolean    mex_init_with_args          (int            *argc,
-                                         char         ***argv,
-                                         const char     *parameter_string,
-                                         GOptionEntry   *entries,
-                                         const char     *translation_domain,
-                                         GError        **error);
+gboolean        mex_init_with_args          (int            *argc,
+                                             char         ***argv,
+                                             const char     *parameter_string,
+                                             GOptionEntry   *entries,
+                                             const char     *translation_domain,
+                                             GError        **error);
 
-void        mex_deinit                  ();
+void            mex_deinit                  ();
 
-void          mex_set_main_window (MxWindow *main_window);
-void          mex_set_fullscreen  (gboolean fullscreen);
-gboolean      mex_get_fullscreen  (void);
-ClutterActor *mex_get_stage       (void);
-MexMMkeys    *mex_get_mmkeys      (void);
-
-
+void            mex_set_main_window         (MxWindow *main_window);
+MxWindow *      mex_get_main_window         (void);
+void            mex_set_fullscreen          (gboolean fullscreen);
+gboolean        mex_get_fullscreen          (void);
+void            mex_toggle_fullscreen       (void);
+ClutterActor *  mex_get_stage               (void);
 
 G_END_DECLS
 

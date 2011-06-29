@@ -1562,8 +1562,7 @@ mex_captured_event_cb (ClutterActor *actor,
       return TRUE;
 
     case CLUTTER_KEY_F11 :
-      /* Toggle full-screen */
-      mex_set_fullscreen (!mex_get_fullscreen ());
+      mex_toggle_fullscreen ();
       return TRUE;
     }
 
@@ -2657,7 +2656,7 @@ main (int argc, char **argv)
   mx_window_show (window);
 
   if (opt_fullscreen)
-    mex_set_fullscreen (TRUE);
+    mx_window_set_fullscreen (window, TRUE);
 
   /* Attach event handler to stage */
   g_signal_connect (data.stage, "captured-event",

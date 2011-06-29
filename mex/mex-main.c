@@ -456,6 +456,12 @@ mex_set_main_window (MxWindow *window)
     }
 }
 
+MxWindow *
+mex_get_main_window (void)
+{
+  return mex_main_window;
+}
+
 gboolean
 mex_get_fullscreen (void)
 {
@@ -463,6 +469,12 @@ mex_get_fullscreen (void)
     return FALSE;
 
   return mx_window_get_fullscreen (mex_main_window);
+}
+
+void
+mex_toggle_fullscreen (void)
+{
+  mex_set_fullscreen (!mex_get_fullscreen ());
 }
 
 void

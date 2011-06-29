@@ -430,7 +430,7 @@ mex_player_captured_event (ClutterActor *actor,
 
     case CLUTTER_BUTTON_RELEASE:
       if (event->button.click_count == 2)
-        mex_set_fullscreen (!mex_get_fullscreen ());
+        mex_toggle_fullscreen ();
       else
         mex_player_restart_timer (MEX_PLAYER (actor));
       break;
