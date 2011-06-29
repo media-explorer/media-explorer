@@ -1577,6 +1577,20 @@ mex_captured_event_cb (ClutterActor *actor,
 }
 
 static void
+on_stage_actived (ClutterStage *stage,
+                  MexData      *data)
+{
+  mex_mmkeys_grab_keys (mex_mmkeys_get_default ());
+}
+
+static void
+on_stage_deactived (ClutterStage *stage,
+                    MexData      *data)
+{
+  mex_mmkeys_ungrab_keys (mex_mmkeys_get_default ());
+}
+
+static void
 on_fullscreen_set (ClutterStage *stage,
                    GParamSpec   *pspec,
                    MexData      *data)
@@ -2498,6 +2512,10 @@ main (int argc, char **argv)
 
   mex_set_main_window (window);
 
+  g_signal_connect (data.stage, "activate",
+                    G_CALLBACK (on_stage_actived), &data);
+  g_signal_connect (data.stage, "deactivate",
+                    G_CALLBACK (on_stage_deactived), &data);
   g_signal_connect (data.stage, "notify::fullscreen-set",
                     G_CALLBACK (on_fullscreen_set), &data);
   on_fullscreen_set (data.stage, NULL, &data);

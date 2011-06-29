@@ -475,8 +475,4 @@ mex_set_fullscreen (gboolean fullscreen)
     return;
 
   mx_window_set_fullscreen (mex_main_window, fullscreen);
-  if (fullscreen)
-    mex_mmkeys_grab_keys (mex_mmkeys_get_default ());
-  else
-    mex_mmkeys_ungrab_keys (mex_mmkeys_get_default ());
 }
