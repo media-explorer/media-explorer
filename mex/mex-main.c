@@ -435,17 +435,6 @@ mex_get_stage (void)
   return mex_stage;
 }
 
-MexMMkeys *
-mex_get_mmkeys (void)
-{
-  static MexMMkeys *mmkeys = NULL;
-
-  if (G_UNLIKELY (mmkeys == NULL))
-    mmkeys = mex_mmkeys_new ();
-
-  return mmkeys;
-}
-
 void
 mex_set_main_window (MxWindow *window)
 {
@@ -459,7 +448,7 @@ mex_set_main_window (MxWindow *window)
       mex_main_window = g_object_ref (window);
       mex_stage =
         (ClutterActor *) mx_window_get_clutter_stage (mex_main_window);
-      mmkeys = mex_get_mmkeys ();
+      mmkeys = mex_mmkeys_get_default ();
       mex_mmkeys_set_stage (mmkeys, mex_stage);
     }
   else
@@ -484,7 +473,7 @@ static gboolean
 hide_cursor_cb (gpointer data)
 {
   clutter_stage_hide_cursor (CLUTTER_STAGE (mex_get_stage ()));
-  mex_mmkeys_grab_keys (mex_get_mmkeys ());
+  mex_mmkeys_grab_keys (mex_mmkeys_get_default ());
   hide_cursor_id = 0;
 
   return FALSE;
@@ -514,6 +503,6 @@ mex_set_fullscreen (gboolean fullscreen)
           hide_cursor_id = 0;
         }
       clutter_stage_show_cursor (CLUTTER_STAGE (mex_get_stage ()));
-      mex_mmkeys_ungrab_keys (mex_get_mmkeys ());
+      mex_mmkeys_ungrab_keys (mex_mmkeys_get_default ());
     }
 }

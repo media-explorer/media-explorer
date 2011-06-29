@@ -60,12 +60,13 @@ struct _MexMMkeysClass
 
 GType           mex_mmkeys_get_type         (void) G_GNUC_CONST;
 
-MexMMkeys *mex_mmkeys_new (void);
+MexMMkeys *     mex_mmkeys_get_default      (void);
 
-void mex_mmkeys_grab_keys (MexMMkeys *self);
-void mex_mmkeys_ungrab_keys (MexMMkeys *self);
+void            mex_mmkeys_grab_keys        (MexMMkeys *self);
+void            mex_mmkeys_ungrab_keys      (MexMMkeys *self);
 
-void mex_mmkeys_set_stage (MexMMkeys *self, ClutterActor *stage);
+void            mex_mmkeys_set_stage        (MexMMkeys    *self,
+                                             ClutterActor *stage);
 
 G_END_DECLS
 

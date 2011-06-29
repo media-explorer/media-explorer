@@ -69,10 +69,22 @@ mex_mmkeys_init (MexMMkeys *self)
   self->priv = MMKEYS_PRIVATE (self);
 }
 
-MexMMkeys *
+static MexMMkeys *
 mex_mmkeys_new (void)
 {
   return g_object_new (MEX_TYPE_MMKEYS, NULL);
+}
+
+MexMMkeys *
+mex_mmkeys_get_default (void)
+{
+  static MexMMkeys *singleton = NULL;
+
+  if (G_LIKELY (singleton))
+    return singleton;
+
+  singleton = mex_mmkeys_new ();
+  return singleton;
 }
 
 void
