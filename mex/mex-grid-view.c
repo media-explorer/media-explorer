@@ -135,6 +135,18 @@ mex_grid_view_dispose (GObject *object)
 {
   MexGridViewPrivate *priv = MEX_GRID_VIEW (object)->priv;
 
+  if (priv->proxy)
+    {
+      g_object_unref (priv->proxy);
+      priv->proxy = NULL;
+    }
+
+  if (priv->alpha)
+    {
+      g_object_unref (priv->alpha);
+      priv->alpha = NULL;
+    }
+
   if (priv->grid_layout)
     {
       clutter_actor_destroy (priv->grid_layout);
