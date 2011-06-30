@@ -1562,6 +1562,7 @@ mex_captured_event_cb (ClutterActor *actor,
       return TRUE;
 
     case CLUTTER_KEY_F11 :
+    case CLUTTER_KEY_f:
       mex_toggle_fullscreen ();
       return TRUE;
     }
