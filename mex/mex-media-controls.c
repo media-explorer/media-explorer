@@ -842,6 +842,7 @@ mex_media_controls_notify_progress_cb (ClutterMedia     *media,
 
   label = (MxLabel*) clutter_script_get_object (priv->script, "progress-label");
   mx_label_set_text (label, text);
+  g_free (text);
 }
 
 static void
