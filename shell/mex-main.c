@@ -1562,7 +1562,6 @@ mex_captured_event_cb (ClutterActor *actor,
       return TRUE;
 
     case CLUTTER_KEY_F11 :
-    case CLUTTER_KEY_f:
       mex_toggle_fullscreen ();
       return TRUE;
     }
@@ -1574,6 +1573,28 @@ mex_captured_event_cb (ClutterActor *actor,
                                            G_OBJECT (actor));
 
   return handled;
+}
+
+static gboolean
+mex_event_cb (ClutterActor *actor,
+              ClutterEvent *event,
+              MexData      *data)
+{
+  ClutterKeyEvent *key_event;
+
+  if (event->type != CLUTTER_KEY_PRESS)
+    return FALSE;
+
+  key_event = (ClutterKeyEvent *)event;
+
+  switch (key_event->keyval)
+    {
+    case CLUTTER_KEY_f:
+      mex_toggle_fullscreen ();
+      return TRUE;
+    }
+
+  return FALSE;
 }
 
 static void
@@ -2654,6 +2675,9 @@ main (int argc, char **argv)
   /* Attach event handler to stage */
   g_signal_connect (data.stage, "captured-event",
                     G_CALLBACK (mex_captured_event_cb), &data);
+
+  g_signal_connect (data.stage, "event",
+                    G_CALLBACK (mex_event_cb), &data);
 
   /* Create root model */
   root_model = mex_aggregate_model_new ();
