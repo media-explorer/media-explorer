@@ -39,6 +39,15 @@ G_DEFINE_TYPE_WITH_CODE (MexInfoPanel, mex_info_panel, MX_TYPE_FRAME,
 #define INFO_PANEL_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_INFO_PANEL, MexInfoPanelPrivate))
 
+#define GET_ACTOR(name) \
+  (CLUTTER_ACTOR (clutter_script_get_object (priv->script, name)))
+
+#define GET_LABEL(name) \
+  (MX_LABEL (clutter_script_get_object (priv->script, name)))
+
+#define GET_OBJECT(name) \
+  (clutter_script_get_object (priv->script, name))
+
 enum
 {
   PROP_0,
@@ -226,12 +235,8 @@ mex_info_panel_constructed (GObject *object)
       clutter_script_load_from_file (priv->script, tmp, &err);
       g_free (tmp);
 
-      priv->watch_button =
-        CLUTTER_ACTOR (clutter_script_get_object (priv->script, "watch-button"));
-
-      priv->buttons_container =
-        CLUTTER_ACTOR (clutter_script_get_object (priv->script,
-                                                  "buttons"));
+      priv->watch_button = GET_ACTOR ("watch-button");
+      priv->buttons_container = GET_ACTOR ("buttons");
 
       g_signal_connect (priv->watch_button, "clicked",
                         G_CALLBACK (_watch_button_pressed_cb),
@@ -261,11 +266,9 @@ mex_info_panel_constructed (GObject *object)
       return;
     }
 
-  root = CLUTTER_ACTOR (clutter_script_get_object (priv->script,
-                                                   "info-panel-container"));
+  root = GET_ACTOR ("info-panel-container");
 
-  priv->metadata_row1 =
-    MX_LABEL (clutter_script_get_object (priv->script, "row1-metadata"));
+  priv->metadata_row1 = GET_LABEL ("row1-metadata");
 
   mx_bin_set_child (MX_BIN (self), root);
 
@@ -470,11 +473,8 @@ mex_info_panel_set_content (MexContentView *view, MexContent *content)
 
   if (priv->mode == MEX_INFO_PANEL_MODE_FULL)
     {
-      thumbnail =
-        CLUTTER_ACTOR (clutter_script_get_object (priv->script, "thumbnail"));
-      queue_button =
-        CLUTTER_ACTOR (clutter_script_get_object (priv->script,
-                                                  "add-to-queue-button"));
+      thumbnail = GET_ACTOR ("thumbnail");
+      queue_button = GET_ACTOR ("add-to-queue-button");
 
       mex_content_view_set_content (MEX_CONTENT_VIEW (thumbnail), content);
       mex_content_view_set_content (MEX_CONTENT_VIEW (queue_button), content);
@@ -482,8 +482,7 @@ mex_info_panel_set_content (MexContentView *view, MexContent *content)
       if ((title = mex_content_get_metadata (content,
                                              MEX_CONTENT_METADATA_TITLE)))
         {
-          GObject *label = clutter_script_get_object (priv->script,
-                                                      "content-title");
+          GObject *label = GET_OBJECT ("content-title");
           mx_label_set_text (MX_LABEL (label), title);
         }
     }
