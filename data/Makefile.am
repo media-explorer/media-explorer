@@ -29,6 +29,7 @@ dist_style_DATA = \
 		  style/harderror-bg.png \
 		  style/highlight-bg.png \
 		  style/item-title-bg.png \
+		  style/label-bg.png \
 		  style/panel-header-bg.png \
 		  style/panel-highlight.png \
 		  style/panel-shadow.png \
