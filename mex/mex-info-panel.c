@@ -322,12 +322,11 @@ _append_human (const gchar *raw,
         break;
 
       default:
+        human = NULL;
         break;
     }
-  if (human)
-    return human;
 
-  return NULL;
+  return human;
 }
 
 
