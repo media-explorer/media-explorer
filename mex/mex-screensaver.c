@@ -66,7 +66,7 @@ connect_gnome_screensaverd (MexScreensaver *self)
  MexScreensaverPrivate *priv = MEX_SCREENSAVER (self)->priv;
 
  DBusGConnection *dbus_connection;
- DBusGProxy *proxy;
+ DBusGProxy *proxy = NULL;
  GError *error=NULL;
 
  dbus_connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
