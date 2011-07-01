@@ -334,7 +334,7 @@ mex_resizing_hbox_create_child_meta (ClutterContainer *container,
 {
   MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (container)->priv;
   MexResizingHBoxChild *meta =
-    g_object_new (MEX_TYPE_RESIZING_HBOX_CHILD, NULL);
+    g_object_new (MEX_TYPE_RESIZING_HBOX_CHILD, "actor", actor, NULL);
 
   meta->actor = actor;
   meta->stagger = TRUE;
