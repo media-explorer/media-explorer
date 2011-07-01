@@ -1050,7 +1050,7 @@ mex_media_controls_get_enqueued (MexMediaControls *controls,
 {
   MexMediaControlsPrivate *priv;
   MexModel *queue;
-  MexContent *content;
+  MexContent *content = NULL;
 
   if (!MEX_IS_MEDIA_CONTROLS (controls) || !MEX_IS_CONTENT (current_content))
     return NULL;
@@ -1074,10 +1074,7 @@ mex_media_controls_get_enqueued (MexMediaControls *controls,
       content = mex_model_get_content (queue, idx);
     }
 
-  if (content)
-    return content;
-
-  return NULL;
+  return content;
 }
 
 void
