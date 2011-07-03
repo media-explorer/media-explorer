@@ -685,6 +685,8 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
 
   /* Start the proxy */
   mex_view_model_start (MEX_VIEW_MODEL (view_model));
+
+  g_object_unref (view_model);
 }
 
 static void

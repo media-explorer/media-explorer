@@ -178,6 +178,12 @@ mex_info_panel_dispose (GObject *object)
       priv->content = NULL;
     }
 
+  if (priv->model)
+    {
+      g_object_unref (priv->model);
+      priv->model = NULL;
+    }
+
   if (priv->script)
     {
       g_object_unref (priv->script);

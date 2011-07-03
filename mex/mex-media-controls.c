@@ -780,7 +780,6 @@ mex_media_controls_init (MexMediaControls *self)
   /* proxy setup */
 
   priv->proxy_model = MEX_VIEW_MODEL (mex_view_model_new (NULL));
-  g_object_ref_sink (G_OBJECT (priv->proxy_model));
   /* FIXME: Set an arbitrary 200-item limit as we can't handle large
    *        amounts of actors without massive slow-down.
    */
