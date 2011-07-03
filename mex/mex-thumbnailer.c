@@ -285,6 +285,7 @@ get_mime_type (const char *uri)
 
   mime = g_strdup (g_file_info_get_attribute_string (info, G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE));
   g_object_unref (info);
+  g_object_unref (file);
 
   return mime;
 }
