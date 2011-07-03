@@ -255,28 +255,28 @@ mex_proxy_model_set_model (MexProxyModel *proxy,
 
   priv->model = model;
 
-  if (model)
+  if (priv->model)
     {
-      g_object_ref (model);
-      controller = mex_model_get_controller (model);
+      g_object_ref (priv->model);
+      controller = mex_model_get_controller (priv->model);
       g_signal_connect (controller, "changed",
                         G_CALLBACK (mex_proxy_model_controller_changed_cb),
                         proxy);
 
       priv->bindings = g_list_prepend (priv->bindings,
-        g_object_bind_property (model, "title",
+        g_object_bind_property (priv->model, "title",
                                 proxy, "title",
                                 G_BINDING_SYNC_CREATE));
       priv->bindings = g_list_prepend (priv->bindings,
-        g_object_bind_property (model, "placeholder-text",
+        g_object_bind_property (priv->model, "placeholder-text",
                                 proxy, "placeholder-text",
                                 G_BINDING_SYNC_CREATE));
       priv->bindings = g_list_prepend (priv->bindings,
-        g_object_bind_property (model, "icon-name",
+        g_object_bind_property (priv->model, "icon-name",
                                 proxy, "icon-name",
                                 G_BINDING_SYNC_CREATE));
       priv->bindings = g_list_prepend (priv->bindings,
-        g_object_bind_property (model, "display-item-count",
+        g_object_bind_property (priv->model, "display-item-count",
                                 proxy, "display-item-count",
                                 G_BINDING_SYNC_CREATE));
 
