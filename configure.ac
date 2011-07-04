@@ -279,11 +279,16 @@ AC_ARG_ENABLE([maintainer-flags],
 
 AS_IF([test "x$enable_maintainer_flags" = "xyes"],
       [
+        #-Wwrite-strings
         AS_COMPILER_FLAGS([MEX_MAINTAINER_CFLAGS],
-                          ["-Wall -Wshadow -Wcast-align
-                            -Wempty-body -Wformat-security
-                            -Winit-self -Wmissing-declarations
-                            -Wredundant-decls"])
+                          ["-Wall -Wshadow -Wcast-align -Wmissing-declarations
+                            -Wdeclaration-after-statement -Wmissing-prototypes
+                            -Wredundant-decls -Wmissing-noreturn -Wpointer-arith
+                            -Winline -Wformat-nonliteral -Wformat-security
+                            -Winit-self -Wmissing-include-dirs -Wundef
+                            -Waggregate-return -Wempty-body
+                            -Wmissing-format-attribute -Wnested-externs
+                            -Wpacked -Winvalid-pch -Wsync-nand"])
       ],
       [
         AS_COMPILER_FLAGS([MEX_MAINTAINER_CFLAGS],
