@@ -80,7 +80,7 @@ emit_notify (gboolean online)
   }
 }
 
-#if WITH_ONLINE_ALWAYS
+#ifdef WITH_ONLINE_ALWAYS
 
 /*
  * A bit nasty but this case never uses emit_notify we get a compile warning
@@ -102,7 +102,7 @@ mex_is_online (void)
 
 #endif
 
-#if WITH_ONLINE_NM
+#ifdef WITH_ONLINE_NM
 #include <libnm-glib/nm-client.h>
 
 /*
@@ -170,7 +170,7 @@ mex_is_online (void)
 #endif
 
 
-#if WITH_ONLINE_CONNMAN
+#ifdef WITH_ONLINE_CONNMAN
 #include <string.h>
 #include <dbus/dbus-glib.h>
 
