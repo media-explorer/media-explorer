@@ -118,13 +118,13 @@ mex_aggregate_model_clear_model (MexAggregateModel *self,
                                  MexModel          *model)
 {
   gint i;
-  GList *c, *remove;
+  GList *c, *to_remove;
   MexContent *content;
 
   MexAggregateModelPrivate *priv = self->priv;
 
   i = 0;
-  remove = NULL;
+  to_remove = NULL;
   while ((content = mex_model_get_content (MEX_MODEL (self), i++)))
     {
       MexModel *parent = g_hash_table_lookup (priv->content_to_model, content);
@@ -132,17 +132,17 @@ mex_aggregate_model_clear_model (MexAggregateModel *self,
       if (parent == model)
         {
           g_hash_table_remove (priv->content_to_model, content);
-          remove = g_list_prepend (remove, content);
+          to_remove = g_list_prepend (to_remove, content);
         }
     }
 
   /* Remove the contents after the loop, to avoid modifying what we're
    * iterating over.
    */
-  for (c = remove; c; c = c->next)
+  for (c = to_remove; c; c = c->next)
     mex_model_remove_content (MEX_MODEL (self), MEX_CONTENT (c->data));
 
-  g_list_free (remove);
+  g_list_free (to_remove);
 }
 
 static void
@@ -289,7 +289,7 @@ void
 mex_aggregate_model_remove_model (MexAggregateModel *aggregate,
                                   MexModel          *model)
 {
-  GList *link;
+  GList *model_link;
   GController *controller;
   MexAggregateModelPrivate *priv;
 
@@ -297,7 +297,7 @@ mex_aggregate_model_remove_model (MexAggregateModel *aggregate,
   g_return_if_fail (MEX_IS_MODEL (model));
 
   priv = aggregate->priv;
-  if (!(link = g_list_find (priv->models, model)))
+  if (!(model_link = g_list_find (priv->models, model)))
     return;
 
   controller = mex_model_get_controller (model);
@@ -312,7 +312,7 @@ mex_aggregate_model_remove_model (MexAggregateModel *aggregate,
 
   /* Remove model from list and remove custom data */
   g_hash_table_remove (priv->controller_to_model, controller);
-  priv->models = g_list_delete_link (priv->models, link);
+  priv->models = g_list_delete_link (priv->models, model_link);
 
   /* Emit removed signal */
   g_signal_emit (aggregate, signals[MODEL_REMOVED], 0, model);

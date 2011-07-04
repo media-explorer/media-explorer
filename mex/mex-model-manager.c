@@ -379,7 +379,7 @@ const MexModelInfo *
 mex_model_manager_get_model_info (MexModelManager *manager,
                                   MexModel        *model)
 {
-  GList *link;
+  GList *model_link;
   MexModelManagerPrivate *priv;
 
   g_return_val_if_fail (MEX_IS_MODEL_MANAGER (manager), NULL);
@@ -387,12 +387,13 @@ mex_model_manager_get_model_info (MexModelManager *manager,
 
   priv = manager->priv;
 
-  link = g_list_find_custom (priv->models, model, mex_model_manager_find_cb);
-  if (!link)
-    link = g_list_find_custom (priv->models, model,
-                               mex_model_manager_find_alt_cb);
+  model_link = g_list_find_custom (priv->models, model,
+                                   mex_model_manager_find_cb);
+  if (!model_link)
+    model_link = g_list_find_custom (priv->models, model,
+                                     mex_model_manager_find_alt_cb);
 
-  return link ? link->data : NULL;
+  return model_link ? model_link->data : NULL;
 }
 
 void
