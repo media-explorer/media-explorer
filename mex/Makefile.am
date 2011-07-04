@@ -122,6 +122,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-queue-button.h			\
 	$(top_srcdir)/mex/mex-resizing-hbox.h			\
 	$(top_srcdir)/mex/mex-resizing-hbox-child.h		\
+	$(top_srcdir)/mex/mex-scene.h				\
 	$(top_srcdir)/mex/mex-screensaver.h			\
 	$(top_srcdir)/mex/mex-scroll-indicator.h		\
 	$(top_srcdir)/mex/mex-scroll-view.h			\
@@ -222,6 +223,7 @@ mex_sources =					\
 	mex-queue-button.c			\
 	mex-resizing-hbox.c			\
 	mex-resizing-hbox-child.c		\
+	mex-scene.c				\
 	mex-screensaver.c			\
 	mex-scroll-indicator.c			\
 	mex-scroll-view.c			\
