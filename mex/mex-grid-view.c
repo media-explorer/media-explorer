@@ -300,8 +300,9 @@ static void
 mex_grid_view_init (MexGridView *self)
 {
   MexGridViewPrivate *priv = self->priv = GRID_VIEW_PRIVATE (self);
-
   ClutterActor *scroll_view;
+  MexShadow *shadow;
+  ClutterColor shadow_color = { 0, 0, 0, 128 };
 
   /* Create the menu */
   priv->menu_layout = mex_menu_new ();
@@ -320,8 +321,6 @@ mex_grid_view_init (MexGridView *self)
                          priv->menu_title, NULL);
 
   priv->menu = (ClutterActor*) mex_menu_get_layout (MEX_MENU (priv->menu_layout));
-  MexShadow *shadow;
-  ClutterColor shadow_color = { 0, 0, 0, 128 };
 
   shadow = mex_shadow_new ();
   mex_shadow_set_radius_y (shadow, 0);

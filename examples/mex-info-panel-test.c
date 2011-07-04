@@ -31,6 +31,8 @@ main (int argc, char **argv)
   ClutterActor *stage, *info_panel, *align;
   MxApplication *app;
   MxWindow *window;
+  MexFeed *feed;
+  MexProgram *program;
 
   mex_init (&argc, &argv);
 
@@ -52,8 +54,8 @@ main (int argc, char **argv)
   mx_window_set_has_toolbar (window, FALSE);
   clutter_actor_set_size (stage, 1024, 768);
 
-  MexFeed *feed = mex_feed_new ("source", "title");
-  MexProgram *program =  mex_program_new (feed);
+  feed = mex_feed_new ("source", "title");
+  program =  mex_program_new (feed);
   mex_content_set_metadata (MEX_CONTENT (program),
                             MEX_CONTENT_METADATA_TITLE,
                             "The cats on the moon");

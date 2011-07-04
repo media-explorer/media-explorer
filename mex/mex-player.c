@@ -485,12 +485,13 @@ mex_player_key_press_event (ClutterActor    *actor,
             }
           else
             {
+              MxFocusable *focusable;
+
               /* if you're pressing info button while the media controls are up
                set them as previously visible */
               if (priv->controls_visible)
                 priv->controls_prev_visible = TRUE;
 
-              MxFocusable *focusable;
               focusable = mx_focus_manager_get_focused (fmanager);
               if (MEX_IS_CONTENT_TILE (focusable) &&
                   priv->controls_prev_visible == TRUE)

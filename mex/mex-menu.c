@@ -171,6 +171,7 @@ mex_menu_notify_focused_cb (MxFocusManager *manager,
   MxBoxLayout *layout;
   ClutterActor *focused;
   MexMenuPrivate *priv = self->priv;
+  gint depth;
 
   focused = (ClutterActor *)mx_focus_manager_get_focused (manager);
 
@@ -188,7 +189,7 @@ mex_menu_notify_focused_cb (MxFocusManager *manager,
           if (parent == (ClutterActor *)self)
             {
               /* We have focus, check what depth we should be at */
-              gint depth =
+              depth =
                 GPOINTER_TO_INT (g_object_get_qdata (G_OBJECT (layout),
                                                      mex_menu_depth_quark));
 

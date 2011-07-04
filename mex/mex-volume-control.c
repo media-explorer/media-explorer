@@ -227,6 +227,7 @@ static void
 mex_volume_control_init (MexVolumeControl *self)
 {
   MexVolumeControlPrivate *priv = self->priv = VOLUME_CONTROL_PRIVATE (self);
+  gchar *new_style_class;
   MexPlayer *player;
 
   player = mex_player_get_default ();
@@ -236,7 +237,6 @@ mex_volume_control_init (MexVolumeControl *self)
   mx_widget_set_disabled (MX_WIDGET (priv->volume), TRUE);
 
   priv->vol_value = clutter_media_get_audio_volume (priv->media);
-  gchar *new_style_class;
 
   /* The media sound can also be changed from another process changint the
    * stream audio with pulse audio, adjust the volume on those changes */

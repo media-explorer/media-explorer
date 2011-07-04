@@ -242,7 +242,7 @@ mex_epg_grid_move_focus (MxFocusable      *focusable,
   MxFocusable *new_focused = NULL;
   GPtrArray *focused_row;
   MexEpgEvent *event;
-  MxFocusHint hint = MX_FOCUS_HINT_FIRST;;
+  MxFocusHint hint = MX_FOCUS_HINT_FIRST;
   gint new_tile_position = -1;
 
   focused_row = g_ptr_array_index (priv->rows, priv->focused_row_idx);

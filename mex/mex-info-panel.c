@@ -496,11 +496,13 @@ mex_info_panel_set_content (MexContentView *view, MexContent *content)
 static void
 mex_info_panel_init (MexInfoPanel *self)
 {
+  GList *image_metadata_template = NULL;
+  GList *video_metadata_template = NULL;
+  GList *music_metadata_template = NULL;
+
   self->priv = INFO_PANEL_PRIVATE (self);
 
   /* Template for the metadata that we want to display for images */
-
-  GList *image_metadata_template = NULL;
 
   image_metadata_template =
     g_list_append (image_metadata_template,
@@ -532,8 +534,6 @@ mex_info_panel_init (MexInfoPanel *self)
 
 
   /* Template for the metadata we want to display for videos */
-  GList *video_metadata_template = NULL;
-
   video_metadata_template =
     g_list_append (video_metadata_template,
                    mex_metadata_info_new (MEX_CONTENT_METADATA_DATE,
@@ -556,8 +556,6 @@ mex_info_panel_init (MexInfoPanel *self)
                                           0));
 
   self->priv->video_metadata_template = video_metadata_template;
-
-  GList *music_metadata_template = NULL;
 
   music_metadata_template =
     g_list_append (music_metadata_template,
