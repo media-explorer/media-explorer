@@ -837,6 +837,7 @@ mex_explorer_push_model (MexExplorer *explorer,
   else
     {
       page = mex_grid_view_new (model);
+      container = page;
     }
 
   if (page)
@@ -858,10 +859,10 @@ mex_explorer_push_model (MexExplorer *explorer,
 
       /* If the page is a grid, push the focus on the container - we don't do
        * this on the non-grid container, as it may not accept focus right
-       * away - grid always accepts focus.
-       */
-      if (MEX_IS_GRID (container))
-        mex_push_focus (MX_FOCUSABLE (container));
+       * away - grid always accepts focus. */
+
+     if (MEX_IS_GRID_VIEW (container))
+       mex_push_focus (MX_FOCUSABLE (container));
 
       g_object_notify (G_OBJECT (explorer), "model");
       g_object_notify (G_OBJECT (explorer), "depth");
