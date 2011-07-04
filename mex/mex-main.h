@@ -73,7 +73,7 @@ gboolean        mex_init_with_args          (int            *argc,
                                              const char     *translation_domain,
                                              GError        **error);
 
-void            mex_deinit                  ();
+void            mex_deinit                  (void);
 
 void            mex_set_main_window         (MxWindow *main_window);
 MxWindow *      mex_get_main_window         (void);

@@ -202,7 +202,7 @@ mex_queue_model_init (MexQueueModel *self)
  * have finished with it.
  */
 MexModel *
-mex_queue_model_dup_singleton ()
+mex_queue_model_dup_singleton (void)
 {
   static MexModel *model = NULL;
 

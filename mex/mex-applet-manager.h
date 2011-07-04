@@ -70,7 +70,7 @@ struct _MexAppletManagerClass
 
 GType mex_applet_manager_get_type (void) G_GNUC_CONST;
 
-MexAppletManager *mex_applet_manager_get_default ();
+MexAppletManager *mex_applet_manager_get_default (void);
 
 GList *mex_applet_manager_get_applets (MexAppletManager *manager);
 

@@ -73,7 +73,7 @@ GrlMedia *mex_grilo_program_get_grilo_media (MexGriloProgram *program);
 
 void mex_grilo_program_set_grilo_media (MexGriloProgram *program, GrlMedia *media);
 
-GList * mex_grilo_program_get_default_keys ();
+GList * mex_grilo_program_get_default_keys (void);
 
 G_END_DECLS
 

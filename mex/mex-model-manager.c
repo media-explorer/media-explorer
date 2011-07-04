@@ -185,7 +185,7 @@ mex_model_manager_init (MexModelManager *self)
 }
 
 MexModelManager *
-mex_model_manager_get_default ()
+mex_model_manager_get_default (void)
 {
   static MexModelManager *manager = NULL;
 

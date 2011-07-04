@@ -62,7 +62,7 @@ typedef gint (*MexActorSortFunc) (ClutterActor *a,
                                   ClutterActor *b,
                                   gpointer      userdata);
 
-void mex_style_load_default ();
+void mex_style_load_default (void);
 void mex_paint_texture_frame (gfloat                    x,
                               gfloat                    y,
                               gfloat                    width,
@@ -102,14 +102,14 @@ gchar * mex_date_to_string  (GDateTime *date);
 
 extern const gchar *mex_shader_box_blur;
 
-GQuark mex_tile_shadow_quark ();
+GQuark mex_tile_shadow_quark (void);
 
 void mex_replace_border_image (CoglHandle     *texture_p,
                                MxBorderImage  *image,
                                MxBorderImage **image_p,
                                CoglHandle     *material_p);
 
-const char* mex_get_data_dir ();
+const char* mex_get_data_dir (void);
 
 gboolean mex_actor_has_focus (MxFocusManager *manager,
                               ClutterActor   *actor);

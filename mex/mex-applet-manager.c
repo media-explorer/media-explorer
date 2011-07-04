@@ -108,7 +108,7 @@ mex_applet_manager_init (MexAppletManager *self)
 }
 
 MexAppletManager *
-mex_applet_manager_get_default ()
+mex_applet_manager_get_default (void)
 {
   static MexAppletManager *manager = NULL;
 

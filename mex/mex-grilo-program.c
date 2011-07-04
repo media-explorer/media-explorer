@@ -720,7 +720,7 @@ mex_grilo_program_set_grilo_media (MexGriloProgram *program,
 }
 
 GList *
-mex_grilo_program_get_default_keys ()
+mex_grilo_program_get_default_keys (void)
 {
   return grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
                                     GRL_METADATA_KEY_TITLE,

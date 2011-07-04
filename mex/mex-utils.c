@@ -87,7 +87,7 @@ static GQuark mex_action_content_quark = 0;
 static GQuark mex_action_model_quark = 0;
 
 void
-mex_style_load_default ()
+mex_style_load_default (void)
 {
   GList *d, *dirs;
   gchar *tmp;
@@ -537,7 +537,7 @@ mex_model_info_new_with_sort_funcs (MexModel    *model,
 }
 
 GQuark
-mex_tile_shadow_quark ()
+mex_tile_shadow_quark (void)
 {
   static GQuark shadow_quark = 0;
 
@@ -625,7 +625,7 @@ mex_replace_border_image (CoglHandle     *texture_p,
  * Return value: Path to mex data directory
  */
 const char*
-mex_get_data_dir ()
+mex_get_data_dir (void)
 {
   static char* datadir = NULL;
   gint i;

@@ -229,7 +229,7 @@ mex_plugin_manager_init (MexPluginManager *self)
 }
 
 MexPluginManager *
-mex_plugin_manager_get_default ()
+mex_plugin_manager_get_default (void)
 {
   static MexPluginManager *manager = NULL;
 

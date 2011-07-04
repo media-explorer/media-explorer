@@ -113,7 +113,7 @@ mex_action_manager_init (MexActionManager *self)
 }
 
 MexActionManager *
-mex_action_manager_get_default ()
+mex_action_manager_get_default (void)
 {
   static MexActionManager *manager = NULL;
 

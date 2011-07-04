@@ -65,10 +65,9 @@ struct _MexSlideShowClass
   MxFrameClass parent_class;
 };
 
-ClutterActor *   mex_slide_show_new ();
-
 GType            mex_slide_show_get_type    (void) G_GNUC_CONST;
 
+ClutterActor *   mex_slide_show_new         (void);
 MexSlideShow *   mex_slide_show_get_default (void);
 
 void mex_slide_show_set_sort_func (MexSlideShow     *self,

@@ -79,7 +79,7 @@ struct _MexActionManagerClass
 
 GType mex_action_manager_get_type (void) G_GNUC_CONST;
 
-MexActionManager *mex_action_manager_get_default ();
+MexActionManager *mex_action_manager_get_default (void);
 
 GList *mex_action_manager_get_actions (MexActionManager *manager);
 

@@ -350,7 +350,8 @@ mex_init (int    *argc,
  * performs internal clean-up.
  *
  */
-void mex_deinit ()
+void
+mex_deinit (void)
 {
 #ifdef HAVE_LIRC
   mex_lirc_deinit (mex_lirc_config);

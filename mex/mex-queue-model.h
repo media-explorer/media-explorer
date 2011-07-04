@@ -64,7 +64,7 @@ struct _MexQueueModelClass
 
 GType mex_queue_model_get_type (void) G_GNUC_CONST;
 
-MexModel *mex_queue_model_dup_singleton ();
+MexModel *mex_queue_model_dup_singleton (void);
 
 G_END_DECLS
 

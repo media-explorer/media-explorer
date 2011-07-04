@@ -901,7 +901,7 @@ mex_slide_show_init (MexSlideShow *self)
 }
 
 ClutterActor *
-mex_slide_show_new ()
+mex_slide_show_new (void)
 {
   return g_object_new (MEX_TYPE_SLIDE_SHOW, NULL);
 }

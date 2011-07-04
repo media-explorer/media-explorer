@@ -104,7 +104,7 @@ struct _MexModelManagerClass
 
 GType mex_model_manager_get_type (void) G_GNUC_CONST;
 
-MexModelManager *mex_model_manager_get_default ();
+MexModelManager *mex_model_manager_get_default (void);
 
 GList *mex_model_manager_get_models (MexModelManager *manager);
 
