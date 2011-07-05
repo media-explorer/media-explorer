@@ -870,6 +870,7 @@ mex_player_init (MexPlayer *self)
                                "y-fill", FALSE, "y-align", MX_ALIGN_END,
                                NULL);
   clutter_actor_set_opacity (priv->info_panel, 0);
+  mex_info_panel_set_media (MEX_INFO_PANEL (priv->info_panel), priv->media);
 
   /* add media controls */
   priv->controls = mex_media_controls_new ();

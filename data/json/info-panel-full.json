@@ -95,6 +95,12 @@
             "height" : 48,
             "child::x-fill" : true,
             "x-align" : "start"
+          },
+          {
+            "id" : "audio-streams-choice",
+            "type" : "MxComboBox",
+            "height" : 48,
+            "child::x-fill" : true
           }
         ]
       }

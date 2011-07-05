@@ -31,6 +31,10 @@
 
 #include <glib/gi18n-lib.h>
 
+#if USE_PLAYER_CLUTTER_GST
+#include <clutter-gst/clutter-gst.h>
+#endif
+
 static void mex_content_view_iface_init (MexContentViewIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexInfoPanel, mex_info_panel, MX_TYPE_FRAME,
@@ -60,9 +64,11 @@ struct _MexInfoPanelPrivate
   ClutterScript *script;
   ClutterActor *buttons_container;
   ClutterActor *watch_button;
+  ClutterActor *audio_combo_box;
 
   MxLabel *metadata_row1;
 
+  ClutterMedia *media;
   MexContent *content;
   MexModel   *model;
 
@@ -283,9 +289,18 @@ mex_info_panel_constructed (GObject *object)
   mx_bin_set_child (MX_BIN (self), root);
 
   if (priv->mode == MEX_INFO_PANEL_MODE_FULL)
-    clutter_actor_add_effect (root, CLUTTER_EFFECT (mex_shadow_new ()));
+    {
+      /* hide the combo box for the audio streams by default. It's handled
+       * by listening to some ClutterMedia signals */
+      priv->audio_combo_box = GET_ACTOR ("audio-streams-choice");
+      clutter_actor_hide (priv->audio_combo_box);
+
+      clutter_actor_add_effect (root, CLUTTER_EFFECT (mex_shadow_new ()));
+    }
   else
-    mx_bin_set_fill (MX_BIN (self), TRUE, TRUE);
+    {
+      mx_bin_set_fill (MX_BIN (self), TRUE, TRUE);
+    }
 }
 
 static void
@@ -635,3 +650,88 @@ mex_info_panel_new (MexInfoPanelMode mode)
   return g_object_new (MEX_TYPE_INFO_PANEL, "mode", mode, NULL);
 }
 
+#if USE_PLAYER_CLUTTER_GST
+static void
+on_media_audio_streams_changed (ClutterMedia *media,
+                                GParamSpec   *pspsec,
+                                MexInfoPanel *panel)
+{
+  ClutterGstVideoTexture *video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
+  MexInfoPanelPrivate *priv = panel->priv;
+  GList *streams, *l;
+  gint n_streams;
+
+  streams = clutter_gst_video_texture_get_audio_streams (video_texture);
+  n_streams = g_list_length (streams);
+
+  /* no need to display the audio stream combox box if there's no more than 1
+   * stream */
+  if (n_streams <= 1)
+    {
+      mx_combo_box_remove_all (MX_COMBO_BOX (priv->audio_combo_box));
+      clutter_actor_hide (priv->audio_combo_box);
+      return;
+    }
+
+  mx_combo_box_remove_all (MX_COMBO_BOX (priv->audio_combo_box));
+  for (l = streams; l; l = g_list_next (l))
+    {
+      const gchar *description = l->data;
+
+      mx_combo_box_append_text (MX_COMBO_BOX (priv->audio_combo_box),
+                                description);
+    }
+  clutter_actor_show (priv->audio_combo_box);
+}
+
+static void
+on_media_audio_stream_changed (ClutterMedia *media,
+                                GParamSpec   *pspsec,
+                                MexInfoPanel *panel)
+{
+  ClutterGstVideoTexture *video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
+  MexInfoPanelPrivate *priv = panel->priv;
+  gint index_;
+
+  index_ = clutter_gst_video_texture_get_audio_stream (video_texture);
+  mx_combo_box_set_index (MX_COMBO_BOX (priv->audio_combo_box), index_);
+}
+
+void
+mex_info_panel_set_media (MexInfoPanel *panel,
+                          ClutterMedia *media)
+{
+  MexInfoPanelPrivate *priv = panel->priv;
+
+  g_return_if_fail (MEX_IS_INFO_PANEL (panel));
+  g_return_if_fail (CLUTTER_IS_MEDIA (media));
+
+  /* we only do something with the info from ClutterMedia in full mode */
+  if (priv->mode != MEX_INFO_PANEL_MODE_FULL)
+    return;
+
+  if (priv->media)
+    {
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            on_media_audio_streams_changed,
+                                            panel);
+    }
+
+  priv->media = media;
+  g_signal_connect (priv->media, "notify::audio-streams",
+                    G_CALLBACK (on_media_audio_streams_changed), panel);
+  g_signal_connect (priv->media, "notify::audio-stream",
+                    G_CALLBACK (on_media_audio_stream_changed), panel);
+}
+
+#else /* !USE_PLAYER_CLUTTER_GST */
+
+void
+mex_info_panel_set_media (MexInfoPanel *panel,
+                          ClutterMedia *media)
+{
+  g_return_if_fail (MEX_IS_INFO_PANEL (panel));
+  g_return_if_fail (CLUTTER_IS_MEDIA (media));
+}
+
+#endif

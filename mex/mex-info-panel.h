@@ -71,7 +71,9 @@ struct _MexInfoPanelClass
 
 GType mex_info_panel_get_type (void) G_GNUC_CONST;
 
-ClutterActor *mex_info_panel_new (MexInfoPanelMode mode);
+ClutterActor *  mex_info_panel_new        (MexInfoPanelMode mode);
+void            mex_info_panel_set_media  (MexInfoPanel *panel,
+                                           ClutterMedia *media);
 
 G_END_DECLS
 
