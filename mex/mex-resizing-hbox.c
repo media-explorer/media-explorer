@@ -1061,9 +1061,13 @@ mex_resizing_hbox_get_preferred_width (ClutterActor *actor,
   GList *c;
   MxPadding padding;
   gfloat min_width, nat_width;
+  gfloat progress;
 
   MexResizingHBox *self = MEX_RESIZING_HBOX (actor);
   MexResizingHBoxPrivate *priv = self->priv;
+
+  clutter_alpha_set_timeline (priv->alpha, priv->timeline);
+  progress = clutter_alpha_get_alpha (priv->alpha);
 
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   for_height -= padding.top + padding.bottom;
@@ -1072,24 +1076,31 @@ mex_resizing_hbox_get_preferred_width (ClutterActor *actor,
 
   for (c = priv->children; c; c = c->next)
     {
+      MexResizingHBoxChild *meta;
       gfloat child_min_width, child_nat_width, multiplier;
 
       ClutterActor *child = c->data;
-      MexResizingHBoxChild *meta = MEX_RESIZING_HBOX_CHILD (
-        clutter_container_get_child_meta (CLUTTER_CONTAINER (actor), child));
+
+      if (!CLUTTER_ACTOR_IS_VISIBLE (child))
+        continue;
+
+      meta = MEX_RESIZING_HBOX_CHILD (
+        clutter_container_get_child_meta (CLUTTER_CONTAINER (self), child));
 
       clutter_actor_get_preferred_width (child,
                                          for_height,
                                          &child_min_width,
                                          &child_nat_width);
 
+      multiplier = (meta->target_width * progress) +
+        (meta->initial_width * (1.f - progress));
+
+
       if (meta->stagger)
         {
           clutter_alpha_set_timeline (priv->alpha, meta->timeline);
-          multiplier = clutter_alpha_get_alpha (priv->alpha);
+          multiplier *= clutter_alpha_get_alpha (priv->alpha);
         }
-      else
-        multiplier = 1.f;
 
       min_width += (int)(child_min_width * multiplier);
       nat_width += (int)(child_nat_width * multiplier);
@@ -1154,7 +1165,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
   MxPadding padding;
   ClutterActorBox actor_box;
   ClutterActorBox child_box;
-  gint space, n_children;
+  gint n_children;
   gfloat extra_space, min_width, nat_width, height, width;
 
   MexResizingHBoxPrivate *priv = self->priv;
@@ -1275,7 +1286,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
       for (c = priv->children; c; c = g_list_next (c))
         {
           MexResizingHBoxChild *meta;
-          gfloat child_min_width, child_nat_width, child_height;
+          gfloat child_nat_width;
 
           ClutterActor *child = c->data;
 
@@ -1284,26 +1295,41 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
 
           clutter_actor_get_preferred_width (child,
                                              -1,
-                                             &child_min_width,
+                                             NULL,
                                              &child_nat_width);
 
           meta = MEX_RESIZING_HBOX_CHILD (clutter_container_get_child_meta (CLUTTER_CONTAINER (self), child));
+
+          if (meta->stagger)
+            {
+              gfloat multiplier;
+
+              clutter_alpha_set_timeline (priv->alpha, meta->timeline);
+              multiplier = clutter_alpha_get_alpha (priv->alpha);
+
+              child_nat_width =
+                (child_nat_width * meta->target_width * multiplier);
+
+              clutter_alpha_set_timeline (priv->alpha, priv->timeline);
+            }
+          else
+            child_nat_width = child_nat_width * meta->target_width;
 
           if (child == priv->current_focus)
             {
 
               if (priv->max_depth > 1)
                 {
-                  cumulative_width += (child_nat_width * meta->target_width) / 2.0;
+                  cumulative_width += child_nat_width / 2.0;
 
                   child_box.x1 = padding.left + (width / 2.0)
                     - (cumulative_width * progress)
-                    - (priv->prev_width * (1 - progress));
+                    - (priv->prev_width * (1.0 - progress));
+
                 }
               else
                 {
                   gfloat offset;
-                  gfloat current_focus_width = child_nat_width * meta->target_width;
                   child_box.x1 = 0;
 
                   offset = (cumulative_width * progress)
@@ -1313,12 +1339,12 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
                   child_box.x1 = priv->prev_offset;
 
                   /* adjust for moving right */
-                  if (child_box.x1 + offset + current_focus_width > width)
-                    child_box.x1 = width - (offset + current_focus_width);
+                  if (child_box.x1 + offset + child_nat_width > width)
+                    child_box.x1 = width - (offset + child_nat_width);
 
                   /* adjust for moving left */
                   if (child_box.x1 + offset < 0)
-                    child_box.x1 = child_box.x1 + -1 * (child_box.x1 + offset);
+                    child_box.x1 = child_box.x1 - (child_box.x1 + offset);
 
                   /* store the current offset */
                   priv->prev_offset = child_box.x1;
@@ -1332,7 +1358,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
 
               break;
             }
-          cumulative_width += child_nat_width * meta->target_width;
+          cumulative_width += child_nat_width;
         }
 
 
@@ -1421,7 +1447,10 @@ mex_resizing_hbox_allocate (ClutterActor           *actor,
 
   /* Allocate children and update adjustments */
   if (clutter_timeline_is_playing (priv->timeline))
-    progress = clutter_alpha_get_alpha (priv->alpha);
+    {
+      clutter_alpha_set_timeline (priv->alpha, priv->timeline);
+      progress = clutter_alpha_get_alpha (priv->alpha);
+    }
   else
     progress = 1.0;
 
