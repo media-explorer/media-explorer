@@ -1279,7 +1279,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
 
 
   /* calculate the starting offset to ensure the focused column is centered */
-  if (priv->current_focus)
+  if (priv->current_focus && priv->depth_index != 0)
     {
       gfloat cumulative_width = 0;
 
