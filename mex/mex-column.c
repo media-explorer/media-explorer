@@ -925,11 +925,11 @@ mex_column_allocate (ClutterActor          *actor,
                                       &header_pref_height);
   child_box.y1 = padding.top + header_pref_height;
 
-  if (priv->placeholder_actor)
-    {
-      child_box.x1 = padding.left;
-      child_box.x2 = box->x2 - box->x1 - padding.right;
+  child_box.x1 = padding.left;
+  child_box.x2 = box->x2 - box->x1 - padding.right;
 
+  if ((priv->n_items < 1) && priv->placeholder_actor)
+    {
       /* keep the aspect ratio of the placeholder actor */
       clutter_actor_get_preferred_size (priv->placeholder_actor, NULL, NULL,
                                         &pref_w, &pref_h);
