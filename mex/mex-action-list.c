@@ -212,11 +212,19 @@ mex_action_list_move_focus (MxFocusable      *focusable,
 {
   MexActionListPrivate *priv = MEX_ACTION_LIST (focusable)->priv;
 
-  if (direction == MX_FOCUS_DIRECTION_OUT)
+  switch (direction)
+  {
+  case MX_FOCUS_DIRECTION_OUT:
+  case MX_FOCUS_DIRECTION_LEFT:
+  case MX_FOCUS_DIRECTION_RIGHT:
     return NULL;
-  else
+
+  default:
     return mx_focusable_accept_focus (MX_FOCUSABLE (priv->layout),
                                       MX_FOCUS_HINT_PRIOR);
+  }
+
+  return NULL;
 }
 
 static MxFocusable *
