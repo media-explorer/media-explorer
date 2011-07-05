@@ -31,6 +31,10 @@
 #include "mex-scroll-view.h"
 #include "mex-tile.h"
 
+#include "mex-scene.h"
+
+#define ANIMATION_DURATION 150
+
 static void model_length_changed_cb (MexModel   *model,
                                      GParamSpec *pspec,
                                      MexColumn  *column);
@@ -38,7 +42,7 @@ static void mx_focusable_iface_init (MxFocusableIface *iface);
 
 static MxFocusableIface *mex_explorer_focusable_parent_iface = NULL;
 
-G_DEFINE_TYPE_WITH_CODE (MexExplorer, mex_explorer, MEX_TYPE_SHELL,
+G_DEFINE_TYPE_WITH_CODE (MexExplorer, mex_explorer, MX_TYPE_STACK,
                          G_IMPLEMENT_INTERFACE (MX_TYPE_FOCUSABLE,
                                                 mx_focusable_iface_init))
 
@@ -66,6 +70,7 @@ enum
 
 struct _MexExplorerPrivate
 {
+  guint         in_transition       : 1;
   guint         has_temporary_focus : 1;
   guint         touch_mode          : 1;
   MexModel     *root_model;
@@ -73,6 +78,8 @@ struct _MexExplorerPrivate
   GList        *to_destroy;
   ClutterActor *last_focus;
   gint          n_preview_items;
+
+  ClutterActor *current_child;
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -388,7 +395,7 @@ mex_explorer_class_init (MexExplorerClass *klass)
 }
 
 static void
-mex_explorer_transition_completed_cb (MexExplorer *self)
+mex_explorer_prune_children (MexExplorer *self)
 {
   ClutterStage *stage;
   MxActorManager *manager;
@@ -447,9 +454,6 @@ mex_explorer_init (MexExplorer *self)
   priv->n_preview_items = 8;
 
   g_queue_init (&priv->pages);
-
-  g_signal_connect (self, "transition-completed",
-                    G_CALLBACK (mex_explorer_transition_completed_cb), NULL);
 }
 
 static void
@@ -680,6 +684,7 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
 
   clutter_container_add_actor (CLUTTER_CONTAINER (scroll), column);
   clutter_container_add_actor (container, scroll);
+  clutter_container_child_set (container, scroll, "expand", FALSE, NULL);
 
   g_object_weak_ref (G_OBJECT (column), mex_explorer_unset_container_cb, model);
 
@@ -714,6 +719,79 @@ mex_explorer_model_removed_cb (MexAggregateModel *aggregate,
    */
   clutter_container_remove_actor (CLUTTER_CONTAINER (parent), scroll);
 }
+
+static void
+mex_explorer_open_child_complete (ClutterActor *child,
+                                  gpointer explorer)
+{
+  MexExplorerPrivate *priv = MEX_EXPLORER (explorer)->priv;
+
+  priv->in_transition = FALSE;
+}
+
+static void
+mex_explorer_child_opacity_complete (ClutterAnimation *animation,
+                                     MexExplorer      *explorer)
+{
+  MexExplorerPrivate *priv = explorer->priv;
+  mex_scene_open (MEX_SCENE (priv->current_child),
+                  mex_explorer_open_child_complete, explorer);
+  mex_explorer_prune_children (explorer);
+}
+
+static void
+mex_explorer_open_child (ClutterActor *old_child,
+                         gpointer      explorer)
+{
+  MexExplorerPrivate *priv = MEX_EXPLORER (explorer)->priv;
+  ClutterActor *child;
+
+  child = priv->current_child;
+
+  clutter_actor_animate (child, CLUTTER_EASE_IN_OUT_QUAD,
+                         ANIMATION_DURATION,
+                         "opacity", (guchar) 255,
+                         "signal::completed",
+                         mex_explorer_child_opacity_complete, explorer,
+                         NULL);
+
+  clutter_actor_animate (old_child, CLUTTER_EASE_IN_OUT_QUAD,
+                         ANIMATION_DURATION,
+                         "opacity", (guchar) 0, NULL);
+
+  /* ensure the child has focus */
+  mex_push_focus (MX_FOCUSABLE (child));
+}
+
+static void
+mex_explorer_present (MexExplorer  *explorer,
+                      ClutterActor *child)
+{
+  MexExplorerPrivate *priv = explorer->priv;
+  ClutterActor *old_child;
+
+  if (priv->in_transition)
+    return;
+
+  old_child = priv->current_child;
+  priv->current_child = child;
+
+  /* remove focus from the current child */
+  mex_push_focus (MX_FOCUSABLE (child));
+
+  if (!old_child)
+    return;
+
+  /* transition between the old child and the new */
+  priv->in_transition = TRUE;
+
+  mex_scene_close (MEX_SCENE (old_child), mex_explorer_open_child, explorer);
+
+  /* make the new child transparent until the old child has "closed" */
+  clutter_actor_set_opacity (child, 0);
+}
+
+/* public functions */
 
 ClutterActor *
 mex_explorer_new (void)
@@ -765,7 +843,7 @@ mex_explorer_push_model (MexExplorer *explorer,
                          MexModel    *model)
 {
   MexExplorerPrivate *priv;
-  ClutterActor *page, *container;
+  ClutterActor *page, *container = NULL;
 
   g_return_if_fail (MEX_IS_EXPLORER (explorer));
   g_return_if_fail (MEX_IS_MODEL (model));
@@ -773,25 +851,21 @@ mex_explorer_push_model (MexExplorer *explorer,
   page = NULL;
   priv = explorer->priv;
 
+  if (priv->in_transition)
+    return;
+
   if (MEX_IS_AGGREGATE_MODEL (model) &&
       (model != mex_explorer_get_model (explorer)))
     {
       GList *m;
       const GList *models;
       MxAdjustment *hadjust;
-      ClutterActor *scroll_view, *resizing_hbox;
+      ClutterActor *resizing_hbox;
 
       /* Create container actors */
-      scroll_view = mex_scroll_view_new ();
-      g_object_set (G_OBJECT (scroll_view),
-                    "x-fill", FALSE,
-                    "x-align", MX_ALIGN_MIDDLE,
-                    "scroll-policy", MX_SCROLL_POLICY_HORIZONTAL,
-                    "indicators-hidden", TRUE,
-                    "scroll-gravity", CLUTTER_GRAVITY_CENTER,
-                    NULL);
-
       resizing_hbox = mex_resizing_hbox_new ();
+      mx_stylable_set_style_class (MX_STYLABLE (resizing_hbox),
+                                   "column-view");
 
       if (model != priv->root_model)
         {
@@ -799,10 +873,6 @@ mex_explorer_push_model (MexExplorer *explorer,
             MEX_RESIZING_HBOX (resizing_hbox), 1);
           mex_resizing_hbox_set_vertical_depth_scale (
             MEX_RESIZING_HBOX (resizing_hbox), 0.98f);
-          mex_scroll_view_set_scroll_gravity (MEX_SCROLL_VIEW (scroll_view),
-                                              CLUTTER_GRAVITY_NONE);
-          mx_bin_set_alignment (MX_BIN (scroll_view), MX_ALIGN_START,
-                                MX_ALIGN_START);
         }
       else
         {
@@ -810,9 +880,6 @@ mex_explorer_push_model (MexExplorer *explorer,
                                          &hadjust, NULL);
           mx_adjustment_set_clamp_value (hadjust, FALSE);
         }
-
-      clutter_container_add_actor (CLUTTER_CONTAINER (scroll_view),
-                                   resizing_hbox);
 
       /* Store the container on the aggregate model */
       g_object_set_qdata (G_OBJECT (model), mex_explorer_container_quark,
@@ -831,8 +898,7 @@ mex_explorer_push_model (MexExplorer *explorer,
       g_signal_connect (model, "model-removed",
                         G_CALLBACK (mex_explorer_model_removed_cb), explorer);
 
-      page = scroll_view;
-      container = resizing_hbox;
+      page = container = resizing_hbox;
     }
   else
     {
@@ -850,13 +916,6 @@ mex_explorer_push_model (MexExplorer *explorer,
       g_queue_push_tail (&priv->pages, page);
       clutter_container_add_actor (CLUTTER_CONTAINER (explorer), page);
 
-      if (model == priv->root_model)
-        mex_shell_present (MEX_SHELL (explorer), page, 0);
-      else
-        mex_shell_present (MEX_SHELL (explorer),
-                           page,
-                           MEX_SHELL_DIRECTION_RIGHT);
-
       /* If the page is a grid, push the focus on the container - we don't do
        * this on the non-grid container, as it may not accept focus right
        * away - grid always accepts focus. */
@@ -867,6 +926,8 @@ mex_explorer_push_model (MexExplorer *explorer,
       g_object_notify (G_OBJECT (explorer), "model");
       g_object_notify (G_OBJECT (explorer), "depth");
     }
+
+  mex_explorer_present (explorer, container);
 }
 
 void
@@ -883,6 +944,9 @@ mex_explorer_replace_model (MexExplorer *explorer,
 
   priv = explorer->priv;
   old_model = mex_explorer_get_model (explorer);
+
+  if (priv->in_transition)
+    return;
 
   if (model == old_model)
     return;
@@ -975,12 +1039,14 @@ mex_explorer_pop_model (MexExplorer *explorer)
   if (g_queue_get_length (&priv->pages) <= 1)
     return;
 
+  if (priv->in_transition)
+    return;
+
   priv->to_destroy = g_list_prepend (priv->to_destroy,
                                      g_queue_pop_tail (&priv->pages));
 
-  mex_shell_present (MEX_SHELL (explorer),
-                     (ClutterActor *)g_queue_peek_tail (&priv->pages),
-                     MEX_SHELL_DIRECTION_LEFT);
+  mex_explorer_present (explorer,
+                        (ClutterActor *)g_queue_peek_tail (&priv->pages));
 
   g_object_notify (G_OBJECT (explorer), "model");
   g_object_notify (G_OBJECT (explorer), "depth");
@@ -997,13 +1063,16 @@ mex_explorer_pop_to_root (MexExplorer *explorer)
   if (g_queue_get_length (&priv->pages) <= 1)
     return;
 
+
+  if (priv->in_transition)
+    return;
+
   while (g_queue_get_length (&priv->pages) > 1)
     priv->to_destroy = g_list_prepend (priv->to_destroy,
                                        g_queue_pop_tail (&priv->pages));
 
-  mex_shell_present (MEX_SHELL (explorer),
-                     (ClutterActor *)g_queue_peek_tail (&priv->pages),
-                     MEX_SHELL_DIRECTION_LEFT);
+  mex_explorer_present (explorer,
+                        (ClutterActor *)g_queue_peek_tail (&priv->pages));
 
   g_object_notify (G_OBJECT (explorer), "model");
   g_object_notify (G_OBJECT (explorer), "depth");

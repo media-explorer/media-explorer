@@ -23,7 +23,7 @@
 #include <glib-object.h>
 #include <clutter/clutter.h>
 #include <mex/mex-model.h>
-#include <mex/mex-shell.h>
+#include <mx/mx.h>
 
 G_BEGIN_DECLS
 
@@ -55,14 +55,14 @@ typedef struct _MexExplorerPrivate MexExplorerPrivate;
 
 struct _MexExplorer
 {
-  MexShell parent;
+  MxStack parent;
 
   MexExplorerPrivate *priv;
 };
 
 struct _MexExplorerClass
 {
-  MexShellClass parent_class;
+  MxStackClass parent_class;
 
   void (*page_created)      (MexExplorer      *explorer,
                              MexModel         *model,

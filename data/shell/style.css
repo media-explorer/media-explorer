@@ -1,7 +1,7 @@
 
 /* This padding is temporary until we have real widgets to add this space */
 
-MexColumn > MxBoxLayout.Header MxIcon
+MxBoxLayout.Header MxIcon
 {
   -mx-icon-size: 26;
 }
@@ -40,8 +40,8 @@ MexExplorer#main-explorer > MexScrollView
 
 MxBoxLayout.Header#menu-header
 {
-  padding: 15 10;
-  -mx-spacing: 10;
+  padding: 15 15 16 15;
+  -mx-spacing: 8;
 }
 
 MxBoxLayout.Header#menu-header > MxLabel,

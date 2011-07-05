@@ -572,6 +572,11 @@ MexResizingHBox
   x-mex-shadow: url('panel-shadow.png') 0;
 }
 
+MexResizingHBox.column-view
+{
+  padding: 34 50 0 39;
+}
+
 /* MexInfoPanel styling */
 
 MexInfoPanel
