@@ -85,10 +85,12 @@ mex_grid_view_move_focus (MxFocusable      *focusable,
 
   if (direction == MX_FOCUS_DIRECTION_LEFT
       && from == MX_FOCUSABLE (priv->grid_layout))
-    return mx_focusable_accept_focus (MX_FOCUSABLE (priv->menu_layout), 0);
+    return mx_focusable_accept_focus (MX_FOCUSABLE (priv->menu_layout),
+                                      MX_FOCUS_HINT_PRIOR);
   else if (direction == MX_FOCUS_DIRECTION_RIGHT
            && from == MX_FOCUSABLE (priv->menu_layout))
-    return mx_focusable_accept_focus (MX_FOCUSABLE (priv->grid_layout), 0);
+    return mx_focusable_accept_focus (MX_FOCUSABLE (priv->grid_layout),
+                                      MX_FOCUS_HINT_PRIOR);
   else
     return NULL;
 }
