@@ -107,22 +107,19 @@ mex_explorer_move_focus (MxFocusable      *focusable,
 
   priv->has_temporary_focus = FALSE;
 
-  return mex_explorer_focusable_parent_iface->
-    move_focus (focusable, direction, from);
+  return NULL;
 }
 
 static MxFocusable *
 mex_explorer_accept_focus (MxFocusable *focusable, MxFocusHint hint)
 {
   MexExplorerPrivate *priv = MEX_EXPLORER (focusable)->priv;
-  MxFocusable *return_val = mex_explorer_focusable_parent_iface->
-                              accept_focus (focusable, hint);
 
   /* If our child isn't focusable (this will happen in the case we're
    * currently showing a completely empty model), still accept focus
    * so we can push the focus to the child once it gets filled with data.
    */
-  if (!return_val)
+  if (!priv->current_child)
     {
       priv->has_temporary_focus = TRUE;
       return focusable;
@@ -130,7 +127,7 @@ mex_explorer_accept_focus (MxFocusable *focusable, MxFocusHint hint)
 
   priv->has_temporary_focus = FALSE;
 
-  return return_val;
+  return mx_focusable_accept_focus (priv->current_child, hint);
 }
 
 static void
