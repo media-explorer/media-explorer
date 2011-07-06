@@ -72,7 +72,7 @@ ClutterActor *mex_content_box_new (void);
 
 ClutterActor *mex_content_box_get_tile (MexContentBox *box);
 ClutterActor *mex_content_box_get_menu (MexContentBox *box);
-ClutterActor *mex_content_box_get_details (MexContentBox *box);
+ClutterActor *mex_content_box_get_info_panel (MexContentBox *box);
 
 void mex_content_box_set_thumbnail_size (MexContentBox *box,
                                          gint           width,

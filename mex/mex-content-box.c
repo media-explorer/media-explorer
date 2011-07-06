@@ -67,10 +67,10 @@ struct _MexContentBoxPrivate
 
   MexModel     *model;
 
-  ClutterActor *box;
+  ClutterActor *expander_box;
   ClutterActor *action_list;
   ClutterActor *tile;
-  ClutterActor *panel;
+  ClutterActor *info_panel;
 
   gchar        *thumb_url;
   gchar        *media_url;
@@ -399,7 +399,9 @@ mex_content_box_notify_open_cb (MexExpanderBox *box,
     }
 
   /* Refresh the info panel and the action list */
-  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->panel), priv->content);
+  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel),
+                                priv->content);
+
   mex_action_list_refresh (MEX_ACTION_LIST (priv->action_list));
 
   /* See if we have any actions */
@@ -472,7 +474,7 @@ mex_content_box_key_press_event_cb (ClutterActor    *actor,
     return FALSE;
 
   mex_expander_box_set_open (drawer, open);
-  mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->box), open);
+  mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->expander_box), open);
 
   return TRUE;
 }
@@ -638,12 +640,12 @@ mex_content_box_tile_clicked_cb (ClutterActor       *tile,
   if (mex_expander_box_get_open (MEX_EXPANDER_BOX (self)))
     {
       mex_expander_box_set_open (MEX_EXPANDER_BOX (self), FALSE);
-      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->box), FALSE);
+      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->expander_box), FALSE);
     }
   else
     {
       mex_expander_box_set_open (MEX_EXPANDER_BOX (self), TRUE);
-      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->box), TRUE);
+      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->expander_box), TRUE);
     }
 
   mex_push_focus (MX_FOCUSABLE (priv->tile));
@@ -655,22 +657,23 @@ static void
 mex_content_box_init (MexContentBox *self)
 {
   MexContentBoxPrivate *priv = self->priv = CONTENT_BOX_PRIVATE (self);
-  ClutterActor *hline, *box;
+  ClutterActor *hline, *info_container;
 
   priv->thumb_width = 426;
   priv->thumb_height = 240;
 
   /* Create description panel */
-  box = mx_box_layout_new ();
-  mx_box_layout_set_orientation (MX_BOX_LAYOUT (box), MX_ORIENTATION_VERTICAL);
+  info_container = mx_box_layout_new ();
+  mx_box_layout_set_orientation (MX_BOX_LAYOUT (info_container),
+                                 MX_ORIENTATION_VERTICAL);
+
+  priv->info_panel = mex_info_panel_new (MEX_INFO_PANEL_MODE_SIMPLE);
 
   hline = clutter_rectangle_new_with_color (&hline_color);
   clutter_actor_set_height (hline, 1);
 
-  priv->panel = mex_info_panel_new (MEX_INFO_PANEL_MODE_SIMPLE);
-
-  clutter_container_add (CLUTTER_CONTAINER (box), hline, priv->panel, NULL);
-
+  clutter_container_add (CLUTTER_CONTAINER (info_container), hline,
+                         priv->info_panel, NULL);
 
   /* monitor key press events */
   g_signal_connect (self, "key-press-event",
@@ -689,19 +692,23 @@ mex_content_box_init (MexContentBox *self)
                     G_CALLBACK (mex_content_box_tile_clicked_cb), self);
 
   /* Create secondary box for tile/menu */
-  priv->box = mex_expander_box_new ();
-  mex_expander_box_set_important (MEX_EXPANDER_BOX (priv->box), TRUE);
-  mex_expander_box_set_grow_direction (MEX_EXPANDER_BOX (priv->box),
+  priv->expander_box = mex_expander_box_new ();
+  mex_expander_box_set_important (MEX_EXPANDER_BOX (priv->expander_box), TRUE);
+  mex_expander_box_set_grow_direction (MEX_EXPANDER_BOX (priv->expander_box),
                                       MEX_EXPANDER_BOX_RIGHT);
-  mex_expander_box_set_primary_child (MEX_EXPANDER_BOX (priv->box), priv->tile);
+  mex_expander_box_set_primary_child (MEX_EXPANDER_BOX (priv->expander_box),
+                                      priv->tile);
 
   /* Pack box and panel into self */
-  mex_expander_box_set_primary_child (MEX_EXPANDER_BOX (self), priv->box);
-  mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (self), box);
+  mex_expander_box_set_primary_child (MEX_EXPANDER_BOX (self),
+                                      priv->expander_box);
+
+  mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (self),
+                                        info_container);
 
   /* Create the action list */
   priv->action_list = mex_action_list_new ();
-  mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (priv->box),
+  mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (priv->expander_box),
                                         priv->action_list);
 
   /* Connect to the open notify signal */
@@ -730,10 +737,10 @@ mex_content_box_get_menu (MexContentBox *box)
 }
 
 ClutterActor *
-mex_content_box_get_details (MexContentBox *box)
+mex_content_box_get_info_panel (MexContentBox *box)
 {
   g_return_val_if_fail (MEX_IS_CONTENT_BOX (box), NULL);
-  return box->priv->panel;
+  return box->priv->info_panel;
 }
 
 void
