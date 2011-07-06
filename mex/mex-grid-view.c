@@ -157,6 +157,12 @@ mex_grid_view_dispose (GObject *object)
       priv->alpha = NULL;
     }
 
+  if (priv->timeline)
+    {
+      g_object_unref (priv->timeline);
+      priv->timeline = NULL;
+    }
+
   if (priv->grid_layout)
     {
       clutter_actor_destroy (priv->grid_layout);
