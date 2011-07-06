@@ -68,6 +68,8 @@ struct _MexInfoPanelPrivate
 
   MexInfoPanelMode mode;
 
+  guint content_handler_id;
+
   GList *video_metadata_template;
   GList *image_metadata_template;
   GList *music_metadata_template;
@@ -171,6 +173,12 @@ mex_info_panel_dispose (GObject *object)
 {
   MexInfoPanel *self = MEX_INFO_PANEL (object);
   MexInfoPanelPrivate *priv = self->priv;
+
+  if (priv->content_handler_id > 0)
+    {
+      g_signal_handler_disconnect (priv->content, priv->content_handler_id);
+      priv->content_handler_id = 0;
+    }
 
   if (priv->content)
     {
@@ -409,20 +417,52 @@ _set_metadata (MexInfoPanel *self, MexInfoPanelMime mime)
 }
 
 static void
+_unset_content (MexInfoPanel *self)
+{
+  MexInfoPanelPrivate *priv = self->priv;
+
+  if (priv->content)
+    {
+      if (priv->content_handler_id > 0)
+        g_signal_handler_disconnect (priv->content, priv->content_handler_id);
+
+      g_object_unref (priv->content);
+      priv->content = NULL;
+    }
+}
+
+static void
+_content_changed_cb (MexContent     *content,
+                     GParamSpec     *pspec,
+                     MexContentView *view)
+{
+  /* Refresh the content */
+  _unset_content (MEX_INFO_PANEL (view));
+  mex_info_panel_set_content (view, content);
+}
+
+static void
 mex_info_panel_set_content (MexContentView *view, MexContent *content)
 {
   MexInfoPanel *self = MEX_INFO_PANEL (view);
   MexInfoPanelPrivate *priv = self->priv;
+
+  if (priv->content == content)
+    return;
 
   const gchar *mimetype;
   const gchar *title = NULL;
 
   ClutterActor *thumbnail, *queue_button;
 
-  if (priv->content)
-    g_object_unref (priv->content);
+  _unset_content (MEX_INFO_PANEL (view));
 
   priv->content = g_object_ref (content);
+
+  priv->content_handler_id =
+    g_signal_connect (content, "notify",
+                      G_CALLBACK (_content_changed_cb),
+                      view);
 
   mimetype = mex_content_get_metadata (content, MEX_CONTENT_METADATA_MIMETYPE);
 
