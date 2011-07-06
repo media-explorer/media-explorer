@@ -1307,24 +1307,24 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
               clutter_alpha_set_timeline (priv->alpha, meta->timeline);
               multiplier = clutter_alpha_get_alpha (priv->alpha);
 
-              child_nat_width =
+              child_nat_width = (int)
                 (child_nat_width * meta->target_width * multiplier);
 
               clutter_alpha_set_timeline (priv->alpha, priv->timeline);
             }
           else
-            child_nat_width = child_nat_width * meta->target_width;
+            child_nat_width = (int) (child_nat_width * meta->target_width);
 
           if (child == priv->current_focus)
             {
 
               if (priv->max_depth > 1)
                 {
-                  cumulative_width += child_nat_width / 2.0;
+                  cumulative_width += (int) (child_nat_width / 2.0);
 
-                  child_box.x1 = padding.left + (width / 2.0)
-                    - (cumulative_width * progress)
-                    - (priv->prev_width * (1.0 - progress));
+                  child_box.x1 = (int) (padding.left + (width / 2.0)
+                                        - (cumulative_width * progress)
+                                        - (priv->prev_width * (1.0 - progress)));
 
                 }
               else
@@ -1332,8 +1332,8 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
                   gfloat offset;
                   child_box.x1 = 0;
 
-                  offset = (cumulative_width * progress)
-                    + (priv->prev_width * (1 - progress));
+                  offset = (int) ((cumulative_width * progress)
+                                  + (priv->prev_width * (1 - progress)));
 
                   /* attempt to use the previous offset */
                   child_box.x1 = priv->prev_offset;
