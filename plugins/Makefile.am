@@ -2,6 +2,9 @@ plugin_datadir = $(datadir)/mex/plugins
 pluginsdir = $(libdir)/mex/plugins
 plugins_LTLIBRARIES =
 
+EXTRA_DIST =
+CLEANFILES =
+
 AM_CPPFLAGS =					\
 	-I$(top_srcdir)				\
 	-I$(top_srcdir)/mex			\
@@ -125,4 +128,24 @@ plugins_LTLIBRARIES += 40mex-justintv.la
 	justintv/mex-justintv-plugin.h
 40mex_justintv_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Justintv\"
 40mex_justintv_la_LIBADD = $(_libadd)
+endif
+
+if USE_PLUGIN_DEBUG
+debugdir = $(pkglibdir)/debug
+debug_LTLIBRARIES = mex-gobject-list.la
+
+mex_gobject_list_la_SOURCES =		\
+	debug/mex-gobject-list.c	\
+	debug/mex-gobject-list.h
+
+do_subst = sed -e 's,[@]pkglibdir[@],$(pkglibdir),'
+
+bin_SCRIPTS = debug/mex-debug
+
+debug/mex-debug: debug/mex-debug.in Makefile
+	$(AM_V_GEN)$(do_subst) < $(srcdir)/debug/mex-debug.in > $@
+	chmod +x $@
+
+EXTRA_DIST += debug/mex-debug.in
+CLEANFILES += $(bin_SCRIPTS)
 endif

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+export LD_PRELOAD=@pkglibdir@/debug/mex-gobject-list.so
+mex
