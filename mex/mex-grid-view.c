@@ -348,9 +348,9 @@ mex_grid_view_timeline_complete_cb (ClutterTimeline *timeline,
       priv->state = STATE_CLOSING_STAGE2;
 
       /* remove the actions from the menu */
-      actions = mex_menu_get_actions (priv->menu_layout, 0);
+      actions = mex_menu_get_actions (MEX_MENU (priv->menu_layout), 0);
       for (l = actions; l; l = g_list_next (l))
-        mex_menu_remove_action (priv->menu_layout, mx_action_get_name (l->data));
+        mex_menu_remove_action (MEX_MENU (priv->menu_layout), mx_action_get_name (l->data));
       g_list_free (actions);
 
       return;

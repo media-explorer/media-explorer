@@ -128,7 +128,7 @@ mex_explorer_accept_focus (MxFocusable *focusable, MxFocusHint hint)
 
   priv->has_temporary_focus = FALSE;
 
-  return mx_focusable_accept_focus (priv->current_child, hint);
+  return mx_focusable_accept_focus (MX_FOCUSABLE (priv->current_child), hint);
 }
 
 static void
@@ -428,7 +428,7 @@ mex_explorer_prune_children (MexExplorer *self)
       if (manager && CLUTTER_IS_CONTAINER (page))
         {
           clutter_actor_set_opacity (page, 0);
-          mx_actor_manager_remove_container (manager, page);
+          mx_actor_manager_remove_container (manager, CLUTTER_CONTAINER (page));
         }
       else
         clutter_actor_destroy (page);
