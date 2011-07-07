@@ -345,7 +345,7 @@ thumbnail_cb (const char *uri, gpointer user_data)
 static void
 mex_grilo_program_thumbnail (MexContent *content, GrlMedia *media)
 {
-  const char *url;
+  const char *url, *old_thumb_url;
   char *thumb_path;
   static gchar *folder_thumb_uri = NULL;
 
@@ -353,6 +353,9 @@ mex_grilo_program_thumbnail (MexContent *content, GrlMedia *media)
   url = grl_media_get_url (media);
   if (url == NULL || !g_str_has_prefix (url, "file:///"))
     return;
+
+  old_thumb_url = mex_content_get_metadata (content,
+                                            MEX_CONTENT_METADATA_STILL);
 
   if (GRL_IS_MEDIA_BOX (media))
     {
@@ -374,10 +377,11 @@ mex_grilo_program_thumbnail (MexContent *content, GrlMedia *media)
 
   if (g_file_test (thumb_path, G_FILE_TEST_EXISTS))
     {
-      gchar *thumb_uri = g_filename_to_uri (thumb_path, NULL, NULL);
-      mex_grilo_program_set_metadata (content, MEX_CONTENT_METADATA_STILL,
-                                      thumb_uri);
-      g_free (thumb_uri);
+      gchar *thumb_url = g_filename_to_uri (thumb_path, NULL, NULL);
+      if (!old_thumb_url || strcmp (thumb_url, old_thumb_url) != 0)
+        mex_grilo_program_set_metadata (content, MEX_CONTENT_METADATA_STILL,
+                                        thumb_url);
+      g_free (thumb_url);
     }
   else
     {
