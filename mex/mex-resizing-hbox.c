@@ -103,6 +103,7 @@ struct _MexResizingHBoxPrivate
   ClutterTimeline *state_timeline;
   ClutterAlpha    *state_alpha;
   ClutterActorBox  old_box;
+  ClutterActorBox  target_box;
   ClutterCallback  state_callback;
   gpointer state_userdata;
   guint state;
@@ -125,39 +126,46 @@ static void mex_resizing_hbox_get_allocation (MexScrollableContainer *self,
 
 /* MexSceneInterface */
 static void
-mex_resizing_hbox_open (MexScene        *actor,
-                        ClutterCallback  callback,
-                        gpointer         data)
+mex_resizing_hbox_open (MexScene              *actor,
+                        const ClutterActorBox *origin,
+                        ClutterCallback        callback,
+                        gpointer               data)
 {
   MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (actor)->priv;
+  GList *l;
 
-  if (priv->state == STATE_CLOSING || priv->state == STATE_OPENING)
-    return;
+  priv->state = STATE_OPEN;
 
-  if (priv->state == STATE_OPEN)
+  /* make sure all children are visible again */
+  for (l = priv->children; l; l = g_list_next (l))
     {
-      if (callback)
-        callback (CLUTTER_ACTOR (actor), data);
-      return;
+      if (l->data != priv->current_focus)
+        {
+          clutter_actor_animate (l->data, CLUTTER_EASE_OUT_QUAD, ANIMATION_DURATION / 2.0,
+                                 "opacity", (guchar) INACTIVE_OPACITY, NULL);
+        }
     }
 
-  if (!priv->current_focus)
+  /* fade in the children of the column */
+  if (MEX_IS_SCROLL_VIEW (priv->current_focus)
+      && MEX_IS_COLUMN (mx_bin_get_child (MX_BIN (priv->current_focus))))
     {
-      priv->state = STATE_OPEN;
+      ClutterActor *container;
+      GList *l, *children;
 
-      if (callback)
-        callback (CLUTTER_ACTOR (actor), data);
+      container = mx_bin_get_child (MX_BIN (priv->current_focus));
+      children = clutter_container_get_children (CLUTTER_CONTAINER (container));
 
-      return;
+      for (l = children; l; l = g_list_next (l))
+        {
+          clutter_actor_set_opacity (l->data, 255);
+        }
+
+      g_list_free (children);
     }
 
-
-  priv->state = STATE_OPENING;
-
-  clutter_timeline_start (priv->state_timeline);
-
-  priv->state_callback = callback;
-  priv->state_userdata = data;
+  if (callback)
+    callback (CLUTTER_ACTOR (actor), data);
 }
 
 static void
@@ -166,25 +174,7 @@ mex_resizing_hbox_state_timeline_complete_cb (ClutterTimeline *timeline,
 {
   MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (hbox)->priv;
 
-  if (priv->state == STATE_OPENING)
-    {
-      GList *l;
-
-      /* make sure all children are visible again */
-      for (l = priv->children; l; l = g_list_next (l))
-        {
-          if (l->data != priv->current_focus)
-            {
-              clutter_actor_show (l->data);
-              clutter_actor_set_opacity (l->data, 0);
-              clutter_actor_animate (l->data, CLUTTER_EASE_OUT_QUAD, ANIMATION_DURATION / 2.0,
-                                     "opacity", (guchar) INACTIVE_OPACITY, NULL);
-            }
-        }
-      priv->state = STATE_OPEN;
-    }
-  else
-    priv->state = STATE_CLOSED;
+  priv->state = STATE_CLOSED;
 
   if (priv->state_callback)
     priv->state_callback (CLUTTER_ACTOR (hbox), priv->state_userdata);
@@ -202,9 +192,10 @@ mex_resizing_hbox_state_timeline_cb (ClutterTimeline *timeline,
 }
 
 static void
-mex_resizing_hbox_close (MexScene        *actor,
-                         ClutterCallback  callback,
-                         gpointer         data)
+mex_resizing_hbox_close (MexScene              *actor,
+                         const ClutterActorBox *target,
+                         ClutterCallback        callback,
+                         gpointer               data)
 {
   MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (actor)->priv;
   GList *l;
@@ -224,6 +215,8 @@ mex_resizing_hbox_close (MexScene        *actor,
 
   clutter_actor_get_allocation_box (priv->current_focus, &priv->old_box);
 
+  priv->target_box = *target;
+
   /* set the current state after retrieving the allocation box, as the
    * current focused actor may not have a valid allocation and therefore
    * resizing hbox must not start the animation before giving the focused
@@ -240,7 +233,40 @@ mex_resizing_hbox_close (MexScene        *actor,
   for (l = priv->children; l; l = g_list_next (l))
     {
       if (l->data != priv->current_focus)
-        clutter_actor_hide (l->data);
+        {
+          clutter_actor_animate (l->data, CLUTTER_LINEAR, 100,
+                                 "opacity", (guchar) 0, NULL);
+        }
+    }
+}
+
+static void
+mex_resizing_hbox_get_current_target (MexScene        *scene,
+                                      ClutterActorBox *box)
+{
+  MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (scene)->priv;
+
+  if (priv->current_focus)
+    {
+      *box = priv->old_box;
+      return;
+    }
+  else if (priv->children)
+    {
+      gfloat width, height;
+      MxPadding padding;
+
+      if (priv->max_depth == 1)
+        {
+          clutter_actor_get_size (priv->children->data, &width, &height);
+          mx_widget_get_padding (MX_WIDGET (scene), &padding);
+          box->x1 = padding.left;
+          box->y1 = padding.top;
+          box->x2 = box->x1 + width;
+          box->y2 = box->y1 + height;
+        }
+
+      return;
     }
 }
 
@@ -249,6 +275,7 @@ mex_scene_iface_init (MexSceneInterface *iface)
 {
   iface->open = mex_resizing_hbox_open;
   iface->close = mex_resizing_hbox_close;
+  iface->get_current_target = mex_resizing_hbox_get_current_target;
 }
 
 
@@ -1179,32 +1206,22 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
   child_box.x1 = padding.left;
   child_box.y2 = padding.top + height;
 
-  if ((priv->state == STATE_CLOSING || priv->state == STATE_CLOSED
-      || priv->state == STATE_OPENING) && priv->current_focus)
+  if ((priv->state == STATE_CLOSING || priv->state == STATE_CLOSED)
+      && priv->current_focus)
     {
-      ClutterActorBox final_box;
       gfloat state_progress;
 
       /* only the current focused child is visible in these states, so no need
        * to allocate the other children */
       state_progress = clutter_alpha_get_alpha (priv->state_alpha);
 
-      /* reverse the animation when opening */
-      if (priv->state == STATE_OPENING)
-        state_progress = 1 - state_progress;
-
-      final_box.x1 = padding.left;
-      final_box.y1 = padding.top;
-      final_box.x2 = final_box.x1 + 284;
-      final_box.y2 = final_box.y1 + clutter_actor_get_height (priv->current_focus);
-
       if (priv->state == STATE_CLOSED)
         {
-          clutter_actor_allocate (priv->current_focus, &final_box, flags);
+          clutter_actor_allocate (priv->current_focus, &priv->target_box, flags);
           return;
         }
 
-      clutter_actor_box_interpolate (&priv->old_box, &final_box,
+      clutter_actor_box_interpolate (&priv->old_box, &priv->target_box,
                                      state_progress,
                                      &child_box);
 
@@ -1572,8 +1589,9 @@ mex_resizing_hbox_draw_child (MexResizingHBox *self,
 
   clutter_actor_paint (child);
 
-  mex_resizing_hbox_draw_overlay (self, &child_box, opacity,
-                                  highlight_left, highlight_right);
+  if (clutter_actor_get_opacity (child) > 0)
+    mex_resizing_hbox_draw_overlay (self, &child_box, opacity,
+                                    highlight_left, highlight_right);
 
   if (meta->stagger)
     cogl_clip_pop ();

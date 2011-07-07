@@ -8,7 +8,7 @@
 #define MENU_MIN_WIDTH 284.0
 #define MENU_SECONDARY_WIDTH 180.0
 #define GRID_TOP_PADDING 6
-#define ANIMATION_DURATION 500
+#define ANIMATION_DURATION 400
 
 static void mex_grid_view_focus_iface_init (MxFocusableIface *iface);
 static void mex_grid_view_scene_iface_init (MexSceneInterface *iface);
@@ -48,6 +48,8 @@ struct _MexGridViewPrivate
 
   ClutterCallback callback;
   gpointer userdata;
+
+  ClutterActorBox target_box;
 };
 
 enum
@@ -58,7 +60,8 @@ enum
 enum
 {
   STATE_OPENING,
-  STATE_CLOSING,
+  STATE_CLOSING_STAGE1,
+  STATE_CLOSING_STAGE2,
   STATE_OPEN,
   STATE_CLOSED
 };
@@ -205,6 +208,12 @@ mex_grid_view_allocate (ClutterActor           *actor,
                                      &menu_width);
   mx_widget_get_available_area (MX_WIDGET (actor), box, &child_box);
   child_box.x2 = child_box.x1 + MAX (MENU_MIN_WIDTH, menu_width);
+
+  if (priv->state == STATE_CLOSING_STAGE2)
+    clutter_actor_box_interpolate (&child_box, &priv->target_box,
+                                   clutter_alpha_get_alpha (priv->alpha),
+                                   &child_box);
+
   clutter_actor_allocate (priv->menu_layout, &child_box, flags);
 
 
@@ -215,9 +224,9 @@ mex_grid_view_allocate (ClutterActor           *actor,
   child_box.x1 = child_box.x1 + MENU_MIN_WIDTH;
   if (priv->state == STATE_OPENING)
     child_box.x2 = child_box.x2 * clutter_alpha_get_alpha (priv->alpha);
-  else if (priv->state == STATE_CLOSING)
+  else if (priv->state == STATE_CLOSING_STAGE1)
     child_box.x2 = child_box.x2 * (1 - clutter_alpha_get_alpha (priv->alpha));
-  else if (priv->state == STATE_CLOSED)
+  else if (priv->state == STATE_CLOSED || priv->state == STATE_CLOSING_STAGE2)
     child_box.x2 = child_box.x1;
   clutter_actor_allocate (priv->grid_layout, &child_box, flags);
 }
@@ -250,9 +259,10 @@ mex_grid_view_pick (ClutterActor       *actor,
 }
 
 static void
-mex_grid_view_open (MexScene        *actor,
-                    ClutterCallback  callback,
-                    gpointer         data)
+mex_grid_view_open (MexScene              *actor,
+                    const ClutterActorBox *origin,
+                    ClutterCallback        callback,
+                    gpointer               data)
 {
   MexGridViewPrivate *priv = MEX_GRID_VIEW (actor)->priv;
 
@@ -264,17 +274,29 @@ mex_grid_view_open (MexScene        *actor,
 }
 
 static void
-mex_grid_view_close (MexScene        *actor,
-                     ClutterCallback  callback,
-                     gpointer         data)
+mex_grid_view_close (MexScene              *actor,
+                     const ClutterActorBox *target,
+                     ClutterCallback        callback,
+                     gpointer               data)
 {
   MexGridViewPrivate *priv = MEX_GRID_VIEW (actor)->priv;
 
   clutter_timeline_start (priv->timeline);
-  priv->state = STATE_CLOSING;
+  priv->state = STATE_CLOSING_STAGE1;
+  priv->target_box = *target;
 
   priv->callback = callback;
   priv->userdata = data;
+
+}
+
+static void
+mex_grid_view_get_current_target (MexScene        *scene,
+                                  ClutterActorBox *box)
+{
+  MexGridViewPrivate *priv = MEX_GRID_VIEW (scene)->priv;
+
+  clutter_actor_get_allocation_box (CLUTTER_ACTOR (priv->menu_layout), box);
 }
 
 static void
@@ -282,6 +304,7 @@ mex_grid_view_scene_iface_init (MexSceneInterface *iface)
 {
   iface->open = mex_grid_view_open;
   iface->close = mex_grid_view_close;
+  iface->get_current_target = mex_grid_view_get_current_target;
 }
 
 
@@ -290,31 +313,65 @@ mex_grid_view_timeline_cb (ClutterTimeline *timeline,
                            gint             msecs,
                            MexGridView     *view)
 {
+  MexGridViewPrivate *priv = MEX_GRID_VIEW (view)->priv;
+
   clutter_actor_queue_relayout (CLUTTER_ACTOR (view));
+
+  if (priv->state == STATE_CLOSING_STAGE2)
+    {
+      gfloat progress = clutter_alpha_get_alpha (priv->alpha);
+      gfloat target_width = clutter_actor_box_get_width (&priv->target_box);
+
+      clutter_actor_set_width (priv->menu,
+                               MENU_MIN_WIDTH * (1 - progress)
+                               + target_width * progress);
+    }
+  else
+    {
+      clutter_actor_set_width (priv->menu, MENU_MIN_WIDTH);
+    }
 }
 
 static void
 mex_grid_view_timeline_complete_cb (ClutterTimeline *timeline,
                                     MexGridView     *view)
 {
-  if (view->priv->state == STATE_CLOSING)
+  MexGridViewPrivate *priv = MEX_GRID_VIEW (view)->priv;
+
+  if (priv->state == STATE_CLOSING_STAGE1)
     {
-      view->priv->state = STATE_CLOSED;
+      GList *l, *actions;
+
+      /* move to stage 2 of the close animation */
+      clutter_timeline_rewind (timeline);
+      clutter_timeline_start (timeline);
+      priv->state = STATE_CLOSING_STAGE2;
+
+      /* remove the actions from the menu */
+      actions = mex_menu_get_actions (priv->menu_layout, 0);
+      for (l = actions; l; l = g_list_next (l))
+        mex_menu_remove_action (priv->menu_layout, mx_action_get_name (l->data));
+      g_list_free (actions);
+
+      return;
+    }
+  else if (priv->state == STATE_CLOSING_STAGE2)
+    {
+      priv->state = STATE_CLOSED;
       CLUTTER_ACTOR_CLASS (mex_grid_view_parent_class)->hide (CLUTTER_ACTOR (view));
     }
-  else if (view->priv->state == STATE_OPENING)
+  else if (priv->state == STATE_OPENING)
     {
-      view->priv->state = STATE_OPEN;
-      mex_proxy_set_model (view->priv->proxy, view->priv->model);
+      priv->state = STATE_OPEN;
+      mex_proxy_set_model (priv->proxy, priv->model);
     }
 
 
+  if (priv->callback)
+    priv->callback (CLUTTER_ACTOR (view), priv->userdata);
 
-  if (view->priv->callback)
-    view->priv->callback (CLUTTER_ACTOR (view), view->priv->userdata);
-
-  view->priv->callback = NULL;
-  view->priv->userdata = NULL;
+  priv->callback = NULL;
+  priv->userdata = NULL;
 }
 
 static void
@@ -423,7 +480,7 @@ mex_grid_view_init (MexGridView *self)
 
   /* timeline for animations */
   priv->timeline = clutter_timeline_new (ANIMATION_DURATION);
-  priv->alpha = clutter_alpha_new_full (priv->timeline, CLUTTER_EASE_OUT_CUBIC);
+  priv->alpha = clutter_alpha_new_full (priv->timeline, CLUTTER_EASE_IN_OUT_CUBIC);
   g_signal_connect (priv->timeline, "new-frame",
                     G_CALLBACK (mex_grid_view_timeline_cb), self);
   g_signal_connect (priv->timeline, "completed",

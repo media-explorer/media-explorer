@@ -30,9 +30,10 @@ mex_scene_default_init (MexSceneInterface *interface)
 
 
 void
-mex_scene_open (MexScene        *scene,
-                ClutterCallback  callback,
-                gpointer         data)
+mex_scene_open (MexScene              *scene,
+                const ClutterActorBox *origin,
+                ClutterCallback        callback,
+                gpointer               data)
 {
   MexSceneInterface *iface;
 
@@ -42,7 +43,7 @@ mex_scene_open (MexScene        *scene,
 
   if (iface->open)
     {
-      iface->open (scene, callback, data);
+      iface->open (scene, origin, callback, data);
       return;
     }
 
@@ -51,9 +52,31 @@ mex_scene_open (MexScene        *scene,
 }
 
 void
-mex_scene_close (MexScene        *scene,
-                 ClutterCallback  callback,
-                 gpointer         data)
+mex_scene_close (MexScene              *scene,
+                 const ClutterActorBox *target,
+                 ClutterCallback        callback,
+                 gpointer               data)
+{
+  MexSceneInterface *iface;
+
+  g_return_if_fail (MEX_IS_SCENE (scene));
+  g_return_if_fail (target != NULL);
+
+  iface = MEX_SCENE_GET_IFACE (scene);
+
+  if (iface->close)
+    {
+      iface->close (scene, target, callback, data);
+      return;
+    }
+
+  g_warning ("MexScene of type '%s' does not implement close()",
+             g_type_name (G_OBJECT_TYPE (scene)));
+}
+
+void
+mex_scene_get_current_target (MexScene              *scene,
+                              ClutterActorBox       *box)
 {
   MexSceneInterface *iface;
 
@@ -61,12 +84,12 @@ mex_scene_close (MexScene        *scene,
 
   iface = MEX_SCENE_GET_IFACE (scene);
 
-  if (iface->close)
+  if (iface->get_current_target)
     {
-      iface->close (scene, callback, data);
+      iface->get_current_target (scene, box);
       return;
     }
 
-  g_warning ("MexScene of type '%s' does not implement close()",
+  g_warning ("MexScene of type '%s' does not implement get_current_target()",
              g_type_name (G_OBJECT_TYPE (scene)));
 }

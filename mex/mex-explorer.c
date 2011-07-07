@@ -80,6 +80,7 @@ struct _MexExplorerPrivate
   gint          n_preview_items;
 
   ClutterActor *current_child;
+  ClutterActor *previous_child;
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -406,14 +407,10 @@ mex_explorer_prune_children (MexExplorer *self)
     {
       GObject *model;
       ClutterActor *page;
-      ClutterContainer *container;
 
       page = priv->to_destroy->data;
       model = g_object_get_qdata (G_OBJECT (page),
                                   mex_explorer_model_quark);
-
-      container =
-        g_object_get_qdata (model, mex_explorer_container_quark);
 
       g_object_set_qdata (model, mex_explorer_proxy_quark, NULL);
       g_object_set_qdata (model, mex_explorer_container_quark, NULL);
@@ -428,12 +425,10 @@ mex_explorer_prune_children (MexExplorer *self)
                                                 self);
         }
 
-      if (manager && container)
+      if (manager && CLUTTER_IS_CONTAINER (page))
         {
           clutter_actor_set_opacity (page, 0);
-          mx_actor_manager_remove_container (manager, container);
-          mx_actor_manager_remove_actor (manager,
-                                         CLUTTER_CONTAINER (self), page);
+          mx_actor_manager_remove_container (manager, page);
         }
       else
         clutter_actor_destroy (page);
@@ -727,37 +722,37 @@ mex_explorer_open_child_complete (ClutterActor *child,
 }
 
 static void
-mex_explorer_child_opacity_complete (ClutterAnimation *animation,
-                                     MexExplorer      *explorer)
-{
-  MexExplorerPrivate *priv = explorer->priv;
-  mex_scene_open (MEX_SCENE (priv->current_child),
-                  mex_explorer_open_child_complete, explorer);
-  mex_explorer_prune_children (explorer);
-}
-
-static void
 mex_explorer_open_child (ClutterActor *old_child,
                          gpointer      explorer)
 {
   MexExplorerPrivate *priv = MEX_EXPLORER (explorer)->priv;
-  ClutterActor *child;
+  ClutterActorBox box;
 
-  child = priv->current_child;
 
-  clutter_actor_animate (child, CLUTTER_EASE_IN_OUT_QUAD,
+  /* swap the two scenes */
+  clutter_actor_hide (priv->previous_child);
+  clutter_actor_show (priv->current_child);
+
+  /* ensure the child has focus */
+  mex_push_focus (MX_FOCUSABLE (priv->current_child));
+
+  mex_scene_get_current_target (MEX_SCENE (priv->current_child), &box);
+
+  mex_scene_open (MEX_SCENE (priv->current_child), &box,
+                  mex_explorer_open_child_complete, explorer);
+
+
+  clutter_actor_animate (priv->current_child, CLUTTER_EASE_OUT_QUINT,
                          ANIMATION_DURATION,
                          "opacity", (guchar) 255,
-                         "signal::completed",
-                         mex_explorer_child_opacity_complete, explorer,
                          NULL);
 
-  clutter_actor_animate (old_child, CLUTTER_EASE_IN_OUT_QUAD,
+  clutter_actor_animate (priv->previous_child, CLUTTER_EASE_IN_QUINT,
                          ANIMATION_DURATION,
                          "opacity", (guchar) 0, NULL);
 
-  /* ensure the child has focus */
-  mex_push_focus (MX_FOCUSABLE (child));
+
+  mex_explorer_prune_children (explorer);
 }
 
 static void
@@ -765,27 +760,32 @@ mex_explorer_present (MexExplorer  *explorer,
                       ClutterActor *child)
 {
   MexExplorerPrivate *priv = explorer->priv;
-  ClutterActor *old_child;
+  ClutterActorBox target;
 
   if (priv->in_transition)
     return;
 
-  old_child = priv->current_child;
+  priv->previous_child = priv->current_child;
   priv->current_child = child;
 
   /* remove focus from the current child */
   mex_push_focus (MX_FOCUSABLE (child));
 
-  if (!old_child)
+  if (!priv->previous_child)
     return;
 
   /* transition between the old child and the new */
   priv->in_transition = TRUE;
 
-  mex_scene_close (MEX_SCENE (old_child), mex_explorer_open_child, explorer);
+  /* get the target position */
+  mex_scene_get_current_target (MEX_SCENE (child), &target);
 
-  /* make the new child transparent until the old child has "closed" */
-  clutter_actor_set_opacity (child, 0);
+  /* close the old scene */
+  mex_scene_close (MEX_SCENE (priv->previous_child), &target,
+                   mex_explorer_open_child, explorer);
+
+  /* hide the new child until the old child has "closed" */
+  clutter_actor_hide (child);
 }
 
 /* public functions */
@@ -840,7 +840,7 @@ mex_explorer_push_model (MexExplorer *explorer,
                          MexModel    *model)
 {
   MexExplorerPrivate *priv;
-  ClutterActor *page, *container = NULL;
+  ClutterActor *page;
 
   g_return_if_fail (MEX_IS_EXPLORER (explorer));
   g_return_if_fail (MEX_IS_MODEL (model));
@@ -895,36 +895,26 @@ mex_explorer_push_model (MexExplorer *explorer,
       g_signal_connect (model, "model-removed",
                         G_CALLBACK (mex_explorer_model_removed_cb), explorer);
 
-      page = container = resizing_hbox;
+      page = resizing_hbox;
     }
   else
     {
       page = mex_grid_view_new (model);
-      container = page;
     }
 
   if (page)
     {
       g_object_weak_ref (G_OBJECT (page), (GWeakNotify)g_object_unref, model);
       g_object_set_qdata (G_OBJECT (page), mex_explorer_model_quark, model);
-      g_object_set_qdata (G_OBJECT (page), mex_explorer_container_quark,
-                          container);
 
       g_queue_push_tail (&priv->pages, page);
       clutter_container_add_actor (CLUTTER_CONTAINER (explorer), page);
-
-      /* If the page is a grid, push the focus on the container - we don't do
-       * this on the non-grid container, as it may not accept focus right
-       * away - grid always accepts focus. */
-
-     if (MEX_IS_GRID_VIEW (container))
-       mex_push_focus (MX_FOCUSABLE (container));
 
       g_object_notify (G_OBJECT (explorer), "model");
       g_object_notify (G_OBJECT (explorer), "depth");
     }
 
-  mex_explorer_present (explorer, container);
+  mex_explorer_present (explorer, page);
 }
 
 void

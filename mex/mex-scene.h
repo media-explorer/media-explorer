@@ -38,12 +38,31 @@ struct _MexSceneInterface
   GTypeInterface g_iface;
 
   /* virtual functions */
-  void (*open) (MexScene *scene, ClutterCallback callback, gpointer data);
-  void (*close) (MexScene *scene, ClutterCallback callback, gpointer data);
+  void (*open) (MexScene              *scene,
+                const ClutterActorBox *origin,
+                ClutterCallback        callback,
+                gpointer               data);
+
+  void (*close) (MexScene              *scene,
+                 const ClutterActorBox *target,
+                 ClutterCallback        callback,
+                 gpointer               data);
+
+  void (*get_current_target) (MexScene        *scene,
+                              ClutterActorBox *box);
 };
 
 
 GType mex_scene_get_type (void) G_GNUC_CONST;
 
-void mex_scene_open (MexScene *scene, ClutterCallback callback, gpointer data);
-void mex_scene_close (MexScene *scene, ClutterCallback callback, gpointer data);
+void mex_scene_open (MexScene              *scene,
+                     const ClutterActorBox *origin,
+                     ClutterCallback        callback,
+                     gpointer               data);
+void mex_scene_close (MexScene              *scene,
+                      const ClutterActorBox *target,
+                      ClutterCallback        callback,
+                      gpointer               data);
+
+void mex_scene_get_current_target (MexScene        *scene,
+                                   ClutterActorBox *box);
