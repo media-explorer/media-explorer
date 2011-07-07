@@ -131,6 +131,14 @@ plugins_LTLIBRARIES += 40mex-justintv.la
 endif
 
 if USE_PLUGIN_DEBUG
+plugins_LTLIBRARIES += 100mex-debug.la
+
+100mex_debug_la_SOURCES = 		\
+	debug/mex-debug-plugin.c 	\
+	debug/mex-debug-plugin.h
+100mex_debug_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Debug\"
+100mex_debug_la_LIBADD = $(_libadd)
+
 debugdir = $(pkglibdir)/debug
 debug_LTLIBRARIES = mex-gobject-list.la
 

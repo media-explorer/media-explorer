@@ -396,6 +396,9 @@ PKG_CHECK_EXISTS(clutter-x11-1.0, [AC_DEFINE(HAVE_CLUTTER_X11,
 # Default list of plugins to compile
 WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv"
 
+# the debug plugin is enabled in debug mode
+AS_IF([test "x$enable_debug" = "xyes"], [WITH_PLUGINS="$WITH_PLUGINS,debug"])
+
 # Provide a --with-plugins/--without-plugins configure option
 AS_MEX_ARG_WITH_PLUGINS
 
@@ -410,6 +413,7 @@ AS_MEX_PLUGIN(tracker)
 AS_MEX_PLUGIN(dbusinput)
 AS_MEX_PLUGIN(bliptv)
 AS_MEX_PLUGIN(justintv)
+AS_MEX_PLUGIN(debug)
 
 AC_CONFIG_FILES([
   Makefile

@@ -66,6 +66,22 @@ static GHashTable *classes = NULL;
 
 gpointer gobject_list_pointer_to_follow = NULL;
 
+/*
+ * messages printed with PRINT() can be enabled/disabled at run time
+ */
+static gboolean gobject_list_verbose = FALSE;
+
+#define PRINT(fmt, a...)  G_STMT_START { \
+    if (gobject_list_verbose)            \
+      g_print (fmt, ##a);                \
+                          } G_STMT_END
+
+void
+gobject_list_toggle_verbose (void)
+{
+  gobject_list_verbose = !gobject_list_verbose;
+}
+
 static gboolean
 display_filter (DisplayFlags flags)
 {
@@ -269,7 +285,7 @@ _object_finalized (gpointer data,
 {
   if (display_filter (DISPLAY_FLAG_CREATE))
     {
-      g_print (" -- Finalized object %p, %s\n", obj, G_OBJECT_TYPE_NAME (obj));
+      PRINT (" -- Finalized object %p, %s\n", obj, G_OBJECT_TYPE_NAME (obj));
       print_trace();
     }
 
@@ -289,7 +305,7 @@ _object_created (GObject *obj)
     {
       if (display_filter (DISPLAY_FLAG_CREATE))
         {
-          g_print (" ++ Created object %p, %s\n", obj, obj_name);
+          PRINT (" ++ Created object %p, %s\n", obj, obj_name);
           print_trace();
         }
 
@@ -378,7 +394,7 @@ g_object_ref (gpointer object)
                   (object_filter (obj_name) &&
                    display_filter (DISPLAY_FLAG_REFS))))
     {
-      g_print (" +  Reffed object %p, %s; ref_count: %d -> %d\n",
+      PRINT (" +  Reffed object %p, %s; ref_count: %d -> %d\n",
           obj, obj_name, ref_count, obj->ref_count);
       print_trace();
     }
@@ -406,8 +422,8 @@ g_object_ref_sink (gpointer object)
                   (object_filter (obj_name) &&
                    display_filter (DISPLAY_FLAG_REFS))))
     {
-      g_print (" +  Reffed(sink) object %p, %s; ref_count: %d -> %d\n",
-          obj, obj_name, ref_count, obj->ref_count);
+      PRINT (" +  Reffed(sink) object %p, %s; ref_count: %d -> %d\n",
+             obj, obj_name, ref_count, obj->ref_count);
       print_trace();
     }
 
@@ -435,8 +451,8 @@ g_object_add_toggle_ref (GObject       *object,
                   (object_filter (obj_name) &&
                    display_filter (DISPLAY_FLAG_REFS))))
     {
-      g_print (" +  Reffed(sink) object %p, %s; ref_count: %d -> %d\n",
-          obj, obj_name, ref_count, obj->ref_count);
+      PRINT (" +  Reffed(sink) object %p, %s; ref_count: %d -> %d\n",
+             obj, obj_name, ref_count, obj->ref_count);
       print_trace();
     }
 }
@@ -457,8 +473,8 @@ g_object_unref (gpointer object)
                   (object_filter (obj_name) &&
                    display_filter (DISPLAY_FLAG_REFS))))
     {
-      g_print (" -  Unreffed object %p, %s; ref_count: %d -> %d\n",
-          obj, obj_name, obj->ref_count, obj->ref_count - 1);
+      PRINT (" -  Unreffed object %p, %s; ref_count: %d -> %d\n",
+             obj, obj_name, obj->ref_count, obj->ref_count - 1);
       print_trace();
     }
 
