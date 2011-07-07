@@ -920,7 +920,7 @@ mex_column_allocate (ClutterActor          *actor,
 
   /* Allocate placeholder actor */
   clutter_actor_get_preferred_height (priv->header,
-                                      child_box.x2 - child_box.x1,
+                                      -1,
                                       NULL,
                                       &header_pref_height);
   child_box.y1 = padding.top + header_pref_height;

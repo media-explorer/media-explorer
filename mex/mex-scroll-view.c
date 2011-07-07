@@ -595,7 +595,7 @@ mex_scroll_view_focus_allocation_cb (ClutterActor           *focus,
 {
   ClutterActor *parent;
   ClutterGeometry geom;
-  ClutterActorBox child_box;
+  ClutterActorBox child_box = { 0, };
 
   MexScrollViewPrivate *priv = self->priv;
 
