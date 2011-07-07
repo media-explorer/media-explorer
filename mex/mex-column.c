@@ -387,7 +387,7 @@ mex_column_set_adjustments (MxScrollable *scrollable,
 
   if (priv->adjustment)
     {
-      g_object_ref (priv->adjustment);
+      g_object_ref_sink (priv->adjustment);
       g_signal_connect_swapped (priv->adjustment, "notify::value",
                                 G_CALLBACK (mex_column_adjustment_changed_cb),
                                 scrollable);
@@ -410,9 +410,13 @@ mex_column_get_adjustments (MxScrollable  *scrollable,
     return;
 
   if (!priv->adjustment)
-    mx_scrollable_set_adjustments (scrollable, NULL, mx_adjustment_new ());
-
-  *vadjust = priv->adjustment;
+    {
+      *vadjust = mx_adjustment_new ();
+      mx_scrollable_set_adjustments (scrollable, NULL, *vadjust);
+      g_object_unref (*vadjust);
+    }
+  else
+    *vadjust = priv->adjustment;
 }
 
 static void
