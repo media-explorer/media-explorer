@@ -113,6 +113,16 @@ plugins_LTLIBRARIES += 40mex-bliptv.la
 40mex_bliptv_la_LIBADD = $(_libadd)
 endif
 
+if USE_PLUGIN_TELEPATHY
+plugins_LTLIBRARIES += 40mex-telepathy.la
+
+40mex_telepathy_la_SOURCES = 		\
+	telepathy/mex-telepathy-plugin.c 	\
+	telepathy/mex-telepathy-plugin.h
+40mex_telepathy_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Telepathy\" `pkg-config telepathy-glib --cflags`
+40mex_telepathy_la_LIBADD = $(_libadd)
+endif
+
 if USE_PLUGIN_JUSTINTV
 plugins_LTLIBRARIES += 40mex-justintv.la
 
