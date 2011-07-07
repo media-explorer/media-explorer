@@ -87,6 +87,7 @@ struct _MexResizingHBoxPrivate
   gint             max_depth;
   gfloat           prev_offset;
   gfloat           prev_width;
+  gfloat           current_width;
 
   MxAdjustment    *hadjust;
 
@@ -1370,8 +1371,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
 
                 }
 
-              if (progress == 1.0)
-                priv->prev_width = cumulative_width;
+              priv->current_width = cumulative_width;
 
               break;
             }
@@ -1876,6 +1876,7 @@ static void
 mex_resizing_hbox_timeline_completed_cb (ClutterTimeline *timeline,
                                          ClutterActor    *box)
 {
+  MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (box)->priv;
   ClutterTimelineDirection direction =
     clutter_timeline_get_direction (timeline);
 
@@ -1888,6 +1889,8 @@ mex_resizing_hbox_timeline_completed_cb (ClutterTimeline *timeline,
                                   CLUTTER_TIMELINE_BACKWARD :
                                   CLUTTER_TIMELINE_FORWARD);
   clutter_timeline_rewind (timeline);
+
+  priv->prev_width = priv->current_width;
 
   clutter_actor_queue_relayout (box);
 }
