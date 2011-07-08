@@ -61,7 +61,10 @@ DisplayFlagsMapItem display_flags_map[] =
   { "all", DISPLAY_FLAG_ALL },
 };
 
+static GStaticMutex objects_lock = G_STATIC_MUTEX_INIT;
 static GHashTable *objects = NULL;
+
+static GStaticMutex classes_lock = G_STATIC_MUTEX_INIT;
 static GHashTable *classes = NULL;
 
 gpointer gobject_list_pointer_to_follow = NULL;
@@ -173,13 +176,14 @@ _dump_object_list (void)
   GHashTableIter iter;
   GObject *obj;
 
+  g_static_mutex_lock (&objects_lock);
   g_hash_table_iter_init (&iter, objects);
   while (g_hash_table_iter_next (&iter, (gpointer) &obj, NULL))
     {
       g_print (" - %p, %s: %u refs\n",
           obj, G_OBJECT_TYPE_NAME (obj), obj->ref_count);
     }
-
+  g_static_mutex_unlock (&objects_lock);
 }
 
 static void
@@ -189,6 +193,7 @@ _dump_classes_list (void)
   const gchar *class_name;
   gpointer class_instances;
 
+  g_static_mutex_lock (&classes_lock);
   g_hash_table_iter_init (&iter, classes);
   while (g_hash_table_iter_next (&iter,
                                  (gpointer) &class_name,
@@ -199,6 +204,7 @@ _dump_classes_list (void)
       if (nb > 0)
         g_print (" - %s: %u instances\n", class_name, nb);
     }
+  g_static_mutex_unlock (&classes_lock);
 }
 
 static void
@@ -263,8 +269,10 @@ _class_inc_instance (const gchar *class_name)
 {
   guint nb;
 
+  g_static_mutex_lock (&classes_lock);
   nb = GPOINTER_TO_UINT (g_hash_table_lookup ((gpointer) classes, class_name));
   g_hash_table_insert (classes, (gpointer) class_name, GUINT_TO_POINTER (++nb));
+  g_static_mutex_unlock (&classes_lock);
 }
 
 static void
@@ -272,10 +280,12 @@ _class_dec_instance (const gchar *class_name)
 {
   guint nb;
 
+  g_static_mutex_lock (&classes_lock);
   nb = GPOINTER_TO_UINT (g_hash_table_lookup ((gpointer) classes, class_name));
   if (nb > 0)
     g_hash_table_insert (classes, (gpointer) class_name,
                          GUINT_TO_POINTER (--nb));
+  g_static_mutex_unlock (&classes_lock);
 }
 
 static void
@@ -288,7 +298,10 @@ _object_finalized (gpointer data,
       print_trace();
     }
 
+  g_static_mutex_lock (&objects_lock);
   g_hash_table_remove (objects, obj);
+  g_static_mutex_unlock (&objects_lock);
+
   _class_dec_instance (G_OBJECT_TYPE_NAME (obj));
 }
 
@@ -296,11 +309,15 @@ static void
 _object_created (GObject *obj)
 {
   const gchar *obj_name;
+  gpointer found;
 
   obj_name = G_OBJECT_TYPE_NAME (obj);
 
-  if (g_hash_table_lookup (objects, obj) == NULL &&
-      object_filter (obj_name))
+  g_static_mutex_lock (&objects_lock);
+  found = g_hash_table_lookup (objects, obj);
+  g_static_mutex_unlock (&objects_lock);
+
+  if (!found && object_filter (obj_name))
     {
       if (display_filter (DISPLAY_FLAG_CREATE))
         {
@@ -310,7 +327,10 @@ _object_created (GObject *obj)
 
       g_object_weak_ref (obj, _object_finalized, NULL);
 
+      g_static_mutex_lock (&objects_lock);
       g_hash_table_insert (objects, obj, GUINT_TO_POINTER (TRUE));
+      g_static_mutex_unlock (&objects_lock);
+
       _class_inc_instance (G_OBJECT_TYPE_NAME (obj));
     }
 }
