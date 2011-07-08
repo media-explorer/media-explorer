@@ -194,11 +194,10 @@ _dump_classes_list (void)
                                  (gpointer) &class_name,
                                  &class_instances))
     {
-      guint nb = GPOINTER_TO_UINT (class_name);
+      guint nb = GPOINTER_TO_UINT (class_instances);
 
       if (nb > 0)
-        g_print (" - %s: %u instances\n",
-                 class_name, GPOINTER_TO_UINT (class_instances));
+        g_print (" - %s: %u instances\n", class_name, nb);
     }
 }
 
