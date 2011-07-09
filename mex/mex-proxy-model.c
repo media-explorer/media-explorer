@@ -96,7 +96,7 @@ mex_proxy_model_dispose (GObject *object)
 }
 
 static MexModel *
-mex_proxy_model_get_model (MexModel *model)
+_mex_proxy_model_get_model (MexModel *model)
 {
   MexProxyModelPrivate *priv = PROXY_MODEL_PRIVATE (model);
 
