@@ -20,6 +20,8 @@
 #include "config.h"
 #endif
 
+#include <dlfcn.h>
+
 #include <glib/gi18n-lib.h>
 #include <gmodule.h>
 
@@ -40,10 +42,29 @@ G_DEFINE_TYPE_WITH_CODE (MexDebugPlugin,
                                 MEX_TYPE_DEBUG_PLUGIN,  \
                                 MexDebugPluginPrivate))
 
+typedef struct
+{
+  void (* toggle_verbose) (void);
+} GObjectListSyms;
+
 struct _MexDebugPluginPrivate
 {
+  GObjectListSyms gobject_list;
+
   GList *bindings;
 };
+
+static gboolean
+init_gobject_list (MexDebugPlugin *plugin,
+                   void           *dlhandle)
+{
+  MexDebugPluginPrivate *priv = plugin->priv;
+
+  priv->gobject_list.toggle_verbose = dlsym (dlhandle,
+                                             "gobject_list_toggle_verbose");
+
+  return priv->gobject_list.toggle_verbose != NULL;
+}
 
 static gboolean
 do_verbose (GObject             *instance,
@@ -52,7 +73,11 @@ do_verbose (GObject             *instance,
             ClutterModifierType  modifiers,
             gpointer             user_data)
 {
-  gobject_list_toggle_verbose ();
+  MexDebugPlugin *plugin = MEX_DEBUG_PLUGIN (user_data);
+  MexDebugPluginPrivate *priv = plugin->priv;
+
+  priv->gobject_list.toggle_verbose ();
+
   return TRUE;
 }
 
@@ -108,17 +133,29 @@ mex_debug_plugin_init (MexDebugPlugin *self)
 {
   MexDebugPluginPrivate *priv;
   MexToolProviderBinding *binding;
+  gboolean have_gobject_list;
+  void *dlhandle;
 
   self->priv = priv = GET_PRIVATE (self);
 
-  binding = g_new0 (MexToolProviderBinding, 1);
-  binding->action_name = "debug-verbose";
-  binding->key_val = CLUTTER_KEY_v;
-  binding->modifiers = CLUTTER_CONTROL_MASK;
-  binding->callback = G_CALLBACK (do_verbose);
-  binding->data = self;
+  dlhandle = dlopen (NULL, RTLD_LAZY);
+  if (dlhandle)
+    {
+      dlerror ();
+      have_gobject_list = init_gobject_list (self, dlhandle);
+    }
 
-  priv->bindings = g_list_prepend (priv->bindings, binding);
+  if (have_gobject_list)
+    {
+      binding = g_new0 (MexToolProviderBinding, 1);
+      binding->action_name = "debug-verbose";
+      binding->key_val = CLUTTER_KEY_v;
+      binding->modifiers = CLUTTER_CONTROL_MASK;
+      binding->callback = G_CALLBACK (do_verbose);
+      binding->data = self;
+
+      priv->bindings = g_list_prepend (priv->bindings, binding);
+    }
 }
 
 G_MODULE_EXPORT const GType
