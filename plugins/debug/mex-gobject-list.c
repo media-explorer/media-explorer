@@ -186,12 +186,58 @@ _dump_object_list (void)
   g_static_mutex_unlock (&objects_lock);
 }
 
-static void
-_dump_classes_list (void)
+typedef struct
 {
-  GHashTableIter iter;
-  const gchar *class_name;
+  const gchar *str;
+  gint value;
+} StringValue;
+
+static StringValue *
+tuple_new (const gchar *str,
+           gint value)
+{
+  StringValue *tuple;
+
+  tuple = g_slice_new (StringValue);
+  tuple->str = str; /* no need to strdup() it, we never remove the string from
+                       the classes hash table */
+  tuple->value = value;
+
+  return tuple;
+}
+
+static void
+tuple_free (StringValue *tuple)
+{
+  g_slice_free (StringValue, tuple);
+}
+
+static gint
+tuplecmp (gconstpointer pa,
+          gconstpointer pb)
+{
+  const StringValue *a = pa, *b = pb;
+
+  return b->value - a->value;
+}
+
+static gint
+tuplecmp_reverse (gconstpointer pa,
+                  gconstpointer pb)
+{
+  const StringValue *a = pa, *b = pb;
+
+  return a->value - b->value;
+}
+
+static GList *
+create_object_list (void)
+{
   gpointer class_instances;
+  const gchar *class_name;
+  GList *tuples = NULL;
+  GHashTableIter iter;
+  StringValue *tuple;
 
   g_static_mutex_lock (&classes_lock);
   g_hash_table_iter_init (&iter, classes);
@@ -202,9 +248,40 @@ _dump_classes_list (void)
       guint nb = GPOINTER_TO_UINT (class_instances);
 
       if (nb > 0)
-        g_print (" - %s: %u instances\n", class_name, nb);
+        {
+          tuple = tuple_new (class_name, nb);
+          tuples = g_list_prepend (tuples, tuple);
+        }
     }
   g_static_mutex_unlock (&classes_lock);
+
+  tuples = g_list_sort (tuples, tuplecmp_reverse);
+  return tuples;
+}
+
+static void
+free_object_list (GList *tuples)
+{
+  while (tuples)
+    {
+      tuple_free (tuples->data);
+      tuples = g_list_delete_link (tuples, tuples);
+    }
+}
+
+static void
+_dump_classes_list (void)
+{
+  GList *tuples, *l;
+
+  tuples = create_object_list ();
+  for (l = tuples; l; l = g_list_next (l))
+    {
+      StringValue *tuple = l->data;
+
+      g_print (" - %s: %u instances\n", tuple->str, tuple->value);
+    }
+  free_object_list (tuples);
 }
 
 static void
