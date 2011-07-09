@@ -1993,10 +1993,6 @@ main (int argc, char **argv)
       g_clear_error (&error);
     }
 
-  application_for_signal = app;
-  signal (SIGINT, on_int_term_signaled);
-  signal (SIGTERM, on_int_term_signaled);
-
 #ifdef HAVE_CLUTTER_CEX100
   /* If we're on CEX100, use the default stage and make it semi-transparent */
   data.stage = CLUTTER_STAGE (clutter_stage_get_default ());
@@ -2341,6 +2337,10 @@ main (int argc, char **argv)
 
       mex_player_content_set_externally_cb (&data);
     }
+
+  application_for_signal = app;
+  signal (SIGINT, on_int_term_signaled);
+  signal (SIGTERM, on_int_term_signaled);
 
   mx_application_run (app);
 
