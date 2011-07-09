@@ -972,7 +972,6 @@ mex_media_controls_set_content (MexMediaControls *self,
 
       mex_view_model_set_content (priv->proxy_model, priv->content);
       mex_media_controls_update_header (self);
-
       return;
     }
 
@@ -981,6 +980,7 @@ mex_media_controls_set_content (MexMediaControls *self,
   priv->is_queue_model = FALSE;
 
   mex_media_controls_update_header (self);
+
 
   /* We may not have a context if we're launched by something like SetUri*/
   if (context)
@@ -994,36 +994,29 @@ mex_media_controls_set_content (MexMediaControls *self,
       g_object_set (G_OBJECT (priv->proxy_model), "model", orig_model, NULL);
 
       mex_view_model_start_at_content (priv->proxy_model, priv->content, TRUE);
-    }
 
-  /* Work out if the context was a queue */
- if (MEX_IS_PROXY_MODEL (context))
-   {
-     MexModel *model_from_proxy;
-     model_from_proxy = mex_proxy_model_get_model (MEX_PROXY_MODEL (context));
+      /* Work out if the context was a queue FIXME unreliable */
+      /* From coloumn context = MexViewModel MexAggregateModel MexQueueModel */
+      /* From grid  context = MexProxyModel MexProxyModel MexQueueModel */
 
-     if (MEX_IS_QUEUE_MODEL (model_from_proxy))
-       priv->is_queue_model = TRUE;
-   }
-  /* we may have an aggregate model if the column was the context */
- else if (MEX_IS_AGGREGATE_MODEL (context))
-    {
-      MexModel *real_model;
-      MexModelManager *model_manager;
-      const MexModelInfo *model_info;
+      if (MEX_IS_PROXY_MODEL (context))
+        {
+         MexModel *model_from_proxy;
+          model_from_proxy =
+            mex_proxy_model_get_model (MEX_PROXY_MODEL (orig_model));
 
-      model_manager = mex_model_manager_get_default ();
-      real_model =
-        mex_aggregate_model_get_model_for_content (MEX_AGGREGATE_MODEL (context),
-                                                content);
-
-      model_info = mex_model_manager_get_model_info (model_manager, real_model);
-
-      if (model_info)
-        if (g_strcmp0 (model_info->category, "queue") == 0)
+          if (MEX_IS_QUEUE_MODEL (model_from_proxy))
             priv->is_queue_model = TRUE;
+        }
+      else if (MEX_IS_AGGREGATE_MODEL (orig_model))
+        {
+          MexModel *real_model;
+          real_model =
+            mex_aggregate_model_get_model_for_content (MEX_AGGREGATE_MODEL (orig_model), content);
+          if (MEX_IS_QUEUE_MODEL (real_model))
+            priv->is_queue_model = TRUE;
+        }
     }
-
   /* Update content on the queue button */
   mex_content_view_set_content (MEX_CONTENT_VIEW (priv->queue_button),
                                 priv->content);
