@@ -95,6 +95,14 @@ mex_proxy_model_dispose (GObject *object)
   G_OBJECT_CLASS (mex_proxy_model_parent_class)->dispose (object);
 }
 
+static MexModel *
+mex_proxy_model_get_model (MexModel *model)
+{
+  MexProxyModelPrivate *priv = PROXY_MODEL_PRIVATE (model);
+
+  return priv->model;
+}
+
 static void
 mex_proxy_model_set_sort_func (MexModel         *model,
                                MexModelSortFunc  sort_func,
@@ -118,6 +126,7 @@ mex_model_iface_init (MexModelIface *iface)
   /* Store a pointer to the parent implementation so we can chain up */
   mex_proxy_model_parent_iface = g_type_interface_peek_parent (iface);
 
+  iface->get_model     = _mex_proxy_model_get_model;
   iface->set_sort_func = mex_proxy_model_set_sort_func;
 }
 
