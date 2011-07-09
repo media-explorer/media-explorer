@@ -1882,6 +1882,7 @@ main (int argc, char **argv)
       g_print ("Failed to parse options: %s\n", error->message);
       exit (1);
     }
+  g_option_context_free (context);
 
   /* Initialisation */
   mex_init (&argc, &argv);
