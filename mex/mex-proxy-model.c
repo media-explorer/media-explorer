@@ -108,7 +108,7 @@ mex_proxy_model_set_sort_func (MexModel         *model,
                                MexModelSortFunc  sort_func,
                                gpointer          userdata)
 {
-  MexProxyModelPrivate *priv = MEX_PROXY_MODEL (model)->priv;
+  MexProxyModelPrivate *priv = PROXY_MODEL_PRIVATE (model);
 
   /* Ignore the 'replace' signal that will come as a result of the sort
    * function changing.
