@@ -27,7 +27,7 @@
 
 typedef struct
 {
-  const gchar *str;
+  gchar *str;
   gint value;
 } GObjectListTuple;
 

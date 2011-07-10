@@ -196,8 +196,8 @@ tuple_new (const gchar *str,
   GObjectListTuple *tuple;
 
   tuple = g_slice_new (GObjectListTuple);
-  tuple->str = str; /* no need to strdup() it, we never remove the string from
-                       the classes hash table */
+  tuple->str = (gchar *) str; /* no need to strdup() it, we never remove the
+                                 string from the classes hash table */
   tuple->value = value;
 
   return tuple;

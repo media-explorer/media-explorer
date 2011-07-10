@@ -53,6 +53,8 @@ struct _MexDebugPluginPrivate
 {
   GObjectListSyms gobject_list;
 
+  GList *snapshot;
+
   GList *bindings;
 };
 
@@ -120,6 +122,150 @@ do_list (GObject             *instance,
   return TRUE;
 }
 
+static gint
+tuplestrcmp (gconstpointer pa,
+          gconstpointer pb)
+{
+  const GObjectListTuple *a = pa, *b = pb;
+
+  return strcmp (b->str, a->str);
+}
+
+static gboolean
+do_snapshot (GObject             *instance,
+             const gchar         *action_name,
+             guint                key_val,
+             ClutterModifierType  modifiers,
+             gpointer             user_data)
+{
+  MexDebugPlugin *plugin = MEX_DEBUG_PLUGIN (user_data);
+  MexDebugPluginPrivate *priv = plugin->priv;
+
+  if (priv->snapshot)
+    {
+      priv->gobject_list.free_summary (priv->snapshot);
+      priv->snapshot = NULL;
+    }
+
+  priv->snapshot = priv->gobject_list.get_summary ();
+  priv->snapshot = g_list_sort (priv->snapshot, tuplestrcmp);
+
+  return TRUE;
+}
+
+static GObjectListTuple *
+diff_tuple_new (const gchar *str,
+                gint         value)
+{
+  GObjectListTuple *tuple;
+
+  tuple = g_slice_new (GObjectListTuple);
+  tuple->str = g_strdup (str);
+  tuple->value = value;
+
+  return tuple;
+}
+
+static void
+diff_tuple_free (GObjectListTuple *tuple)
+{
+  g_free (tuple->str);
+  g_slice_free (GObjectListTuple, tuple);
+}
+
+static gboolean
+do_diff (GObject             *instance,
+         const gchar         *action_name,
+         guint                key_val,
+         ClutterModifierType  modifiers,
+         gpointer             user_data)
+{
+  MexDebugPlugin *plugin = MEX_DEBUG_PLUGIN (user_data);
+  MexDebugPluginPrivate *priv = plugin->priv;
+  GList *new_snapshot, *l1, *l2, *diff = NULL;
+  GObjectListTuple *t1, *t2, *tuple;
+  gint cmp;
+
+  if (priv->snapshot == NULL)
+    return;
+
+  new_snapshot = priv->gobject_list.get_summary ();
+  new_snapshot = g_list_sort (new_snapshot, tuplestrcmp);
+
+  l1 = priv->snapshot;
+  l2 = new_snapshot;
+
+  while (l2 && l1)
+    {
+      t1 = l1->data;
+      t2 = l2->data;
+      tuple = NULL;
+
+      cmp = strcmp (t1->str, t2->str);
+      if (cmp < 0)
+        {
+          /* old snapshot has a type that new snapshot does not have */
+          tuple = diff_tuple_new (t1->str, -t1->value);
+          l1 = g_list_next (l1);
+        }
+      else if (cmp == 0)
+        {
+          /* both snapshots have that type */
+          if ((t2->value - t1->value) != 0)
+            tuple = diff_tuple_new (t1->str, t2->value - t1->value);
+          l1 = g_list_next (l1);
+          l2 = g_list_next (l2);
+        }
+      else
+        {
+          /* new snapshot has a type that old snapshot does not have */
+          tuple = diff_tuple_new (t2->str, t2->value);
+          l2 = g_list_next (l2);
+        }
+
+      if (tuple)
+        diff = g_list_prepend (diff, tuple);
+    }
+
+  while (l2)
+    {
+      t2 = l2->data;
+
+      tuple = diff_tuple_new (t2->str, t2->value);
+      diff = g_list_prepend (diff, tuple);
+      l2 = g_list_next (l2);
+    }
+
+  while (l1)
+    {
+      t1 = l1->data;
+
+      tuple = diff_tuple_new (t1->str, -t1->value);
+      diff = g_list_prepend (diff, tuple);
+      l1 = g_list_next (l1);
+    }
+
+  diff = g_list_reverse (diff);
+  if (diff)
+    g_print ("Diff:\n");
+  for (l1 = diff; l1; l1 = g_list_next (l1))
+    {
+      t1 = l1->data;
+
+      g_print ("  %s: %+d\n", t1->str, t1->value);
+    }
+
+  /* clean up */
+  while (diff)
+    {
+      diff_tuple_free (diff->data);
+      diff = g_list_delete_link (diff, diff);
+    }
+  priv->gobject_list.free_summary (new_snapshot);
+
+  return TRUE;
+}
+
 /*
  * MexToolProvider implementation
  */
@@ -171,8 +317,7 @@ static void
 append_binding (MexDebugPlugin *plugin,
                 const gchar    *name,
                 guint           key_val,
-                GCallback       callback,
-                gpointer        data)
+                GCallback       callback)
 {
   MexDebugPluginPrivate *priv = plugin->priv;
   MexToolProviderBinding *binding;
@@ -182,7 +327,7 @@ append_binding (MexDebugPlugin *plugin,
   binding->key_val = key_val;
   binding->modifiers = CLUTTER_CONTROL_MASK;
   binding->callback = callback;
-  binding->data = data;
+  binding->data = plugin;
 
   priv->bindings = g_list_prepend (priv->bindings, binding);
 }
@@ -206,9 +351,13 @@ mex_debug_plugin_init (MexDebugPlugin *self)
   if (have_gobject_list)
     {
       append_binding (self, "debug-verbose", CLUTTER_KEY_v,
-                      G_CALLBACK (do_verbose), self);
+                      G_CALLBACK (do_verbose));
       append_binding (self, "debug-list", CLUTTER_KEY_l,
-                      G_CALLBACK (do_list), self);
+                      G_CALLBACK (do_list));
+      append_binding (self, "debug-snapshot", CLUTTER_KEY_s,
+                      G_CALLBACK (do_snapshot));
+      append_binding (self, "debug-diff", CLUTTER_KEY_d,
+                      G_CALLBACK (do_diff));
     }
 }
 
