@@ -1,4 +1,18 @@
 #!/bin/sh
 
-export LD_PRELOAD=@pkglibdir@/debug/mex-gobject-list.so
-mex
+case "$1" in
+--valgrind)
+  export G_SLICE=always-malloc
+  export G_DEBUG=gc-friendly
+  valgrind -v --leak-check=full --num-callers=20 mex
+  ;;
+--valgrind-full)
+  export G_SLICE=always-malloc
+  export G_DEBUG=gc-friendly
+  valgrind -v --leak-check=full --show-reachable=yes --num-callers=20 mex
+  ;;
+*)
+  export LD_PRELOAD=@pkglibdir@/debug/mex-gobject-list.so
+  mex
+  ;;
+esac
