@@ -21,6 +21,7 @@
  *
  * Authors:
  *     Danielle Madeley  <danielle.madeley@collabora.co.uk>
+ *     Lionel Landwerlin <lionel.g.landwerlin@linux.intel.com>
  *     Damien Lespiau <damien.lespiau@intel.com>
  */
 #include <glib-object.h>
