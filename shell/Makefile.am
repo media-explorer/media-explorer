@@ -5,6 +5,7 @@ AM_CFLAGS =					\
 	-I$(top_srcdir)/mex			\
 	-I$(top_srcdir)/applets/rebinder	\
 	$(MEX_CFLAGS)				\
+	$(MEX_DEBUG_CFLAGS)			\
 	$(MAINTAINER_FLAGS) 			\
 	-DG_LOG_DOMAIN=\"Mex\"			\
 	-DPKGDATADIR=\""$(pkgdatadir)/shell"\"	\

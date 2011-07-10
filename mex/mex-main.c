@@ -357,6 +357,7 @@ mex_deinit (void)
   mex_lirc_deinit (mex_lirc_config);
   mex_lirc_config = NULL;
 #endif
+  mex_set_main_window (NULL);
 }
 
 /**

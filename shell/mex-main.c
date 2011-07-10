@@ -2347,10 +2347,19 @@ main (int argc, char **argv)
 
   cleanup_before_exit ();
 
+#ifdef MEX_ENABLE_DEBUG
+  /* When we are building the application in debug mode let's try to cleanly
+   * remove everything to make valgrind and our debug plugin more useful */
   if (error)
     g_error_free (error);
 
+  g_object_unref (amanager);
+
+  g_object_unref (app);
+
+  gst_deinit ();
   mex_deinit ();
+#endif
 
   return 0;
 }
