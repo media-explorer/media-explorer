@@ -44,7 +44,9 @@ G_DEFINE_TYPE_WITH_CODE (MexDebugPlugin,
 
 typedef struct
 {
-  void (* toggle_verbose) (void);
+  void    (* toggle_verbose) (void);
+  GList * (* get_summary)    (void);
+  void    (* free_summary)   (GList *tuples);
 } GObjectListSyms;
 
 struct _MexDebugPluginPrivate
@@ -62,6 +64,10 @@ init_gobject_list (MexDebugPlugin *plugin,
 
   priv->gobject_list.toggle_verbose = dlsym (dlhandle,
                                              "gobject_list_toggle_verbose");
+  priv->gobject_list.get_summary = dlsym (dlhandle,
+                                             "gobject_list_get_summary");
+  priv->gobject_list.free_summary = dlsym (dlhandle,
+                                           "gobject_list_free_summary");
 
   return priv->gobject_list.toggle_verbose != NULL;
 }
@@ -77,6 +83,39 @@ do_verbose (GObject             *instance,
   MexDebugPluginPrivate *priv = plugin->priv;
 
   priv->gobject_list.toggle_verbose ();
+
+  return TRUE;
+}
+
+static gint
+tuplecmp (gconstpointer pa,
+          gconstpointer pb)
+{
+  const GObjectListTuple *a = pa, *b = pb;
+
+  return b->value - a->value;
+}
+
+static gboolean
+do_list (GObject             *instance,
+         const gchar         *action_name,
+         guint                key_val,
+         ClutterModifierType  modifiers,
+         gpointer             user_data)
+{
+  MexDebugPlugin *plugin = MEX_DEBUG_PLUGIN (user_data);
+  MexDebugPluginPrivate *priv = plugin->priv;
+  GList *tuples, *l;
+  gint i;
+
+  tuples = priv->gobject_list.get_summary ();
+  tuples = g_list_sort (tuples, tuplecmp);
+  for (l = tuples, i = 0; l && i < 20; l = g_list_next (l), i++)
+    {
+      GObjectListTuple *tuple = l->data;;
+      g_print ("%s: %d instances\n", tuple->str, tuple->value);
+    }
+  priv->gobject_list.free_summary (tuples);
 
   return TRUE;
 }
@@ -129,10 +168,29 @@ mex_debug_plugin_class_init (MexDebugPluginClass *klass)
 }
 
 static void
+append_binding (MexDebugPlugin *plugin,
+                const gchar    *name,
+                guint           key_val,
+                GCallback       callback,
+                gpointer        data)
+{
+  MexDebugPluginPrivate *priv = plugin->priv;
+  MexToolProviderBinding *binding;
+
+  binding = g_new0 (MexToolProviderBinding, 1);
+  binding->action_name = name;
+  binding->key_val = key_val;
+  binding->modifiers = CLUTTER_CONTROL_MASK;
+  binding->callback = callback;
+  binding->data = data;
+
+  priv->bindings = g_list_prepend (priv->bindings, binding);
+}
+
+static void
 mex_debug_plugin_init (MexDebugPlugin *self)
 {
   MexDebugPluginPrivate *priv;
-  MexToolProviderBinding *binding;
   gboolean have_gobject_list;
   void *dlhandle;
 
@@ -147,14 +205,10 @@ mex_debug_plugin_init (MexDebugPlugin *self)
 
   if (have_gobject_list)
     {
-      binding = g_new0 (MexToolProviderBinding, 1);
-      binding->action_name = "debug-verbose";
-      binding->key_val = CLUTTER_KEY_v;
-      binding->modifiers = CLUTTER_CONTROL_MASK;
-      binding->callback = G_CALLBACK (do_verbose);
-      binding->data = self;
-
-      priv->bindings = g_list_prepend (priv->bindings, binding);
+      append_binding (self, "debug-verbose", CLUTTER_KEY_v,
+                      G_CALLBACK (do_verbose), self);
+      append_binding (self, "debug-list", CLUTTER_KEY_l,
+                      G_CALLBACK (do_list), self);
     }
 }
 

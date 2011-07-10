@@ -35,6 +35,8 @@
 #include <libunwind.h>
 #endif
 
+#include "mex-gobject-list.h"
+
 typedef enum
 {
   DISPLAY_FLAG_NONE = 0,
@@ -186,19 +188,13 @@ _dump_object_list (void)
   g_static_mutex_unlock (&objects_lock);
 }
 
-typedef struct
-{
-  const gchar *str;
-  gint value;
-} StringValue;
-
-static StringValue *
+static GObjectListTuple *
 tuple_new (const gchar *str,
-           gint value)
+           gint         value)
 {
-  StringValue *tuple;
+  GObjectListTuple *tuple;
 
-  tuple = g_slice_new (StringValue);
+  tuple = g_slice_new (GObjectListTuple);
   tuple->str = str; /* no need to strdup() it, we never remove the string from
                        the classes hash table */
   tuple->value = value;
@@ -207,37 +203,19 @@ tuple_new (const gchar *str,
 }
 
 static void
-tuple_free (StringValue *tuple)
+tuple_free (GObjectListTuple *tuple)
 {
-  g_slice_free (StringValue, tuple);
+  g_slice_free (GObjectListTuple, tuple);
 }
 
-static gint
-tuplecmp (gconstpointer pa,
-          gconstpointer pb)
-{
-  const StringValue *a = pa, *b = pb;
-
-  return b->value - a->value;
-}
-
-static gint
-tuplecmp_reverse (gconstpointer pa,
-                  gconstpointer pb)
-{
-  const StringValue *a = pa, *b = pb;
-
-  return a->value - b->value;
-}
-
-static GList *
-create_object_list (void)
+GList *
+gobject_list_get_summary (void)
 {
   gpointer class_instances;
   const gchar *class_name;
   GList *tuples = NULL;
   GHashTableIter iter;
-  StringValue *tuple;
+  GObjectListTuple *tuple;
 
   g_static_mutex_lock (&classes_lock);
   g_hash_table_iter_init (&iter, classes);
@@ -255,12 +233,29 @@ create_object_list (void)
     }
   g_static_mutex_unlock (&classes_lock);
 
-  tuples = g_list_sort (tuples, tuplecmp_reverse);
   return tuples;
 }
 
-static void
-free_object_list (GList *tuples)
+static gint
+tuplecmp (gconstpointer pa,
+          gconstpointer pb)
+{
+  const GObjectListTuple *a = pa, *b = pb;
+
+  return b->value - a->value;
+}
+
+static gint
+tuplecmp_reverse (gconstpointer pa,
+                  gconstpointer pb)
+{
+  const GObjectListTuple *a = pa, *b = pb;
+
+  return a->value - b->value;
+}
+
+void
+gobject_list_free_summary (GList *tuples)
 {
   while (tuples)
     {
@@ -274,14 +269,15 @@ _dump_classes_list (void)
 {
   GList *tuples, *l;
 
-  tuples = create_object_list ();
+  tuples = gobject_list_get_summary ();
+  tuples = g_list_sort (tuples, tuplecmp_reverse);
   for (l = tuples; l; l = g_list_next (l))
     {
-      StringValue *tuple = l->data;
+      GObjectListTuple *tuple = l->data;
 
       g_print (" - %s: %u instances\n", tuple->str, tuple->value);
     }
-  free_object_list (tuples);
+  gobject_list_free_summary (tuples);
 }
 
 static void

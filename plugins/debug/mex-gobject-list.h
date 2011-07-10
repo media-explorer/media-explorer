@@ -25,6 +25,14 @@
 #ifndef __GOBJECT_LIST__
 #define __GOBJECT_LIST__
 
-void gobject_list_toggle_verbose (void);
+typedef struct
+{
+  const gchar *str;
+  gint value;
+} GObjectListTuple;
+
+void    gobject_list_toggle_verbose (void);
+GList * gobject_list_get_summary    (void);
+void    gobject_list_free_summary   (GList *tuples);
 
 #endif /* __GOBJECT_LIST__ */
