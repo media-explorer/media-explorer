@@ -164,9 +164,9 @@ void mex_telepathy_plugin_on_account_ready(GObject *source_object,
                                            GAsyncResult *res,
                                            gpointer user_data)
 {
-    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (source_object);
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
     MexTelepathyPluginPrivate *priv = self->priv;
-    TpAccount *account = TP_ACCOUNT(user_data);
+    TpAccount *account = TP_ACCOUNT(source_object);
 
     gboolean success = FALSE;
 
@@ -202,7 +202,7 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
                                                    GAsyncResult *res,
                                                    gpointer user_data)
 {
-    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (source_object);
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
     MexTelepathyPluginPrivate *priv = self->priv;
 
     gboolean success = FALSE;
@@ -229,7 +229,7 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
         tp_account_prepare_async(account,
                                  NULL,
                                  mex_telepathy_plugin_on_account_ready,
-                                 account);
+                                 self);
 
         accounts = g_list_next(accounts);
     }
@@ -269,7 +269,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
   tp_account_manager_prepare_async(priv->m_account_manager,
                                    NULL,
                                    mex_telepathy_plugin_on_account_manager_ready,
-                                   NULL);
+                                   self);
 }
 
 MexTelepathyPlugin *
