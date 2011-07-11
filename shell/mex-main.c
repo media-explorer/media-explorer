@@ -1896,7 +1896,7 @@ main (int argc, char **argv)
   MEX_LOG_DOMAIN_INIT (main_log_domain, "main");
 
   /* grilo */
-  grl_init (&argc, &argv);
+  mex_grilo_init (&argc, &argv);
 
   registry = grl_plugin_registry_get_default ();
 

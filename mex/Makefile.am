@@ -91,6 +91,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-gio-notification-source.h		\
 	$(top_srcdir)/mex/mex-grid.h				\
 	$(top_srcdir)/mex/mex-grid-view.h			\
+	$(top_srcdir)/mex/mex-grilo.h				\
 	$(top_srcdir)/mex/mex-grilo-feed.h			\
 	$(top_srcdir)/mex/mex-grilo-tracker-feed.h		\
 	$(top_srcdir)/mex/mex-grilo-program.h			\
@@ -190,6 +191,7 @@ mex_sources =					\
 	mex-gio-notification-source.c		\
 	mex-grid.c				\
 	mex-grid-view.c				\
+	mex-grilo.c				\
 	mex-grilo-feed.c			\
 	mex-grilo-tracker-feed.c		\
 	mex-grilo-program.c			\
