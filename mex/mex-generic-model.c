@@ -124,13 +124,8 @@ mex_generic_model_add_content (MexModel   *model,
 {
   MexGenericModel *gm = (MexGenericModel *) model;
   MexGenericModelPrivate *priv = gm->priv;
-  MexGenericModelClass *klass = MEX_GENERIC_MODEL_GET_CLASS (gm);
   GControllerReference *ref;
   gint pos;
-
-  if (klass->add_content) {
-    klass->add_content (gm, content);
-  }
 
   g_object_ref_sink (content);
   if (priv->sort_func && priv->items->len)
@@ -173,17 +168,12 @@ mex_generic_model_remove_content (MexModel   *model,
 {
   MexGenericModel *gm = (MexGenericModel *) model;
   MexGenericModelPrivate *priv = gm->priv;
-  MexGenericModelClass *klass = MEX_GENERIC_MODEL_GET_CLASS (gm);
   GControllerReference *ref;
   int idx;
 
   idx = array_find (priv->items, content);
   if (idx == -1) {
     return;
-  }
-
-  if (klass->remove_content) {
-    klass->remove_content (gm, content);
   }
 
   ref = g_controller_create_reference (priv->controller, G_CONTROLLER_REMOVE,
@@ -203,13 +193,8 @@ mex_generic_model_clear (MexModel *model)
 {
   MexGenericModel *gm = (MexGenericModel *) model;
   MexGenericModelPrivate *priv = gm->priv;
-  MexGenericModelClass *klass = MEX_GENERIC_MODEL_GET_CLASS (gm);
   GControllerReference *ref;
   gint i;
-
-  if (klass->clear) {
-    klass->clear (gm);
-  }
 
   ref = g_controller_create_reference (priv->controller, G_CONTROLLER_CLEAR,
                                        G_TYPE_NONE, 0);

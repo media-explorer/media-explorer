@@ -29,6 +29,8 @@ enum {
 struct _MexFeedPrivate {
   char *source;
 
+  GController *controller;
+
   GPtrArray *index_terms;
   GHashTable *index_to_programs; /* Maps index term to a GHashTable of
                                     MexPrograms that have that term */
@@ -39,6 +41,178 @@ struct _MexFeedPrivate {
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj), MEX_TYPE_FEED, MexFeedPrivate))
 
 G_DEFINE_TYPE (MexFeed, mex_feed, MEX_TYPE_GENERIC_MODEL);
+
+static void
+index_content (MexFeed    *feed,
+               MexContent *content)
+{
+  MexFeedPrivate *priv = feed->priv;
+  char *index_str = mex_program_get_index_str (MEX_PROGRAM (content));
+  char **idx_strs;
+  int i;
+
+  if (index_str == NULL) {
+    return;
+  }
+
+  idx_strs = g_strsplit (index_str, " ", -1);
+
+  /* Put each index item into the hashtable, and add its program to the
+     bucket */
+  for (i = 0; idx_strs[i]; i++) {
+    GHashTable *bucket = NULL;
+
+    bucket = g_hash_table_lookup (priv->index_to_programs, idx_strs[i]);
+    if (bucket == NULL) {
+      char *term;
+
+      /* We use a hashtable so that we can eliminate duplicates easily. */
+      bucket = g_hash_table_new (NULL, NULL);
+      g_hash_table_insert (bucket, content, content);
+
+      term = g_strdup (idx_strs[i]);
+      g_hash_table_insert (priv->index_to_programs, term, bucket);
+
+      /* Put the term into an array for searching later */
+      g_ptr_array_add (priv->index_terms, term);
+    } else {
+      /* Check if the program is already in the bucket */
+      if (g_hash_table_lookup (bucket, content) == NULL) {
+        g_hash_table_insert (bucket, content, content);
+      }
+
+      /* The bucket is already in the hashtable so don't need to
+         do anything else */
+    }
+  }
+
+  g_free (index_str);
+  g_strfreev (idx_strs);
+
+  /* Add to id table */
+  index_str = mex_program_get_id (MEX_PROGRAM (content));
+
+  if (index_str)
+    g_hash_table_insert (priv->id_to_programs, index_str, content);
+}
+
+static void
+unindex_content (MexFeed    *feed,
+                 MexContent *content)
+{
+  MexFeedPrivate *priv = feed->priv;
+  char *index_str = mex_program_get_index_str (MEX_PROGRAM (content));
+  char **idx_strs;
+  int i;
+
+  if (index_str == NULL) {
+    return;
+  }
+
+  idx_strs = g_strsplit (index_str, " ", -1);
+  g_free (index_str);
+
+  /* Look for each index term in the index, and remove the program from
+     its bucket */
+  for (i = 0; idx_strs[i]; i++) {
+    GHashTable *bucket = NULL;
+
+    bucket = g_hash_table_lookup (priv->index_to_programs, idx_strs[i]);
+    if (bucket) {
+      /* Check if the program is already in the bucket and remove */
+      if (g_hash_table_lookup (bucket, content)) {
+        g_hash_table_remove (bucket, content);
+      }
+
+      if (g_hash_table_size (bucket) == 0) {
+        /* Empty bucket, remove from the index */
+        g_hash_table_remove (priv->index_to_programs, idx_strs[i]);
+      }
+    }
+  }
+
+  g_strfreev (idx_strs);
+
+  /* Remove from id table */
+  index_str = mex_program_get_id (MEX_PROGRAM (content));
+
+  if (index_str) {
+    g_hash_table_remove (priv->id_to_programs, index_str);
+    g_free (index_str);
+  }
+}
+
+static void
+index_clear (MexFeed *feed)
+{
+  MexFeedPrivate *priv = feed->priv;
+
+  g_hash_table_remove_all (priv->index_to_programs);
+  g_ptr_array_set_size (priv->index_terms, 0);
+}
+
+static void
+mex_feed_controller_changed_cb (GController          *controller,
+                                GControllerAction     action,
+                                GControllerReference *ref,
+                                MexFeed              *feed)
+{
+  guint i, c_index, n_indices;
+
+  n_indices = g_controller_reference_get_n_indices (ref);
+
+  switch (action)
+    {
+    case G_CONTROLLER_ADD:
+      for (i = 0; i < n_indices; i++)
+        {
+          c_index = g_controller_reference_get_index_uint (ref, i);
+          index_content (feed,
+                         mex_model_get_content (MEX_MODEL (feed), c_index));
+        }
+      break;
+
+    case G_CONTROLLER_REMOVE:
+      for (i = 0; i < n_indices; i++)
+        {
+          c_index = g_controller_reference_get_index_uint (ref, i);
+          unindex_content (feed,
+                           mex_model_get_content (MEX_MODEL (feed), c_index));
+        }
+      break;
+
+    case G_CONTROLLER_UPDATE:
+      for (i = 0; i < n_indices; i++)
+        {
+          c_index = g_controller_reference_get_index_uint (ref, i);
+          /* Reindex item */
+          unindex_content (feed,
+                           mex_model_get_content (MEX_MODEL (feed), c_index));
+          index_content (feed,
+                         mex_model_get_content (MEX_MODEL (feed), c_index));
+        }
+      break;
+
+    case G_CONTROLLER_CLEAR:
+      index_clear (feed);
+      break;
+
+    case G_CONTROLLER_REPLACE:
+      index_clear (feed);
+      n_indices = mex_model_get_length (MEX_MODEL (feed));
+      for (i = 0; i < n_indices; i++)
+        index_content (feed, mex_model_get_content (MEX_MODEL (feed), i));
+      break;
+
+    case G_CONTROLLER_INVALID_ACTION:
+      g_warning (G_STRLOC ": Feed controller has issued an error");
+      break;
+
+    default:
+      g_warning (G_STRLOC ": Unhandled action");
+      break;
+    }
+}
 
 /*
  * GObject implementation
@@ -59,6 +233,16 @@ mex_feed_finalize (GObject *object)
 static void
 mex_feed_dispose (GObject *object)
 {
+  MexFeedPrivate *priv = MEX_FEED (object)->priv;
+
+  if (priv->controller)
+    {
+      g_signal_handlers_disconnect_by_func (priv->controller,
+                                            mex_feed_controller_changed_cb,
+                                            object);
+      priv->controller = NULL;
+    }
+
   G_OBJECT_CLASS (mex_feed_parent_class)->dispose (object);
 }
 
@@ -104,146 +288,30 @@ mex_feed_get_property (GObject    *object,
 }
 
 static void
-index_program (MexFeed    *feed,
-               MexProgram *program)
+mex_feed_constructed (GObject *object)
 {
-  MexFeedPrivate *priv = feed->priv;
-  char *index_str = mex_program_get_index_str (program);
-  char **idx_strs;
-  int i;
+  MexFeedPrivate *priv = MEX_FEED (object)->priv;
 
-  if (index_str == NULL) {
-    return;
-  }
+  priv->controller = mex_model_get_controller (MEX_MODEL (object));
+  g_signal_connect_after (priv->controller, "changed",
+                          G_CALLBACK (mex_feed_controller_changed_cb),
+                          object);
 
-  idx_strs = g_strsplit (index_str, " ", -1);
-
-  /* Put each index item into the hashtable, and add its program to the
-     bucket */
-  for (i = 0; idx_strs[i]; i++) {
-    GHashTable *bucket = NULL;
-
-    bucket = g_hash_table_lookup (priv->index_to_programs, idx_strs[i]);
-    if (bucket == NULL) {
-      char *term;
-
-      /* We use a hashtable so that we can eliminate duplicates easily. */
-      bucket = g_hash_table_new (NULL, NULL);
-      g_hash_table_insert (bucket, program, program);
-
-      term = g_strdup (idx_strs[i]);
-      g_hash_table_insert (priv->index_to_programs, term, bucket);
-
-      /* Put the term into an array for searching later */
-      g_ptr_array_add (priv->index_terms, term);
-    } else {
-      /* Check if the program is already in the bucket */
-      if (g_hash_table_lookup (bucket, program) == NULL) {
-        g_hash_table_insert (bucket, program, program);
-      }
-
-      /* The bucket is already in the hashtable so don't need to
-         do anything else */
-    }
-  }
-
-  g_free (index_str);
-  g_strfreev (idx_strs);
-
-  /* Add to id table */
-  index_str = mex_program_get_id (program);
-
-  if (index_str)
-    g_hash_table_insert (priv->id_to_programs, index_str, program);
-}
-
-static void
-mex_feed_add_content (MexGenericModel *model,
-                      MexContent      *content)
-{
-  index_program ((MexFeed *) model, (MexProgram *) content);
-}
-
-static void
-unindex_program (MexFeed    *feed,
-                 MexProgram *program)
-{
-  MexFeedPrivate *priv = feed->priv;
-  char *index_str = mex_program_get_index_str (program);
-  char **idx_strs;
-  int i;
-
-  if (index_str == NULL) {
-    return;
-  }
-
-  idx_strs = g_strsplit (index_str, " ", -1);
-  g_free (index_str);
-
-  /* Look for each index term in the index, and remove the program from
-     its bucket */
-  for (i = 0; idx_strs[i]; i++) {
-    GHashTable *bucket = NULL;
-
-    bucket = g_hash_table_lookup (priv->index_to_programs, idx_strs[i]);
-    if (bucket) {
-      /* Check if the program is already in the bucket and remove */
-      if (g_hash_table_lookup (bucket, program)) {
-        g_hash_table_remove (bucket, program);
-      }
-
-      if (g_hash_table_size (bucket) == 0) {
-        /* Empty bucket, remove from the index */
-        g_hash_table_remove (priv->index_to_programs, idx_strs[i]);
-      }
-    }
-  }
-
-  g_strfreev (idx_strs);
-
-  /* Remove from id table */
-  index_str = mex_program_get_id (program);
-
-  if (index_str) {
-    g_hash_table_remove (priv->id_to_programs, index_str);
-    g_free (index_str);
-  }
-}
-
-static void
-mex_feed_remove_content (MexGenericModel *model,
-                         MexContent      *content)
-{
-  MexFeed *feed = (MexFeed *) model;
-
-  unindex_program (feed, (MexProgram *) content);
-}
-
-static void
-mex_feed_clear (MexGenericModel *model)
-{
-  MexFeed *feed = (MexFeed *) model;
-  MexFeedPrivate *priv = feed->priv;
-
-  g_hash_table_remove_all (priv->index_to_programs);
-  g_ptr_array_set_size (priv->index_terms, 0);
+  if (G_OBJECT_CLASS (mex_feed_parent_class)->constructed)
+    G_OBJECT_CLASS (mex_feed_parent_class)->constructed (object);
 }
 
 static void
 mex_feed_class_init (MexFeedClass *klass)
 {
   GObjectClass *o_class = (GObjectClass *) klass;
-  MexGenericModelClass *m_class = (MexGenericModelClass *) klass;
   GParamSpec *pspec;
 
   o_class->dispose = mex_feed_dispose;
   o_class->finalize = mex_feed_finalize;
   o_class->set_property = mex_feed_set_property;
   o_class->get_property = mex_feed_get_property;
-
-  m_class->add_content = mex_feed_add_content;
-  m_class->remove_content = mex_feed_remove_content;
-  m_class->clear = mex_feed_clear;
+  o_class->constructed = mex_feed_constructed;
 
   g_type_class_add_private (klass, sizeof (MexFeedPrivate));
 

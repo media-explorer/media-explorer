@@ -61,12 +61,6 @@ struct _MexGenericModel
 struct _MexGenericModelClass
 {
   GObjectClass parent_class;
-
-  void (*add_content) (MexGenericModel *model,
-                       MexContent      *content);
-  void (*remove_content) (MexGenericModel *model,
-                          MexContent      *content);
-  void (*clear) (MexGenericModel *model);
 };
 
 GType mex_generic_model_get_type (void) G_GNUC_CONST;
