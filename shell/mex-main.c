@@ -1732,7 +1732,7 @@ _close_screen_dialog_cb (MxAction *action, gpointer user_data)
 
 /*
  * Check the screen resolution and issue a warning if we're running in a mode
- * with less than 720 pixels of height available.
+ * with less than 600 pixels of height available.
  */
 static void
 check_resolution (MexData *data)
@@ -1749,8 +1749,8 @@ check_resolution (MexData *data)
   screen = ScreenOfDisplay (clutter_x11_get_default_display (),
                             clutter_x11_get_default_screen ());
 
-  /* Issue a warning if we've not got 720 pixels of height to play with */
-  if (HeightOfScreen (screen) >= 720)
+  /* Issue a warning if we've not got 600 pixels of height to play with */
+  if (HeightOfScreen (screen) >= 600)
     return;
 
   dialog = mx_dialog_new ();
@@ -1765,7 +1765,7 @@ check_resolution (MexData *data)
   mx_stylable_set_style_class (MX_STYLABLE (title), "DialogHeader");
   mx_table_add_actor (MX_TABLE (layout), CLUTTER_ACTOR (title), 0, 0);
 
-  label = mx_label_new_with_text (_("This application requires at least 720 vertical pixels."));
+  label = mx_label_new_with_text (_("This application requires at least 600 vertical pixels."));
   mx_table_add_actor (MX_TABLE (layout), CLUTTER_ACTOR (label), 1, 0);
 
   action = mx_action_new_full ("close", _("Close"),
