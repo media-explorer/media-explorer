@@ -19,6 +19,7 @@
 #include "mex-telepathy-plugin.h"
 
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/account-manager.h>
 
 #include <glib/gi18n.h>
 
@@ -33,7 +34,7 @@ struct _MexTelepathyPluginPrivate {
   MexModelManager *manager;
   GHashTable *video_models;
 
-  TpAccount *m_account;
+  TpAccountManager *m_account_manager;
 };
 
 static void
@@ -71,6 +72,62 @@ mex_telepathy_plugin_class_init (MexTelepathyPluginClass *klass)
   g_type_class_add_private (klass, sizeof (MexTelepathyPluginPrivate));
 }
 
+void mex_telepathy_plugin_on_account_ready(GObject *source_object,
+                                           GAsyncResult *res,
+                                           gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (source_object);
+    MexTelepathyPluginPrivate *priv = self->priv;
+    TpAccount *account = TP_ACCOUNT(user_data);
+
+    gboolean success = FALSE;
+
+    success = tp_account_prepare_finish(account, res, NULL);
+
+    if (!success) {
+        // TODO Handle error
+        printf("Fail in preparing the AM!\n");
+        return;
+    }
+}
+
+void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
+                                                   GAsyncResult *res,
+                                                   gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (source_object);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    gboolean success = FALSE;
+
+    success = tp_account_manager_prepare_finish(priv->m_account_manager,
+                                                res,
+                                                NULL);
+
+    if (!success) {
+        // TODO Handle error
+        printf("Fail in preparing the AM!\n");
+        return;
+    }
+
+    // Get the accounts
+    GList *accounts;
+    accounts = tp_account_manager_get_valid_accounts (priv->m_account_manager);
+    g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
+    accounts = g_list_first(accounts);
+
+    while (accounts != NULL) {
+        TpAccount *account = TP_ACCOUNT(accounts->data);
+
+        tp_account_prepare_async(account,
+                                 NULL,
+                                 mex_telepathy_plugin_on_account_ready,
+                                 account);
+
+        accounts = g_list_next(accounts);
+    }
+}
+
 static void
 mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 {
@@ -99,6 +156,13 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
   info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed), "contacts", 0);
   mex_model_manager_add_model (priv->manager, info);
   mex_model_info_free (info);
+
+  // Tp init
+  priv->m_account_manager = tp_account_manager_dup();
+  tp_account_manager_prepare_async(priv->m_account_manager,
+                                   NULL,
+                                   mex_telepathy_plugin_on_account_manager_ready,
+                                   NULL);
 }
 
 MexTelepathyPlugin *
