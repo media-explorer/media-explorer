@@ -447,7 +447,9 @@ static gboolean
 mex_player_key_press_event (ClutterActor    *actor,
                             ClutterKeyEvent *event)
 {
-  MexPlayerPrivate *priv = MEX_PLAYER (actor)->priv;
+  MexPlayer *player = MEX_PLAYER (actor);
+  MexPlayerPrivate *priv = player->priv;
+
   ClutterStage *stage;
   MxFocusManager *fmanager;
 
@@ -459,7 +461,17 @@ mex_player_key_press_event (ClutterActor    *actor,
     case CLUTTER_KEY_Down:
         {
           if (!priv->controls_visible && !priv->info_visible)
-            return mex_player_set_controls_visible (MEX_PLAYER (actor), TRUE);
+            return mex_player_set_controls_visible (player, TRUE);
+          break;
+        }
+
+    /* Pause the player */
+    case CLUTTER_KEY_space:
+        {
+          if (clutter_media_get_playing (priv->media))
+            mex_player_pause (player);
+          else
+            mex_player_play (player);
           break;
         }
 
@@ -481,7 +493,7 @@ mex_player_key_press_event (ClutterActor    *actor,
               priv->info_visible = FALSE;
 
               if (priv->controls_prev_visible)
-                mex_player_set_controls_visible (MEX_PLAYER (actor), TRUE);
+                mex_player_set_controls_visible (player, TRUE);
             }
           else
             {
@@ -520,7 +532,7 @@ mex_player_key_press_event (ClutterActor    *actor,
 
               priv->info_visible = TRUE;
 
-              mex_player_set_controls_visible (MEX_PLAYER (actor), FALSE);
+              mex_player_set_controls_visible (player, FALSE);
 
               mex_push_focus (MX_FOCUSABLE (priv->info_panel));
             }
