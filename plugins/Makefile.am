@@ -180,8 +180,8 @@ plugins_LTLIBRARIES += 40mex-telepathy.la
 40mex_telepathy_la_SOURCES = 		\
 	telepathy/mex-telepathy-plugin.c 	\
 	telepathy/mex-telepathy-plugin.h
-40mex_telepathy_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Telepathy\" `pkg-config telepathy-glib --cflags`
-40mex_telepathy_la_LIBADD = $(_libadd)
+40mex_telepathy_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Telepathy\" $(PLUGIN_TELEPATHY_CFLAGS)
+40mex_telepathy_la_LIBADD = $(_libadd) $(PLUGIN_TELEPATHY_LIBS)
 endif
 
 if USE_PLUGIN_JUSTINTV
