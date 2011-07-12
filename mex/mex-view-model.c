@@ -653,22 +653,34 @@ mex_view_model_set_offset (MexViewModel *self, guint offset)
         {
           /* Remove elements from the top */
           i = diff;
-          do
-            {
-              i--;
-              content = mex_model_get_content (MEX_MODEL (self), i);
-              if (content)
-                mex_model_remove_content (MEX_MODEL (self), content);
-            } while (i > 0);
-
-          /* Add following contents */
-          length = mex_model_get_length (MEX_MODEL (self));
           for (i = 0; i < diff; i++)
             {
-              content = mex_model_get_content (priv->model, i + length);
+              content = mex_model_get_content (priv->model,
+                                               priv->offset + i);
+              if (content)
+                mex_model_remove_content (MEX_MODEL (self), content);
+            }
+
+          /* Add following contents */
+          for (i = 0; i < diff; i++)
+            {
+              content = mex_model_get_content (priv->model,
+                                               offset + priv->limit - diff + i);
               if (!content)
                 break;
               mex_model_add_content (MEX_MODEL (self), content);
+            }
+
+          /* loop if needed */
+          if (priv->looped)
+            {
+              /* How much can we loop? */
+              diff = priv->limit - mex_model_get_length (MEX_MODEL (self));
+              for (i = 0; i < diff && i < offset; i++)
+                {
+                  content = mex_model_get_content (priv->model, i);
+                  mex_model_add_content (MEX_MODEL (self), content);
+                }
             }
         }
       else
