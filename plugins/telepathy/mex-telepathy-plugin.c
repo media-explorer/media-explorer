@@ -160,6 +160,25 @@ void mex_telepathy_plugin_on_account_status_changed(TpAccount  *account,
     }
 }
 
+void mex_telepathy_plugin_on_presence_request_finished(GObject *source_object,
+                                                       GAsyncResult *res,
+                                                       gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+    TpAccount *account = TP_ACCOUNT(source_object);
+
+    gboolean success = FALSE;
+
+    success = tp_account_request_presence_finish(account, res, NULL);
+
+    if (!success) {
+        // TODO Handle error
+        g_warning("Fail in setting a different presence!");
+        return;
+    }
+}
+
 void mex_telepathy_plugin_on_account_ready(GObject *source_object,
                                            GAsyncResult *res,
                                            gpointer user_data)
@@ -180,16 +199,34 @@ void mex_telepathy_plugin_on_account_ready(GObject *source_object,
 
     // Get the connection, and wait until ready
     TpConnection *connection = 0;
-    switch (tp_account_get_connection_status(account, NULL)) {
-        case TP_CONNECTION_STATUS_CONNECTED:
+    if (tp_account_get_connection_status(account, NULL) == TP_CONNECTION_STATUS_CONNECTED) {
             connection = tp_account_get_connection(account);
             tp_connection_call_when_ready(connection,
                                           mex_telepathy_plugin_on_connection_ready,
                                           self);
-            break;
-        default:
-            printf("Account is not connected\n");
-            break;
+    } else {
+        printf("Account is not connected, setting it back to autopresence\n");
+
+        // Get the autopresence
+        guint type;
+        gchar *status;
+        gchar *message;
+
+        g_object_get(account,
+                     "automatic-presence-type", &type,
+                     "automatic-status", &status,
+                     "automatic-status-message", &message,
+                     NULL);
+
+        tp_account_request_presence_async(account,
+                                          type,
+                                          status,
+                                          message,
+                                          mex_telepathy_plugin_on_presence_request_finished,
+                                          self);
+
+        g_free(status);
+        g_free(message);
     }
 
     g_signal_connect(account,
