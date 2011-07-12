@@ -16,18 +16,27 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#include <string.h>
 #include "mex-feed.h"
 #include "mex-program.h"
 #include "mex-model.h"
 
+#include <string.h>
+#include <stdlib.h>
+
 enum {
   PROP_0,
   PROP_SOURCE,
+  PROP_DEFAULT_NB_RESULTS,
+  PROP_REFRESH_TIMEOUT,
 };
 
 struct _MexFeedPrivate {
   char *source;
+
+  guint default_nb_results;
+  guint refresh_timeout;
+
+  guint timeout;
 
   GController *controller;
 
@@ -214,6 +223,43 @@ mex_feed_controller_changed_cb (GController          *controller,
     }
 }
 
+static gboolean
+mex_feed_refresh (MexFeed *feed)
+{
+  MexFeedClass *klass = MEX_FEED_GET_CLASS (feed);
+
+  if (!klass->refresh)
+    {
+      g_warning ("Class '%s' does not implement refresh method",
+                 G_OBJECT_TYPE_NAME (feed));
+      return FALSE;
+    }
+
+  klass->refresh (feed);
+
+  return TRUE;
+}
+
+static void
+mex_feed_rearm_timeout (MexFeed *feed)
+{
+  MexFeedPrivate *priv = feed->priv;
+  guint randomized_delay = 0;
+
+  if (priv->timeout)
+    g_source_remove (priv->timeout);
+
+  if (priv->refresh_timeout)
+    {
+      if (priv->refresh_timeout < 60)
+        randomized_delay = rand () % (60 * 2);
+      priv->timeout =
+        g_timeout_add_seconds (priv->refresh_timeout + randomized_delay,
+                               (GSourceFunc) mex_feed_refresh,
+                               feed);
+    }
+}
+
 /*
  * GObject implementation
  */
@@ -243,6 +289,12 @@ mex_feed_dispose (GObject *object)
       priv->controller = NULL;
     }
 
+  if (priv->timeout)
+    {
+      g_source_remove (priv->timeout);
+      priv->timeout = 0;
+    }
+
   G_OBJECT_CLASS (mex_feed_parent_class)->dispose (object);
 }
 
@@ -259,6 +311,15 @@ mex_feed_set_property (GObject      *object,
   case PROP_SOURCE:
     g_free (priv->source);
     priv->source = g_value_dup_string (value);
+    break;
+
+  case PROP_DEFAULT_NB_RESULTS:
+    priv->default_nb_results = g_value_get_uint (value);
+    break;
+
+  case PROP_REFRESH_TIMEOUT:
+    priv->refresh_timeout = g_value_get_uint (value);
+    mex_feed_rearm_timeout (feed);
     break;
 
   default:
@@ -281,6 +342,14 @@ mex_feed_get_property (GObject    *object,
     g_value_set_string (value, priv->source);
     break;
 
+  case PROP_DEFAULT_NB_RESULTS:
+    g_value_set_uint (value, priv->default_nb_results);
+    break;
+
+  case PROP_REFRESH_TIMEOUT:
+    g_value_set_uint (value, priv->refresh_timeout);
+    break;
+
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
     break;
@@ -296,6 +365,8 @@ mex_feed_constructed (GObject *object)
   g_signal_connect_after (priv->controller, "changed",
                           G_CALLBACK (mex_feed_controller_changed_cb),
                           object);
+
+  mex_feed_rearm_timeout (MEX_FEED (object));
 
   if (G_OBJECT_CLASS (mex_feed_parent_class)->constructed)
     G_OBJECT_CLASS (mex_feed_parent_class)->constructed (object);
@@ -319,6 +390,24 @@ mex_feed_class_init (MexFeedClass *klass)
                                "The source of the feed", "",
                                G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
   g_object_class_install_property (o_class, PROP_SOURCE, pspec);
+
+  pspec = g_param_spec_uint ("default-nb-results", "Default number of results",
+                             "Number of results to be returned by default",
+                             1, G_MAXUINT, 50,
+                             G_PARAM_STATIC_STRINGS |
+                             G_PARAM_CONSTRUCT |
+                             G_PARAM_READWRITE);
+  g_object_class_install_property (o_class, PROP_DEFAULT_NB_RESULTS, pspec);
+
+
+  pspec = g_param_spec_uint ("refresh-timeout", "Refresh timeout",
+                             "The number of seconds after which the feed "
+                             "should be refreshed",
+                             0, G_MAXUINT, 10 * 60,
+                             G_PARAM_STATIC_STRINGS |
+                             G_PARAM_CONSTRUCT |
+                             G_PARAM_READWRITE);
+  g_object_class_install_property (o_class, PROP_REFRESH_TIMEOUT, pspec);
 }
 
 static void
@@ -542,4 +631,12 @@ mex_feed_lookup (MexFeed *feed, const char *id)
   priv = feed->priv;
 
   return g_hash_table_lookup (priv->id_to_programs, id);
+}
+
+guint
+mex_feed_get_default_nb_results (MexFeed *feed)
+{
+  g_return_val_if_fail (MEX_IS_FEED (feed), 0);
+
+  return feed->priv->default_nb_results;
 }

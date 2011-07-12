@@ -70,6 +70,8 @@ struct _MexFeed
 struct _MexFeedClass
 {
   MexGenericModelClass parent_class;
+
+  void (*refresh) (MexFeed *feed);
 };
 
 GType mex_feed_get_type (void) G_GNUC_CONST;
@@ -84,6 +86,7 @@ void mex_feed_search (MexFeed            *feed,
 MexProgram *mex_feed_lookup (MexFeed    *feed,
                              const char *id);
 
+guint mex_feed_get_default_nb_results (MexFeed *feed);
 
 G_END_DECLS
 
