@@ -88,6 +88,9 @@ mex_media_controls_get_enqueued (MexMediaControls *self,                        
 
 gboolean mex_media_controls_get_playing_queue (MexMediaControls *self);
 
+void mex_media_controls_set_disabled (MexMediaControls *self,
+                                      gboolean disabled);
+
 G_END_DECLS
 
 #endif /* _MEX_MEDIA_CONTROLS_H */

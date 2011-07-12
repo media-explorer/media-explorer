@@ -612,6 +612,8 @@ mex_player_set_controls_visible (MexPlayer *player,
                              "opacity", 0xff,
                              "anchor-y", 0.0,
                              NULL);
+      mex_media_controls_set_disabled (MEX_MEDIA_CONTROLS (priv->controls),
+                                       FALSE);
 
       mex_player_restart_timer (player);
 
@@ -639,6 +641,8 @@ mex_player_set_controls_visible (MexPlayer *player,
                              "opacity", 0x00,
                              "anchor-y", -pos,
                              NULL);
+      mex_media_controls_set_disabled (MEX_MEDIA_CONTROLS (priv->controls),
+                                       TRUE);
 
       if (priv->hide_controls_source)
         {

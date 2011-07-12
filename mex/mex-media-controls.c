@@ -70,6 +70,7 @@ struct _MexMediaControlsPrivate
   MexProxy *proxy;
 
   guint is_queue_model : 1;
+  guint is_disabled    : 1;
 
   MexModel   *model;
   MexViewModel *proxy_model;
@@ -791,6 +792,8 @@ mex_media_controls_init (MexMediaControls *self)
 
   g_signal_connect (priv->proxy, "object-created", G_CALLBACK (tile_created_cb),
                     self);
+
+  priv->is_disabled = TRUE;
 }
 
 ClutterActor *
@@ -897,18 +900,7 @@ mex_media_controls_set_media (MexMediaControls *self,
     {
       if (priv->media)
         {
-          g_signal_handlers_disconnect_by_func (priv->media,
-                                       mex_media_controls_notify_can_seek_cb,
-                                       self);
-          g_signal_handlers_disconnect_by_func (priv->media,
-                                       mex_media_controls_notify_playing_cb,
-                                       self);
-          g_signal_handlers_disconnect_by_func (priv->media,
-                                       mex_media_controls_notify_progress_cb,
-                                       self);
-          g_signal_handlers_disconnect_by_func (priv->media,
-                                       mex_media_controls_notify_download_cb,
-                                       self);
+          mex_media_controls_set_disabled (self, TRUE);
 
           g_object_unref (priv->media);
           priv->media = NULL;
@@ -918,23 +910,7 @@ mex_media_controls_set_media (MexMediaControls *self,
         {
           priv->media = g_object_ref (media);
 
-          g_signal_connect (media, "notify::can-seek",
-                            G_CALLBACK (mex_media_controls_notify_can_seek_cb),
-                            self);
-          g_signal_connect (media, "notify::playing",
-                            G_CALLBACK (mex_media_controls_notify_playing_cb),
-                            self);
-          g_signal_connect (media, "notify::progress",
-                            G_CALLBACK (mex_media_controls_notify_progress_cb),
-                            self);
-	  g_signal_connect (media, "download-buffering",
-			    G_CALLBACK (mex_media_controls_notify_download_cb),
-			    self);
-
-          mex_media_controls_notify_can_seek_cb (media, NULL, self);
-          mex_media_controls_notify_playing_cb (media, NULL, self);
-          mex_media_controls_notify_progress_cb (media, NULL, self);
-	  mex_media_controls_notify_download_cb (media, 0.0, 0.0, self);
+          mex_media_controls_set_disabled (self, FALSE);
         }
 
       g_object_notify (G_OBJECT (self), "media");
@@ -1136,4 +1112,59 @@ mex_media_controls_set_sort_func (MexMediaControls *self,
           mex_media_controls_sort_items (self);
         }
     }
+}
+
+void
+mex_media_controls_set_disabled (MexMediaControls *self,
+                                 gboolean          disabled)
+{
+  MexMediaControlsPrivate *priv;
+
+  g_return_if_fail (MEX_IS_MEDIA_CONTROLS (self));
+
+  priv = self->priv;
+
+  if (!priv->media)
+    return;
+
+  if (priv->is_disabled == disabled)
+    return;
+
+  if (disabled)
+    {
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            mex_media_controls_notify_can_seek_cb,
+                                            self);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            mex_media_controls_notify_playing_cb,
+                                            self);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            mex_media_controls_notify_progress_cb,
+                                            self);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            mex_media_controls_notify_download_cb,
+                                            self);
+    }
+  else
+    {
+      g_signal_connect (priv->media, "notify::can-seek",
+                        G_CALLBACK (mex_media_controls_notify_can_seek_cb),
+                        self);
+      g_signal_connect (priv->media, "notify::playing",
+                        G_CALLBACK (mex_media_controls_notify_playing_cb),
+                        self);
+      g_signal_connect (priv->media, "notify::progress",
+                        G_CALLBACK (mex_media_controls_notify_progress_cb),
+                        self);
+      g_signal_connect (priv->media, "download-buffering",
+                        G_CALLBACK (mex_media_controls_notify_download_cb),
+                        self);
+
+      mex_media_controls_notify_can_seek_cb (priv->media, NULL, self);
+      mex_media_controls_notify_playing_cb (priv->media, NULL, self);
+      mex_media_controls_notify_progress_cb (priv->media, NULL, self);
+      mex_media_controls_notify_download_cb (priv->media, 0.0, 0.0, self);
+    }
+
+  priv->is_disabled = disabled;
 }
