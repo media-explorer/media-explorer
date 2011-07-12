@@ -221,8 +221,7 @@ _reset_thumbnail (MexContentTile *tile)
       gchar *tmp;
       const gchar *dir = mex_get_data_dir ();
 
-      tmp = g_build_filename (dir, "common",
-                              placeholder_filename, NULL);
+      tmp = g_build_filename (dir, "style", placeholder_filename, NULL);
       _update_thumbnail_from_image (tile, tmp);
       g_free (tmp);
     }

@@ -102,7 +102,7 @@ mex_style_load_default (void)
   for (d = dirs; d; d = d->next)
     d->data = g_strdup (d->data);
 
-  tmp = g_build_filename (mex_get_data_dir (), "common", "style", "icons",
+  tmp = g_build_filename (mex_get_data_dir (), "style", "icons",
                           NULL);
   dirs = g_list_prepend (dirs, tmp);
 
@@ -117,8 +117,7 @@ mex_style_load_default (void)
   mx_icon_theme_set_theme_name (theme, "mex");
 
   /* Load the style */
-  tmp = g_build_filename (mex_get_data_dir (), "common",
-                          "style", "style.css", NULL);
+  tmp = g_build_filename (mex_get_data_dir (), "style", "style.css", NULL);
   mx_style_load_from_file (mx_style_get_default (), tmp, &error);
   g_free (tmp);
 

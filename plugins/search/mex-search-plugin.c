@@ -697,7 +697,7 @@ mex_search_plugin_init (MexSearchPlugin *self)
 
   /* Load style data */
   mx_style_load_from_file (mx_style_get_default (),
-                           PLUGIN_DATA_DIR "/style.css", NULL);
+                           PLUGIN_DATA_DIR "/search/style.css", NULL);
 
   /* Create the history model and models list */
   priv->history_model = mex_feed_new (_("Search"), _("Search"));

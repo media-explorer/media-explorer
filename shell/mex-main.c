@@ -1984,9 +1984,6 @@ main (int argc, char **argv)
   app = mx_application_new (&argc, &argv, "Media Explorer",
                             MX_APPLICATION_SINGLE_INSTANCE);
   mex_style_load_default ();
-  tmp = g_build_filename (mex_get_data_dir (), "shell", "style", "style.css", NULL);
-  mx_style_load_from_file (mx_style_get_default (), tmp, &error);
-  g_free (tmp);
 
   if (error)
     {

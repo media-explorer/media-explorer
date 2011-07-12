@@ -6,7 +6,7 @@
   /* TODO: Replace this with a dedicated background, or set the background
    * differently in the main app so that it shows underneath here.
    */
-  border-image: url('../../shell/style/main-bg.png') 0;
+  border-image: url('../../style/main-bg.png') 0;
 }
 
 MxBoxLayout#search-suggestions
@@ -29,7 +29,7 @@ MxTable#search-entry-frame MxEntry
 
 MxTable#search-entry-frame MxSpinner
 {
-  -mx-spinner-image: url('../../common/style/queue-spinner-highlight.png');
+  -mx-spinner-image: url('../../style/queue-spinner-highlight.png');
   -mx-spinner-frames: 16;
   -mx-spinner-duration: 4000;
 }
@@ -39,12 +39,12 @@ MxTable#search-entry-frame MxSpinner
 MxBoxLayout#search-header
 {
   padding: 11 15;
-  border-image: url("../../common/style/panel-header-bg.png") 1 0;
+  border-image: url("../../style/panel-header-bg.png") 1 0;
 }
 
 MxBoxLayout#search-header:focus
 {
-  border-image: url('../../common/style/highlight-bg.png') 0;
+  border-image: url('../../style/highlight-bg.png') 0;
 }
 
 MxBoxLayout#search-header > MxIcon.Search
@@ -60,7 +60,7 @@ MxBoxLayout#search-header:focus > MxIcon.Search
 /* suggest column */
 MxBoxLayout#suggest-column
 {
-  border-image: url('../../common/style/panel-highlight.png') 1;
+  border-image: url('../../style/panel-highlight.png') 1;
 }
 
 MxBoxLayout#suggest-column > MxButton
@@ -72,6 +72,6 @@ MxBoxLayout#suggest-column > MxButton
 
 MxBoxLayout#suggest-column > MxButton:focus
 {
-  border-image: url('../../common/style/highlight-bg.png') 0;
+  border-image: url('../../style/highlight-bg.png') 0;
   color: #464541;
 }

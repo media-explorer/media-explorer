@@ -1,13 +1,5 @@
 SUBDIRS = appicons
 
-extradir = $(pkgdatadir)/common
-dist_extra_DATA = \
-	folder-tile.png \
-	thumb-image.png \
-	thumb-video.png \
-	thumb-music.png \
-	$(NULL)
-
 jsondir = $(pkgdatadir)/json
 dist_json_DATA = \
 	json/media-controls.json	\
@@ -18,92 +10,82 @@ dist_json_DATA = \
 	$(NULL)
 
 if HAVE_LIRC
-dist_extra_DATA += mex-lircrc
+extradir = $(pkgdatadir)/common
+dist_extra_DATA = mex-lircrc
 endif
 
-styledir = $(pkgdatadir)/common/style
+styledir = $(pkgdatadir)/style
 dist_style_DATA = \
-		  style/details-actions-separator.png \
-		  style/details-bg.png \
-		  style/grid-content-bg.png \
-		  style/harderror-bg.png \
-		  style/highlight-bg.png \
-		  style/item-title-bg.png \
-		  style/label-bg.png \
-		  style/panel-header-bg.png \
-		  style/panel-highlight.png \
-		  style/panel-shadow.png \
-		  style/queue-spinner.png \
-		  style/queue-spinner-highlight.png \
-		  style/scroll-bg.png \
-		  style/scroll-bar.png \
-		  style/thumb-noContent.png \
-		  style/spinner.png \
-		  style.css
+	style/controls-bg.png \
+	style/details-actions-separator.png \
+	style/details-bg.png \
+	style/folder-tile.png \
+	style/folder-tile-up.png \
+	style/graphic-network.png \
+	style/graphic-rebinder.png \
+	style/grid-content-bg.png \
+	style/harderror-bg.png \
+	style/header-vr.png \
+	style/highlight-bg.png \
+	style/highlight-bg-white.png \
+	style/highlight.png \
+	style/icon-actualsize-highlight.png \
+	style/icon-actualsize.png \
+	style/icon-fullscreen-highlight.png \
+	style/icon-fullscreen.png \
+	style/icon-pause-highlight.png \
+	style/icon-pause.png \
+	style/icon-play-highlight.png \
+	style/icon-play.png \
+	style/icon-rotate-highlight.png \
+	style/icon-rotate.png \
+	style/icon-stop-highlight.png \
+	style/icon-stop.png \
+	style/item-title-bg.png \
+	style/label-bg.png \
+	style/main-bg.png \
+	style/panel-bg.png \
+	style/panel-header-bg.png \
+	style/panel-header-grid-bg.png \
+	style/panel-highlight.png \
+	style/panel-shadow.png \
+	style/queue-spinner-highlight.png \
+	style/queue-spinner.png \
+	style/scroll-bar.png \
+	style/scroll-bg.png \
+	style/spinner.png \
+	style/style.css \
+	style/thumb-bg.png \
+	style/thumb-image.png \
+	style/thumb-music.png \
+	style/thumb-no-content.png \
+	style/thumb-tv.png \
+	style/thumb-video.png \
+	style/timeline-bg.png \
+	style/timeline-buffer.png \
+	style/timeline-highlight.png \
+	style/timeline-highlight-white.png \
+	style/timeline-playhead.png \
+	style/volume-0.png \
+	style/volume-10.png \
+	style/volume-1.png \
+	style/volume-2.png \
+	style/volume-3.png \
+	style/volume-4.png \
+	style/volume-5.png \
+	style/volume-6.png \
+	style/volume-7.png \
+	style/volume-8.png \
+	style/volume-9.png \
+	$(NULL)
+
+
 
 if ENABLE_IDLE_VIDEO
 dist_style_DATA +=style/background-loop.mkv
 endif
 
-shellstyledir = $(pkgdatadir)/shell/style
-dist_shellstyle_DATA =		\
-	shell/style.css		\
-	shell/folder-tile-up.png \
-	shell/main-bg.png	\
-	shell/panel-header-grid-bg.png \
-	$(NULL)
-
-videocontrolsstyledir = $(pkgdatadir)/common/style/video-controls
-dist_videocontrolsstyle_DATA = \
-		style/video-controls/header-vr.png \
-		style/video-controls/highlight.png \
-		style/video-controls/icon-play-highlight.png \
-		style/video-controls/icon-play.png \
-		style/video-controls/icon-pause-highlight.png \
-		style/video-controls/icon-pause.png \
-		style/video-controls/icon-stop-highlight.png \
-		style/video-controls/icon-stop.png \
-		style/video-controls/main-bg.png \
-		style/video-controls/panel-bg.png \
-		style/video-controls/timeline-bg.png \
-		style/video-controls/timeline-buffer.png \
-		style/video-controls/timeline-highlight.png \
-		style/video-controls/timeline-highlight-white.png \
-		style/video-controls/timeline-playhead.png
-
-slideshowstyledir = $(pkgdatadir)/common/style/slide-show
-dist_slideshowstyle_DATA = \
-		style/slide-show/highlight-bg-white.png \
-		style/slide-show/icon-actualsize-highlight.png \
-		style/slide-show/icon-actualsize.png \
-		style/slide-show/icon-fullscreen-highlight.png \
-		style/slide-show/icon-fullscreen.png \
-		style/slide-show/icon-rotate-highlight.png \
-		style/slide-show/icon-rotate.png
-
-infobarstyledir = $(pkgdatadir)/common/style/info-bar
-dist_infobarstyle_DATA = \
-			style/info-bar/graphic-network.png \
-			style/info-bar/graphic-rebinder.png
-
-volumecontrolstyledir = $(pkgdatadir)/common/style/volume-control
-dist_volumecontrolstyle_DATA = \
-			style/volume-control/volume-0.png \
-			style/volume-control/volume-1.png \
-			style/volume-control/volume-2.png \
-			style/volume-control/volume-3.png \
-			style/volume-control/volume-4.png \
-			style/volume-control/volume-5.png \
-			style/volume-control/volume-6.png \
-			style/volume-control/volume-7.png \
-			style/volume-control/volume-8.png \
-			style/volume-control/volume-9.png \
-			style/volume-control/volume-10.png
-
-
-
-
-icondir = $(styledir)/icons/mex
+icondir = $(pkgdatadir)/icons/mex
 dist_icon_DATA = \
 		 icons/index.theme
 

@@ -467,8 +467,8 @@ _create_settings_dialog (MexInfoBar *self)
       mx_stylable_set_style_class (MX_STYLABLE (rebinder_graphic),
                                "RebinderGraphic");
 
-      tmp = g_build_filename (mex_get_data_dir (), "common", "style",
-                              "info-bar", "graphic-rebinder.png", NULL);
+      tmp = g_build_filename (mex_get_data_dir (), "style",
+                              "graphic-rebinder.png", NULL);
       mx_image_set_from_file (MX_IMAGE (rebinder_graphic), tmp, NULL);
       g_free (tmp);
 
@@ -494,8 +494,8 @@ _create_settings_dialog (MexInfoBar *self)
       mx_stylable_set_style_class (MX_STYLABLE (network_graphic),
                                    "NetworkGraphic");
 
-      tmp = g_build_filename (mex_get_data_dir (), "common", "style",
-                              "info-bar", "graphic-network.png", NULL);
+      tmp = g_build_filename (mex_get_data_dir (), "style",
+                              "graphic-network.png", NULL);
       mx_image_set_from_file (MX_IMAGE (network_graphic), tmp, NULL);
       g_free (tmp);
 

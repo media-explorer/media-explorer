@@ -1424,13 +1424,13 @@ mex_column_init (MexColumn *self)
   priv->header = mx_box_layout_new ();
   mx_box_layout_set_orientation ((MxBoxLayout *) priv->header,
                                  MX_ORIENTATION_HORIZONTAL);
-  mx_stylable_set_style_class (MX_STYLABLE (priv->header), "Header");
 
   clutter_actor_push_internal (CLUTTER_ACTOR (self));
   clutter_actor_set_parent (priv->header, CLUTTER_ACTOR (self));
   clutter_actor_pop_internal (CLUTTER_ACTOR (self));
 
   priv->button = mx_button_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (priv->button), "Header");
   priv->icon = mx_icon_new ();
   priv->label = mx_label_new ();
   g_object_set (priv->label, "clip-to-allocation", TRUE, "fade-out", TRUE,

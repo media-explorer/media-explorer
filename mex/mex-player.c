@@ -986,7 +986,7 @@ mex_player_set_idle_mode (MexPlayer *player,
         gchar *tmp;
 
         tmp = g_strconcat ("file://", mex_get_data_dir (),
-                           "/common/style/background-loop.mkv", NULL);
+                           "/style/background-loop.mkv", NULL);
         clutter_media_set_uri (priv->media, tmp);
         g_free (tmp);
 
