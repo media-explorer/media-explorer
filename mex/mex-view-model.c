@@ -674,10 +674,9 @@ mex_view_model_set_offset (MexViewModel *self, guint offset)
       else
         {
           /* Remove elements from the bottom */
-          length = mex_model_get_length (MEX_MODEL (self));
-          for (i = length - 1; i > length - diff; i--)
+          for (i = MIN (priv->offset - 1 - diff, 0); i < priv->offset; i--)
             {
-              content = mex_model_get_content (MEX_MODEL (self), i);
+              content = mex_model_get_content (priv->model, i);
               if (content)
                 mex_model_remove_content (MEX_MODEL (self), content);
             }
