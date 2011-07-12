@@ -82,7 +82,6 @@
 #include <mex/mex-scrollable-container.h>
 #include <mex/mex-settings.h>
 #include <mex/mex-shadow.h>
-#include <mex/mex-shell.h>
 #include <mex/mex-slide-show.h>
 #include <mex/mex-tile.h>
 #include <mex/mex-tool-provider.h>

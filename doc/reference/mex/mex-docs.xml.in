@@ -104,7 +104,6 @@
       <xi:include href="xml/mex-notification-area.xml"/>
       <xi:include href="xml/mex-resizing-hbox.xml"/>
       <xi:include href="xml/mex-scroll-view.xml"/>
-      <xi:include href="xml/mex-shell.xml"/>
     </chapter>
 
     <chapter>

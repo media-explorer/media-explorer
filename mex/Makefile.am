@@ -129,7 +129,6 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-scrollable-container.h		\
 	$(top_srcdir)/mex/mex-settings.h			\
 	$(top_srcdir)/mex/mex-shadow.h				\
-	$(top_srcdir)/mex/mex-shell.h				\
 	$(top_srcdir)/mex/mex-slide-show.h			\
 	$(top_srcdir)/mex/mex-surface-player.h			\
 	$(top_srcdir)/mex/mex-thumbnailer.h			\
@@ -230,7 +229,6 @@ mex_sources =					\
 	mex-scrollable-container.c		\
 	mex-settings.c				\
 	mex-shadow.c				\
-	mex-shell.c				\
 	mex-slide-show.c			\
 	mex-surface-player.c			\
 	mex-thumbnailer.c			\
