@@ -503,7 +503,8 @@ mex_slide_show_move (MexSlideShow *slideshow,
               /* ensure the tile is always in the middle */
               g_signal_connect (priv->current_tile, "allocation-changed",
                                 G_CALLBACK (update_tile_position), scrollview);
-              g_object_add_weak_pointer (priv->current_tile, &priv->current_tile);
+              g_object_add_weak_pointer (G_OBJECT (priv->current_tile),
+                                         (gpointer *) &priv->current_tile);
               break;
             }
         }
