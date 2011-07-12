@@ -533,13 +533,16 @@ mex_header_activated_cb (MexExplorer *explorer,
     {
       const GList *models =
         mex_aggregate_model_get_models (MEX_AGGREGATE_MODEL (model));
+
+      /* only one model */
       if (models && !models->next)
         {
           mex_header_activated_cb (explorer, models->data, data);
           return;
         }
 
-      mex_explorer_push_model (explorer, g_object_ref (model));
+      if (models)
+        mex_explorer_push_model (explorer, g_object_ref (model));
     }
   else
     {
