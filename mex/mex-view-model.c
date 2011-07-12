@@ -51,6 +51,33 @@ struct _MexViewModelPrivate
   gboolean looped  : 1;
 };
 
+static void
+mex_view_model_set_model (MexViewModel *self,
+                          MexModel     *model)
+{
+  MexViewModelPrivate *priv = self->priv;
+  gboolean is_started = priv->started;
+
+  if (model == priv->model)
+    return;
+
+  if (priv->model)
+    {
+      if (is_started)
+        mex_view_model_stop (self);
+
+      g_object_unref (priv->model);
+      priv->model = NULL;
+    }
+
+  if (model)
+    {
+      priv->model = g_object_ref_sink (model);
+      if (is_started)
+        mex_view_model_start (self);
+    }
+
+}
 
 static void
 mex_view_model_get_property (GObject    *object,
@@ -87,32 +114,11 @@ mex_view_model_set_property (GObject      *object,
                              GParamSpec   *pspec)
 {
   MexViewModel *self = MEX_VIEW_MODEL (object);
-  MexViewModelPrivate *priv = self->priv;
-  MexModel *new_model;
-  gboolean is_started = priv->started;
 
   switch (property_id)
     {
     case PROP_MODEL:
-      new_model = g_value_get_object (value);
-
-      if (new_model == priv->model)
-        break;
-
-      if (priv->model)
-        {
-          if (is_started)
-            mex_view_model_stop (self);
-          g_object_unref (priv->model);
-          priv->model = NULL;
-        }
-
-      if (new_model)
-        {
-          priv->model = g_object_ref_sink (new_model);
-          if (is_started)
-            mex_view_model_start (self);
-        }
+      mex_view_model_set_model (self, g_value_get_object (value));
       break;
 
     case PROP_OFFSET:
@@ -617,7 +623,7 @@ void
 mex_view_model_set_offset (MexViewModel *self, guint offset)
 {
   gboolean inc;
-  guint i, diff, length;
+  guint i, diff;
   MexContent *content;
   MexViewModelPrivate *priv;
 
@@ -651,21 +657,23 @@ mex_view_model_set_offset (MexViewModel *self, guint offset)
     {
       if (inc)
         {
+          g_print ("INC from %u to %u\n", priv->offset, offset);
           /* Remove elements from the top */
-          i = diff;
-          do
-            {
-              i--;
-              content = mex_model_get_content (MEX_MODEL (self), i);
-              if (content)
-                mex_model_remove_content (MEX_MODEL (self), content);
-            } while (i > 0);
-
-          /* Add following contents */
-          length = mex_model_get_length (MEX_MODEL (self));
           for (i = 0; i < diff; i++)
             {
-              content = mex_model_get_content (priv->model, i + length);
+              content = mex_model_get_content (priv->model,
+                                               priv->offset + i);
+              g_print ("\tremoving %i\n", priv->offset + i);
+              if (content)
+                mex_model_remove_content (MEX_MODEL (self), content);
+            }
+
+          /* Add following contents */
+          for (i = 0; i < diff; i++)
+            {
+              content = mex_model_get_content (priv->model,
+                                               offset + priv->limit - diff + i);
+              g_print ("\tadding %i\n", offset + priv->limit - diff + i);
               if (!content)
                 break;
               mex_model_add_content (MEX_MODEL (self), content);
@@ -673,10 +681,13 @@ mex_view_model_set_offset (MexViewModel *self, guint offset)
         }
       else
         {
+          g_print ("DEC from %u to %u\n", priv->offset, offset);
           /* Remove elements from the bottom */
-          for (i = MIN (priv->offset - 1 - diff, 0); i < priv->offset; i--)
+          for (i = 0; i < diff; i--)
             {
-              content = mex_model_get_content (priv->model, i);
+              content = mex_model_get_content (priv->model,
+                                               priv->offset + priv->limit - diff + i);
+              g_print ("\tremoving %i\n", priv->offset + priv->limit - diff + i);
               if (content)
                 mex_model_remove_content (MEX_MODEL (self), content);
             }
@@ -685,8 +696,22 @@ mex_view_model_set_offset (MexViewModel *self, guint offset)
           for (i = 0; i < diff; i++)
             {
               content = mex_model_get_content (priv->model, i);
+              g_print ("\tadding %i\n", i);
               if (!content)
                 break;
+              mex_model_add_content (MEX_MODEL (self), content);
+            }
+        }
+
+      /* loop if needed */
+      if (priv->looped)
+        {
+          /* How much can we loop? */
+          diff = priv->limit - mex_model_get_length (MEX_MODEL (self));
+          for (i = 0; i < diff && i < offset; i++)
+            {
+              g_print ("\tadding %i\n", i);
+              content = mex_model_get_content (priv->model, i);
               mex_model_add_content (MEX_MODEL (self), content);
             }
         }
