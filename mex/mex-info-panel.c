@@ -447,13 +447,14 @@ mex_info_panel_set_content (MexContentView *view, MexContent *content)
   MexInfoPanel *self = MEX_INFO_PANEL (view);
   MexInfoPanelPrivate *priv = self->priv;
 
-  if (priv->content == content)
-    return;
-
   const gchar *mimetype;
   const gchar *title = NULL;
 
   ClutterActor *thumbnail, *queue_button;
+
+  if (priv->content == content)
+    return;
+
 
   _unset_content (MEX_INFO_PANEL (view));
 
