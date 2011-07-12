@@ -20,6 +20,8 @@
 
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/account-manager.h>
+#include <telepathy-glib/connection.h>
+#include <telepathy-glib/contact.h>
 
 #include <glib/gi18n.h>
 
@@ -72,6 +74,92 @@ mex_telepathy_plugin_class_init (MexTelepathyPluginClass *klass)
   g_type_class_add_private (klass, sizeof (MexTelepathyPluginPrivate));
 }
 
+static void mex_telepathy_plugin_on_got_contacts_by_handle(TpConnection *connection,
+                                                           guint n_contacts,
+                                                           TpContact * const *contacts,
+                                                           guint n_invalid,
+                                                           const TpHandle *invalid,
+                                                           const GError *error,
+                                                           gpointer user_data,
+                                                           GObject *weak_object)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    if (error != NULL) {
+        g_warning("Error getting contacts: %s", error->message);
+        return;
+    }
+
+    guint i;
+
+    for (i = 0; i < n_contacts; ++i) {
+        printf("%s\n", tp_contact_get_alias(contacts[i]));
+    }
+
+    for (i = 0; i < n_invalid; ++i) {
+        g_warning("Invalid handle %u", invalid[i]);
+    }
+}
+
+static void mex_telepathy_plugin_on_connection_ready(TpConnection *connection,
+                                                     const GError *error,
+                                                     gpointer user_data)
+{
+    printf("Connection ready!\n");
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    static TpContactFeature features[] = {
+        TP_CONTACT_FEATURE_ALIAS,
+        TP_CONTACT_FEATURE_AVATAR_DATA,
+        TP_CONTACT_FEATURE_AVATAR_TOKEN,
+        TP_CONTACT_FEATURE_PRESENCE,
+        TP_CONTACT_FEATURE_CAPABILITIES
+    };
+
+    if (error != NULL) {
+        g_warning("%s", error->message);
+        return;
+    }
+
+    TpHandle self_handle = tp_connection_get_self_handle (connection);
+
+    tp_connection_get_contacts_by_handle (connection,
+                                          1, &self_handle,
+                                          G_N_ELEMENTS (features), features,
+                                          mex_telepathy_plugin_on_got_contacts_by_handle,
+                                          self, NULL, NULL);
+}
+
+void mex_telepathy_plugin_on_account_status_changed(TpAccount  *account,
+                                                    guint       old_status,
+                                                    guint       new_status,
+                                                    guint       reason,
+                                                    gchar      *dbus_error_name,
+                                                    GHashTable *details,
+                                                    gpointer    user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    switch (new_status) {
+        case TP_CONNECTION_STATUS_CONNECTED:
+            if (old_status != TP_CONNECTION_STATUS_CONNECTED) {
+                printf("Account got connected!\n");
+                tp_connection_call_when_ready(tp_account_get_connection(account),
+                                              mex_telepathy_plugin_on_connection_ready,
+                                              self);
+            }
+            break;
+        default:
+            if (old_status == TP_CONNECTION_STATUS_CONNECTED) {
+                g_warning("Account got disconnected! %s", dbus_error_name);
+                // TODO: Maybe give more info?
+            }
+    }
+}
+
 void mex_telepathy_plugin_on_account_ready(GObject *source_object,
                                            GAsyncResult *res,
                                            gpointer user_data)
@@ -86,9 +174,28 @@ void mex_telepathy_plugin_on_account_ready(GObject *source_object,
 
     if (!success) {
         // TODO Handle error
-        printf("Fail in preparing the AM!\n");
+        printf("Fail in preparing %s account!\n", tp_account_get_normalized_name(account));
         return;
     }
+
+    // Get the connection, and wait until ready
+    TpConnection *connection = 0;
+    switch (tp_account_get_connection_status(account, NULL)) {
+        case TP_CONNECTION_STATUS_CONNECTED:
+            connection = tp_account_get_connection(account);
+            tp_connection_call_when_ready(connection,
+                                          mex_telepathy_plugin_on_connection_ready,
+                                          self);
+            break;
+        default:
+            printf("Account is not connected\n");
+            break;
+    }
+
+    g_signal_connect(account,
+                     "status-changed",
+                     G_CALLBACK(mex_telepathy_plugin_on_account_status_changed),
+                     self);
 }
 
 void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
@@ -106,7 +213,7 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
 
     if (!success) {
         // TODO Handle error
-        printf("Fail in preparing the AM!\n");
+        g_warning("Fail in preparing the AM!");
         return;
     }
 
