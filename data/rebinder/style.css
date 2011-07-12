@@ -1,10 +1,3 @@
-MxLabel
-{
-  color: white;
-  font-size: 18;
-  font-family: "Droid Sans";
-}
-
 MxLabel.Para
 {
   padding: 0 0 12 0;
@@ -15,8 +8,8 @@ MxLabel.BigPaddedPara
   padding: 12 0 36 0;
 }
 
-MxButton,
-MxButton:checked
+.Pane MxButton,
+.Pane MxButton:checked
 {
   padding: 10 100 10 100;
   border-image: url("button-bg.png") 1 0 0;
@@ -24,9 +17,9 @@ MxButton:checked
   font-size: 18;
 }
 
-MxButton:hover,
-MxButton:focus,
-MxButton:active
+.Pane MxButton:hover,
+.Pane MxButton:focus,
+.Pane MxButton:active
 {
   padding: 11 100 11 100;
   border-image: url("button-bg-highlight.png") 0;
@@ -47,19 +40,19 @@ MxBoxLayout.Pane
 
 /* welcome */
 
-MxIcon.Back
+.Pane MxIcon.Back
 {
   -mx-content-image: url('icon-back.png');
   padding: 16;
 }
 
-MxIcon.Home
+.Pane MxIcon.Home
 {
   -mx-content-image: url('icon-home.png');
   padding: 16;
 }
 
-MxIcon.Info
+.Pane MxIcon.Info
 {
   -mx-content-image: url('icon-info.png');
   padding: 16;
