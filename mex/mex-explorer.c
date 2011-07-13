@@ -676,7 +676,6 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
 
   clutter_container_add_actor (CLUTTER_CONTAINER (scroll), column);
   clutter_container_add_actor (container, scroll);
-  clutter_container_child_set (container, scroll, "expand", FALSE, NULL);
 
   g_object_weak_ref (G_OBJECT (column), mex_explorer_unset_container_cb, model);
 

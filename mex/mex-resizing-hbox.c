@@ -1193,7 +1193,6 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
   MxPadding padding;
   ClutterActorBox actor_box;
   ClutterActorBox child_box;
-  gint n_children;
   gfloat min_width, nat_width, height, width;
 
   MexResizingHBoxPrivate *priv = self->priv;
@@ -1257,37 +1256,6 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
                                          box->y2 - box->y1,
                                          &min_width,
                                          &nat_width);
-
-  n_children = 0;
-  for (c = priv->children; c; c = c->next)
-    {
-      MexResizingHBoxChild *meta = MEX_RESIZING_HBOX_CHILD (
-        clutter_container_get_child_meta (CLUTTER_CONTAINER (self), c->data));
-
-      n_children ++;
-      if (meta->push)
-        {
-          gfloat hmult;
-          gfloat child_width = 0;
-          clutter_actor_get_preferred_width (c->data,
-                                             box->y2 - box->y1 - padding.top -
-                                             padding.bottom,
-                                             NULL,
-                                             &child_width);
-
-          hmult = (meta->target_width * progress) +
-                  (meta->initial_width * (1.f - progress));
-          child_width *= hmult;
-
-          if (meta->stagger)
-            {
-              clutter_alpha_set_timeline (priv->alpha, meta->timeline);
-              child_width *= clutter_alpha_get_alpha (priv->alpha);
-            }
-
-          actor_box.x2 += child_width;
-        }
-    }
 
   /* calculate the starting offset to ensure the focused column is centered */
   if (priv->current_focus && priv->depth_index != 0)

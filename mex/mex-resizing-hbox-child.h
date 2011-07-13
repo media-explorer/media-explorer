@@ -62,10 +62,6 @@ struct _MexResizingHBoxChild
   /*< private >*/
   ClutterChildMeta parent;
 
-  /* These are accessible via public properties */
-  guint expand : 1;
-  guint push   : 1;
-
   /* These are private, internal variables */
   guint            dead    : 1;
   guint            stagger : 1;
@@ -91,19 +87,6 @@ struct _MexResizingHBoxChildClass
 };
 
 GType mex_resizing_hbox_child_get_type (void);
-
-gboolean mex_resizing_hbox_child_get_expand (MexResizingHBox *resizing_hbox,
-                                             ClutterActor    *child);
-void     mex_resizing_hbox_child_set_expand (MexResizingHBox *resizing_hbox,
-                                             ClutterActor    *child,
-                                             gboolean         expand);
-
-gboolean mex_resizing_hbox_child_get_push   (MexResizingHBox *resizing_hbox,
-                                             ClutterActor    *child);
-void     mex_resizing_hbox_child_set_push   (MexResizingHBox *resizing_hbox,
-                                             ClutterActor    *child,
-                                             gboolean         fit);
-
 
 G_END_DECLS
 
