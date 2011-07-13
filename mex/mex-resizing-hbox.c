@@ -1194,7 +1194,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
   ClutterActorBox actor_box;
   ClutterActorBox child_box;
   gint n_children;
-  gfloat extra_space, min_width, nat_width, height, width;
+  gfloat min_width, nat_width, height, width;
 
   MexResizingHBoxPrivate *priv = self->priv;
 
@@ -1289,12 +1289,6 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
           actor_box.x2 += child_width;
         }
     }
-
-  if (priv->hadjust)
-    extra_space = 0;
-  else
-    extra_space = ((actor_box.x2 - actor_box.x1) - nat_width);
-
 
   /* calculate the starting offset to ensure the focused column is centered */
   if (priv->current_focus && priv->depth_index != 0)
