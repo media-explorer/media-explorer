@@ -1040,7 +1040,7 @@ mex_resizing_hbox_start_animation (MexResizingHBox *self)
           else
             {
               meta->target_width = 1.0 *
-                pow (priv->hdepth, MIN (priv->max_depth, ABS (focus - i)));
+                pow (priv->hdepth, MIN (1, ABS (focus - i)));
               meta->target_height = 1.0 *
                 pow (priv->vdepth, MIN (priv->max_depth, ABS (focus - i)));
             }
@@ -1205,7 +1205,6 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
   width = box->x2 - box->x1 - padding.left - padding.right;
   height = box->y2 - box->y1 - padding.top - padding.bottom;
   child_box.x1 = padding.left;
-  child_box.y2 = padding.top + height;
 
   if ((priv->state == STATE_CLOSING || priv->state == STATE_CLOSED)
       && priv->current_focus)
@@ -1401,6 +1400,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
               (meta->initial_height * (1.f - progress));
       child_height = (gint)(height * vmult);
       child_box.y1 = (padding.top + (height - child_height));
+      child_box.y2 = child_box.y1 + (height - padding.top);
 
       if (child == find)
         {
