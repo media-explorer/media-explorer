@@ -82,7 +82,7 @@ mdns_service_add_service (AvahiClient *client, MdnsServiceInfo *info)
       info->mdns_entry_group =
         avahi_entry_group_new (client,
                                (AvahiEntryGroupCallback) mdns_service_group_state_changed,
-                               client);
+                               info);
     }
 
   ret = avahi_entry_group_add_service (info->mdns_entry_group,
@@ -169,6 +169,8 @@ mdns_service_client_state_changed_cb (AvahiClient *client,
 void
 mdns_service_start (MdnsServiceInfo *info)
 {
+  gint ret=0;
+
   if (info->mdns_glib_poll || info->mdns_client)
     {
       g_warning ("Avahi: service already started");
@@ -179,13 +181,17 @@ mdns_service_start (MdnsServiceInfo *info)
 
   info->mdns_glib_poll = avahi_glib_poll_new (NULL, G_PRIORITY_DEFAULT);
 
+  /* AVAHI_CLIENT_NO_FAIL = don't block waiting to connect to avahi-daemon */
   info->mdns_client =
     avahi_client_new (avahi_glib_poll_get (info->mdns_glib_poll),
                       AVAHI_CLIENT_NO_FAIL,
                       (AvahiClientCallback)
                       mdns_service_client_state_changed_cb,
                       info,
-                      NULL);
+                      &ret);
+
+    if (!info->mdns_client)
+      g_warning ("Failed to create client: %s", avahi_strerror (ret));
 }
 
 MdnsServiceInfo *mdns_service_info_new (void)
