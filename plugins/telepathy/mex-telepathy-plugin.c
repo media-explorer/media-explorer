@@ -490,21 +490,28 @@ void create_video_page(MexModelProvider *self)
     mx_stylable_set_style_class (MX_STYLABLE (hold_button), "MediaPause");
 
     ClutterActor *duration_label = mx_label_new_with_text("Duration - 0:00");
-    clutter_actor_set_size(CLUTTER_ACTOR(duration_label), 500, 48);
     mx_label_set_x_align(MX_LABEL(duration_label), MX_ALIGN_MIDDLE);
     mx_label_set_y_align(MX_LABEL(duration_label), MX_ALIGN_MIDDLE);
 
     // Put the buttons in the toolbar
     clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, hold_button, duration_label, NULL);
     mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), end_button, MX_ALIGN_END);
-    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), end_button, TRUE);
+    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), end_button, TRUE);
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), end_button, FALSE);
     mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), end_button, FALSE);
-    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), hold_button, MX_ALIGN_END);
+
     mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), hold_button, FALSE);
     mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), hold_button, FALSE);
-    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), duration_label, MX_ALIGN_END);
+
+    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), duration_label, MX_ALIGN_START);
+    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), duration_label, TRUE);
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), duration_label, FALSE);
 
     clutter_container_add(CLUTTER_CONTAINER(vertical), videocontainer, toolbar, NULL);
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(vertical), toolbar, TRUE);
+    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(vertical), toolbar, MX_ALIGN_END);
+    mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(vertical), toolbar, TRUE);
+    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(vertical), toolbar, TRUE);
 
     clutter_container_add(CLUTTER_CONTAINER(priv->video_call_page), vertical, NULL);
 }
