@@ -39,18 +39,20 @@ static const gchar *audio_contact_mimetypes[] = { "x-mex-audio-contact", "x-mex-
 static const gchar *av_contact_mimetypes[] = { "x-mex-av-contact", NULL };
 static const gchar *pending_contact_mimetypes[] = { "x-mex-pending-contact", NULL };
 
+static void mex_tool_provider_iface_init (MexToolProviderInterface *iface);
 static void model_provider_iface_init (MexModelProviderInterface *iface);
 static void action_provider_iface_init (MexActionProviderInterface *iface);
 G_DEFINE_TYPE_WITH_CODE (MexTelepathyPlugin,
                          mex_telepathy_plugin,
                          G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (MEX_TYPE_TOOL_PROVIDER,
+                                                mex_tool_provider_iface_init)
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_MODEL_PROVIDER,
                                                 model_provider_iface_init)
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_ACTION_PROVIDER,
                                                 action_provider_iface_init))
 
-
-#define GET_PRIVATE(o)                                          \
+#define TELEPATHY_PLUGIN_PRIVATE(o)                                          \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o),                            \
                                 MEX_TYPE_TELEPATHY_PLUGIN,         \
                                 MexTelepathyPluginPrivate))
@@ -61,6 +63,8 @@ struct _MexTelepathyPluginPrivate {
   GList *models;
   GList *actions;
   GList *contacts;
+
+  ClutterActor *video_call_page;
 
   TpAccountManager *account_manager;
 };
@@ -434,6 +438,11 @@ void mex_telepathy_plugin_on_account_status_changed(TpAccount  *account,
     }
 }
 
+static void
+mex_tool_provider_iface_init (MexToolProviderInterface *iface)
+{
+}
+
 void mex_telepathy_plugin_on_presence_request_finished(GObject *source_object,
                                                        GAsyncResult *res,
                                                        gpointer user_data)
@@ -451,6 +460,53 @@ void mex_telepathy_plugin_on_presence_request_finished(GObject *source_object,
         g_warning("Fail in setting a different presence!");
         return;
     }
+}
+
+void create_video_page(MexModelProvider *self)
+{
+    MexTelepathyPluginPrivate *priv = MEX_TELEPATHY_PLUGIN(self)->priv;
+
+    // VideoCall widget init
+    priv->video_call_page = mx_frame_new();
+    clutter_actor_set_name(priv->video_call_page, "videocall-page");
+    mx_bin_set_fill(MX_BIN(priv->video_call_page), TRUE, TRUE);
+    mx_bin_set_alignment(MX_BIN(priv->video_call_page), MX_ALIGN_START, MX_ALIGN_START);
+
+    ClutterActor *vertical = mx_box_layout_new();
+    mx_box_layout_set_orientation(MX_BOX_LAYOUT(vertical), MX_ORIENTATION_VERTICAL);
+
+    ClutterActor *videocontainer = mx_box_layout_new();
+    clutter_actor_set_size(CLUTTER_ACTOR(videocontainer), 980, 552);
+
+    ClutterActor *toolbar = mx_box_layout_new();
+
+    mx_stylable_set_style_class (MX_STYLABLE (toolbar), "MexMediaControlsTitle");
+    mx_box_layout_set_spacing( MX_BOX_LAYOUT(toolbar), 16);
+
+    ClutterActor *end_button = mx_button_new();
+    mx_stylable_set_style_class (MX_STYLABLE (end_button), "MediaStop");
+
+    ClutterActor *hold_button = mx_button_new();
+    mx_stylable_set_style_class (MX_STYLABLE (hold_button), "MediaPause");
+
+    ClutterActor *duration_label = mx_label_new_with_text("Duration - 0:00");
+    clutter_actor_set_size(CLUTTER_ACTOR(duration_label), 500, 48);
+    mx_label_set_x_align(MX_LABEL(duration_label), MX_ALIGN_MIDDLE);
+    mx_label_set_y_align(MX_LABEL(duration_label), MX_ALIGN_MIDDLE);
+
+    // Put the buttons in the toolbar
+    clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, hold_button, duration_label, NULL);
+    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), end_button, MX_ALIGN_END);
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), end_button, TRUE);
+    mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), end_button, FALSE);
+    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), hold_button, MX_ALIGN_END);
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), hold_button, FALSE);
+    mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), hold_button, FALSE);
+    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), duration_label, MX_ALIGN_END);
+
+    clutter_container_add(CLUTTER_CONTAINER(vertical), videocontainer, toolbar, NULL);
+
+    clutter_container_add(CLUTTER_CONTAINER(priv->video_call_page), vertical, NULL);
 }
 
 void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
@@ -545,7 +601,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     MexModelInfo *info;
     MexTelepathyPluginPrivate *priv;
 
-    priv = self->priv = GET_PRIVATE (self);
+    priv = self->priv = TELEPATHY_PLUGIN_PRIVATE (self);
     priv->actions = NULL;
     priv->contacts = NULL;
 
@@ -652,6 +708,7 @@ model_provider_iface_init (MexModelProviderInterface *iface)
 
 static void
 action_provider_iface_init (MexActionProviderInterface *iface)
+
 {
   iface->get_actions = mex_telepathy_plugin_get_actions;
 }
