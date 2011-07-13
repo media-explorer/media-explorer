@@ -102,8 +102,7 @@ mex_style_load_default (void)
   for (d = dirs; d; d = d->next)
     d->data = g_strdup (d->data);
 
-  tmp = g_build_filename (mex_get_data_dir (), "style", "icons",
-                          NULL);
+  tmp = g_build_filename (mex_get_data_dir (), "icons", NULL);
   dirs = g_list_prepend (dirs, tmp);
 
   mx_icon_theme_set_search_paths (theme, dirs);
