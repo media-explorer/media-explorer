@@ -152,14 +152,14 @@ mex_resizing_hbox_open (MexScene              *actor,
       && MEX_IS_COLUMN (mx_bin_get_child (MX_BIN (priv->current_focus))))
     {
       ClutterActor *container;
-      GList *l, *children;
+      GList *actors, *children;
 
       container = mx_bin_get_child (MX_BIN (priv->current_focus));
       children = clutter_container_get_children (CLUTTER_CONTAINER (container));
 
-      for (l = children; l; l = g_list_next (l))
+      for (actors = children; actors; actors = g_list_next (actors))
         {
-          clutter_actor_set_opacity (l->data, 255);
+          clutter_actor_set_opacity (actors->data, 255);
         }
 
       g_list_free (children);
