@@ -118,7 +118,9 @@ plugins_LTLIBRARIES += 40mex-telepathy.la
 
 40mex_telepathy_la_SOURCES = 		\
 	telepathy/mex-telepathy-plugin.c 	\
-	telepathy/mex-telepathy-plugin.h
+	telepathy/mex-telepathy-plugin.h	\
+	telepathy/mex-contact.c 	\
+	telepathy/mex-contact.h
 40mex_telepathy_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Telepathy\" $(PLUGIN_TELEPATHY_CFLAGS)
 40mex_telepathy_la_LIBADD = $(_libadd) $(PLUGIN_TELEPATHY_LIBS)
 endif
