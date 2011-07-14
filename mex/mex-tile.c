@@ -583,6 +583,8 @@ mex_tile_init (MexTile *self)
   mx_table_add_actor_with_properties (MX_TABLE (priv->table),
                                       priv->label, 0, 1,
                                       "y-fill", FALSE,
+                                      "x-fill", FALSE,
+                                      "x-align", MX_ALIGN_START,
                                       NULL);
 
   g_signal_connect (self, "style-changed",
