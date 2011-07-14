@@ -26,8 +26,18 @@
 #include <telepathy-glib/simple-client-factory.h>
 
 #include <glib/gi18n.h>
+#include "mex-contact.h"
 
-G_DEFINE_TYPE (MexTelepathyPlugin, mex_telepathy_plugin, G_TYPE_OBJECT)
+static void model_provider_iface_init (MexModelProviderInterface *iface);
+static void action_provider_iface_init (MexActionProviderInterface *iface);
+G_DEFINE_TYPE_WITH_CODE (MexTelepathyPlugin,
+                         mex_telepathy_plugin,
+                         G_TYPE_OBJECT,
+                         G_IMPLEMENT_INTERFACE (MEX_TYPE_MODEL_PROVIDER,
+                                                model_provider_iface_init)
+                         G_IMPLEMENT_INTERFACE (MEX_TYPE_ACTION_PROVIDER,
+                                                action_provider_iface_init))
+
 
 #define GET_PRIVATE(o)                                          \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o),                            \
@@ -37,7 +47,8 @@ G_DEFINE_TYPE (MexTelepathyPlugin, mex_telepathy_plugin, G_TYPE_OBJECT)
 struct _MexTelepathyPluginPrivate {
   MexModelManager *manager;
   MexFeed *feed;
-  GHashTable *video_models;
+  GList *models;
+  GList *actions;
 
   TpAccountManager *m_account_manager;
 };
@@ -52,19 +63,23 @@ remove_model (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
-mex_telepathy_plugin_finalize (GObject *gobject)
+mex_telepathy_plugin_dispose (GObject *gobject)
 {
-  MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (gobject);
-  MexTelepathyPluginPrivate *priv = self->priv;
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (gobject);
+    MexTelepathyPluginPrivate *priv = self->priv;
 
-  if (priv->video_models)
-    {
-      g_hash_table_foreach (priv->video_models, remove_model, self);
-      g_hash_table_destroy (priv->video_models);
-      priv->video_models = NULL;
+    while (priv->models) {
+        mex_model_info_free (priv->models->data);
+        priv->models = g_list_delete_link (priv->models, priv->models);
     }
 
-  G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->finalize (gobject);
+    G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->dispose (gobject);
+}
+
+static void
+mex_telepathy_plugin_finalize (GObject *object)
+{
+    G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->finalize (object);
 }
 
 static void
@@ -85,12 +100,13 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
     TpContact *contact = TP_CONTACT(contact_ptr);
     printf("Adding %s\n", tp_contact_get_alias(contact));
 
-    MexContent *content = MEX_CONTENT (mex_program_new (priv->feed));
-    mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, tp_contact_get_alias(contact));
-    mex_content_set_metadata (content, MEX_CONTENT_METADATA_MIMETYPE,
-                              "x-mex/contact");
-    mex_content_set_metadata (content, MEX_CONTENT_METADATA_ARTIST, tp_contact_get_presence_message(contact));
-    mex_model_add_content (MEX_MODEL (priv->feed), content);
+    MexContact *mex_contact;
+
+    mex_contact = g_object_new (MEX_TYPE_CONTACT,
+                                NULL);
+    mex_contact_set_tp_contact(mex_contact, contact);
+
+    mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
 }
 
 static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer user_data)
@@ -262,11 +278,9 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 {
     MexModelInfo *info;
     MexTelepathyPluginPrivate *priv;
+    MexActionInfo *action_info;
 
     priv = self->priv = GET_PRIVATE (self);
-
-    priv->video_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                                    NULL, NULL);
 
     priv->manager = mex_model_manager_get_default ();
     MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 0, "" };
@@ -275,8 +289,8 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     priv->feed = mex_feed_new("Contacts", "Feed");
 
     info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
-    mex_model_manager_add_model (priv->manager, info);
-    mex_model_info_free (info);
+
+    priv->models = g_list_append (priv->models, info);
 
     static TpContactFeature contact_features[] = {
         TP_CONTACT_FEATURE_ALIAS,
@@ -310,6 +324,36 @@ MexTelepathyPlugin *
 mex_telepathy_plugin_new (void)
 {
   return g_object_new (MEX_TYPE_TELEPATHY_PLUGIN, NULL);
+}
+
+static const GList *
+mex_telepathy_plugin_get_actions (MexActionProvider *action_provider)
+{
+  MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (action_provider);
+  MexTelepathyPluginPrivate *priv = self->priv;
+
+  return priv->actions;
+}
+
+static const GList *
+mex_telepathy_plugin_get_models (MexModelProvider *model_provider)
+{
+  MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (model_provider);
+  MexTelepathyPluginPrivate *priv = self->priv;
+
+  return priv->models;
+}
+
+static void
+model_provider_iface_init (MexModelProviderInterface *iface)
+{
+  iface->get_models = mex_telepathy_plugin_get_models;
+}
+
+static void
+action_provider_iface_init (MexActionProviderInterface *iface)
+{
+  iface->get_actions = mex_telepathy_plugin_get_actions;
 }
 
 G_MODULE_EXPORT const GType
