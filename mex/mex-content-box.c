@@ -51,13 +51,6 @@ enum
   PROP_THUMB_HEIGHT
 };
 
-enum
-{
-  GOT_THUMB,
-
-  LAST_SIGNAL
-};
-
 #define MAX_DESCRIPTION_HEIGHT 200.0
 
 struct _MexContentBoxPrivate
@@ -80,8 +73,6 @@ struct _MexContentBoxPrivate
   gint          thumb_width;
   gint          thumb_height;
 };
-
-static guint signals[LAST_SIGNAL] = { 0, };
 
 static ClutterColor hline_color = { 255, 255, 255, 51 };
 
@@ -619,15 +610,6 @@ mex_content_box_class_init (MexContentBoxClass *klass)
                             G_PARAM_READWRITE |
                             G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_THUMB_HEIGHT, pspec);
-
-  signals[GOT_THUMB] = g_signal_new ("got-thumb",
-                                     G_TYPE_FROM_CLASS (klass),
-                                     G_SIGNAL_RUN_LAST,
-                                     G_STRUCT_OFFSET (MexContentBoxClass,
-                                                      got_thumb),
-                                     NULL, NULL,
-                                     g_cclosure_marshal_VOID__VOID,
-                                     G_TYPE_NONE, 0);
 }
 
 static gboolean

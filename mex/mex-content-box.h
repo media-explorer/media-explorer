@@ -62,8 +62,6 @@ struct _MexContentBox
 struct _MexContentBoxClass
 {
   MexExpanderBoxClass parent_class;
-
-  void (*got_thumb) (MexContentBox *box);
 };
 
 GType mex_content_box_get_type (void) G_GNUC_CONST;
