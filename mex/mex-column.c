@@ -1005,13 +1005,13 @@ mex_column_allocate (ClutterActor          *actor,
   if (priv->adjustment)
     {
       gdouble page_size = box->y2 - box->y1 - padding.top - padding.bottom;
-      g_object_set (G_OBJECT (priv->adjustment),
-                    "lower", 0.0,
-                    "upper", child_box.y2 - padding.top,
-                    "page-size", page_size,
-                    "step-increment", 1.0,
-                    "page-increment", page_size,
-                    NULL);
+      mx_adjustment_set_values (priv->adjustment,
+                                mx_adjustment_get_value (priv->adjustment),
+                                0.0,
+                                child_box.y2 - padding.top,
+                                1.0,
+                                page_size,
+                                page_size);
     }
 }
 
