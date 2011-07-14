@@ -36,6 +36,7 @@ G_DEFINE_TYPE (MexTelepathyPlugin, mex_telepathy_plugin, G_TYPE_OBJECT)
 
 struct _MexTelepathyPluginPrivate {
   MexModelManager *manager;
+  MexFeed *feed;
   GHashTable *video_models;
 
   TpAccountManager *m_account_manager;
@@ -111,6 +112,13 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
 
     TpContact *contact = TP_CONTACT(contact_ptr);
     printf("Adding %s\n", tp_contact_get_alias(contact));
+
+    MexContent *content = MEX_CONTENT (mex_program_new (priv->feed));
+    mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, tp_contact_get_alias(contact));
+    mex_content_set_metadata (content, MEX_CONTENT_METADATA_MIMETYPE,
+                              "x-mex/contact");
+    mex_content_set_metadata (content, MEX_CONTENT_METADATA_ARTIST, tp_contact_get_presence_message(contact));
+    mex_model_add_content (MEX_MODEL (priv->feed), content);
 }
 
 static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer user_data)
@@ -280,7 +288,6 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
 static void
 mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 {
-  MexFeed *feed;
   MexModelInfo *info;
   MexTelepathyPluginPrivate *priv;
 
@@ -293,16 +300,9 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
   MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 0, "" };
   mex_model_manager_add_category(priv->manager, &contacts);
 
-  feed = mex_feed_new("Contacts", "Feed");
+  priv->feed = mex_feed_new("Contacts", "Feed");
 
-  // TODO: remove this fake item and replace it with real contact information.
-  MexContent *content = MEX_CONTENT (mex_program_new (feed));
-  mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, "MeeGo");
-  mex_content_set_metadata (content, MEX_CONTENT_METADATA_MIMETYPE,
-                            "x-mex/contact");
-  mex_model_add_content (MEX_MODEL (feed), content);
-
-  info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed), "contacts", 0);
+  info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
   mex_model_manager_add_model (priv->manager, info);
   mex_model_info_free (info);
 
