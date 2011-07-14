@@ -77,34 +77,6 @@ mex_telepathy_plugin_class_init (MexTelepathyPluginClass *klass)
   g_type_class_add_private (klass, sizeof (MexTelepathyPluginPrivate));
 }
 
-static void mex_telepathy_plugin_on_got_contacts_by_handle(TpConnection *connection,
-                                                           guint n_contacts,
-                                                           TpContact * const *contacts,
-                                                           guint n_invalid,
-                                                           const TpHandle *invalid,
-                                                           const GError *error,
-                                                           gpointer user_data,
-                                                           GObject *weak_object)
-{
-    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
-    MexTelepathyPluginPrivate *priv = self->priv;
-
-    if (error != NULL) {
-        g_warning("Error getting contacts: %s", error->message);
-        return;
-    }
-
-    guint i;
-
-    for (i = 0; i < n_contacts; ++i) {
-        printf("%s\n", tp_contact_get_alias(contacts[i]));
-    }
-
-    for (i = 0; i < n_invalid; ++i) {
-        g_warning("Invalid handle %u", invalid[i]);
-    }
-}
-
 static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user_data)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
