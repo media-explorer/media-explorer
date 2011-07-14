@@ -288,23 +288,23 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
 static void
 mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 {
-  MexModelInfo *info;
-  MexTelepathyPluginPrivate *priv;
+    MexModelInfo *info;
+    MexTelepathyPluginPrivate *priv;
 
-  priv = self->priv = GET_PRIVATE (self);
+    priv = self->priv = GET_PRIVATE (self);
 
-  priv->video_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                                   NULL, NULL);
+    priv->video_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
+                                                    NULL, NULL);
 
-  priv->manager = mex_model_manager_get_default ();
-  MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 0, "" };
-  mex_model_manager_add_category(priv->manager, &contacts);
+    priv->manager = mex_model_manager_get_default ();
+    MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 0, "" };
+    mex_model_manager_add_category(priv->manager, &contacts);
 
-  priv->feed = mex_feed_new("Contacts", "Feed");
+    priv->feed = mex_feed_new("Contacts", "Feed");
 
-  info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
-  mex_model_manager_add_model (priv->manager, info);
-  mex_model_info_free (info);
+    info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
+    mex_model_manager_add_model (priv->manager, info);
+    mex_model_info_free (info);
 
     static TpContactFeature contact_features[] = {
         TP_CONTACT_FEATURE_ALIAS,
