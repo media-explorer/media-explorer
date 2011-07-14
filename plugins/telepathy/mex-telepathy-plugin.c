@@ -24,6 +24,7 @@
 #include <telepathy-glib/contact.h>
 
 #include <glib/gi18n.h>
+#include <../telepathy-glib/telepathy-glib/simple-client-factory.h>
 
 G_DEFINE_TYPE (MexTelepathyPlugin, mex_telepathy_plugin, G_TYPE_OBJECT)
 
@@ -179,62 +180,6 @@ void mex_telepathy_plugin_on_presence_request_finished(GObject *source_object,
     }
 }
 
-void mex_telepathy_plugin_on_account_ready(GObject *source_object,
-                                           GAsyncResult *res,
-                                           gpointer user_data)
-{
-    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
-    MexTelepathyPluginPrivate *priv = self->priv;
-    TpAccount *account = TP_ACCOUNT(source_object);
-
-    gboolean success = FALSE;
-
-    success = tp_account_prepare_finish(account, res, NULL);
-
-    if (!success) {
-        // TODO Handle error
-        printf("Fail in preparing %s account!\n", tp_account_get_normalized_name(account));
-        return;
-    }
-
-    // Get the connection, and wait until ready
-    TpConnection *connection = 0;
-    if (tp_account_get_connection_status(account, NULL) == TP_CONNECTION_STATUS_CONNECTED) {
-            connection = tp_account_get_connection(account);
-            tp_connection_call_when_ready(connection,
-                                          mex_telepathy_plugin_on_connection_ready,
-                                          self);
-    } else {
-        printf("Account is not connected, setting it back to autopresence\n");
-
-        // Get the autopresence
-        guint type;
-        gchar *status;
-        gchar *message;
-
-        g_object_get(account,
-                     "automatic-presence-type", &type,
-                     "automatic-status", &status,
-                     "automatic-status-message", &message,
-                     NULL);
-
-        tp_account_request_presence_async(account,
-                                          type,
-                                          status,
-                                          message,
-                                          mex_telepathy_plugin_on_presence_request_finished,
-                                          self);
-
-        g_free(status);
-        g_free(message);
-    }
-
-    g_signal_connect(account,
-                     "status-changed",
-                     G_CALLBACK(mex_telepathy_plugin_on_account_status_changed),
-                     self);
-}
-
 void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
                                                    GAsyncResult *res,
                                                    gpointer user_data)
@@ -263,10 +208,42 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
     while (accounts != NULL) {
         TpAccount *account = TP_ACCOUNT(accounts->data);
 
-        tp_account_prepare_async(account,
-                                 NULL,
-                                 mex_telepathy_plugin_on_account_ready,
-                                 self);
+        // Get the connection, and wait until ready
+        TpConnection *connection = 0;
+        if (tp_account_get_connection_status(account, NULL) == TP_CONNECTION_STATUS_CONNECTED) {
+                connection = tp_account_get_connection(account);
+                tp_connection_call_when_ready(connection,
+                                            mex_telepathy_plugin_on_connection_ready,
+                                            self);
+        } else {
+            printf("Account is not connected, setting it back to autopresence\n");
+
+            // Get the autopresence
+            guint type;
+            gchar *status;
+            gchar *message;
+
+            g_object_get(account,
+                        "automatic-presence-type", &type,
+                        "automatic-status", &status,
+                        "automatic-status-message", &message,
+                        NULL);
+
+            tp_account_request_presence_async(account,
+                                              type,
+                                              status,
+                                              message,
+                                              mex_telepathy_plugin_on_presence_request_finished,
+                                              self);
+
+            g_free(status);
+            g_free(message);
+        }
+
+        g_signal_connect(account,
+                        "status-changed",
+                        G_CALLBACK(mex_telepathy_plugin_on_account_status_changed),
+                        self);
 
         accounts = g_list_next(accounts);
     }
@@ -301,12 +278,29 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
   mex_model_manager_add_model (priv->manager, info);
   mex_model_info_free (info);
 
-  // Tp init
-  priv->m_account_manager = tp_account_manager_dup();
-  tp_account_manager_prepare_async(priv->m_account_manager,
-                                   NULL,
-                                   mex_telepathy_plugin_on_account_manager_ready,
-                                   self);
+    static TpContactFeature features[] = {
+        TP_CONTACT_FEATURE_ALIAS,
+        TP_CONTACT_FEATURE_AVATAR_DATA,
+        TP_CONTACT_FEATURE_AVATAR_TOKEN,
+        TP_CONTACT_FEATURE_PRESENCE,
+        TP_CONTACT_FEATURE_CAPABILITIES
+    };
+
+    GQuark account_features = tp_account_get_feature_quark_connection();
+    GQuark connection_features = tp_connection_get_feature_quark_contact_list();
+
+    TpSimpleClientFactory *factory = tp_simple_client_factory_new(tp_dbus_daemon_dup(NULL));
+    tp_simple_client_factory_add_account_features(factory, &account_features);
+    tp_simple_client_factory_add_connection_features(factory, &connection_features);
+    tp_simple_client_factory_add_contact_features(factory, G_N_ELEMENTS (features), features);
+
+    // Tp init
+    priv->m_account_manager = tp_simple_client_factory_dup_account_manager(factory);
+
+    tp_account_manager_prepare_async(priv->m_account_manager,
+                                     NULL,
+                                     mex_telepathy_plugin_on_account_manager_ready,
+                                     self);
 }
 
 MexTelepathyPlugin *
