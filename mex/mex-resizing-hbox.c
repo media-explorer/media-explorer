@@ -1531,15 +1531,27 @@ mex_resizing_hbox_draw_child (MexResizingHBox *self,
                               guint8           opacity)
 {
   ClutterActorBox child_box;
+  ClutterActorBox box;
   MexResizingHBoxChild *meta;
 
   if (!CLUTTER_ACTOR_IS_VISIBLE (child))
     return;
 
+  clutter_actor_get_allocation_box (child, &child_box);
+  clutter_actor_get_allocation_box (CLUTTER_ACTOR (self), &box);
+
+  /* check the child is within the hbox allocation */
+  if (!((child_box.x1 < box.x2) &&
+        (child_box.x2 > box.x1) &&
+        (child_box.y1 < box.y2) &&
+        (child_box.y2 > box.y1)))
+    {
+      return;
+    }
+
+
   meta = MEX_RESIZING_HBOX_CHILD (
     clutter_container_get_child_meta (CLUTTER_CONTAINER (self), child));
-
-  clutter_actor_get_allocation_box (child, &child_box);
 
   /* Clip the child for the staggered expanding animation. */
   if (meta->stagger)
