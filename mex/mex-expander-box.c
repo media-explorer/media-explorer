@@ -63,7 +63,8 @@ struct _MexExpanderBoxPrivate
 
   MexExpanderBoxDirection direction;
 
-  ClutterAlpha *alpha;
+  ClutterAlpha *open_alpha;
+  ClutterAlpha *expand_alpha;
   ClutterTimeline *expand_timeline;
   ClutterTimeline *open_timeline;
 
@@ -451,10 +452,16 @@ mex_expander_box_dispose (GObject *object)
 {
   MexExpanderBoxPrivate *priv = MEX_EXPANDER_BOX (object)->priv;
 
-  if (priv->alpha)
+  if (priv->open_alpha)
     {
-      g_object_unref (priv->alpha);
-      priv->alpha = NULL;
+      g_object_unref (priv->open_alpha);
+      priv->open_alpha = NULL;
+    }
+
+  if (priv->expand_alpha)
+    {
+      g_object_unref (priv->expand_alpha);
+      priv->expand_alpha = NULL;
     }
 
   if (priv->open_timeline)
@@ -507,8 +514,7 @@ mex_expander_box_get_preferred_width (ClutterActor *actor,
 
   min_width[0] = nat_width[0] = min_width[1] = nat_width[1] = 0;
 
-  clutter_alpha_set_timeline (priv->alpha, priv->open_timeline);
-  open_progress = clutter_alpha_get_alpha (priv->alpha);
+  open_progress = clutter_alpha_get_alpha (priv->open_alpha);
 
   if (!(priv->expand && (priv->direction == MEX_EXPANDER_BOX_LEFT ||
                          priv->direction == MEX_EXPANDER_BOX_RIGHT)))
@@ -591,10 +597,8 @@ mex_expander_box_get_preferred_height (ClutterActor *actor,
 
   min_height[0] = nat_height[0] = min_height[1] = nat_height[1] = 0;
 
-  clutter_alpha_set_timeline (priv->alpha, priv->expand_timeline);
-  expand_progress = clutter_alpha_get_alpha (priv->alpha);
-  clutter_alpha_set_timeline (priv->alpha, priv->open_timeline);
-  open_progress = clutter_alpha_get_alpha (priv->alpha);
+  expand_progress = clutter_alpha_get_alpha (priv->expand_alpha);
+  open_progress = clutter_alpha_get_alpha (priv->open_alpha);
 
   if (!(priv->expand && (priv->direction == MEX_EXPANDER_BOX_UP ||
                          priv->direction == MEX_EXPANDER_BOX_DOWN)))
@@ -695,10 +699,8 @@ mex_expander_box_allocate (ClutterActor           *actor,
   else
     primary_width = primary_height = 0;
 
-  clutter_alpha_set_timeline (priv->alpha, priv->open_timeline);
-  open_progress = clutter_alpha_get_alpha (priv->alpha);
-  clutter_alpha_set_timeline (priv->alpha, priv->expand_timeline);
-  expand_progress = clutter_alpha_get_alpha (priv->alpha);
+  open_progress = clutter_alpha_get_alpha (priv->open_alpha);
+  expand_progress = clutter_alpha_get_alpha (priv->expand_alpha);
 
   /* Work out the target size of the primary actor. If we're set to
    * expand, this will be modified when working out the size of the
@@ -856,10 +858,7 @@ mex_expander_box_paint (ClutterActor *actor)
 
   if (priv->secondary)
     {
-      clutter_alpha_set_timeline (priv->alpha, priv->open_timeline);
-      clutter_alpha_get_alpha (priv->alpha);
-
-      if (clutter_alpha_get_alpha (priv->alpha) > 0.0)
+      if (clutter_alpha_get_alpha (priv->open_alpha) > 0.0)
         clutter_actor_paint (priv->secondary);
     }
 
@@ -881,10 +880,7 @@ mex_expander_box_pick (ClutterActor       *actor,
 
   if (priv->secondary)
     {
-      clutter_alpha_set_timeline (priv->alpha, priv->open_timeline);
-      clutter_alpha_get_alpha (priv->alpha);
-
-      if (clutter_alpha_get_alpha (priv->alpha) > 0.0)
+      if (clutter_alpha_get_alpha (priv->open_alpha) > 0.0)
         clutter_actor_paint (priv->secondary);
     }
 
@@ -1104,12 +1100,18 @@ mex_expander_box_init (MexExpanderBox *self)
 
   priv->close_on_unfocus = TRUE;
 
-  priv->alpha = clutter_alpha_new ();
-  clutter_alpha_set_mode (priv->alpha, CLUTTER_EASE_OUT_CUBIC);
+  priv->open_alpha = clutter_alpha_new ();
+  clutter_alpha_set_mode (priv->open_alpha, CLUTTER_EASE_OUT_CUBIC);
+
+  priv->expand_alpha = clutter_alpha_new ();
+  clutter_alpha_set_mode (priv->expand_alpha, CLUTTER_EASE_OUT_CUBIC);
 
   priv->direction = MEX_EXPANDER_BOX_DOWN;
   priv->expand_timeline = clutter_timeline_new (150);
   priv->open_timeline = clutter_timeline_new (200);
+
+  clutter_alpha_set_timeline (priv->open_alpha, priv->open_timeline);
+  clutter_alpha_set_timeline (priv->expand_alpha, priv->expand_timeline);
 
   g_signal_connect_swapped (priv->expand_timeline, "new-frame",
                             G_CALLBACK (clutter_actor_queue_relayout), self);
