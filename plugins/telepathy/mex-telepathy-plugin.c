@@ -21,10 +21,11 @@
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/connection.h>
+#include <telepathy-glib/connection-contact-list.h>
 #include <telepathy-glib/contact.h>
+#include <telepathy-glib/simple-client-factory.h>
 
 #include <glib/gi18n.h>
-#include <../telepathy-glib/telepathy-glib/simple-client-factory.h>
 
 G_DEFINE_TYPE (MexTelepathyPlugin, mex_telepathy_plugin, G_TYPE_OBJECT)
 
@@ -103,6 +104,39 @@ static void mex_telepathy_plugin_on_got_contacts_by_handle(TpConnection *connect
     }
 }
 
+static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    TpContact *contact = TP_CONTACT(contact_ptr);
+    printf("Adding %s\n", tp_contact_get_alias(contact));
+}
+
+static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    TpContact *contact = TP_CONTACT(contact_ptr);
+    printf("Removing %s\n", tp_contact_get_alias(contact));
+}
+
+static void mex_telepathy_plugin_on_contact_list_changed(TpConnection *connection,
+                                                         GPtrArray    *added,
+                                                         GPtrArray    *removed,
+                                                         gpointer      user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    g_ptr_array_foreach(added, mex_telepathy_plugin_add_contact, self);
+    g_ptr_array_foreach(removed, mex_telepathy_plugin_remove_contact, self);
+
+    g_ptr_array_unref(added);
+    g_ptr_array_unref(removed);
+}
+
 static void mex_telepathy_plugin_on_connection_ready(TpConnection *connection,
                                                      const GError *error,
                                                      gpointer user_data)
@@ -111,26 +145,21 @@ static void mex_telepathy_plugin_on_connection_ready(TpConnection *connection,
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
     MexTelepathyPluginPrivate *priv = self->priv;
 
-    static TpContactFeature features[] = {
-        TP_CONTACT_FEATURE_ALIAS,
-        TP_CONTACT_FEATURE_AVATAR_DATA,
-        TP_CONTACT_FEATURE_AVATAR_TOKEN,
-        TP_CONTACT_FEATURE_PRESENCE,
-        TP_CONTACT_FEATURE_CAPABILITIES
-    };
-
     if (error != NULL) {
         g_warning("%s", error->message);
         return;
     }
 
-    TpHandle self_handle = tp_connection_get_self_handle (connection);
+    GPtrArray *contacts = tp_connection_dup_contact_list(connection);
 
-    tp_connection_get_contacts_by_handle (connection,
-                                          1, &self_handle,
-                                          G_N_ELEMENTS (features), features,
-                                          mex_telepathy_plugin_on_got_contacts_by_handle,
-                                          self, NULL, NULL);
+    g_ptr_array_foreach(contacts, mex_telepathy_plugin_add_contact, self);
+
+    g_ptr_array_unref(contacts);
+
+    g_signal_connect(connection,
+                     "contact-list-changed",
+                     G_CALLBACK(mex_telepathy_plugin_on_contact_list_changed),
+                     self);
 }
 
 void mex_telepathy_plugin_on_account_status_changed(TpAccount  *account,
@@ -202,7 +231,6 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
     // Get the accounts
     GList *accounts;
     accounts = tp_account_manager_get_valid_accounts (priv->m_account_manager);
-    g_list_foreach (accounts, (GFunc) g_object_ref, NULL);
     accounts = g_list_first(accounts);
 
     while (accounts != NULL) {
@@ -278,7 +306,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
   mex_model_manager_add_model (priv->manager, info);
   mex_model_info_free (info);
 
-    static TpContactFeature features[] = {
+    static TpContactFeature contact_features[] = {
         TP_CONTACT_FEATURE_ALIAS,
         TP_CONTACT_FEATURE_AVATAR_DATA,
         TP_CONTACT_FEATURE_AVATAR_TOKEN,
@@ -286,21 +314,26 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
         TP_CONTACT_FEATURE_CAPABILITIES
     };
 
-    GQuark account_features = tp_account_get_feature_quark_connection();
-    GQuark connection_features = tp_connection_get_feature_quark_contact_list();
+    GQuark account_features[] = { TP_ACCOUNT_FEATURE_CONNECTION, 0 };
+    GQuark connection_features[] = { tp_connection_get_feature_quark_contact_list(), 0 };
 
-    TpSimpleClientFactory *factory = tp_simple_client_factory_new(tp_dbus_daemon_dup(NULL));
-    tp_simple_client_factory_add_account_features(factory, &account_features);
-    tp_simple_client_factory_add_connection_features(factory, &connection_features);
-    tp_simple_client_factory_add_contact_features(factory, G_N_ELEMENTS (features), features);
+    TpDBusDaemon *daemon = tp_dbus_daemon_dup(NULL);
+    TpSimpleClientFactory *factory = tp_simple_client_factory_new(daemon);
+    tp_simple_client_factory_add_account_features(factory, account_features);
+    tp_simple_client_factory_add_connection_features(factory, connection_features);
+    tp_simple_client_factory_add_contact_features(factory, G_N_ELEMENTS (contact_features), contact_features);
 
     // Tp init
     priv->m_account_manager = tp_simple_client_factory_dup_account_manager(factory);
 
+    GQuark am_features[] = { TP_ACCOUNT_MANAGER_FEATURE_ACCOUNT, 0 };
+
     tp_account_manager_prepare_async(priv->m_account_manager,
-                                     NULL,
+                                     am_features,
                                      mex_telepathy_plugin_on_account_manager_ready,
                                      self);
+
+    g_object_unref(daemon);
 }
 
 MexTelepathyPlugin *
