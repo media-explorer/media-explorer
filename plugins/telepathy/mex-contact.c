@@ -33,6 +33,7 @@ G_DEFINE_TYPE_WITH_CODE (MexContact,
 struct _MexContactPrivate
 {
   TpContact *contact;
+  gchar *avatar_path;
 };
 
 enum
@@ -98,11 +99,14 @@ mex_contact_finalize (GObject *object)
   MexContact *contact = MEX_CONTACT (object);
   MexContactPrivate *priv = contact->priv;
 
-  if (priv->contact)
-    {
-      g_object_unref (priv->contact);
-      priv->contact = NULL;
-    }
+  if (priv->contact) {
+    g_object_unref (priv->contact);
+    priv->contact = NULL;
+  }
+  if (priv->avatar_path) {
+    g_free(priv->avatar_path);
+    priv->avatar_path = NULL;
+  }
 
   G_OBJECT_CLASS (mex_contact_parent_class)->finalize (object);
 }
@@ -136,6 +140,7 @@ mex_contact_init (MexContact *self)
 {
   self->priv = CONTACT_PRIVATE (self);
   self->priv->contact = NULL;
+  self->priv->avatar_path = NULL;
 }
 
 MexContact *
@@ -172,6 +177,18 @@ mex_contact_set_tp_contact (MexContact *self,
 
   g_object_ref(contact);
   priv->contact = contact;
+
+  if (priv->avatar_path) {
+    g_free(priv->avatar_path);
+  }
+
+  GFile *file = tp_contact_get_avatar_file (priv->contact);
+  if (file) {
+    priv->avatar_path = g_file_get_uri (file);
+  } else {
+    priv->avatar_path = NULL;
+  }
+
   g_object_notify (G_OBJECT (self), "contact");
 }
 
@@ -194,8 +211,6 @@ content_get_metadata (MexContent         *content,
     return NULL;
   }
 
-  GFile *file;
-
   switch (key)
   {
     case MEX_CONTENT_METADATA_TITLE:
@@ -205,10 +220,7 @@ content_get_metadata (MexContent         *content,
 //     case MEX_CONTENT_METADATA_ID:
 //       return tp_contact_get_handle (priv->contact);
     case MEX_CONTENT_METADATA_STILL:
-      file = tp_contact_get_avatar_file (priv->contact);
-      if (file) {
-        return g_file_get_uri (file);
-      }
+      return priv->avatar_path;
     case MEX_CONTENT_METADATA_MIMETYPE:
       return "x-mex/contact";
     default:
