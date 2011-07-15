@@ -185,6 +185,8 @@ content_get_metadata (MexContent         *content,
     return NULL;
   }
 
+  GFile *file;
+
   switch (key)
   {
     case MEX_CONTENT_METADATA_TITLE:
@@ -194,7 +196,10 @@ content_get_metadata (MexContent         *content,
 //     case MEX_CONTENT_METADATA_ID:
 //       return tp_contact_get_handle (priv->contact);
     case MEX_CONTENT_METADATA_STILL:
-      return g_file_get_path (tp_contact_get_avatar_file (priv->contact));
+      file = tp_contact_get_avatar_file (priv->contact);
+      if (file) {
+        return g_file_get_uri (file);
+      }
     case MEX_CONTENT_METADATA_MIMETYPE:
       return "x-mex/contact";
     default:
