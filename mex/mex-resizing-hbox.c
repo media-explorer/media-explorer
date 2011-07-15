@@ -642,7 +642,10 @@ mex_resizing_hbox_move_focus (MxFocusable      *focusable,
     }
 
   if (l)
-    return mx_focusable_accept_focus (MX_FOCUSABLE (new_focus), hint);
+    {
+      priv->prev_width = priv->current_width;
+      return mx_focusable_accept_focus (MX_FOCUSABLE (new_focus), hint);
+    }
   else
     return NULL;
 }
