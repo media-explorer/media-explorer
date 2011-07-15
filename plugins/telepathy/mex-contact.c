@@ -18,6 +18,11 @@
 
 
 #include "mex-contact.h"
+
+#include <telepathy-glib/dbus.h>
+#include <telepathy-glib/util.h>
+#include <telepathy-glib/_gen/telepathy-interfaces.h>
+
 static void mex_content_iface_init (MexContentIface *iface);
 G_DEFINE_TYPE_WITH_CODE (MexContact,
                          mex_contact,
@@ -34,6 +39,7 @@ struct _MexContactPrivate
 {
   TpContact *contact;
   gchar *avatar_path;
+  gchar *mimetype;
 };
 
 enum
@@ -189,6 +195,41 @@ mex_contact_set_tp_contact (MexContact *self,
     priv->avatar_path = NULL;
   }
 
+  // Capabilities
+  guint i;
+
+  TpCapabilities *capabilities;
+  capabilities = tp_contact_get_capabilities(priv->contact);
+  GPtrArray *classes;
+  classes = tp_capabilities_get_channel_classes(capabilities);
+
+  priv->mimetype = "x-mex-contact";
+
+  for (i = 0; i < classes->len; i++) {
+    GValueArray *arr = g_ptr_array_index (classes, i);
+    GHashTable *fixed;
+    const gchar *chan_type;
+    TpHandleType handle_type;
+    gboolean valid;
+
+    fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
+
+    if (g_hash_table_size (fixed) != 2)
+      continue;
+
+    chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+    handle_type = tp_asv_get_uint32 (fixed,
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+
+    if (!valid) {
+      continue;
+    }
+
+    if (!tp_strdiff (chan_type, "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT")) {
+      priv->mimetype = "x-mex-av-contact";
+    }
+  }
+
   g_object_notify (G_OBJECT (self), "contact");
 }
 
@@ -222,7 +263,7 @@ content_get_metadata (MexContent         *content,
     case MEX_CONTENT_METADATA_STILL:
       return priv->avatar_path;
     case MEX_CONTENT_METADATA_MIMETYPE:
-      return "x-mex/contact";
+      return priv->mimetype;
     default:
       return NULL;
   }
