@@ -18,15 +18,20 @@
 
 #include "mex-telepathy-plugin.h"
 
+#include "mex-contact.h"
+
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/connection-contact-list.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/simple-client-factory.h>
+#include <telepathy-glib/util.h>
 
 #include <glib/gi18n.h>
-#include "mex-contact.h"
+
+static const gchar *audio_contact_mimetypes[] = { "x-mex-audio-contact", "x-mex-av-contact", NULL };
+static const gchar *av_contact_mimetypes[] = { "x-mex-av-contact", NULL };
 
 static void model_provider_iface_init (MexModelProviderInterface *iface);
 static void action_provider_iface_init (MexActionProviderInterface *iface);
@@ -92,6 +97,20 @@ mex_telepathy_plugin_class_init (MexTelepathyPluginClass *klass)
   g_type_class_add_private (klass, sizeof (MexTelepathyPluginPrivate));
 }
 
+static void
+mex_telepathy_plugin_on_start_video_call (MxAction *action,
+                                          gpointer  userdata)
+{
+    printf("Video Call Start Request!!\n");
+}
+
+static void
+mex_telepathy_plugin_on_start_audio_call (MxAction *action,
+                                          gpointer  userdata)
+{
+    printf("Audio Call Start Request!!\n");
+}
+
 static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user_data)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
@@ -106,7 +125,11 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
                                 "contact", contact,
                                 NULL);
 
-    mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
+    if (!tp_strdiff (mex_content_get_metadata(MEX_CONTENT(mex_contact),
+                                              MEX_CONTENT_METADATA_MIMETYPE),
+                     "x-mex-av-contact")) {
+        mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
+    }
 }
 
 static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer user_data)
@@ -281,12 +304,33 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     MexActionInfo *action_info;
 
     priv = self->priv = GET_PRIVATE (self);
+    priv->actions = NULL;
 
     priv->manager = mex_model_manager_get_default ();
     MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 0, "" };
     mex_model_manager_add_category(priv->manager, &contacts);
 
     priv->feed = mex_feed_new("Contacts", "Feed");
+
+    action_info = g_new0 (MexActionInfo, 1);
+    action_info->action = mx_action_new_full ("startavcall",
+                                              _("Video Call"),
+                                              (GCallback)mex_telepathy_plugin_on_start_video_call,
+                                              self);
+    mx_action_set_icon (action_info->action, "x-mex-app-launch-mex");
+    action_info->mime_types = g_strdupv ((gchar **)av_contact_mimetypes);
+    action_info->priority = 100;
+    priv->actions = g_list_append (priv->actions, action_info);
+
+    action_info = g_new0 (MexActionInfo, 1);
+    action_info->action = mx_action_new_full ("startacall",
+                                              _("Audio Call"),
+                                              (GCallback)mex_telepathy_plugin_on_start_audio_call,
+                                              self);
+    mx_action_set_icon (action_info->action, "x-mex-app-launch-mex");
+    action_info->mime_types = g_strdupv ((gchar **)audio_contact_mimetypes);
+    action_info->priority = 90;
+    priv->actions = g_list_append (priv->actions, action_info);
 
     info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
 
