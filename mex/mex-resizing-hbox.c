@@ -1368,7 +1368,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
               (meta->initial_height * (1.f - progress));
       child_height = (gint)(height * vmult);
       child_box.y1 = (padding.top + (height - child_height));
-      child_box.y2 = child_box.y1 + (height - padding.top);
+      child_box.y2 = child_box.y1 + height;
 
       if (child == find)
         {
