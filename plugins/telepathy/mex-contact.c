@@ -75,8 +75,10 @@ mex_contact_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_CONTACT:
-      mex_contact_set_tp_contact (MEX_CONTACT (object),
-                                  TP_CONTACT(g_value_get_object (value)));
+      if (value != NULL) {
+        mex_contact_set_tp_contact (MEX_CONTACT (object),
+                                    TP_CONTACT(g_value_get_pointer (value)));
+      }
       break;
 
     default:
@@ -118,11 +120,10 @@ mex_contact_class_init (MexContactClass *klass)
   object_class->dispose = mex_contact_dispose;
   object_class->finalize = mex_contact_finalize;
 
-  pspec = g_param_spec_string ("contact",
-                               "Contact",
-                               "Contact object",
-                               NULL,
-                               G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+  pspec = g_param_spec_pointer ("contact",
+                                "Contact",
+                                "Contact object",
+                                G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_CONTACT, pspec);
 }
 
@@ -134,6 +135,7 @@ static void
 mex_contact_init (MexContact *self)
 {
   self->priv = CONTACT_PRIVATE (self);
+  self->priv->contact = NULL;
 }
 
 MexContact *
@@ -154,15 +156,22 @@ void
 mex_contact_set_tp_contact (MexContact *self,
                             TpContact *contact)
 {
+  if (contact == NULL) {
+    return;
+  }
+
   MexContactPrivate *priv;
 
   g_return_if_fail (MEX_IS_CONTACT (self));
 
   priv = self->priv;
 
-  g_object_unref (priv->contact);
+  if (priv->contact) {
+    g_object_unref (priv->contact);
+  }
+
+  g_object_ref(contact);
   priv->contact = contact;
-  g_object_ref(priv->contact);
   g_object_notify (G_OBJECT (self), "contact");
 }
 
