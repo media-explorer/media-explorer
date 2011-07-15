@@ -434,13 +434,13 @@ MexMediaControls MexContentTile, MexSlideShow MexContentTile
 
 MexSlideShow MexContentTile.Important:active
 {
-  border-image: url("highlight-bg-white.png") 4;
+  border-image: url("highlight-bg-white.png") 0;
 }
 
 MexMediaControls MexContentTile.Important:focus,
 MexSlideShow MexContentTile.Important:focus
 {
-  border-image: url("highlight-bg.png") 4;
+  border-image: url("highlight-bg.png") 0;
 }
 
 MexMediaControls MexTile.Important:focus > MxTable.MexTile
