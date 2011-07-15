@@ -103,8 +103,8 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
     MexContact *mex_contact;
 
     mex_contact = g_object_new (MEX_TYPE_CONTACT,
+                                "contact", contact,
                                 NULL);
-    mex_contact_set_tp_contact(mex_contact, contact);
 
     mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
 }
