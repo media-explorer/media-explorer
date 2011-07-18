@@ -58,7 +58,7 @@ struct _MexTelepathyPluginPrivate {
   GList *actions;
   GList *contacts;
 
-  TpAccountManager *m_account_manager;
+  TpAccountManager *account_manager;
 };
 
 static void
@@ -90,6 +90,8 @@ mex_telepathy_plugin_dispose (GObject *gobject)
 
         priv->actions = g_list_delete_link (priv->actions, priv->actions);
     }
+
+    g_object_unref(priv->account_manager);
 
     G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->dispose (gobject);
 }
@@ -373,7 +375,7 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
 
     GError *error = NULL;
 
-    if (!tp_proxy_prepare_finish (priv->m_account_manager, res, &error)) {
+    if (!tp_proxy_prepare_finish (priv->account_manager, res, &error)) {
         g_print ("Error preparing AM: %s\n", error->message);
         g_object_unref(error);
         // TODO: Maybe show stuff in the UI here?
@@ -382,7 +384,7 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
 
     // Get the accounts
     GList *accounts;
-    for (accounts = tp_account_manager_get_valid_accounts (priv->m_account_manager);
+    for (accounts = tp_account_manager_get_valid_accounts (priv->account_manager);
          accounts != NULL; accounts = g_list_delete_link (accounts, accounts)) {
         TpAccount *account = accounts->data;
         TpConnection *connection = tp_account_get_connection (account);
@@ -490,8 +492,8 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
                                                   contact_features);
 
     // Tp init
-    priv->m_account_manager = tp_simple_client_factory_ensure_account_manager (factory);
-    tp_proxy_prepare_async (priv->m_account_manager,
+    priv->account_manager = tp_simple_client_factory_ensure_account_manager (factory);
+    tp_proxy_prepare_async (priv->account_manager,
                             NULL,
                             mex_telepathy_plugin_on_account_manager_ready,
                             self);
