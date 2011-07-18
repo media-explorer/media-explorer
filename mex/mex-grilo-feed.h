@@ -134,12 +134,6 @@ const MexGriloOperation *mex_grilo_feed_get_operation (MexGriloFeed *feed);
 
 gboolean mex_grilo_feed_get_completed (MexGriloFeed *feed);
 
-MexAggregateModel * mex_grilo_feed_to_aggregate_model (MexGriloFeed *feed,
-                                                       int           offset,
-                                                       int           limit);
-
-MexGriloFeed * mex_aggregate_model_get_grilo_feed (MexAggregateModel *model);
-
 void mex_grilo_feed_set_open_callback (MexGriloFeed       *feed,
                                        MexGriloFeedOpenCb  callback);
 

@@ -57,8 +57,6 @@ struct _MexGriloFeedPrivate {
 
 G_DEFINE_TYPE (MexGriloFeed, mex_grilo_feed, MEX_TYPE_FEED)
 
-static GQuark mex_grilo_feed_aggregate_model_quark = 0;
-
 static void update_source (MexGriloFeed *feed, GrlMediaSource *new_source);
 
 static void mex_grilo_feed_stop_op (MexGriloFeed *feed);
@@ -298,9 +296,6 @@ mex_grilo_feed_class_init (MexGriloFeedClass *klass)
                                 FALSE,
                                 G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (o_class, PROP_COMPLETED, pspec);
-
-  mex_grilo_feed_aggregate_model_quark =
-    g_quark_from_static_string ("mex-grilo-feed");
 }
 
 static void
@@ -722,71 +717,6 @@ update_source (MexGriloFeed *feed, GrlMediaSource *new_source)
       g_object_set (feed, "icon-name", "icon-panelheader-computer", NULL);
     }
   }
-}
-
-MexAggregateModel *
-mex_grilo_feed_to_aggregate_model (MexGriloFeed *feed,
-                                   int           offset,
-                                   int           limit)
-{
-  int i;
-  MexContent *content;
-  GrlMediaSource *source;
-  MexModel *model, *ag_model;
-
-  g_return_val_if_fail (MEX_IS_GRILO_FEED (feed), NULL);
-
-  source = feed->priv->source;
-  model = MEX_MODEL (feed);
-  ag_model = NULL;
-  i = 0;
-
-  while ((content = mex_model_get_content (model, i))) {
-    const char *mime =
-      mex_content_get_metadata (content,
-                                MEX_CONTENT_METADATA_MIMETYPE);
-    if (mime && g_str_equal (mime, "x-grl/box")) {
-      GrlMedia *media;
-      MexFeed *sub_feed;
-      GList *query_keys = NULL, *metadata_keys = NULL;
-
-      if (!ag_model) {
-        ag_model = mex_aggregate_model_new ();
-        mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (ag_model),
-                                       g_object_ref (model));
-        g_object_set_qdata (G_OBJECT (ag_model),
-                            mex_grilo_feed_aggregate_model_quark,
-                            feed);
-      }
-
-      media =
-        mex_grilo_program_get_grilo_media (MEX_GRILO_PROGRAM (content));
-
-      g_object_get (G_OBJECT (feed),
-                    "grilo-query-keys", &query_keys,
-                    "grilo-metadata-keys", &metadata_keys,
-                    NULL);
-
-      sub_feed = mex_grilo_feed_new (source, query_keys, metadata_keys, media);
-      g_list_free (query_keys);
-      g_list_free (metadata_keys);
-      mex_grilo_feed_browse (MEX_GRILO_FEED (sub_feed), offset, limit);
-
-      mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (ag_model),
-                                     MEX_MODEL (sub_feed));
-    }
-    i++;
-  }
-
-  return (MexAggregateModel *)ag_model;
-}
-
-MexGriloFeed *
-mex_aggregate_model_get_grilo_feed (MexAggregateModel *model)
-{
-  g_return_val_if_fail (MEX_IS_AGGREGATE_MODEL (model), NULL);
-  return g_object_get_qdata (G_OBJECT (model),
-                             mex_grilo_feed_aggregate_model_quark);
 }
 
 void
