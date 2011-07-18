@@ -59,8 +59,6 @@ struct _MexColumnPrivate
 
   GList            *children;
   guint             n_items;
-  MexActorSortFunc  sort_func;
-  gpointer          sort_data;
   gint              open_boxes;
 
   MxAdjustment *adjustment;
@@ -191,14 +189,7 @@ mex_column_add (ClutterContainer *container,
   MexColumn *self = MEX_COLUMN (container);
   MexColumnPrivate *priv = self->priv;
 
-  if (priv->sort_func)
-    priv->children =
-      g_list_insert_sorted_with_data (priv->children, actor,
-                                      (GCompareDataFunc)priv->sort_func,
-                                      priv->sort_data);
-  else
-    priv->children = g_list_append (priv->children, actor);
-
+  priv->children = g_list_append (priv->children, actor);
   priv->n_items ++;
 
   /* Expand/collapse any drawer that gets added as appropriate */
@@ -1548,43 +1539,6 @@ mex_column_set_icon_name (MexColumn *column, const gchar *name)
 {
   g_return_if_fail (MEX_IS_COLUMN (column));
   mx_icon_set_icon_name (MX_ICON (column->priv->icon), name);
-}
-
-void
-mex_column_set_sort_func (MexColumn        *column,
-                          MexActorSortFunc  func,
-                          gpointer          userdata)
-{
-  MexColumnPrivate *priv;
-
-  g_return_if_fail (MEX_IS_COLUMN (column));
-
-  priv = column->priv;
-  if ((priv->sort_func != func) || (priv->sort_data != userdata))
-    {
-      priv->sort_func = func;
-      priv->sort_data = userdata;
-
-      if (func)
-        {
-          priv->children = g_list_sort_with_data (priv->children,
-                                                  (GCompareDataFunc)func,
-                                                  userdata);
-          clutter_actor_queue_relayout (CLUTTER_ACTOR (column));
-        }
-    }
-}
-
-MexActorSortFunc
-mex_column_get_sort_func (MexColumn *column,
-                          gpointer  *userdata)
-{
-  g_return_val_if_fail (MEX_IS_COLUMN (column), NULL);
-
-  if (userdata)
-    *userdata = column->priv->sort_data;
-
-  return column->priv->sort_func;
 }
 
 void

@@ -78,12 +78,6 @@ void          mex_column_set_icon_name (MexColumn *column, const gchar *name);
 ClutterActor* mex_column_get_placeholder_actor (MexColumn *column);
 void          mex_column_set_placeholder_actor (MexColumn *column, ClutterActor *label);
 
-void             mex_column_set_sort_func (MexColumn        *column,
-                                           MexActorSortFunc  func,
-                                           gpointer          userdata);
-MexActorSortFunc mex_column_get_sort_func (MexColumn        *column,
-                                           gpointer         *userdata);
-
 void     mex_column_set_collapse_on_focus (MexColumn *column,
                                            gboolean   collapse);
 gboolean mex_column_get_collapse_on_focus (MexColumn *column);
