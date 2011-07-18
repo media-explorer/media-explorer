@@ -21,12 +21,14 @@
 #include "mex-contact.h"
 
 #include <telepathy-glib/account.h>
+#include <telepathy-glib/account-channel-request.h>
 #include <telepathy-glib/account-manager.h>
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/connection-contact-list.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/simple-client-factory.h>
 #include <telepathy-glib/util.h>
+#include <telepathy-glib/_gen/telepathy-interfaces.h>
 
 #include <glib/gi18n.h>
 
@@ -98,17 +100,109 @@ mex_telepathy_plugin_class_init (MexTelepathyPluginClass *klass)
 }
 
 static void
-mex_telepathy_plugin_on_start_video_call (MxAction *action,
-                                          gpointer  userdata)
+mex_telepathy_plugin_on_channel_created (GObject *source,
+                                         GAsyncResult *result,
+                                         gpointer user_data)
 {
-    printf("Video Call Start Request!!\n");
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    TpChannel *channel;
+    GError *error = NULL;
+
+    channel = tp_account_channel_request_create_and_handle_channel_finish (
+        TP_ACCOUNT_CHANNEL_REQUEST (source), result, NULL, &error);
+    if (channel == NULL) {
+        g_debug ("Failed to create channel: %s", error->message);
+
+        g_error_free (error);
+        return;
+    }
+
+    g_debug ("Channel created: %s", tp_proxy_get_object_path (channel));
+}
+
+static void
+mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
+                                            TpAccount *account,
+                                            TpContact *contact,
+                                            gboolean audio,
+                                            gboolean video)
+{
+    TpAccountChannelRequest *req;
+    GHashTable *request;
+    request = tp_asv_new (
+        TP_PROP_CHANNEL_CHANNEL_TYPE,
+        G_TYPE_STRING,
+        "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT",
+
+        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+        G_TYPE_UINT,
+        TP_HANDLE_TYPE_CONTACT,
+
+        TP_PROP_CHANNEL_TARGET_ID,
+        G_TYPE_STRING,
+        tp_contact_get_identifier(contact),
+
+        "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialAudio",
+        G_TYPE_BOOLEAN,
+        audio,
+
+        "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialVideo",
+        G_TYPE_BOOLEAN,
+        video,
+
+        NULL);
+
+    g_debug ("Offer video channel to %s", tp_contact_get_identifier(contact));
+
+    req = tp_account_channel_request_new (account, request,
+        TP_USER_ACTION_TIME_CURRENT_TIME);
+
+    tp_account_channel_request_create_and_handle_channel_async (req,
+                                                                NULL,
+                                                                mex_telepathy_plugin_on_channel_created,
+                                                                self);
+}
+
+static void
+mex_telepathy_plugin_on_start_video_call (MxAction *action,
+                                          gpointer  user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    MexContent *content = mex_action_get_content (action);
+    MexContact *mex_contact = MEX_CONTACT (content);
+    TpContact *contact = mex_contact_get_tp_contact (mex_contact);
+    TpAccount *account = tp_connection_get_account (
+                            tp_contact_get_connection (contact));
+
+    mex_telepathy_plugin_craft_channel_request (self,
+                                                account,
+                                                contact,
+                                                TRUE,
+                                                TRUE);
 }
 
 static void
 mex_telepathy_plugin_on_start_audio_call (MxAction *action,
-                                          gpointer  userdata)
+                                          gpointer  user_data)
 {
-    printf("Audio Call Start Request!!\n");
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    MexContent *content = mex_action_get_content (action);
+    MexContact *mex_contact = MEX_CONTACT (content);
+    TpContact *contact = mex_contact_get_tp_contact (mex_contact);
+    TpAccount *account = tp_connection_get_account (
+                            tp_contact_get_connection (contact));
+
+    mex_telepathy_plugin_craft_channel_request (self,
+                                                account,
+                                                contact,
+                                                TRUE,
+                                                FALSE);
 }
 
 static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user_data)
