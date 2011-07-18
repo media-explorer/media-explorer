@@ -134,12 +134,14 @@ _controller_changed_cb (GController          *controller,
    * assumption here that our reference only contains a single item
    */
 
-  index_ = g_controller_reference_get_index_uint (ref, 0);
-  content = mex_model_get_content (MEX_MODEL (model), index_);
+  if (action == G_CONTROLLER_ADD || action == G_CONTROLLER_REMOVE)
+    {
+      index_ = g_controller_reference_get_index_uint (ref, 0);
+      content = mex_model_get_content (MEX_MODEL (model), index_);
+    }
 
   if (action == G_CONTROLLER_ADD)
     {
-      /* FIXME: Make a proper property */
       mex_content_set_metadata (content,
                                 MEX_CONTENT_METADATA_QUEUED,
                                 "yes");
@@ -149,6 +151,20 @@ _controller_changed_cb (GController          *controller,
       mex_content_set_metadata (content,
                                 MEX_CONTENT_METADATA_QUEUED,
                                 NULL);
+    }
+  else if (action == G_CONTROLLER_CLEAR)
+    {
+      gint model_length;
+      model_length = mex_model_get_length (MEX_MODEL (model));
+
+      for (index_=0; index_ < model_length; index_++)
+        {
+          content = mex_model_get_content (MEX_MODEL (model), index_);
+
+          mex_content_set_metadata (content,
+                                    MEX_CONTENT_METADATA_QUEUED,
+                                    NULL);
+        }
     }
   else
     {

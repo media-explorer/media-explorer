@@ -636,6 +636,18 @@ mex_alt_model_cb (MxAction    *action,
 }
 
 static void
+mex_clear_queue_cb (MxAction *action,
+                    MexModel *model)
+{
+  MexModel *model_from_proxy;
+  model_from_proxy = mex_queue_model_dup_singleton ();
+
+  mex_model_clear (model_from_proxy);
+  g_object_unref (model_from_proxy);
+}
+
+
+static void
 mex_grid_view_set_model (MexGridView *view,
                          MexModel    *model)
 {
@@ -658,50 +670,74 @@ mex_grid_view_set_model (MexGridView *view,
     info = mex_model_manager_get_model_info (mex_model_manager_get_default (),
                                              model);
 
-  /* Add the order-by menu */
-  if (info && info->sort_infos)
+  if (info)
     {
-      MexModelSortFuncInfo *sort_info;
+      /* Add the clear queue option */
+      if (g_strcmp0 (info->category, "queue") == 0)
+        {
+          MxAction *clear_queue;
 
-      order = mx_action_new_full ("order",
-                                  _("Order by"),
-                                  G_CALLBACK (mex_order_menu_cb),
-                                  view);
-      mex_menu_add_action (MEX_MENU (priv->menu_layout), order, MEX_MENU_RIGHT);
+          clear_queue =
+            mx_action_new_full ("clear-queue",
+                                _("Clear queue"),
+                                G_CALLBACK (mex_clear_queue_cb),
+                                model);
 
-      sort_info = g_list_nth_data (info->sort_infos, info->default_sort_index);
+          mex_menu_add_action (MEX_MENU (priv->menu_layout),
+                               clear_queue,
+                               MEX_MENU_NONE);
+        }
 
-      if (sort_info)
-        mex_menu_action_set_detail (MEX_MENU (priv->menu_layout), "order",
-                                    sort_info->display_name);
+      /* Add the order-by menu */
+      if (info->sort_infos)
+        {
+          MexModelSortFuncInfo *sort_info;
+
+          order = mx_action_new_full ("order",
+                                      _("Order by"),
+                                      G_CALLBACK (mex_order_menu_cb),
+                                      view);
+
+          mex_menu_add_action (MEX_MENU (priv->menu_layout),
+                               order,
+                               MEX_MENU_RIGHT);
+
+          sort_info = g_list_nth_data (info->sort_infos,
+                                       info->default_sort_index);
+
+          if (sort_info)
+            mex_menu_action_set_detail (MEX_MENU (priv->menu_layout), "order",
+                                        sort_info->display_name);
+          else
+            mex_menu_action_set_detail (MEX_MENU (priv->menu_layout), "order",
+                                        _("Unsorted"));
+        }
+
+      /* Add alt model option */
+      if (info->alt_model)
+        {
+          /* check if the alt_model is being set */
+          if (info->alt_model_active)
+            priv->alt_model = info->model;
+          else
+            priv->alt_model = info->alt_model;
+
+          order = mx_action_new_full ("alt-model",
+                                      info->alt_model_string,
+                                      G_CALLBACK (mex_alt_model_cb),
+                                      view);
+
+          mex_menu_add_action (MEX_MENU (priv->menu_layout), order,
+                               MEX_MENU_TOGGLE);
+
+          mex_menu_action_set_toggled (MEX_MENU (priv->menu_layout),
+                                       "alt-model",
+                                       info->alt_model_active);
+        }
       else
-        mex_menu_action_set_detail (MEX_MENU (priv->menu_layout), "order",
-                                    _("Unsorted"));
-    }
-
-  /* Add alt model option */
-  if (info && info->alt_model)
-    {
-      /* check if the alt_model is being set */
-      if (info->alt_model_active)
-        priv->alt_model = info->model;
-      else
-        priv->alt_model = info->alt_model;
-
-
-      order = mx_action_new_full ("alt-model",
-                                  info->alt_model_string,
-                                  G_CALLBACK (mex_alt_model_cb),
-                                  view);
-      mex_menu_add_action (MEX_MENU (priv->menu_layout), order,
-                           MEX_MENU_TOGGLE);
-
-      mex_menu_action_set_toggled (MEX_MENU (priv->menu_layout), "alt-model",
-                                   info->alt_model_active);
-    }
-  else
-    {
-      priv->alt_model = NULL;
+        {
+          priv->alt_model = NULL;
+        }
     }
 
   stage = clutter_actor_get_stage (CLUTTER_ACTOR (view));
