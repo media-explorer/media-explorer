@@ -81,11 +81,18 @@ G_DEFINE_TYPE_WITH_CODE (MexTelepathyPlugin,
 struct _MexTelepathyPluginPrivate {
   MexModelManager *manager;
   MexFeed *feed;
+
   GList *models;
   GList *actions;
   GList *contacts;
 
   ClutterActor *video_call_page;
+  ClutterActor *video_incoming;
+  ClutterActor *video_outgoing;
+  GstElement *incoming_sink;
+  GstElement *outgoing_sink;
+
+  ChannelContext *current_context;
 
   TpAccountManager *account_manager;
 };
@@ -483,7 +490,7 @@ void mex_telepathy_plugin_on_presence_request_finished(GObject *source_object,
     }
 }
 
-void create_video_page(MexModelProvider *self)
+void create_video_page(MexTelepathyPlugin *self)
 {
     MexTelepathyPluginPrivate *priv = MEX_TELEPATHY_PLUGIN(self)->priv;
 
@@ -498,6 +505,12 @@ void create_video_page(MexModelProvider *self)
 
     ClutterActor *videocontainer = mx_box_layout_new();
     clutter_actor_set_size(CLUTTER_ACTOR(videocontainer), 980, 552);
+
+    priv->video_outgoing = clutter_texture_new();
+    priv->video_incoming = clutter_texture_new();
+    clutter_container_add(CLUTTER_CONTAINER(videocontainer), priv->video_outgoing, priv->video_incoming, NULL);
+    //priv->outgoing_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_outgoing));
+    priv->incoming_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_incoming));
 
     ClutterActor *toolbar = mx_box_layout_new();
 
@@ -628,7 +641,8 @@ bus_watch_cb (GstBus *bus,
               GstMessage *message,
               gpointer user_data)
 {
-    ChannelContext *context = user_data;
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    ChannelContext *context = self->priv->current_context;
 
     if (context->channel != NULL)
         tf_channel_bus_message (context->channel, message);
@@ -657,7 +671,8 @@ src_pad_added_cb (TfContent *content,
                   FsCodec *codec,
                   gpointer user_data)
 {
-    ChannelContext *context = user_data;
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    ChannelContext *context = self->priv->current_context;
     gchar *cstr = fs_codec_to_string (codec);
     FsMediaType mtype;
     GstPad *sinkpad;
@@ -775,12 +790,20 @@ on_video_resolution_changed (TfContent *content,
 static gboolean on_video_start_sending(TfContent *content,
                                    gpointer user_data)
 {
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+    if (!priv->video_call_page)
+        create_video_page(self);
+    mex_tool_provider_present_actor(MEX_TOOL_PROVIDER(self),
+                                    g_object_ref(priv->video_call_page));
+
     return TRUE;
 }
 
 static GstElement *
-setup_video_source (ChannelContext *context, TfContent *content)
+setup_video_source (MexTelepathyPlugin *self, TfContent *content)
 {
+    ChannelContext *context = self->priv->current_context;
     GstElement *result, *input, *rate, *scaler, *colorspace, *capsfilter;
     GstCaps *caps;
     guint framerate = 0, width = 0, height = 0;
@@ -832,6 +855,8 @@ setup_video_source (ChannelContext *context, TfContent *content)
     ghost = gst_ghost_pad_new ("src", pad);
     gst_element_add_pad (result, ghost);
 
+    gst_element_link(ghost, self->priv->incoming_sink);
+
     g_object_unref (pad);
 
     context->video_input = result;
@@ -847,7 +872,7 @@ setup_video_source (ChannelContext *context, TfContent *content)
 
     g_signal_connect (content, "start-sending",
                       G_CALLBACK (on_video_start_sending),
-                      context);
+                      self);
 
     return result;
 }
@@ -857,11 +882,12 @@ content_added_cb (TfChannel *channel,
                   TfContent *content,
                   gpointer user_data)
 {
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
     GstPad *srcpad, *sinkpad;
     FsMediaType mtype;
     GstElement *element;
     GstStateChangeReturn ret;
-    ChannelContext *context = user_data;
+    ChannelContext *context = self->priv->current_context;
 
     g_debug ("Content added");
 
@@ -880,7 +906,7 @@ content_added_cb (TfChannel *channel,
                           TRUE, NULL);
             break;
         case FS_MEDIA_TYPE_VIDEO:
-            element = setup_video_source (context, content);
+            element = setup_video_source (self, content);
             break;
         default:
             g_warning ("Unknown media type");
@@ -888,7 +914,7 @@ content_added_cb (TfChannel *channel,
     }
 
     g_signal_connect (content, "src-pad-added",
-                      G_CALLBACK (src_pad_added_cb), context);
+                      G_CALLBACK (src_pad_added_cb), self);
 
     gst_bin_add (GST_BIN (context->pipeline), element);
     srcpad = gst_element_get_pad (element, "src");
@@ -918,7 +944,8 @@ conference_added_cb (TfChannel *channel,
                      GstElement *conference,
                      gpointer user_data)
 {
-    ChannelContext *context = user_data;
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    ChannelContext *context = self->priv->current_context;
     GKeyFile *keyfile;
 
     g_debug ("Conference added");
@@ -959,7 +986,8 @@ new_tf_channel_cb (GObject *source,
                    GAsyncResult *result,
                    gpointer user_data)
 {
-    ChannelContext *context = user_data;
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    ChannelContext *context = self->priv->current_context;
 
     g_debug ("New TfChannel");
 
@@ -977,10 +1005,10 @@ new_tf_channel_cb (GObject *source,
     g_timeout_add_seconds (5, dump_pipeline_cb, context);
 
     g_signal_connect (context->channel, "fs-conference-added",
-                      G_CALLBACK (conference_added_cb), context);
+                      G_CALLBACK (conference_added_cb), self);
 
     g_signal_connect (context->channel, "content-added",
-                      G_CALLBACK (content_added_cb), context);
+                      G_CALLBACK (content_added_cb), self);
 }
 
 static void
@@ -990,7 +1018,8 @@ proxy_invalidated_cb (TpProxy *proxy,
                       gchar *message,
                       gpointer user_data)
 {
-    ChannelContext *context = user_data;
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    ChannelContext *context = self->priv->current_context;
 
     g_debug ("Channel closed");
     if (context->pipeline != NULL)
@@ -1022,6 +1051,7 @@ new_call_channel_cb (TpSimpleHandler *handler,
                      TpHandleChannelsContext *handler_context,
                      gpointer user_data)
 {
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
     ChannelContext *context;
     TpChannel *proxy;
     GstBus *bus;
@@ -1046,12 +1076,13 @@ new_call_channel_cb (TpSimpleHandler *handler,
 
     context = g_slice_new0 (ChannelContext);
     context->pipeline = pipeline;
+    self->priv->current_context = context;
 
     bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
-    context->buswatch = gst_bus_add_watch (bus, bus_watch_cb, context);
+    context->buswatch = gst_bus_add_watch (bus, bus_watch_cb, self);
     g_object_unref (bus);
 
-    tf_channel_new_async (proxy, new_tf_channel_cb, context);
+    tf_channel_new_async (proxy, new_tf_channel_cb, self);
 
     tp_handle_channels_context_accept (handler_context);
 
@@ -1061,7 +1092,7 @@ new_call_channel_cb (TpSimpleHandler *handler,
     context->proxy = g_object_ref (proxy);
     g_signal_connect (proxy, "invalidated",
                       G_CALLBACK (proxy_invalidated_cb),
-                      context);
+                      self);
 }
 
 void handler_create(MexTelepathyPlugin *self)
@@ -1079,7 +1110,7 @@ void handler_create(MexTelepathyPlugin *self)
                                     "TpMexPlugin",
                                     TRUE,
                                     new_call_channel_cb,
-                                    NULL,
+                                    self,
                                     NULL);
 
     tp_base_client_take_handler_filter (client,
