@@ -211,7 +211,7 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
     MexTelepathyPluginPrivate *priv = self->priv;
 
     TpContact *contact = TP_CONTACT(contact_ptr);
-    printf("Adding %s\n", tp_contact_get_alias(contact));
+    g_debug("Adding %s", tp_contact_get_alias(contact));
 
     MexContact *mex_contact;
 
@@ -232,7 +232,7 @@ static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer u
     MexTelepathyPluginPrivate *priv = self->priv;
 
     TpContact *contact = TP_CONTACT(contact_ptr);
-    printf("Removing %s\n", tp_contact_get_alias(contact));
+    g_debug("Removing %s", tp_contact_get_alias(contact));
 }
 
 static void mex_telepathy_plugin_on_contact_list_changed(TpConnection *connection,
@@ -254,7 +254,7 @@ static void mex_telepathy_plugin_on_connection_ready(TpConnection *connection,
                                                      const GError *error,
                                                      gpointer user_data)
 {
-    printf("Connection ready!\n");
+    g_debug("Connection ready!");
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
     MexTelepathyPluginPrivate *priv = self->priv;
 
@@ -289,7 +289,7 @@ void mex_telepathy_plugin_on_account_status_changed(TpAccount  *account,
     switch (new_status) {
         case TP_CONNECTION_STATUS_CONNECTED:
             if (old_status != TP_CONNECTION_STATUS_CONNECTED) {
-                printf("Account got connected!\n");
+                g_debug("Account got connected!");
                 tp_connection_call_when_ready(tp_account_get_connection(account),
                                               mex_telepathy_plugin_on_connection_ready,
                                               self);
@@ -357,7 +357,7 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
                                             mex_telepathy_plugin_on_connection_ready,
                                             self);
         } else {
-            printf("Account is not connected, setting it back to autopresence\n");
+            g_debug("Account is not connected, setting it back to autopresence");
 
             // Get the autopresence
             guint type;
