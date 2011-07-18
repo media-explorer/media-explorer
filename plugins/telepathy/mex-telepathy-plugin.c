@@ -80,6 +80,16 @@ mex_telepathy_plugin_dispose (GObject *gobject)
         priv->models = g_list_delete_link (priv->models, priv->models);
     }
 
+    while (priv->actions) {
+        MexActionInfo *info = priv->actions->data;
+
+        g_object_unref (info->action);
+        g_strfreev (info->mime_types);
+        g_free (info);
+
+        priv->actions = g_list_delete_link (priv->actions, priv->actions);
+    }
+
     G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->dispose (gobject);
 }
 
@@ -163,6 +173,8 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
                                                                 NULL,
                                                                 mex_telepathy_plugin_on_channel_created,
                                                                 self);
+
+    g_hash_table_unref (request);
 }
 
 static void
@@ -456,6 +468,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
                                      self);
 
     g_object_unref(daemon);
+    g_object_unref(factory);
 }
 
 MexTelepathyPlugin *
