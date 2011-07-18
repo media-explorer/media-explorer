@@ -74,13 +74,6 @@ void                mex_player_set_idle_mode      (MexPlayer *player,
                                                    gboolean   idle);
 gboolean            mex_player_get_idle_mode      (MexPlayer *player);
 
-void mex_player_set_sort_func (MexPlayer        *player,
-                               GCompareDataFunc  func,
-                               gpointer          userdata);
-
-MexActorSortFunc mex_player_get_sort_func (MexPlayer *player,
-                                           gpointer  *userdata);
-
 void mex_player_stop (MexPlayer *player);
 void mex_player_play (MexPlayer *player);
 void mex_player_pause (MexPlayer *player);

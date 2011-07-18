@@ -69,11 +69,6 @@ GType           mex_slide_show_get_type       (void) G_GNUC_CONST;
 
 ClutterActor *  mex_slide_show_new            (void);
 
-void            mex_slide_show_set_sort_func  (MexSlideShow     *self,
-                                               GCompareDataFunc  func,
-                                               gpointer          userdata);
-
-
 G_END_DECLS
 
 #endif /* __MEX_SLIDE_SHOW_H__ */

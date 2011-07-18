@@ -1017,15 +1017,6 @@ mex_player_set_idle_mode (MexPlayer *player,
 }
 
 void
-mex_player_set_sort_func (MexPlayer        *player,
-                          GCompareDataFunc  func,
-                          gpointer          userdata)
-{
-  mex_media_controls_set_sort_func (MEX_MEDIA_CONTROLS (player->priv->controls),
-                                    func, userdata);
-}
-
-void
 mex_player_stop (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;

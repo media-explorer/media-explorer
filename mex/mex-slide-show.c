@@ -39,8 +39,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void mex_slide_show_sort_items (MexSlideShow *self);
-
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 static void mex_slide_show_content_view_iface_init (MexContentViewIface *iface);
 
@@ -84,9 +82,6 @@ struct _MexSlideShowPrivate
   guint controls_prev_visible : 1;
 
   gpointer download_id;
-
-  GCompareDataFunc sort_func;
-  gpointer sort_data;
 };
 
 enum
@@ -1029,8 +1024,6 @@ tile_created_cb (MexProxy *proxy,
 
   notify_pseudo_class (MX_BIN (object));
 
-  mex_slide_show_sort_items (slideshow);
-
   /* ensure the correct item is highlighted in the photo strip */
   mex_slide_show_move (slideshow, 0);
 }
@@ -1113,52 +1106,4 @@ static MexContent*
 mex_slide_show_get_content (MexContentView *view)
 {
   return MEX_SLIDE_SHOW (view)->priv->content;
-}
-
-static void
-mex_slide_show_sort_items (MexSlideShow *self)
-{
-  MexSlideShowPrivate *priv = self->priv;
-  ClutterContainer *container;
-  GList *children, *l;
-
-  if (!priv->sort_func)
-    return;
-
-  container = CLUTTER_CONTAINER (clutter_script_get_object (priv->script,
-                                                            "photo-strip"));
-
-  children = clutter_container_get_children (container);
-
-  children = g_list_sort_with_data (children, priv->sort_func, priv->sort_data);
-
-  for (l = children; l; l = g_list_next (l))
-    {
-      clutter_actor_raise_top (l->data);
-    }
-
-  g_list_free (children);
-}
-
-void
-mex_slide_show_set_sort_func (MexSlideShow     *self,
-                              GCompareDataFunc  func,
-                              gpointer          userdata)
-{
-  MexSlideShowPrivate *priv;
-
-  g_return_if_fail (MEX_IS_SLIDE_SHOW (self));
-
-  priv = self->priv;
-
-  if ((priv->sort_func != func) || (priv->sort_data != userdata))
-    {
-      priv->sort_func = func;
-      priv->sort_data = userdata;
-
-      if (func)
-        {
-          mex_slide_show_sort_items (self);
-        }
-    }
 }

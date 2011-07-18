@@ -80,11 +80,8 @@ void mex_media_controls_set_content (MexMediaControls *self,
 void mex_media_controls_focus_content (MexMediaControls *self,
                                        MexContent       *content);
 
-void mex_media_controls_set_sort_func (MexMediaControls *self,
-                                       GCompareDataFunc  func,
-                                       gpointer          userdata);
-MexContent *
-mex_media_controls_get_enqueued (MexMediaControls *self,                                                         MexContent *current_content);
+MexContent *mex_media_controls_get_enqueued (MexMediaControls *self,
+                                             MexContent *current_content);
 
 gboolean mex_media_controls_get_playing_queue (MexMediaControls *self);
 

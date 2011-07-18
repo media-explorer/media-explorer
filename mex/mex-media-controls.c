@@ -21,8 +21,6 @@
 #include "mex-view-model.h"
 #include "mex.h"
 
-static void mex_media_controls_sort_items (MexMediaControls *self);
-
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexMediaControls, mex_media_controls, MX_TYPE_WIDGET,
@@ -686,9 +684,6 @@ tile_created_cb (MexProxy *proxy,
   g_signal_connect (object, "focus-in", G_CALLBACK (tile_focus_in_cb), NULL);
   g_signal_connect (object, "focus-out", G_CALLBACK (tile_focus_out_cb), NULL);
   tile_focus_out_cb (MX_BIN (object));
-
-
-  mex_media_controls_sort_items (controls);
 }
 
 static void
@@ -1023,31 +1018,6 @@ mex_media_controls_focus_content (MexMediaControls *self,
   return;
 }
 
-static void
-mex_media_controls_sort_items (MexMediaControls *self)
-{
-  MexMediaControlsPrivate *priv = self->priv;
-  ClutterContainer *container;
-  GList *children, *l;
-
-  if (!priv->sort_func)
-    return;
-
-  container = CLUTTER_CONTAINER (clutter_script_get_object (priv->script,
-                                                            "related-box"));
-
-  children = clutter_container_get_children (container);
-
-  children = g_list_sort_with_data (children, priv->sort_func, priv->sort_data);
-
-  for (l = children; l; l = g_list_next (l))
-    {
-      clutter_actor_raise_top (l->data);
-    }
-
-  g_list_free (children);
-}
-
 /**
   * mex_media_controls_get_enqueued:
   * @controls: The MexMediaControls widget
@@ -1089,29 +1059,6 @@ mex_media_controls_get_enqueued (MexMediaControls *controls,
     }
 
   return content;
-}
-
-void
-mex_media_controls_set_sort_func (MexMediaControls *self,
-                                  GCompareDataFunc  func,
-                                  gpointer          userdata)
-{
-  MexMediaControlsPrivate *priv;
-
-  g_return_if_fail (MEX_IS_MEDIA_CONTROLS (self));
-
-  priv = self->priv;
-
-  if ((priv->sort_func != func) || (priv->sort_data != userdata))
-    {
-      priv->sort_func = func;
-      priv->sort_data = userdata;
-
-      if (func)
-        {
-          mex_media_controls_sort_items (self);
-        }
-    }
 }
 
 void
