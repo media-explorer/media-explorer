@@ -371,34 +371,25 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
     MexTelepathyPluginPrivate *priv = self->priv;
 
-    gboolean success = FALSE;
+    GError *error = NULL;
 
-    success = tp_account_manager_prepare_finish(priv->m_account_manager,
-                                                res,
-                                                NULL);
-
-    if (!success) {
-        // TODO Handle error
-        g_warning("Fail in preparing the AM!");
+    if (!tp_proxy_prepare_finish (priv->m_account_manager, res, &error)) {
+        g_print ("Error preparing AM: %s\n", error->message);
+        g_object_unref(error);
+        // TODO: Maybe show stuff in the UI here?
         return;
     }
 
     // Get the accounts
     GList *accounts;
-    accounts = tp_account_manager_get_valid_accounts (priv->m_account_manager);
-    accounts = g_list_first(accounts);
+    for (accounts = tp_account_manager_get_valid_accounts (priv->m_account_manager);
+         accounts != NULL; accounts = g_list_delete_link (accounts, accounts)) {
+        TpAccount *account = accounts->data;
+        TpConnection *connection = tp_account_get_connection (account);
+        GPtrArray *contacts;
+        guint i;
 
-    while (accounts != NULL) {
-        TpAccount *account = TP_ACCOUNT(accounts->data);
-
-        // Get the connection, and wait until ready
-        TpConnection *connection = 0;
-        if (tp_account_get_connection_status(account, NULL) == TP_CONNECTION_STATUS_CONNECTED) {
-                connection = tp_account_get_connection(account);
-                tp_connection_call_when_ready(connection,
-                                            mex_telepathy_plugin_on_connection_ready,
-                                            self);
-        } else {
+        if (connection == NULL) {
             g_debug("Account is not connected, setting it back to autopresence");
 
             // Get the autopresence
@@ -421,14 +412,17 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
 
             g_free(status);
             g_free(message);
+        } else {
+            connection = tp_account_get_connection(account);
+            tp_connection_call_when_ready(connection,
+                                          mex_telepathy_plugin_on_connection_ready,
+                                          self);
         }
 
         g_signal_connect(account,
-                        "status-changed",
-                        G_CALLBACK(mex_telepathy_plugin_on_account_status_changed),
-                        self);
-
-        accounts = g_list_next(accounts);
+                         "status-changed",
+                         G_CALLBACK(mex_telepathy_plugin_on_account_status_changed),
+                         self);
     }
 }
 
@@ -473,6 +467,15 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 
     priv->models = g_list_append (priv->models, info);
 
+    const GQuark account_manager_features[] = {
+        TP_ACCOUNT_MANAGER_FEATURE_ACCOUNT,
+        0 };
+    const GQuark account_features[] = {
+        TP_ACCOUNT_FEATURE_CONNECTION,
+        0 };
+    const GQuark connection_features[] = {
+        TP_CONNECTION_FEATURE_CONTACT_LIST,
+        0 };
     static TpContactFeature contact_features[] = {
         TP_CONTACT_FEATURE_ALIAS,
         TP_CONTACT_FEATURE_AVATAR_DATA,
@@ -481,24 +484,20 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
         TP_CONTACT_FEATURE_CAPABILITIES
     };
 
-    GQuark account_features[] = { TP_ACCOUNT_FEATURE_CONNECTION, 0 };
-    GQuark connection_features[] = { tp_connection_get_feature_quark_contact_list(), 0 };
-
     TpDBusDaemon *daemon = tp_dbus_daemon_dup(NULL);
     TpSimpleClientFactory *factory = tp_simple_client_factory_new(daemon);
     tp_simple_client_factory_add_account_features(factory, account_features);
     tp_simple_client_factory_add_connection_features(factory, connection_features);
-    tp_simple_client_factory_add_contact_features(factory, G_N_ELEMENTS (contact_features), contact_features);
+    tp_simple_client_factory_add_contact_features(factory,
+                                                  G_N_ELEMENTS (contact_features),
+                                                  contact_features);
 
     // Tp init
-    priv->m_account_manager = tp_simple_client_factory_dup_account_manager(factory);
-
-    GQuark am_features[] = { TP_ACCOUNT_MANAGER_FEATURE_ACCOUNT, 0 };
-
-    tp_account_manager_prepare_async(priv->m_account_manager,
-                                     am_features,
-                                     mex_telepathy_plugin_on_account_manager_ready,
-                                     self);
+    priv->m_account_manager = tp_simple_client_factory_ensure_account_manager (factory);
+    tp_proxy_prepare_async (priv->m_account_manager,
+                            account_manager_features,
+                            mex_telepathy_plugin_on_account_manager_ready,
+                            self);
 
     g_object_unref(daemon);
     g_object_unref(factory);
