@@ -56,6 +56,7 @@ struct _MexTelepathyPluginPrivate {
   MexFeed *feed;
   GList *models;
   GList *actions;
+  GList *contacts;
 
   TpAccountManager *m_account_manager;
 };
@@ -231,11 +232,24 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
                                 "contact", contact,
                                 NULL);
 
+    priv->contacts = g_list_append (priv->contacts, mex_contact);
+
     if (!tp_strdiff (mex_content_get_metadata(MEX_CONTENT(mex_contact),
                                               MEX_CONTENT_METADATA_MIMETYPE),
                      "x-mex-av-contact")) {
         mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
     }
+}
+
+static gint
+mex_telepathy_plugin_compare_mex_contact(gconstpointer a,
+                                         gconstpointer b)
+{
+    MexContact *mex_contact = MEX_CONTACT (a);
+    TpContact *contact_b = TP_CONTACT(b);
+    TpContact *contact_a = mex_contact_get_tp_contact(mex_contact);
+
+    return tp_strdiff(tp_contact_get_identifier(contact_a), tp_contact_get_identifier(contact_b));
 }
 
 static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer user_data)
@@ -245,6 +259,22 @@ static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer u
 
     TpContact *contact = TP_CONTACT(contact_ptr);
     g_debug("Removing %s", tp_contact_get_alias(contact));
+
+    GList *found = g_list_find_custom(priv->contacts, contact, mex_telepathy_plugin_compare_mex_contact);
+    if (found == NULL) {
+        g_warning ("Could not find contact %s!", tp_contact_get_identifier(contact));
+        return;
+    }
+
+    gpointer found_element = found->data;
+
+    mex_model_remove_content(MEX_MODEL(priv->feed), MEX_CONTENT(found_element));
+    priv->contacts = g_list_remove(priv->contacts, found_element);
+
+    g_debug ("Contact %s removed successfully.", tp_contact_get_identifier(
+                                                    mex_contact_get_tp_contact(found_element)));
+
+    g_object_unref (found_element);
 }
 
 static void mex_telepathy_plugin_on_contact_list_changed(TpConnection *connection,
@@ -411,6 +441,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 
     priv = self->priv = GET_PRIVATE (self);
     priv->actions = NULL;
+    priv->contacts = NULL;
 
     priv->manager = mex_model_manager_get_default ();
     MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 0, "" };
