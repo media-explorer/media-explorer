@@ -224,37 +224,10 @@ mex_contact_get_tp_contact (MexContact* self)
   return self->priv->contact;
 }
 
-void
-mex_contact_set_tp_contact (MexContact *self,
-                            TpContact *contact)
+static void
+mex_contact_compute_mimetype (MexContact *self)
 {
-  if (contact == NULL) {
-    return;
-  }
-
-  MexContactPrivate *priv;
-
-  g_return_if_fail (MEX_IS_CONTACT (self));
-
-  priv = self->priv;
-
-  if (priv->contact) {
-    g_object_unref (priv->contact);
-  }
-
-  g_object_ref(contact);
-  priv->contact = contact;
-
-  if (priv->avatar_path) {
-    g_free(priv->avatar_path);
-  }
-
-  GFile *file = tp_contact_get_avatar_file (priv->contact);
-  if (file) {
-    priv->avatar_path = g_file_get_uri (file);
-  } else {
-    priv->avatar_path = NULL;
-  }
+  MexContactPrivate *priv = self->priv;
 
   // Capabilities
   guint i;
@@ -289,6 +262,67 @@ mex_contact_set_tp_contact (MexContact *self,
     if (!tp_strdiff (chan_type, "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT")) {
       priv->mimetype = "x-mex-av-contact";
     }
+  }
+}
+
+static void
+mex_contact_on_subscription_states_changed (TpContact *contact,
+                                            guint      subscribe,
+                                            guint      publish,
+                                            gchar     *publish_request,
+                                            gpointer   user_data)
+{
+  MexContact *self = MEX_CONTACT (user_data);
+  MexContactPrivate *priv = self->priv;
+
+  if (publish == TP_SUBSCRIPTION_STATE_ASK &&
+      !tp_strdiff(priv->mimetype, "x-mex-pending-contact")) {
+    mex_contact_compute_mimetype(self);
+  }
+
+  g_object_notify (G_OBJECT (self), "contact");
+}
+
+void
+mex_contact_set_tp_contact (MexContact *self,
+                            TpContact *contact)
+{
+  if (contact == NULL) {
+    return;
+  }
+
+  MexContactPrivate *priv;
+
+  g_return_if_fail (MEX_IS_CONTACT (self));
+
+  priv = self->priv;
+
+  if (priv->contact) {
+    g_object_unref (priv->contact);
+  }
+
+  g_object_ref(contact);
+  priv->contact = contact;
+
+  if (priv->avatar_path) {
+    g_free(priv->avatar_path);
+  }
+
+  GFile *file = tp_contact_get_avatar_file (priv->contact);
+  if (file) {
+    priv->avatar_path = g_file_get_uri (file);
+  } else {
+    priv->avatar_path = NULL;
+  }
+
+  if (tp_contact_get_publish_state(contact) == TP_SUBSCRIPTION_STATE_ASK) {
+    priv->mimetype = "x-mex-pending-contact";
+    g_signal_connect(contact,
+                     "subscription-states-changed",
+                     G_CALLBACK(mex_contact_on_subscription_states_changed),
+                     self);
+  } else {
+    mex_contact_compute_mimetype(self);
   }
 
   g_object_notify (G_OBJECT (self), "contact");
