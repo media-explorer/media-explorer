@@ -34,6 +34,7 @@
 
 static const gchar *audio_contact_mimetypes[] = { "x-mex-audio-contact", "x-mex-av-contact", NULL };
 static const gchar *av_contact_mimetypes[] = { "x-mex-av-contact", NULL };
+static const gchar *pending_contact_mimetypes[] = { "x-mex-pending-contact", NULL };
 
 static void model_provider_iface_init (MexModelProviderInterface *iface);
 static void action_provider_iface_init (MexActionProviderInterface *iface);
@@ -144,6 +145,20 @@ mex_telepathy_plugin_on_channel_created (GObject *source,
     }
 
     g_debug ("Channel created: %s", tp_proxy_get_object_path (channel));
+}
+
+static void
+mex_telepathy_plugin_on_accept_contact (MxAction *action,
+                                        gpointer  user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    MexContent *content = mex_action_get_content (action);
+    MexContact *mex_contact = MEX_CONTACT (content);
+    TpContact *contact = mex_contact_get_tp_contact (mex_contact);
+    TpAccount *account = tp_connection_get_account (
+                            tp_contact_get_connection (contact));
 }
 
 static void
@@ -483,6 +498,16 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     mx_action_set_icon (action_info->action, "x-mex-app-launch-mex");
     action_info->mime_types = g_strdupv ((gchar **)audio_contact_mimetypes);
     action_info->priority = 90;
+    priv->actions = g_list_append (priv->actions, action_info);
+
+    action_info = g_new0 (MexActionInfo, 1);
+    action_info->action = mx_action_new_full ("acceptcontact",
+                                              _("Accept Contact Request"),
+                                              (GCallback)mex_telepathy_plugin_on_accept_contact,
+                                              self);
+    mx_action_set_icon (action_info->action, "x-mex-app-launch-mex");
+    action_info->mime_types = g_strdupv ((gchar **)pending_contact_mimetypes);
+    action_info->priority = 10;
     priv->actions = g_list_append (priv->actions, action_info);
 
     info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
