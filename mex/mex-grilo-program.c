@@ -115,18 +115,6 @@ mex_grilo_program_finalize (GObject *object)
   G_OBJECT_CLASS (mex_grilo_program_parent_class)->finalize (object);
 }
 
-/* static void */
-/* mex_grilo_program_set_metadata (MexContent *content, */
-/*                                 MexContentMetadata key, */
-/*                                 const gchar *value) */
-/* { */
-/*   MexContentIface        *iface, *parent_iface; */
-
-/*   iface = MEX_CONTENT_GET_IFACE (content); */
-/*   parent_iface = g_type_interface_peek_parent (iface); */
-/*   parent_iface->set_metadata (content, key, value); */
-/* } */
-
 typedef struct
 {
   MexGriloProgram   *self;
@@ -387,10 +375,6 @@ mex_grilo_program_set_metadata (MexContent         *content,
   MexGriloProgram        *program = MEX_GRILO_PROGRAM (content);
   MexGriloProgramPrivate *priv    = program->priv;
   MexContentIface        *iface, *parent_iface;
-
-
-  if (!value)
-    return;
 
   if (!priv->in_update)
     mex_grilo_set_media_content_metadata (priv->media, key, value);
