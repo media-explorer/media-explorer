@@ -296,10 +296,6 @@ _sig_usr1_handler (int signal)
 static void
 _exiting (void)
 {
-  g_print ("\nStill Alive:\n");
-
-  _dump_object_list ();
-
   g_print ("Living Instances:\n");
 
   _dump_classes_list ();
