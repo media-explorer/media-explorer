@@ -273,14 +273,20 @@ mex_contact_on_subscription_states_changed (TpContact *contact,
                                             gpointer   user_data)
 {
   MexContact *self = MEX_CONTACT (user_data);
-  MexContactPrivate *priv = self->priv;
 
-  if (publish == TP_SUBSCRIPTION_STATE_ASK &&
-      !tp_strdiff(priv->mimetype, "x-mex-pending-contact")) {
-    mex_contact_compute_mimetype(self);
-  }
+  mex_contact_compute_mimetype(self);
+}
 
-  g_object_notify (G_OBJECT (self), "contact");
+static void
+mex_contact_on_presence_changed (TpContact *contact,
+                                 guint      type,
+                                 gchar     *status,
+                                 gchar     *message,
+                                 gpointer   user_data)
+{
+  MexContact *self = MEX_CONTACT (user_data);
+
+  mex_contact_compute_mimetype(self);
 }
 
 void
@@ -316,14 +322,17 @@ mex_contact_set_tp_contact (MexContact *self,
   }
 
   if (tp_contact_get_publish_state(contact) == TP_SUBSCRIPTION_STATE_ASK) {
-    priv->mimetype = "x-mex-pending-contact";
     g_signal_connect(contact,
                      "subscription-states-changed",
                      G_CALLBACK(mex_contact_on_subscription_states_changed),
                      self);
-  } else {
-    mex_contact_compute_mimetype(self);
   }
+  mex_contact_compute_mimetype(self);
+
+  g_signal_connect(contact,
+                   "presence-changed",
+                   G_CALLBACK(mex_contact_on_presence_changed),
+                   self);
 
   g_object_notify (G_OBJECT (self), "contact");
 }
