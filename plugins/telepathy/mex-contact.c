@@ -228,40 +228,58 @@ static void
 mex_contact_compute_mimetype (MexContact *self)
 {
   MexContactPrivate *priv = self->priv;
+  gchar *new_mimetype;
 
-  // Capabilities
-  guint i;
+  if (tp_contact_get_publish_state(priv->contact) == TP_SUBSCRIPTION_STATE_ASK) {
+    new_mimetype = "x-mex-pending-contact";
+  } else if (!mex_contact_validate_presence(priv->contact)) {
+    new_mimetype = "x-mex-offline-contact";
+  } else {
+    // Capabilities
+    guint i;
 
-  TpCapabilities *capabilities;
-  capabilities = tp_contact_get_capabilities(priv->contact);
-  GPtrArray *classes;
-  classes = tp_capabilities_get_channel_classes(capabilities);
+    TpCapabilities *capabilities;
+    capabilities = tp_contact_get_capabilities(priv->contact);
+    GPtrArray *classes;
+    classes = tp_capabilities_get_channel_classes(capabilities);
 
-  priv->mimetype = "x-mex-contact";
+    new_mimetype = "x-mex-contact";
 
-  for (i = 0; i < classes->len; i++) {
-    GValueArray *arr = g_ptr_array_index (classes, i);
-    GHashTable *fixed;
-    const gchar *chan_type;
-    TpHandleType handle_type;
-    gboolean valid;
+    for (i = 0; i < classes->len; i++) {
+      GValueArray *arr = g_ptr_array_index (classes, i);
+      GHashTable *fixed;
+      const gchar *chan_type;
+      TpHandleType handle_type;
+      gboolean valid;
 
-    fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
+      fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
 
-    if (g_hash_table_size (fixed) != 2)
-      continue;
+      if (g_hash_table_size (fixed) != 2)
+        continue;
 
-    chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-    handle_type = tp_asv_get_uint32 (fixed,
-        TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
+      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+      handle_type = tp_asv_get_uint32 (fixed,
+          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
 
-    if (!valid) {
-      continue;
+      if (!valid) {
+        continue;
+      }
+
+      if (!tp_strdiff (chan_type, "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT")) {
+        new_mimetype = "x-mex-av-contact";
+      }
     }
+  }
 
-    if (!tp_strdiff (chan_type, "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT")) {
-      priv->mimetype = "x-mex-av-contact";
-    }
+  if (mex_contact_should_add_to_model(self) !=
+      mex_contact_should_add_mimetype_to_model(new_mimetype)) {
+    priv->mimetype = new_mimetype;
+    g_signal_emit(self,
+                  mex_contact_signals[SHOULD_ADD_TO_MODEL_CHANGED],
+                  0,
+                  mex_contact_should_add_mimetype_to_model(new_mimetype));
+  } else {
+    priv->mimetype = new_mimetype;
   }
 }
 
