@@ -41,14 +41,6 @@ enum
   PROP_IMPORTANT
 };
 
-enum
-{
-  PRIMARY_ICON_CLICKED,
-  SECONDARY_ICON_CLICKED,
-
-  LAST_SIGNAL
-};
-
 struct _MexTilePrivate
 {
   guint            has_focus : 1;
@@ -63,9 +55,6 @@ struct _MexTilePrivate
   ClutterTimeline *timeline;
   ClutterAlpha    *important_alpha;
 };
-
-static guint signals[LAST_SIGNAL] = { 0, };
-
 
 /* MxStylableIface */
 
@@ -168,7 +157,7 @@ mex_tile_dispose (GObject *object)
   MexTile *self = MEX_TILE (object);
   MexTilePrivate *priv = self->priv;
 
-  /* Use icon setting functions to disconnect from signal handlers */
+  /* Use icon setting functions to remove icons */
   mex_tile_set_primary_icon (self, NULL);
   mex_tile_set_secondary_icon (self, NULL);
 
@@ -484,20 +473,6 @@ mex_tile_class_init (MexTileClass *klass)
                                 FALSE,
                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IMPORTANT, pspec);
-
-  signals[PRIMARY_ICON_CLICKED] = g_signal_new ("primary-icon-clicked",
-                                                G_TYPE_FROM_CLASS (klass),
-                                                G_SIGNAL_RUN_LAST,
-                                                0, NULL, NULL,
-                                                g_cclosure_marshal_VOID__VOID,
-                                                G_TYPE_NONE, 0);
-
-  signals[SECONDARY_ICON_CLICKED] = g_signal_new ("secondary-icon-clicked",
-                                                  G_TYPE_FROM_CLASS (klass),
-                                                  G_SIGNAL_RUN_LAST,
-                                                  0, NULL, NULL,
-                                                  g_cclosure_marshal_VOID__VOID,
-                                                  G_TYPE_NONE, 0);
 }
 
 static void
@@ -623,49 +598,6 @@ mex_tile_get_label (MexTile *tile)
   return mx_label_get_text (MX_LABEL (tile->priv->label));
 }
 
-static gboolean
-mex_tile_icon_button_release_cb (ClutterActor       *icon,
-                                 ClutterButtonEvent *event,
-                                 MexTile            *self)
-{
-  MexTilePrivate *priv = self->priv;
-
-  if (icon == priv->icon1)
-    g_signal_emit (self, signals[PRIMARY_ICON_CLICKED], 0);
-  else
-    g_signal_emit (self, signals[SECONDARY_ICON_CLICKED], 0);
-
-  return TRUE;
-}
-
-static gboolean
-mex_tile_icon_leave_event_cb (ClutterActor         *icon,
-                              ClutterCrossingEvent *event,
-                              MexTile              *self)
-{
-  g_signal_handlers_disconnect_by_func (icon,
-                                        mex_tile_icon_leave_event_cb,
-                                        self);
-  g_signal_handlers_disconnect_by_func (icon,
-                                        mex_tile_icon_button_release_cb,
-                                        self);
-
-  return FALSE;
-}
-
-static gboolean
-mex_tile_icon_button_press_cb (ClutterActor       *icon,
-                               ClutterButtonEvent *event,
-                               MexTile            *self)
-{
-  g_signal_connect (icon, "leave-event",
-                    G_CALLBACK (mex_tile_icon_leave_event_cb), self);
-  g_signal_connect (icon, "button-release-event",
-                    G_CALLBACK (mex_tile_icon_leave_event_cb), self);
-
-  return TRUE;
-}
-
 void
 mex_tile_set_primary_icon (MexTile      *tile,
                            ClutterActor *icon)
@@ -680,15 +612,6 @@ mex_tile_set_primary_icon (MexTile      *tile,
     {
       if (priv->icon1)
         {
-          g_signal_handlers_disconnect_by_func (priv->icon1,
-                                                mex_tile_icon_button_press_cb,
-                                                tile);
-          g_signal_handlers_disconnect_by_func (priv->icon1,
-                                                mex_tile_icon_leave_event_cb,
-                                                tile);
-          g_signal_handlers_disconnect_by_func (priv->icon1,
-                                                mex_tile_icon_button_release_cb,
-                                                tile);
           clutter_container_remove_actor (CLUTTER_CONTAINER (priv->table),
                                           priv->icon1);
         }
@@ -705,8 +628,6 @@ mex_tile_set_primary_icon (MexTile      *tile,
                                               NULL);
 
           clutter_actor_set_reactive (icon, TRUE);
-          g_signal_connect (icon, "button-press-event",
-                            G_CALLBACK (mex_tile_icon_button_press_cb), tile);
         }
 
       priv->icon1 = icon;
@@ -736,15 +657,6 @@ mex_tile_set_secondary_icon (MexTile      *tile,
     {
       if (priv->icon2)
         {
-          g_signal_handlers_disconnect_by_func (priv->icon2,
-                                                mex_tile_icon_button_press_cb,
-                                                tile);
-          g_signal_handlers_disconnect_by_func (priv->icon2,
-                                                mex_tile_icon_leave_event_cb,
-                                                tile);
-          g_signal_handlers_disconnect_by_func (priv->icon2,
-                                                mex_tile_icon_button_release_cb,
-                                                tile);
           clutter_container_remove_actor (CLUTTER_CONTAINER (priv->table),
                                           priv->icon2);
         }
@@ -759,8 +671,6 @@ mex_tile_set_secondary_icon (MexTile      *tile,
                                               "y-fill", FALSE,
                                               "x-align", MX_ALIGN_END,
                                               NULL);
-          g_signal_connect (icon, "button-press-event",
-                            G_CALLBACK (mex_tile_icon_button_press_cb), tile);
         }
 
       priv->icon2 = icon;
