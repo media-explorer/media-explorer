@@ -498,22 +498,32 @@ void create_video_page(MexTelepathyPlugin *self)
     // VideoCall widget init
     priv->video_call_page = mx_frame_new();
     clutter_actor_set_name(priv->video_call_page, "videocall-page");
-    mx_bin_set_fill(MX_BIN(priv->video_call_page), TRUE, TRUE);
-    mx_bin_set_alignment(MX_BIN(priv->video_call_page), MX_ALIGN_START, MX_ALIGN_START);
 
-    ClutterActor *vertical = mx_box_layout_new();
-    mx_box_layout_set_orientation(MX_BOX_LAYOUT(vertical), MX_ORIENTATION_VERTICAL);
+    // Create the titlebar with a fixed height
+    ClutterActor *titlebar = mx_box_layout_new();
+    clutter_actor_set_height(titlebar, 48);
+    mx_stylable_set_style_class (MX_STYLABLE (titlebar), "MexMediaControlsTitle");
+    mx_box_layout_set_spacing( MX_BOX_LAYOUT(titlebar), 16);
 
+    ClutterActor *title_label = mx_label_new_with_text("Call with ");
+    mx_label_set_x_align(MX_LABEL(title_label), MX_ALIGN_MIDDLE);
+    mx_label_set_y_align(MX_LABEL(title_label), MX_ALIGN_MIDDLE);
+    clutter_container_add(CLUTTER_CONTAINER(titlebar), title_label, NULL);
+    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(titlebar), title_label, MX_ALIGN_MIDDLE);
+    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(titlebar), title_label, TRUE);
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(titlebar), title_label, FALSE);
+
+    // Create the horizontal video container to hold the two sinks.
     ClutterActor *videocontainer = mx_box_layout_new();
-    clutter_actor_set_size(CLUTTER_ACTOR(videocontainer), 980, 552);
-
     priv->video_outgoing = clutter_texture_new();
     priv->video_incoming = clutter_texture_new();
     clutter_container_add(CLUTTER_CONTAINER(videocontainer), priv->video_outgoing, priv->video_incoming, NULL);
     priv->outgoing_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_outgoing));
     priv->incoming_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_incoming));
 
+    // Create the toolbar with a fixed height
     ClutterActor *toolbar = mx_box_layout_new();
+    clutter_actor_set_height(toolbar, 48);
 
     mx_stylable_set_style_class (MX_STYLABLE (toolbar), "MexMediaControlsTitle");
     mx_box_layout_set_spacing( MX_BOX_LAYOUT(toolbar), 16);
@@ -530,6 +540,7 @@ void create_video_page(MexTelepathyPlugin *self)
 
     // Put the buttons in the toolbar
     clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, hold_button, duration_label, NULL);
+    // Align button to end so it will be centered
     mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), end_button, MX_ALIGN_END);
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), end_button, TRUE);
     mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), end_button, FALSE);
@@ -538,16 +549,17 @@ void create_video_page(MexTelepathyPlugin *self)
     mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), hold_button, FALSE);
     mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), hold_button, FALSE);
 
+    // Align label to start so it will be centered.
     mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), duration_label, MX_ALIGN_START);
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), duration_label, TRUE);
     mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), duration_label, FALSE);
 
-    clutter_container_add(CLUTTER_CONTAINER(vertical), videocontainer, toolbar, NULL);
-    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(vertical), toolbar, TRUE);
-    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(vertical), toolbar, MX_ALIGN_END);
-    mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(vertical), toolbar, TRUE);
-    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(vertical), toolbar, TRUE);
+    // Create the vertical container to put video above the toolbar.
+    ClutterActor *vertical = mx_box_layout_new();
+    mx_box_layout_set_orientation(MX_BOX_LAYOUT(vertical), MX_ORIENTATION_VERTICAL);
+    clutter_container_add(CLUTTER_CONTAINER(vertical), titlebar, videocontainer, toolbar, NULL);
 
+    // Finally put the vertical container in the frame.
     clutter_container_add(CLUTTER_CONTAINER(priv->video_call_page), vertical, NULL);
 }
 
