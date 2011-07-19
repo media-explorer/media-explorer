@@ -231,6 +231,23 @@ mex_telepathy_plugin_on_start_audio_call (MxAction *action,
                                                 FALSE);
 }
 
+static void
+mex_telepathy_plugin_on_should_add_to_model_changed (gpointer instance,
+                                                     gboolean should_add,
+                                                     gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    MexContact *contact = MEX_CONTACT(instance);
+
+    if (should_add) {
+        mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(contact));
+    } else {
+        mex_model_remove_content(MEX_MODEL(priv->feed), MEX_CONTENT(contact));
+    }
+}
+
 static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user_data)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
@@ -250,6 +267,11 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
     if (mex_contact_should_add_to_model(mex_contact)) {
         mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
     }
+
+    g_signal_connect(mex_contact,
+                     "should-add-to-model-changed",
+                     G_CALLBACK(mex_telepathy_plugin_on_should_add_to_model_changed),
+                     self);
 }
 
 static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer user_data)
