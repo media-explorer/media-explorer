@@ -72,6 +72,8 @@ TpContact  * mex_contact_get_tp_contact (MexContact *self);
 void         mex_contact_set_tp_contact (MexContact *self,
                                          TpContact  *contact);
 
+gboolean     mex_contact_should_add_to_model (MexContact *self);
+
 G_END_DECLS
 
 #endif /* __MEX_CONTACT_H__ */
