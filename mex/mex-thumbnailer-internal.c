@@ -24,13 +24,16 @@
 
 #define THUMBNAIL_SIZE 512
 
-static void mex_internal_thumbnail_image (const gchar *uri, const gchar *path);
-static void mex_internal_thumbnail_video (const gchar *uri, const gchar *path);
+static gboolean mex_internal_thumbnail_image (const gchar *uri,
+                                              const gchar *path);
+static gboolean mex_internal_thumbnail_video (const gchar *uri,
+                                              const gchar *path);
 
 int
 main (int argc, char **argv)
 {
   gchar *mime;
+  gboolean generated;
 
   if (argc != 4)
     return 1;
@@ -40,27 +43,28 @@ main (int argc, char **argv)
   mime = argv[1];
 
   if (g_str_has_prefix (mime, "image/"))
-    mex_internal_thumbnail_image (argv[2], argv[3]);
+    generated = mex_internal_thumbnail_image (argv[2], argv[3]);
   else if (g_str_has_prefix (mime, "video/"))
     {
       gst_init (&argc, &argv);
 
-      mex_internal_thumbnail_video (argv[2], argv[3]);
+      generated = mex_internal_thumbnail_video (argv[2], argv[3]);
     }
   else
     return 1;
 
-  return 0;
+  return !generated;
 }
 
 /* image thumbnailer */
-static void
+static gboolean
 mex_internal_thumbnail_image (const gchar *uri,
                               const gchar *thumbnail_path)
 {
   GError *err = NULL;
   gchar *filename;
   GdkPixbuf *pixbuf;
+  gboolean generated = TRUE;
 
   filename = g_filename_from_uri (uri, NULL, NULL);
   pixbuf = gdk_pixbuf_new_from_file_at_scale (filename, THUMBNAIL_SIZE,
@@ -69,7 +73,8 @@ mex_internal_thumbnail_image (const gchar *uri,
 
   if (err)
     {
-      g_warning (G_STRLOC ": %s", err->message);
+      g_warning ("Error opening %s: %s", uri, err->message);
+      generated = FALSE;
       g_clear_error (&err);
     }
   else
@@ -78,10 +83,14 @@ mex_internal_thumbnail_image (const gchar *uri,
 
       if (err)
         {
-          g_warning (G_STRLOC ": %s", err->message);
+          g_warning ("Error saving file %s for %s: %s", thumbnail_path, uri,
+                     err->message);
+          generated = FALSE;
           g_clear_error (&err);
         }
     }
+
+  return generated;
 }
 
 /* video thumbnailer */
@@ -428,19 +437,20 @@ is_interesting (GdkPixbuf *pixbuf)
   return count > 1;
 }
 
-void
+gboolean
 mex_internal_thumbnail_video (const gchar *uri,
                               const gchar *thumbnail_path)
 {
   GdkPixbuf *shot = NULL;
   gboolean interesting = FALSE;
   int count = 0;
+  gboolean generated = TRUE;
 
   while (interesting == FALSE && count < 5)
     {
       shot = get_shot (uri);
       if (shot == NULL)
-        return;
+        return FALSE;
 
       count++;
       interesting = is_interesting (shot);
@@ -452,12 +462,15 @@ mex_internal_thumbnail_video (const gchar *uri,
 
       if (gdk_pixbuf_save (shot, thumbnail_path, "jpeg", &error, NULL) == FALSE)
         {
-          g_warning ("Error writing file %s for %s: %s", thumbnail_path, uri,
+          g_warning ("Error saving file %s for %s: %s", thumbnail_path, uri,
                      error->message);
+          generated = FALSE;
           g_error_free (error);
         }
 
       g_object_unref (shot);
     }
+
+  return generated;
 }
 

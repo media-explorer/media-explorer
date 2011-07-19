@@ -143,6 +143,12 @@ mex_internal_thumbnail_start (ThumbnailData *data,
           g_warning ("Error: %s", err->message);
           g_clear_error (&err);
         }
+
+      if (status != 0)
+        {
+          g_warning ("Could not generate thumbnail, stderr was:");
+          g_print ("%s", output);
+        }
     }
 
   clutter_threads_add_timeout (0, mex_internal_thumbnail_finished, data);
