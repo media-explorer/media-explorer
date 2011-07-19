@@ -312,8 +312,16 @@ mex_media_controls_unmap (ClutterActor *actor)
 
   clutter_actor_unmap (priv->vbox);
   g_object_set (G_OBJECT (priv->proxy_model), "model", NULL, NULL);
-  priv->model = NULL;
-  priv->content = NULL;
+  if (priv->content)
+    {
+      g_object_unref (priv->content);
+      priv->content = NULL;
+    }
+  if (priv->model)
+    {
+      g_object_unref (priv->model);
+      priv->model = NULL;
+    }
 }
 
 static void
@@ -546,11 +554,16 @@ mex_media_controls_replace_content (MexMediaControls *self,
 
   MexMediaControlsPrivate *priv = self->priv;
 
+  if (priv->content == content)
+    return;
+
   player = mex_player_get_default ();
 
   mex_content_view_set_content (MEX_CONTENT_VIEW (player), content);
 
-  priv->content = content;
+  if (priv->content)
+    g_object_unref (priv->content);
+  priv->content = g_object_ref_sink (content);
   mex_media_controls_update_header (self);
   mex_content_view_set_content (MEX_CONTENT_VIEW (priv->queue_button),
                                 content);
@@ -939,15 +952,30 @@ mex_media_controls_set_content (MexMediaControls *self,
       if (priv->content == content)
         return;
 
-      priv->content = content;
+      if (priv->content)
+        g_object_unref (priv->content);
+      if (content)
+        priv->content = g_object_ref_sink (content);
 
-      mex_view_model_set_content (priv->proxy_model, priv->content);
+      mex_media_controls_focus_content (self, priv->content);
       mex_media_controls_update_header (self);
       return;
     }
 
-  priv->model = context;
-  priv->content = content;
+  if (priv->model)
+    {
+      g_object_unref (priv->model);
+      priv->model = NULL;
+    }
+  if (context)
+    priv->model = g_object_ref_sink (context);
+  if (priv->content)
+    {
+      g_object_unref (priv->content);
+      priv->content = NULL;
+    }
+  if (content)
+    priv->content = g_object_ref_sink (content);
   priv->is_queue_model = FALSE;
 
   mex_media_controls_update_header (self);
