@@ -94,59 +94,6 @@ static void mex_grid_start_animation (MexGrid *self);
 
 /* ClutterContainerIface */
 
-static gint
-mex_grid_sort_func (ClutterActor **a,
-                    ClutterActor **b,
-                    MexGrid       *self)
-{
-  MexGridPrivate *priv = self->priv;
-
-  return priv->sort_func (*a, *b, priv->sort_data);
-}
-
-static void
-mex_grid_insert_sorted (MexGrid      *self,
-                        ClutterActor *new_child)
-{
-  gint low, high, position;
-  MexGridPrivate *priv = self->priv;
-  gint result = 0;
-
-  /* Binary search - we assume the array is already sorted */
-  low = 0;
-  high = priv->children->len - 1;
-  position = (high + low + 1) / 2;
-  while (high != low)
-    {
-      ClutterActor *child =
-        g_array_index (priv->children, ClutterActor *, position);
-      result = priv->sort_func (new_child, child, priv->sort_data);
-
-      if (result > 0)
-        {
-          if (low == position)
-            break;
-          low = position;
-        }
-      else if (result < 0)
-        {
-          if (high == position)
-            break;
-          high = position;
-        }
-      else
-        break;
-
-      position = (high + low + 1) / 2;
-    }
-
-  /* We may need to insert-after, depending on the last comparison */
-  if (result >= 0)
-    position ++;
-
-  g_array_insert_val (priv->children, position, new_child);
-}
-
 static void
 mex_grid_child_add_shadow (ClutterActor *child)
 {
@@ -168,10 +115,7 @@ mex_grid_add (ClutterContainer *container,
   MexGrid *self = MEX_GRID (container);
   MexGridPrivate *priv = self->priv;
 
-  if (priv->sort_func && priv->children->len)
-    mex_grid_insert_sorted (self, actor);
-  else
-    g_array_append_val (priv->children, actor);
+  g_array_append_val (priv->children, actor);
 
   mex_grid_child_add_shadow (actor);
 
@@ -1539,20 +1483,4 @@ mex_grid_set_stride (MexGrid *grid, gint stride)
        */
       mex_grid_start_animation (grid);
     }
-}
-
-static void
-mex_grid_refresh (MexGrid *grid)
-{
-  MexGridPrivate *priv = grid->priv;
-
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (grid));
-
-  /* If we have a stored focused actor, recalculate the row
-   * that it's in. If we're focused, also re-animate the
-   * focused row.
-   */
-  if (priv->current_focus)
-    mex_grid_set_focused_actor (grid, priv->has_focus ?
-                                priv->current_focus : NULL);
 }
