@@ -36,6 +36,7 @@
 #include <gst/farsight/fs-utils.h>
 #include <telepathy-farstream/telepathy-farstream.h>
 #include <telepathy-yell/telepathy-yell.h>
+#include <clutter-gst/clutter-gst.h>
 
 #include <telepathy-yell/interfaces.h>
 
@@ -509,7 +510,7 @@ void create_video_page(MexTelepathyPlugin *self)
     priv->video_outgoing = clutter_texture_new();
     priv->video_incoming = clutter_texture_new();
     clutter_container_add(CLUTTER_CONTAINER(videocontainer), priv->video_outgoing, priv->video_incoming, NULL);
-    //priv->outgoing_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_outgoing));
+    priv->outgoing_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_outgoing));
     priv->incoming_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_incoming));
 
     ClutterActor *toolbar = mx_box_layout_new();
@@ -690,9 +691,7 @@ src_pad_added_cb (TfContent *content,
                           TRUE, NULL);
             break;
         case FS_MEDIA_TYPE_VIDEO:
-            element = gst_parse_bin_from_description (
-                          "ffmpegcolorspace ! videoscale ! autovideosink",
-                          TRUE, NULL);
+            element = self->priv->incoming_sink;
             break;
         default:
             g_warning ("Unknown media type");
@@ -852,10 +851,28 @@ setup_video_source (MexTelepathyPlugin *self, TfContent *content)
     pad = gst_element_get_static_pad (capsfilter, "src");
     g_assert (pad != NULL);
 
+    GstElement *tee = gst_element_factory_make("tee", NULL);
+    if (!tee) {
+        g_warning("Couldn't create tee element !?");
+        return;
+    }
+    GstPad *teesink = gst_element_get_pad(tee, "sink");
+    gst_bin_add (GST_BIN(result), tee);
+    if (GST_PAD_LINK_FAILED (gst_pad_link (pad, teesink)))
+    {
+        g_warning ("Couldn't link source pipeline to tee !?");
+        return;
+    }
+    pad = gst_element_get_request_pad (tee, "src%d");
+
+    // Link the tee to the preview widget.
+    GstPad *teesrc = gst_element_get_request_pad(tee, "src%d");
+    GstPad *outsink = gst_element_get_pad (self->priv->outgoing_sink, "sink");
+    gst_bin_add (GST_BIN(result), self->priv->outgoing_sink);
+    gst_pad_link(teesrc, outsink);
+
     ghost = gst_ghost_pad_new ("src", pad);
     gst_element_add_pad (result, ghost);
-
-    gst_element_link(ghost, self->priv->incoming_sink);
 
     g_object_unref (pad);
 
@@ -1052,6 +1069,9 @@ new_call_channel_cb (TpSimpleHandler *handler,
                      gpointer user_data)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    if (!self->priv->video_call_page)
+        create_video_page(self);
+
     ChannelContext *context;
     TpChannel *proxy;
     GstBus *bus;
