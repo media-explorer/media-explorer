@@ -35,6 +35,14 @@ G_DEFINE_TYPE_WITH_CODE (MexContact,
                                 MEX_TYPE_CONTACT,   \
                                 MexContactPrivate))
 
+enum {
+  SHOULD_ADD_TO_MODEL_CHANGED,
+  LAST_SIGNAL
+};
+
+static guint
+mex_contact_signals[LAST_SIGNAL] = { 0 };
+
 struct _MexContactPrivate
 {
   TpContact *contact;
@@ -130,12 +138,65 @@ mex_contact_class_init (MexContactClass *klass)
   object_class->dispose = mex_contact_dispose;
   object_class->finalize = mex_contact_finalize;
 
+  // Signals
+  mex_contact_signals[SHOULD_ADD_TO_MODEL_CHANGED] =
+    g_signal_new("should-add-to-model-changed",
+                 MEX_TYPE_CONTACT,
+                 G_SIGNAL_RUN_LAST,
+                 0,
+                 NULL,
+                 NULL,
+                 g_cclosure_marshal_VOID__BOOLEAN,
+                 G_TYPE_NONE,
+                 1,
+                 G_TYPE_BOOLEAN);
+
+  // Properties
   pspec = g_param_spec_pointer ("contact",
                                 "Contact",
                                 "Contact object",
                                 G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_CONTACT, pspec);
 }
+
+gboolean mex_contact_should_add_mimetype_to_model(gchar *mimetype)
+{
+  if (!tp_strdiff(mimetype, "x-mex-av-contact")) {
+    return TRUE;
+  }
+  if (!tp_strdiff(mimetype, "x-mex-audio-contact")) {
+    return TRUE;
+  }
+  if (!tp_strdiff(mimetype, "x-mex-pending-contact")) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+gboolean mex_contact_should_add_to_model(MexContact* self)
+{
+  return mex_contact_should_add_mimetype_to_model(self->priv->mimetype);
+}
+
+gboolean
+mex_contact_validate_presence(TpContact* contact)
+{
+  TpConnectionPresenceType presence = tp_contact_get_presence_type(contact);
+
+  TpConnectionPresenceType valid_presence = TP_CONNECTION_PRESENCE_TYPE_AVAILABLE |
+                                            TP_CONNECTION_PRESENCE_TYPE_AWAY |
+                                            TP_CONNECTION_PRESENCE_TYPE_EXTENDED_AWAY |
+                                            TP_CONNECTION_PRESENCE_TYPE_HIDDEN |
+                                            TP_CONNECTION_PRESENCE_TYPE_BUSY;
+
+  if (presence & valid_presence != 0) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
 
 /*
  * Accessors

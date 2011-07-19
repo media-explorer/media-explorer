@@ -112,6 +112,17 @@ mex_telepathy_plugin_class_init (MexTelepathyPluginClass *klass)
   g_type_class_add_private (klass, sizeof (MexTelepathyPluginPrivate));
 }
 
+static gint
+mex_telepathy_plugin_compare_mex_contact(gconstpointer a,
+                                         gconstpointer b)
+{
+    MexContact *mex_contact = MEX_CONTACT (a);
+    TpContact *contact_b = TP_CONTACT(b);
+    TpContact *contact_a = mex_contact_get_tp_contact(mex_contact);
+
+    return tp_strdiff(tp_contact_get_identifier(contact_a), tp_contact_get_identifier(contact_b));
+}
+
 static void
 mex_telepathy_plugin_on_channel_created (GObject *source,
                                          GAsyncResult *result,
@@ -236,22 +247,9 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
 
     priv->contacts = g_list_append (priv->contacts, mex_contact);
 
-    if (!tp_strdiff (mex_content_get_metadata(MEX_CONTENT(mex_contact),
-                                              MEX_CONTENT_METADATA_MIMETYPE),
-                     "x-mex-av-contact")) {
+    if (mex_contact_should_add_to_model(mex_contact)) {
         mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
     }
-}
-
-static gint
-mex_telepathy_plugin_compare_mex_contact(gconstpointer a,
-                                         gconstpointer b)
-{
-    MexContact *mex_contact = MEX_CONTACT (a);
-    TpContact *contact_b = TP_CONTACT(b);
-    TpContact *contact_a = mex_contact_get_tp_contact(mex_contact);
-
-    return tp_strdiff(tp_contact_get_identifier(contact_a), tp_contact_get_identifier(contact_b));
 }
 
 static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer user_data)
