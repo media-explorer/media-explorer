@@ -184,13 +184,11 @@ mex_contact_validate_presence(TpContact* contact)
 {
   TpConnectionPresenceType presence = tp_contact_get_presence_type(contact);
 
-  TpConnectionPresenceType valid_presence = TP_CONNECTION_PRESENCE_TYPE_AVAILABLE |
-                                            TP_CONNECTION_PRESENCE_TYPE_AWAY |
-                                            TP_CONNECTION_PRESENCE_TYPE_EXTENDED_AWAY |
-                                            TP_CONNECTION_PRESENCE_TYPE_HIDDEN |
-                                            TP_CONNECTION_PRESENCE_TYPE_BUSY;
-
-  if (presence & valid_presence != 0) {
+  if (presence == TP_CONNECTION_PRESENCE_TYPE_AVAILABLE ||
+      presence == TP_CONNECTION_PRESENCE_TYPE_AWAY ||
+      presence == TP_CONNECTION_PRESENCE_TYPE_EXTENDED_AWAY ||
+      presence == TP_CONNECTION_PRESENCE_TYPE_HIDDEN ||
+      presence == TP_CONNECTION_PRESENCE_TYPE_BUSY) {
     return TRUE;
   } else {
     return FALSE;
