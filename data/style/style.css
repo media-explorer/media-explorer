@@ -180,29 +180,22 @@ MexContentBox.Important
 }
 
 /* Content Box Headers */
-.MexTile
+MexTile
 {
-  padding: 13;
-}
-
-.MexTile MxLabel
-{
-  border-image: none;
+  x-mex-header-padding: 13;
   color: white;
+  font-size: 18;
+  font-family: "Droid Sans";
 }
 
-MexTile.Important > .MexTile
+MexTile.Important
 {
-  border-image: url("item-title-bg.png") 0;
+  x-mex-header-background: url("item-title-bg.png") 0;
 }
 
-MexTile.Important:focus > .MexTile
+MexTile.Important:focus
 {
-  border-image: url("highlight-bg.png") 0;
-}
-
-MexTile.Important:focus > .MexTile > MxLabel
-{
+  x-mex-header-background: url("highlight-bg.png");
   color: #464541;
 }
 

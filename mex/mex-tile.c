@@ -18,6 +18,7 @@
 
 
 #include "mex-tile.h"
+#include "mex-utils.h"
 
 static void mx_stylable_iface_init (MxStylableIface *iface);
 
@@ -29,6 +30,8 @@ G_DEFINE_TYPE_WITH_CODE (MexTile, mex_tile, MX_TYPE_BIN,
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_TILE, MexTilePrivate))
 
 #define DURATION 500
+
+static CoglMaterial *template_material;
 
 enum
 {
@@ -47,13 +50,16 @@ struct _MexTilePrivate
   guint            header_visible : 1;
   guint            important : 1;
 
-  ClutterActor    *table;
   ClutterActor    *icon1;
   ClutterActor    *icon2;
   ClutterActor    *label;
 
   ClutterTimeline *timeline;
   ClutterAlpha    *important_alpha;
+
+  CoglMaterial *material;
+  MxPadding    *header_padding;
+  gfloat        header_height;
 };
 
 /* MxStylableIface */
@@ -69,12 +75,18 @@ mx_stylable_iface_init (MxStylableIface *iface)
 
       is_initialized = TRUE;
 
-      pspec = g_param_spec_uint ("x-mex-label-spacing",
-                                 "Label spacing",
-                                 "Spacing between the label and "
-                                 "the edge of the tile.",
-                                 0, G_MAXUINT, 32,
-                                 G_PARAM_READWRITE);
+      pspec = g_param_spec_boxed ("x-mex-header-background",
+                                  "Header Background",
+                                  "Background image for the title header",
+                                  MX_TYPE_BORDER_IMAGE,
+                                  G_PARAM_READWRITE);
+      mx_stylable_iface_install_property (iface, MEX_TYPE_TILE, pspec);
+
+      pspec = g_param_spec_boxed ("x-mex-header-padding",
+                                  "Header padding",
+                                  "Padding inside the header",
+                                  MX_TYPE_PADDING,
+                                  G_PARAM_READWRITE);
       mx_stylable_iface_install_property (iface, MEX_TYPE_TILE, pspec);
     }
 }
@@ -161,11 +173,16 @@ mex_tile_dispose (GObject *object)
   mex_tile_set_primary_icon (self, NULL);
   mex_tile_set_secondary_icon (self, NULL);
 
-  if (priv->table)
+  if (priv->label)
     {
-      /* Label is in table, so no need to destroy it */
-      clutter_actor_unparent (priv->table);
-      priv->table = NULL;
+      clutter_actor_destroy (priv->label);
+      priv->label = NULL;
+    }
+
+  if (priv->header_padding)
+    {
+      g_boxed_free (MX_TYPE_PADDING, priv->header_padding);
+      priv->header_padding = NULL;
     }
 
   if (priv->important_alpha)
@@ -179,6 +196,12 @@ mex_tile_dispose (GObject *object)
       clutter_timeline_stop (priv->timeline);
       g_object_unref (priv->timeline);
       priv->timeline = NULL;
+    }
+
+  if (priv->material)
+    {
+      cogl_object_unref (priv->material);
+      priv->material = NULL;
     }
 
   G_OBJECT_CLASS (mex_tile_parent_class)->dispose (object);
@@ -197,7 +220,7 @@ mex_tile_get_preferred_height (ClutterActor *actor,
                                gfloat       *nat_height_p)
 {
   MxPadding padding;
-  gfloat box_height;
+  gfloat box_height, label_h, icon1_h, icon2_h;
 
   MexTilePrivate *priv = MEX_TILE (actor)->priv;
 
@@ -207,10 +230,22 @@ mex_tile_get_preferred_height (ClutterActor *actor,
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   for_width -= padding.left + padding.right;
 
-  clutter_actor_get_preferred_height (priv->table,
-                                      for_width,
-                                      NULL,
-                                      &box_height);
+  /* Header */
+  clutter_actor_get_preferred_height (priv->label, for_width, NULL, &label_h);
+
+  if (priv->icon1)
+    clutter_actor_get_preferred_height (priv->icon1, for_width, NULL, &icon1_h);
+  else
+    icon1_h = 0;
+
+  if (priv->icon2)
+    clutter_actor_get_preferred_height (priv->icon2, for_width, NULL, &icon2_h);
+  else
+    icon2_h = 0;
+
+  box_height = MAX (label_h, MAX (icon1_h, icon2_h)) +
+    ((priv->header_padding) ? priv->header_padding->top + priv->header_padding->bottom : 0);
+
 
   /* Override the minimum height with the height of the box */
   if (min_height_p)
@@ -247,7 +282,8 @@ mex_tile_allocate (ClutterActor           *actor,
   MxPadding padding;
   ClutterActor *child;
   ClutterActorBox child_box;
-  gfloat available_width, available_height, box_height;
+  gfloat available_width, available_height;
+  ClutterEffect *fade;
 
   MexTilePrivate *priv = MEX_TILE (actor)->priv;
 
@@ -256,11 +292,6 @@ mex_tile_allocate (ClutterActor           *actor,
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   available_width = box->x2 - box->x1 - padding.left - padding.right;
   available_height = box->y2 - box->y1 - padding.top - padding.bottom;
-
-  clutter_actor_get_preferred_height (priv->table,
-                                      available_width,
-                                      NULL,
-                                      &box_height);
 
   /* Allocate child */
   child = mx_bin_get_child (MX_BIN (actor));
@@ -310,24 +341,123 @@ mex_tile_allocate (ClutterActor           *actor,
       clutter_actor_allocate (child, &child_box, flags);
     }
 
-  /* Allocate title-box */
-  child_box.x1 = padding.left;
-  child_box.y1 = padding.top;
+  /* Allocate Header */
+  if (priv->header_visible)
+    {
+      gfloat icon1_w, icon1_h, icon2_w, icon2_h, label_h, label_w, header_h;
+      gfloat middle_w;
 
-  child_box.y2 = child_box.y1 + box_height;
-  child_box.x2 = child_box.x1 + available_width;
+      if (priv->header_padding)
+        {
+          padding.top += priv->header_padding->top;
+          padding.right += priv->header_padding->right;
+          padding.bottom += priv->header_padding->bottom;
+          padding.left += priv->header_padding->left;
+        }
 
-  clutter_actor_allocate (priv->table, &child_box, flags);
+      clutter_actor_get_preferred_size (priv->label, NULL, NULL, &label_w,
+                                        &label_h);
+
+      if (priv->icon1)
+        clutter_actor_get_preferred_size (priv->icon1, NULL, NULL, &icon1_w,
+                                          &icon1_h);
+      else
+        icon1_h = icon1_w = 0;
+
+      if (priv->icon2)
+        clutter_actor_get_preferred_size (priv->icon2, NULL, NULL, &icon2_w,
+                                          &icon2_h);
+      else
+        icon2_h = icon2_w = 0;
+
+      header_h = MAX (icon1_h, MAX (icon2_h, label_h));
+
+      /* primary icon */
+      if (priv->icon1)
+        {
+          child_box.y1 = padding.top + (header_h / 2.0) - (icon1_h / 2.0);
+          child_box.x1 = padding.left;
+          child_box.y2 = child_box.y1 + icon1_h;
+          child_box.x2 = child_box.x1 + icon1_w;
+
+          clutter_actor_allocate (priv->icon1, &child_box, flags);
+          child_box.x1 += icon1_w;
+        }
+      else
+        child_box.x1 = padding.left;
+
+      /* label */
+      child_box.x2 = child_box.x1 + label_w;
+      child_box.y1 = padding.top + (header_h / 2.0) - (label_h / 2.0);
+      child_box.y2 = child_box.y1 + label_h;
+
+      fade = clutter_actor_get_effect (priv->label, "fade");
+
+      middle_w = available_width - icon1_w - icon2_w;
+      if (priv->header_padding)
+        middle_w -= priv->header_padding->left + priv->header_padding->right;
+      clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (fade),
+                                      !(middle_w > label_w));
+      mx_fade_effect_set_bounds (MX_FADE_EFFECT (fade), 0, 0, middle_w, 0);
+
+      clutter_actor_allocate (priv->label, &child_box, flags);
+
+      /* secondary icon */
+      if (priv->icon2)
+        {
+          child_box.x2 = (box->x2 - box->x1) - padding.right;
+          child_box.x1 = child_box.x2 - icon2_w;
+          child_box.y1 = padding.top + (header_h / 2.0) - (icon2_h / 2.0);
+          child_box.y2 = child_box.y1 + icon2_h;
+
+          clutter_actor_allocate (priv->icon2, &child_box, flags);
+        }
+
+      priv->header_height = header_h;
+      if (priv->header_padding)
+        priv->header_height += priv->header_padding->top
+          + priv->header_padding->bottom;
+    }
 }
 
 static void
 mex_tile_paint (ClutterActor *actor)
 {
   MexTilePrivate *priv = MEX_TILE (actor)->priv;
+  MxPadding padding;
+  ClutterActorBox box;
 
   CLUTTER_ACTOR_CLASS (mex_tile_parent_class)->paint (actor);
 
-  clutter_actor_paint (priv->table);
+  mx_widget_get_padding (MX_WIDGET (actor), &padding);
+
+  if (priv->header_visible)
+    {
+      if (cogl_material_get_n_layers (priv->material) > 0)
+        {
+          guint8 opacity;
+
+          opacity = clutter_actor_get_paint_opacity (actor);
+
+          cogl_material_set_color4ub (priv->material, opacity, opacity, opacity,
+                                      opacity);
+          cogl_set_source (priv->material);
+
+          clutter_actor_get_allocation_box (actor, &box);
+
+          cogl_rectangle (padding.left, padding.top,
+                          box.x2 - box.x1 - padding.right,
+                          priv->header_height);
+        }
+
+      clutter_actor_paint (priv->label);
+
+      if (priv->icon1)
+        clutter_actor_paint (priv->icon1);
+
+      if (priv->icon2)
+        clutter_actor_paint (priv->icon2);
+    }
 }
 
 static void
@@ -371,11 +501,8 @@ static void
 mex_tile_map (ClutterActor *actor)
 {
   MxFocusManager *manager;
-  MexTilePrivate *priv = MEX_TILE (actor)->priv;
 
   CLUTTER_ACTOR_CLASS (mex_tile_parent_class)->map (actor);
-
-  clutter_actor_map (priv->table);
 
   manager = mx_focus_manager_get_for_stage ((ClutterStage *)
                                             clutter_actor_get_stage (actor));
@@ -391,7 +518,6 @@ static void
 mex_tile_unmap (ClutterActor *actor)
 {
   MxFocusManager *manager;
-  MexTilePrivate *priv = MEX_TILE (actor)->priv;
 
   manager = mx_focus_manager_get_for_stage ((ClutterStage *)
                                             clutter_actor_get_stage (actor));
@@ -400,17 +526,7 @@ mex_tile_unmap (ClutterActor *actor)
                                           mex_tile_notify_focused_cb,
                                           actor);
 
-  clutter_actor_unmap (priv->table);
-
   CLUTTER_ACTOR_CLASS (mex_tile_parent_class)->unmap (actor);
-}
-
-static void
-mex_tile_apply_style (MxWidget *widget,
-                      MxStyle  *style)
-{
-  MexTilePrivate *priv = MEX_TILE (widget)->priv;
-  mx_stylable_set_style (MX_STYLABLE (priv->table), style);
 }
 
 static void
@@ -419,7 +535,6 @@ mex_tile_class_init (MexTileClass *klass)
   GParamSpec *pspec;
 
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  MxWidgetClass *widget_class = MX_WIDGET_CLASS (klass);
   ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (MexTilePrivate));
@@ -428,8 +543,6 @@ mex_tile_class_init (MexTileClass *klass)
   object_class->set_property = mex_tile_set_property;
   object_class->dispose = mex_tile_dispose;
   object_class->finalize = mex_tile_finalize;
-
-  widget_class->apply_style = mex_tile_apply_style;
 
   actor_class->get_preferred_height = mex_tile_get_preferred_height;
   actor_class->allocate = mex_tile_allocate;
@@ -473,14 +586,53 @@ mex_tile_class_init (MexTileClass *klass)
                                 FALSE,
                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IMPORTANT, pspec);
+
+
+  /* create a template material for the header background from which cheap
+   * copies can be made for each instance */
+  if (!template_material)
+    template_material = cogl_material_new ();
 }
 
 static void
 mex_tile_style_changed_cb (MexTile *self, MxStyleChangedFlags flags)
 {
   MexTilePrivate *priv = self->priv;
-  mx_stylable_style_changed (MX_STYLABLE (priv->table), flags);
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (self));
+  MxBorderImage *image;
+
+  if (priv->header_padding)
+    {
+      g_boxed_free (MX_TYPE_PADDING, priv->header_padding);
+      priv->header_padding = NULL;
+    }
+
+  mx_stylable_get (MX_STYLABLE (self),
+                   "x-mex-header-background", &image,
+                   "x-mex-header-padding", &priv->header_padding,
+                   NULL);
+
+  mx_stylable_apply_clutter_text_attributes (MX_STYLABLE (self),
+                                             CLUTTER_TEXT (priv->label));
+
+  if (image && image->uri)
+    {
+      CoglObject *background;
+
+      background =
+        mx_texture_cache_get_cogl_texture (mx_texture_cache_get_default (),
+                                           image->uri);
+      cogl_material_set_layer (priv->material, 0, background);
+    }
+  else
+    {
+      if (cogl_material_get_n_layers (priv->material))
+        cogl_material_remove_layer (priv->material, 0);
+    }
+
+  if (image)
+    g_boxed_free (MX_TYPE_BORDER_IMAGE, image);
+
+  clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
 }
 
 static void
@@ -530,18 +682,23 @@ static void
 mex_tile_init (MexTile *self)
 {
   MexTilePrivate *priv = self->priv = TILE_PRIVATE (self);
+  const ClutterColor opaque = { 0x00, 0x00, 0x00, 0x00 };
+  ClutterEffect *fade;
 
-  priv->table = mx_table_new ();
+  priv->material = cogl_material_copy (template_material);
+
+  priv->label = clutter_text_new ();
+
+  fade = (ClutterEffect*) mx_fade_effect_new ();
+  mx_fade_effect_set_border (MX_FADE_EFFECT (fade), 0, 50, 0, 0);
+  mx_fade_effect_set_color (MX_FADE_EFFECT (fade), &opaque);
+  clutter_actor_add_effect_with_name (priv->label, "fade", fade);
+  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (fade),
+                                  TRUE);
 
   clutter_actor_push_internal (CLUTTER_ACTOR (self));
-  clutter_actor_set_parent (priv->table, CLUTTER_ACTOR (self));
+  clutter_actor_set_parent (priv->label, CLUTTER_ACTOR (self));
   clutter_actor_pop_internal (CLUTTER_ACTOR (self));
-
-  mx_stylable_set_style_class (MX_STYLABLE (priv->table), "MexTile");
-
-  priv->label = mx_label_new ();
-
-  mx_label_set_fade_out (MX_LABEL (priv->label), TRUE);
 
   priv->header_visible = TRUE;
 
@@ -554,13 +711,6 @@ mex_tile_init (MexTile *self)
   g_signal_connect_object (priv->timeline, "completed",
                            G_CALLBACK (mex_tile_timeline_completed_cb), self,
                            0);
-
-  mx_table_add_actor_with_properties (MX_TABLE (priv->table),
-                                      priv->label, 0, 1,
-                                      "y-fill", FALSE,
-                                      "x-fill", FALSE,
-                                      "x-align", MX_ALIGN_START,
-                                      NULL);
 
   g_signal_connect (self, "style-changed",
                     G_CALLBACK (mex_tile_style_changed_cb), NULL);
@@ -586,7 +736,7 @@ mex_tile_set_label (MexTile *tile, const gchar *label)
   g_return_if_fail (MEX_IS_TILE (tile));
 
   priv = tile->priv;
-  mx_label_set_text (MX_LABEL (priv->label), label);
+  clutter_text_set_text (CLUTTER_TEXT (priv->label), label);
 
   g_object_notify (G_OBJECT (tile), "label");
 }
@@ -595,7 +745,7 @@ const gchar *
 mex_tile_get_label (MexTile *tile)
 {
   g_return_val_if_fail (MEX_IS_TILE (tile), NULL);
-  return mx_label_get_text (MX_LABEL (tile->priv->label));
+  return clutter_text_get_text (CLUTTER_TEXT (tile->priv->label));
 }
 
 void
@@ -611,23 +761,13 @@ mex_tile_set_primary_icon (MexTile      *tile,
   if (priv->icon1 != icon)
     {
       if (priv->icon1)
-        {
-          clutter_container_remove_actor (CLUTTER_CONTAINER (priv->table),
-                                          priv->icon1);
-        }
+        clutter_actor_destroy (priv->icon1);
 
       if (icon)
         {
-          mx_table_add_actor_with_properties (MX_TABLE (priv->table),
-                                              icon, 0, 0,
-                                              "x-expand", FALSE,
-                                              "y-expand", FALSE,
-                                              "x-fill", FALSE,
-                                              "y-fill", FALSE,
-                                              "x-align", MX_ALIGN_START,
-                                              NULL);
-
-          clutter_actor_set_reactive (icon, TRUE);
+          clutter_actor_push_internal (CLUTTER_ACTOR (tile));
+          clutter_actor_set_parent (icon, CLUTTER_ACTOR (tile));
+          clutter_actor_pop_internal (CLUTTER_ACTOR (tile));
         }
 
       priv->icon1 = icon;
@@ -656,21 +796,13 @@ mex_tile_set_secondary_icon (MexTile      *tile,
   if (priv->icon2 != icon)
     {
       if (priv->icon2)
-        {
-          clutter_container_remove_actor (CLUTTER_CONTAINER (priv->table),
-                                          priv->icon2);
-        }
+        clutter_actor_destroy (priv->icon2);
 
       if (icon)
         {
-          mx_table_add_actor_with_properties (MX_TABLE (priv->table),
-                                              icon, 0, 2,
-                                              "x-expand", FALSE,
-                                              "y-expand", FALSE,
-                                              "x-fill", FALSE,
-                                              "y-fill", FALSE,
-                                              "x-align", MX_ALIGN_END,
-                                              NULL);
+          clutter_actor_push_internal (CLUTTER_ACTOR (tile));
+          clutter_actor_set_parent (icon, CLUTTER_ACTOR (tile));
+          clutter_actor_pop_internal (CLUTTER_ACTOR (tile));
         }
 
       priv->icon2 = icon;
@@ -702,11 +834,6 @@ mex_tile_set_header_visible (MexTile  *tile,
 
   if (header_visible != tile->priv->header_visible)
     {
-      if (header_visible)
-        clutter_actor_show (tile->priv->table);
-      else
-        clutter_actor_hide (tile->priv->table);
-
       tile->priv->header_visible = header_visible;
 
       g_object_notify (G_OBJECT (tile), "header-visible");
