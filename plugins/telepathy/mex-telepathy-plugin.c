@@ -26,6 +26,7 @@
 #include <telepathy-glib/connection.h>
 #include <telepathy-glib/connection-contact-list.h>
 #include <telepathy-glib/contact.h>
+#include <telepathy-glib/contact-operations.h>
 #include <telepathy-glib/simple-client-factory.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/_gen/telepathy-interfaces.h>
@@ -148,6 +149,53 @@ mex_telepathy_plugin_on_channel_created (GObject *source,
 }
 
 static void
+mex_telepathy_plugin_on_request_subscription(GObject *source_object,
+                                             GAsyncResult *res,
+                                             gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    TpContact *contact = TP_CONTACT (source_object);
+
+    GError *error = NULL;
+
+    if (!tp_contact_request_subscription_finish (contact, res, &error)) {
+        g_print ("Error subscribing to contact: %s\n", error->message);
+        g_object_unref(error);
+        // TODO: Maybe show stuff in the UI here?
+    }
+}
+
+static void
+mex_telepathy_plugin_on_authorize_publication(GObject *source_object,
+                                              GAsyncResult *res,
+                                              gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    TpContact *contact = TP_CONTACT (source_object);
+
+    GError *error = NULL;
+
+    if (!tp_contact_authorize_publication_finish (contact, res, &error)) {
+        g_print ("Error authorizing contact: %s\n", error->message);
+        g_object_unref(error);
+        // TODO: Maybe show stuff in the UI here?
+        return;
+    }
+
+    // If we are not subscribed to the contact, do it at this point
+    if (tp_contact_get_subscribe_state (contact) == TP_SUBSCRIPTION_STATE_NO) {
+        tp_contact_request_subscription_async(contact,
+                                              _("Please allow me to see your presence"),
+                                              mex_telepathy_plugin_on_request_subscription,
+                                              self);
+    }
+}
+
+static void
 mex_telepathy_plugin_on_accept_contact (MxAction *action,
                                         gpointer  user_data)
 {
@@ -157,8 +205,10 @@ mex_telepathy_plugin_on_accept_contact (MxAction *action,
     MexContent *content = mex_action_get_content (action);
     MexContact *mex_contact = MEX_CONTACT (content);
     TpContact *contact = mex_contact_get_tp_contact (mex_contact);
-    TpAccount *account = tp_connection_get_account (
-                            tp_contact_get_connection (contact));
+
+    tp_contact_authorize_publication_async(contact,
+                                           mex_telepathy_plugin_on_authorize_publication,
+                                           self);
 }
 
 static void
