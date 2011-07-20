@@ -274,13 +274,21 @@ _update_thumbnail (MexContentTile *tile)
       if (file)
         {
           gchar *path = g_file_get_path (file);
+          GError *error = NULL;
 
           if (path)
             {
               mx_image_set_from_file_at_size (MX_IMAGE (priv->image), path,
                                               priv->thumb_width,
                                               priv->thumb_height,
-                                              NULL);
+                                              &error);
+              if (error)
+                {
+                  g_warning ("Could not load thumbnail %s: %s", path,
+                             error->message);
+                  g_clear_error (&error);
+                }
+
               priv->thumbnail_loaded = TRUE;
               priv->image_set = TRUE;
               clutter_actor_set_size (priv->image,
