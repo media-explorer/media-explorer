@@ -69,6 +69,15 @@ enum
 
 static gulong signals[LAST_SIGNAL] = { 0, };
 
+static void
+image_load_error_cb (MxImage        *image,
+                     GError         *error,
+                     MexContentTile *tile)
+{
+  if (error)
+    g_warning ("Could not load thumbnail: %s", error->message);
+}
+
 static MxFocusable*
 mex_content_tile_accept_focus (MxFocusable *focusable,
                                MxFocusHint  hint)
@@ -585,6 +594,9 @@ mex_content_tile_init (MexContentTile *self)
   mx_image_set_scale_width_threshold (MX_IMAGE (priv->image), 128);
   mx_image_set_scale_height_threshold (MX_IMAGE (priv->image), 128);
   mx_image_set_scale_mode (MX_IMAGE (priv->image), MX_IMAGE_SCALE_CROP);
+
+  g_signal_connect (priv->image, "image-load-error",
+                    G_CALLBACK (image_load_error_cb), self);
 
   mx_bin_set_child (MX_BIN (self), priv->image);
 }
