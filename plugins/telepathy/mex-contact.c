@@ -21,7 +21,9 @@
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/util.h>
-#include <telepathy-glib/_gen/telepathy-interfaces.h>
+#include <telepathy-glib/interfaces.h>
+
+#include <telepathy-yell/interfaces.h>
 
 static void mex_content_iface_init (MexContentIface *iface);
 G_DEFINE_TYPE_WITH_CODE (MexContact,
@@ -264,14 +266,14 @@ mex_contact_compute_mimetype (MexContact *self)
         continue;
       }
 
-      if (!tp_strdiff (chan_type, "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT")) {
+      if (!tp_strdiff (chan_type, TPY_IFACE_CHANNEL_TYPE_CALL)) {
         guint n;
         gboolean hasAudio = FALSE;
         gboolean hasVideo = FALSE;
         for (n = 0; allowed != NULL && allowed[n] != NULL; ++n) {
-          if (!tp_strdiff("org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialAudio", allowed[n])) {
+          if (!tp_strdiff(TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, allowed[n])) {
             hasAudio = TRUE;
-          } else if (!tp_strdiff("org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialVideo", allowed[n])) {
+          } else if (!tp_strdiff(TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, allowed[n])) {
             hasVideo = TRUE;
           }
         }

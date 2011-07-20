@@ -27,9 +27,11 @@
 #include <telepathy-glib/connection-contact-list.h>
 #include <telepathy-glib/contact.h>
 #include <telepathy-glib/contact-operations.h>
+#include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/simple-client-factory.h>
 #include <telepathy-glib/util.h>
-#include <telepathy-glib/_gen/telepathy-interfaces.h>
+
+#include <telepathy-yell/interfaces.h>
 
 #include <glib/gi18n.h>
 
@@ -223,7 +225,7 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
     request = tp_asv_new (
         TP_PROP_CHANNEL_CHANNEL_TYPE,
         G_TYPE_STRING,
-        "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT",
+        TPY_IFACE_CHANNEL_TYPE_CALL,
 
         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
         G_TYPE_UINT,
@@ -233,11 +235,11 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
         G_TYPE_STRING,
         tp_contact_get_identifier(contact),
 
-        "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialAudio",
+        TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
         G_TYPE_BOOLEAN,
         audio,
 
-        "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialVideo",
+        TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
         G_TYPE_BOOLEAN,
         video,
 
