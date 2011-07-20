@@ -246,11 +246,12 @@ mex_contact_compute_mimetype (MexContact *self)
     for (i = 0; i < classes->len; i++) {
       GValueArray *arr = g_ptr_array_index (classes, i);
       GHashTable *fixed;
+      GStrv allowed;
       const gchar *chan_type;
       TpHandleType handle_type;
       gboolean valid;
 
-      fixed =  g_value_get_boxed (g_value_array_get_nth (arr, 0));
+      tp_value_array_unpack(arr, 2, &fixed, &allowed);
 
       if (g_hash_table_size (fixed) != 2)
         continue;
@@ -264,7 +265,22 @@ mex_contact_compute_mimetype (MexContact *self)
       }
 
       if (!tp_strdiff (chan_type, "org.freedesktop.Telepathy.Channel.Type.Call.DRAFT")) {
-        new_mimetype = "x-mex-av-contact";
+        guint n;
+        gboolean hasAudio = FALSE;
+        gboolean hasVideo = FALSE;
+        for (n = 0; allowed != NULL && allowed[n] != NULL; ++n) {
+          if (!tp_strdiff("org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialAudio", allowed[n])) {
+            hasAudio = TRUE;
+          } else if (!tp_strdiff("org.freedesktop.Telepathy.Channel.Type.Call.DRAFT.InitialVideo", allowed[n])) {
+            hasVideo = TRUE;
+          }
+        }
+
+        if (hasVideo) {
+          new_mimetype = "x-mex-av-contact";
+        } else if (hasAudio) {
+          new_mimetype = "x-mex-audio-contact";
+        }
       }
     }
   }
