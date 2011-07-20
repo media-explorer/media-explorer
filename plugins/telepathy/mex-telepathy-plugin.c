@@ -516,11 +516,34 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
 }
 
 static void
+mex_telepathy_plugin_add_action (gchar              *action_id,
+                                 gchar              *display_name,
+                                 GCallback           callback,
+                                 gchar              *icon,
+                                 gchar             **mimetypes,
+                                 gint                priority,
+                                 MexTelepathyPlugin *self)
+{
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    MexActionInfo *action_info;
+
+    action_info = g_new0 (MexActionInfo, 1);
+    action_info->action = mx_action_new_full (action_id,
+                                              display_name,
+                                              callback,
+                                              self);
+    mx_action_set_icon (action_info->action, icon);
+    action_info->mime_types = mimetypes;
+    action_info->priority = priority;
+    priv->actions = g_list_append (priv->actions, action_info);
+}
+
+static void
 mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 {
     MexModelInfo *info;
     MexTelepathyPluginPrivate *priv;
-    MexActionInfo *action_info;
 
     priv = self->priv = GET_PRIVATE (self);
     priv->actions = NULL;
@@ -532,35 +555,29 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 
     priv->feed = mex_feed_new("Contacts", "Feed");
 
-    action_info = g_new0 (MexActionInfo, 1);
-    action_info->action = mx_action_new_full ("startavcall",
-                                              _("Video Call"),
-                                              (GCallback)mex_telepathy_plugin_on_start_video_call,
-                                              self);
-    mx_action_set_icon (action_info->action, "icon-panelheader-videos");
-    action_info->mime_types = g_strdupv ((gchar **)av_contact_mimetypes);
-    action_info->priority = 100;
-    priv->actions = g_list_append (priv->actions, action_info);
+    mex_telepathy_plugin_add_action("startavcall",
+                                    _("Video Call"),
+                                    (GCallback)mex_telepathy_plugin_on_start_video_call,
+                                    "icon-panelheader-videos",
+                                    g_strdupv ((gchar **)av_contact_mimetypes),
+                                    80,
+                                    self);
 
-    action_info = g_new0 (MexActionInfo, 1);
-    action_info->action = mx_action_new_full ("startacall",
-                                              _("Audio Call"),
-                                              (GCallback)mex_telepathy_plugin_on_start_audio_call,
-                                              self);
-    mx_action_set_icon (action_info->action, "icon-panelheader-music");
-    action_info->mime_types = g_strdupv ((gchar **)audio_contact_mimetypes);
-    action_info->priority = 90;
-    priv->actions = g_list_append (priv->actions, action_info);
+    mex_telepathy_plugin_add_action("startaudiocall",
+                                    _("Audio Call"),
+                                    (GCallback)mex_telepathy_plugin_on_start_audio_call,
+                                    "icon-panelheader-music",
+                                    g_strdupv ((gchar **)audio_contact_mimetypes),
+                                    50,
+                                    self);
 
-    action_info = g_new0 (MexActionInfo, 1);
-    action_info->action = mx_action_new_full ("acceptcontact",
-                                              _("Accept Contact Request"),
-                                              (GCallback)mex_telepathy_plugin_on_accept_contact,
-                                              self);
-    mx_action_set_icon (action_info->action, "media-addtoqueue-mex");
-    action_info->mime_types = g_strdupv ((gchar **)pending_contact_mimetypes);
-    action_info->priority = 10;
-    priv->actions = g_list_append (priv->actions, action_info);
+    mex_telepathy_plugin_add_action("acceptcontact",
+                                    _("Accept Contact Request"),
+                                    (GCallback)mex_telepathy_plugin_on_accept_contact,
+                                    "media-addtoqueue-mex",
+                                    g_strdupv ((gchar **)pending_contact_mimetypes),
+                                    100,
+                                    self);
 
     info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
 
