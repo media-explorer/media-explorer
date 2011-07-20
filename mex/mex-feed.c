@@ -361,15 +361,15 @@ mex_feed_constructed (GObject *object)
 {
   MexFeedPrivate *priv = MEX_FEED (object)->priv;
 
-  priv->controller = mex_model_get_controller (MEX_MODEL (object));
-  g_signal_connect_after (priv->controller, "changed",
-                          G_CALLBACK (mex_feed_controller_changed_cb),
-                          object);
-
-  mex_feed_rearm_timeout (MEX_FEED (object));
-
   if (G_OBJECT_CLASS (mex_feed_parent_class)->constructed)
     G_OBJECT_CLASS (mex_feed_parent_class)->constructed (object);
+
+  priv->controller = mex_model_get_controller (MEX_MODEL (object));
+  g_signal_connect (priv->controller, "changed",
+                    G_CALLBACK (mex_feed_controller_changed_cb),
+                    object);
+
+  mex_feed_rearm_timeout (MEX_FEED (object));
 }
 
 static void

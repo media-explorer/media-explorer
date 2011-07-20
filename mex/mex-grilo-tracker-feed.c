@@ -132,7 +132,8 @@ mex_grilo_tracker_feed_constructed (GObject *object)
   MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (object);
   MexGriloTrackerFeedPrivate *priv = self->priv;
 
-  G_OBJECT_CLASS (mex_grilo_tracker_feed_parent_class)->constructed (object);
+  if (G_OBJECT_CLASS (mex_grilo_tracker_feed_parent_class)->constructed)
+    G_OBJECT_CLASS (mex_grilo_tracker_feed_parent_class)->constructed (object);
 
   g_object_get (object,
                 "grilo-box", &priv->root,

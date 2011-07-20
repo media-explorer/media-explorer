@@ -120,11 +120,6 @@ mex_grilo_feed_dispose (GObject *object)
 
   mex_grilo_feed_free_op (self);
 
-  if (priv->programs) {
-    g_hash_table_destroy (priv->programs);
-    priv->programs = NULL;
-  }
-
   if (priv->source) {
     update_source (self, NULL);
   }
@@ -210,6 +205,9 @@ mex_grilo_feed_constructed (GObject *object)
   MexGriloFeed *self = (MexGriloFeed *) object;
   MexGriloFeedPrivate *priv = self->priv;
   MexGriloFeedClass *klass = MEX_GRILO_FEED_GET_CLASS (object);
+
+  if (G_OBJECT_CLASS (mex_grilo_feed_parent_class)->constructed)
+    G_OBJECT_CLASS (mex_grilo_feed_parent_class)->constructed (object);
 
   if (priv->source == NULL) {
     g_warning ("No source supplied");
@@ -305,9 +303,6 @@ mex_grilo_feed_init (MexGriloFeed *self)
 
   self->priv = priv;
 
-  priv->programs = g_hash_table_new_full (g_str_hash, g_str_equal,
-                                          NULL, g_object_unref);
-
   priv->open_callback = mex_grilo_feed_open_default;
 }
 
@@ -326,13 +321,12 @@ mex_grilo_feed_new (GrlMediaSource *source,
 }
 
 static void
-emit_media_added (MexGriloFeed *feed,
-                  GrlMedia     *media)
+emit_media_added (MexGriloFeed *feed, GrlMedia *media)
 {
   MexProgram *program;
 
   program = mex_grilo_program_new (feed, media);
-  mex_model_add_content (MEX_MODEL (feed), (MexContent *) program);
+  mex_model_add_content (MEX_MODEL (feed), MEX_CONTENT (program));
 }
 
 static void
@@ -377,8 +371,8 @@ browse_cb (GrlMediaSource *source,
       return;
     }
 
-    program = g_hash_table_lookup (priv->programs,
-                                   grl_media_get_id (media));
+    program = MEX_GRILO_PROGRAM (mex_feed_lookup (MEX_FEED (feed),
+                                                  grl_media_get_id (media)));
     if (program != NULL) {
       mex_grilo_program_set_grilo_media (program, media);
       return;
@@ -651,7 +645,6 @@ _mex_grilo_feed_content_updated (GrlMediaSource *source,
   GrlMedia *media;
   const gchar *id;
   MexGriloProgram *program;
-  MexGriloFeedPrivate *priv = feed->priv;
 
   for (i = 0 ; i < changed_medias->len ; i++)
     {
@@ -660,7 +653,7 @@ _mex_grilo_feed_content_updated (GrlMediaSource *source,
       switch (change_type)
         {
         case GRL_CONTENT_CHANGED:
-          program = MEX_GRILO_PROGRAM (g_hash_table_lookup (priv->programs, id));
+          program = MEX_GRILO_PROGRAM (mex_feed_lookup (MEX_FEED (feed), id));
           /* The policy might be slightly different here... */
           if (program != NULL) {
             mex_grilo_program_set_grilo_media (program, media);
@@ -668,17 +661,16 @@ _mex_grilo_feed_content_updated (GrlMediaSource *source,
           break;
 
         case GRL_CONTENT_ADDED:
-          program = MEX_GRILO_PROGRAM (g_hash_table_lookup (priv->programs, id));
+          program = MEX_GRILO_PROGRAM (mex_feed_lookup (MEX_FEED (feed), id));
           if (program != NULL) {
             mex_grilo_program_set_grilo_media (program, media);
           } else {
-            program = (MexGriloProgram *) mex_grilo_program_new (feed, media);
-            mex_model_add_content (MEX_MODEL (feed), MEX_CONTENT (program));
+            emit_media_added (feed, media);
           }
           break;
 
         case GRL_CONTENT_REMOVED:
-          program = MEX_GRILO_PROGRAM (g_hash_table_lookup (priv->programs, id));
+          program = MEX_GRILO_PROGRAM (mex_feed_lookup (MEX_FEED (feed), id));
           if (program != NULL) {
             mex_model_remove_content (MEX_MODEL (feed), MEX_CONTENT (program));
           }
