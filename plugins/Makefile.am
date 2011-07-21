@@ -178,6 +178,8 @@ if USE_PLUGIN_TELEPATHY
 plugins_LTLIBRARIES += 40mex-telepathy.la
 
 40mex_telepathy_la_SOURCES = 		\
+	telepathy/mex-telepathy-channel.c	\
+	telepathy/mex-telepathy-channel.h	\
 	telepathy/mex-telepathy-plugin.c 	\
 	telepathy/mex-telepathy-plugin.h	\
 	telepathy/mex-contact.c 	\
