@@ -1089,6 +1089,7 @@ mex_expander_box_timeline_completed_cb (ClutterTimeline *timeline,
   if (priv->notify_open)
     {
       priv->notify_open = FALSE;
+      priv->open = (direction == CLUTTER_TIMELINE_FORWARD);
       g_object_notify (G_OBJECT (box), "open");
     }
 }
@@ -1273,13 +1274,13 @@ mex_expander_box_set_open (MexExpanderBox *box,
   priv = box->priv;
   if (priv->open != open)
     {
-      priv->open = open;
-
       /* Delay notification of the open property to when the drawer is
        * fully closed, when closing the drawer.
        */
       if (open)
         {
+          priv->open = open;
+
           if (!priv->notify_open)
             g_object_notify (G_OBJECT (box), "open");
           else

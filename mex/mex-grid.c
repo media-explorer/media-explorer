@@ -1046,7 +1046,9 @@ mex_grid_paint (ClutterActor *actor)
    * it's visible.
    */
   clipped = FALSE;
-  if (priv->current_focus && priv->has_focus)
+  if (priv->current_focus && priv->has_focus
+      && MEX_IS_EXPANDER_BOX (priv->current_focus)
+      && mex_expander_box_get_open (MEX_EXPANDER_BOX (priv->current_focus)))
     {
       ClutterActorBox child_box;
 
