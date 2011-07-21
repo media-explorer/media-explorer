@@ -79,17 +79,19 @@ mex_generic_model_insert_sorted (MexGenericModel *self,
   gint low, high, position;
 
   MexGenericModelPrivate *priv = self->priv;
-  gint result = 0;
+  gint result;
+  gboolean sorted_once = FALSE;
 
   /* Binary search - we assume the array is already sorted */
   low = 0;
-  high = priv->items->len - 1;
-  position = (high + low + 1) / 2;
+  high = priv->items->len == 0 ? 0 : priv->items->len - 1;
+  position = (high + low) / 2;
   while (high != low)
     {
       MexContent *child =
         g_array_index (priv->items, MexContent *, position);
       result = priv->sort_func (content, child, priv->sort_data);
+      sorted_once = TRUE;
 
       if (result > 0)
         {
@@ -106,12 +108,19 @@ mex_generic_model_insert_sorted (MexGenericModel *self,
       else
         break;
 
-      position = (high + low + 1) / 2;
+      position = (high + low) / 2;
     }
 
   /* We may need to insert-after, depending on the last comparison */
+  if (!sorted_once && priv->items->len > 0)
+    {
+      position = 0;
+      result = priv->sort_func (content,
+                                g_array_index (priv->items, MexContent *, 0),
+                                priv->sort_data);
+    }
   if (result >= 0)
-    position ++;
+    position++;
 
   g_array_insert_val (priv->items, position, content);
 
