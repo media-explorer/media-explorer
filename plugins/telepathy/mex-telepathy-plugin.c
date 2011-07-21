@@ -90,6 +90,8 @@ struct _MexTelepathyPluginPrivate {
   ClutterActor *video_call_page;
   ClutterActor *video_incoming;
   ClutterActor *video_outgoing;
+  ClutterActor *title_label;
+  ClutterActor *duration_label;
   GstElement *incoming_sink;
   GstElement *outgoing_sink;
 
@@ -491,6 +493,21 @@ void mex_telepathy_plugin_on_presence_request_finished(GObject *source_object,
     }
 }
 
+void on_hangup(MexTelepathyPlugin *self)
+{
+    g_debug("hangup called self is %d", self);
+    ChannelContext *context = self->priv->current_context;
+    g_debug("priv is %d, context is %d", self->priv, context);
+    if (context) {
+        g_debug("context channel is %d", context->channel);
+        tp_channel_close_async (TP_CHANNEL (context->channel), NULL, NULL);
+    }
+}
+
+void on_pause_resume(MexTelepathyPlugin *self)
+{
+}
+
 void create_video_page(MexTelepathyPlugin *self)
 {
     MexTelepathyPluginPrivate *priv = MEX_TELEPATHY_PLUGIN(self)->priv;
@@ -505,13 +522,13 @@ void create_video_page(MexTelepathyPlugin *self)
     mx_stylable_set_style_class (MX_STYLABLE (titlebar), "MexMediaControlsTitle");
     mx_box_layout_set_spacing( MX_BOX_LAYOUT(titlebar), 16);
 
-    ClutterActor *title_label = mx_label_new_with_text("Call with ");
-    mx_label_set_x_align(MX_LABEL(title_label), MX_ALIGN_MIDDLE);
-    mx_label_set_y_align(MX_LABEL(title_label), MX_ALIGN_MIDDLE);
-    clutter_container_add(CLUTTER_CONTAINER(titlebar), title_label, NULL);
-    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(titlebar), title_label, MX_ALIGN_MIDDLE);
-    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(titlebar), title_label, TRUE);
-    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(titlebar), title_label, FALSE);
+    priv->title_label = mx_label_new();
+    mx_label_set_x_align(MX_LABEL(priv->title_label), MX_ALIGN_MIDDLE);
+    mx_label_set_y_align(MX_LABEL(priv->title_label), MX_ALIGN_MIDDLE);
+    clutter_container_add(CLUTTER_CONTAINER(titlebar), priv->title_label, NULL);
+    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(titlebar), priv->title_label, MX_ALIGN_MIDDLE);
+    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(titlebar), priv->title_label, TRUE);
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(titlebar), priv->title_label, FALSE);
 
     // Create the horizontal video container to hold the two sinks.
     ClutterActor *videocontainer = mx_box_layout_new();
@@ -528,18 +545,20 @@ void create_video_page(MexTelepathyPlugin *self)
     mx_stylable_set_style_class (MX_STYLABLE (toolbar), "MexMediaControlsTitle");
     mx_box_layout_set_spacing( MX_BOX_LAYOUT(toolbar), 16);
 
+    MxAction *end_action = mx_action_new_full("End", "End Call", (GCallback)on_hangup, self);
     ClutterActor *end_button = mx_button_new();
+    mx_button_set_action(MX_BUTTON(end_button), end_action);
     mx_stylable_set_style_class (MX_STYLABLE (end_button), "MediaStop");
 
     ClutterActor *hold_button = mx_button_new();
     mx_stylable_set_style_class (MX_STYLABLE (hold_button), "MediaPause");
 
-    ClutterActor *duration_label = mx_label_new_with_text("Duration - 0:00");
-    mx_label_set_x_align(MX_LABEL(duration_label), MX_ALIGN_MIDDLE);
-    mx_label_set_y_align(MX_LABEL(duration_label), MX_ALIGN_MIDDLE);
+    priv->duration_label = mx_label_new_with_text("Duration - 0:00");
+    mx_label_set_x_align(MX_LABEL(priv->duration_label), MX_ALIGN_MIDDLE);
+    mx_label_set_y_align(MX_LABEL(priv->duration_label), MX_ALIGN_MIDDLE);
 
     // Put the buttons in the toolbar
-    clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, hold_button, duration_label, NULL);
+    clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, hold_button, priv->duration_label, NULL);
     // Align button to end so it will be centered
     mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), end_button, MX_ALIGN_END);
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), end_button, TRUE);
@@ -550,9 +569,9 @@ void create_video_page(MexTelepathyPlugin *self)
     mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), hold_button, FALSE);
 
     // Align label to start so it will be centered.
-    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), duration_label, MX_ALIGN_START);
-    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), duration_label, TRUE);
-    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), duration_label, FALSE);
+    mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), priv->duration_label, MX_ALIGN_START);
+    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), priv->duration_label, TRUE);
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), priv->duration_label, FALSE);
 
     // Create the vertical container to put video above the toolbar.
     ClutterActor *vertical = mx_box_layout_new();
@@ -1020,8 +1039,8 @@ new_tf_channel_cb (GObject *source,
 
     g_debug ("New TfChannel");
 
-    context->channel = TF_CHANNEL (g_async_initable_new_finish (
-                                       G_ASYNC_INITABLE (source), result, NULL));
+    context->channel = g_object_ref(TF_CHANNEL (g_async_initable_new_finish (
+                                       G_ASYNC_INITABLE (source), result, NULL)));
 
 
     if (context->channel == NULL)
@@ -1070,6 +1089,28 @@ proxy_invalidated_cb (TpProxy *proxy,
     //g_main_loop_quit (loop);
 }
 
+static void on_contact_fetched(TpConnection *connection,
+                               guint n_contacts,
+                               TpContact * const *contacts,
+                               guint n_failed,
+                               const TpHandle *failed,
+                               const GError *error,
+                               gpointer user_data,
+                               GObject *weak_object)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+
+    int i = 0;
+    for (i = 0; i < n_contacts; ++i) {
+        // Get the contacts.
+        TpContact *current = contacts[i];
+
+        // Connect to alias change signal.
+        // Add the alias to the label.
+        mx_label_set_text( MX_LABEL(self->priv->title_label), tp_contact_get_alias(current));
+    }
+}
+
 static void
 new_call_channel_cb (TpSimpleHandler *handler,
                      TpAccount *account,
@@ -1093,6 +1134,13 @@ new_call_channel_cb (TpSimpleHandler *handler,
     g_debug ("New channel");
 
     proxy = channels->data;
+
+    TpHandle contactHandle = tp_channel_get_handle(proxy, NULL);
+    TpContactFeature features[] = {TP_CONTACT_FEATURE_ALIAS};
+    if (contactHandle)
+        tp_connection_get_contacts_by_handle(connection, 1, &contactHandle, 1,
+                                         features, on_contact_fetched,
+                                         self, NULL, NULL);
 
     pipeline = gst_pipeline_new (NULL);
 
@@ -1285,7 +1333,7 @@ mex_telepathy_plugin_get_models (MexModelProvider *model_provider)
 static void
 model_provider_iface_init (MexModelProviderInterface *iface)
 {
-  iface->get_models = mex_telepathy_plugin_get_models;
+    iface->get_models = mex_telepathy_plugin_get_models;
 }
 
 static void
