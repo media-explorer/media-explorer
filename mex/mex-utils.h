@@ -92,6 +92,10 @@ gint mex_model_sort_time_cb (MexContent *a,
                              MexContent *b,
                              gpointer    bool_reverse);
 
+gint mex_model_sort_smart_cb (MexContent *a,
+                              MexContent *b,
+                              gpointer    bool_reverse);
+
 MexModelInfo* mex_model_info_new_with_sort_funcs (MexModel    *model,
                                                   const gchar *category,
                                                   gint         priority);

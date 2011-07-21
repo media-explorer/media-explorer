@@ -626,10 +626,10 @@ mex_notify_depth_cb (MexExplorer *explorer,
   model = mex_explorer_get_model (explorer);
   container = mex_explorer_get_container_for_model (explorer, model);
 
-  if (container && !MEX_IS_GRID (container))
+  if (container && !MEX_IS_GRID_VIEW (container))
     {
       data->using_alt = FALSE;
-      mex_model_set_sort_func (model, mex_model_sort_time_cb,
+      mex_model_set_sort_func (model, mex_model_sort_smart_cb,
                                GINT_TO_POINTER (FALSE));
     }
 }
@@ -1185,6 +1185,9 @@ mex_refresh_root_model (MexData *data)
 
       /* Create a new aggregate model for this category */
       aggregate = mex_aggregate_model_new ();
+      mex_model_set_sort_func (MEX_MODEL (aggregate),
+                               mex_model_sort_smart_cb,
+                               GINT_TO_POINTER (FALSE));
 
       /* prevent the length display in the search column */
       if (!g_strcmp0 (c_info->name, "search"))
@@ -2161,6 +2164,9 @@ main (int argc, char **argv)
 
   /* Create root model */
   root_model = mex_aggregate_model_new ();
+  mex_model_set_sort_func (MEX_MODEL (root_model),
+                           mex_model_sort_smart_cb,
+                           GINT_TO_POINTER (FALSE));
   mex_explorer_set_root_model (MEX_EXPLORER (data.explorer), root_model);
 
   /* Create top-level model hash-table */

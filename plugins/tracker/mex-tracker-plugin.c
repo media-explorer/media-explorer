@@ -169,6 +169,9 @@ add_model (MexTrackerPlugin *self,
                                      self->priv->query_keys,
                                      metadata_keys,
                                      NULL, box);
+  mex_model_set_sort_func (MEX_MODEL (feed),
+                           mex_model_sort_time_cb,
+                           GINT_TO_POINTER (TRUE));
   mex_grilo_feed_query (MEX_GRILO_FEED (feed), query, 0, MAX_TRACKER_RESULTS);
 
   g_hash_table_insert (models, plugin, feed);
@@ -190,6 +193,9 @@ add_model (MexTrackerPlugin *self,
                                          self->priv->query_keys,
                                          metadata_keys,
                                          query, NULL);
+  mex_model_set_sort_func (MEX_MODEL (dir_feed),
+                           mex_model_sort_alpha_cb,
+                           GINT_TO_POINTER (FALSE));
   mex_grilo_feed_browse (MEX_GRILO_FEED (dir_feed), 0, G_MAXINT);
   info->alt_model = MEX_MODEL (dir_feed);
   info->alt_model_string = g_strdup (_("Show Folders"));
@@ -293,6 +299,7 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                 GRL_METADATA_KEY_URL,
                                                 GRL_METADATA_KEY_DATE,
                                                 GRL_METADATA_KEY_THUMBNAIL,
+                                                GRL_METADATA_KEY_PLAY_COUNT,
                                                 NULL);
 
   priv->image_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,

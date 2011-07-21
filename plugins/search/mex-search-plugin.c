@@ -400,11 +400,15 @@ mex_search_plugin_search (MexSearchPlugin *self,
           MexFeed *feed;
 
           if (g_str_equal (source_id, "grl-tracker"))
-            feed =
-              mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (meta_src), NULL, NULL, NULL, NULL);
+            feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (meta_src),
+                                               NULL, NULL, NULL, NULL);
           else
             feed =
               mex_grilo_feed_new (GRL_MEDIA_SOURCE (meta_src), NULL, NULL, NULL);
+          mex_model_set_sort_func (MEX_MODEL (feed),
+                                   mex_model_sort_time_cb,
+                                   GINT_TO_POINTER (TRUE));
+
           g_object_set (G_OBJECT (feed), "placeholder-text",
                         _("No videos found"), NULL);
           GController *controller = mex_model_get_controller (MEX_MODEL (feed));

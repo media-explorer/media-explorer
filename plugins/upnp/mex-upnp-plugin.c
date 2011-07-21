@@ -136,6 +136,9 @@ add_model (MexUpnpPlugin *self,
   feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
                              self->priv->query_keys,
                              metadata_keys, box);
+  mex_model_set_sort_func (MEX_MODEL (feed),
+                           mex_model_sort_time_cb,
+                           GINT_TO_POINTER (TRUE));
   g_object_set (feed, "icon-name", "icon-panelheader-computer",
                 "placeholder-text", placeholder,
                 NULL);

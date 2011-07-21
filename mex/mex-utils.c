@@ -470,7 +470,44 @@ mex_model_sort_time_cb (MexContent *a,
   else
     retval = 0;
 
-  if (!GPOINTER_TO_INT (bool_reverse))
+  if (GPOINTER_TO_INT (bool_reverse))
+    retval = -retval;
+
+  return retval;
+}
+
+gint
+mex_model_sort_smart_cb (MexContent *a,
+                         MexContent *b,
+                         gpointer    bool_reverse)
+{
+  gint retval;
+  const gchar *played_a, *played_b;
+
+  played_a = mex_content_get_metadata (a, MEX_CONTENT_METADATA_PLAY_COUNT);
+  played_b = mex_content_get_metadata (b, MEX_CONTENT_METADATA_PLAY_COUNT);
+  if (played_a)
+    {
+      if (!played_b)
+        {
+          retval = 1;
+          goto end;
+        }
+    }
+  else
+    {
+      if (played_b)
+        {
+          retval = -1;
+          goto end;
+        }
+    }
+
+  retval = -mex_model_sort_time_cb (a, b, bool_reverse);
+
+ end:
+
+  if (GPOINTER_TO_INT (bool_reverse))
     retval = -retval;
 
   return retval;
@@ -519,6 +556,9 @@ mex_model_info_new_with_sort_funcs (MexModel    *model,
                                     gint         priority)
 {
   return mex_model_info_new (model, category, priority,
+                             "smart", _("Unseen"),
+                               mex_model_sort_smart_cb,
+                               GINT_TO_POINTER (FALSE),
                              "atoz", _("A to Z"),
                                mex_model_sort_alpha_cb,
                                GINT_TO_POINTER (FALSE),
@@ -527,10 +567,10 @@ mex_model_info_new_with_sort_funcs (MexModel    *model,
                                GINT_TO_POINTER (TRUE),
                              "newest", _("Newest"),
                                mex_model_sort_time_cb,
-                               GINT_TO_POINTER (FALSE),
+                               GINT_TO_POINTER (TRUE),
                              "oldest", _("Oldest"),
                                mex_model_sort_time_cb,
-                               GINT_TO_POINTER (TRUE),
+                               GINT_TO_POINTER (FALSE),
                              NULL);
 }
 
