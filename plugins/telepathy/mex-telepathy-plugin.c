@@ -550,7 +550,8 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     priv->contacts = NULL;
 
     priv->manager = mex_model_manager_get_default ();
-    MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 0, "" };
+    MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 10,
+                                      _("None of your contacts are online at the moment") };
     mex_model_manager_add_category(priv->manager, &contacts);
 
     priv->feed = mex_feed_new("Contacts", "Feed");
