@@ -383,15 +383,18 @@ AM_CONDITIONAL(ENABLE_DISPLAYCONF, test "x$enable_displayconf" = "xyes")
 
 PKG_CHECK_MODULES(SHELL, [gio-unix-2.0 mx-1.0 clutter-1.0 glib-2.0 rest-0.7 dbus-glib-1])
 
-PKG_CHECK_EXISTS(clutter-cex100-1.0, [AC_DEFINE(HAVE_CLUTTER_CEX100,
-                                      [1],
-                                      [Defined if we are on CEX100])],
-                 [])
+AS_CASE([`pkg-config --variable soname_infix clutter-1.0`],
 
-PKG_CHECK_EXISTS(clutter-x11-1.0, [AC_DEFINE(HAVE_CLUTTER_X11,
-                                   [1],
-                                   [Defined if we are on X11])],
-                 [])
+        [cex100],
+        [
+        AC_DEFINE(HAVE_CLUTTER_CEX100, [1], [Defined if we are on CEX100])
+        ],
+
+        [glx|eglx],
+        [
+        AC_DEFINE(HAVE_CLUTTER_X11, [1], [Defined if we are on X11])
+        ]
+)
 
 # Default list of plugins to compile
 WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv"
