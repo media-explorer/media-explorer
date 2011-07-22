@@ -27,9 +27,12 @@
 #include "tracker-client.h"
 #include "mdns-client.h"
 
+#include "dbus-service.h"
+
 #include <mex/mex.h>
 
-/* TODO #ifdef HAVE_TRACKER etc */
+/* TODO #ifdef HAVE_TRACKER etc split webserver into separate module */
+/* TODO web-service.h */
 
 typedef struct
 {
@@ -41,6 +44,8 @@ typedef struct
   guint userpass;
   gchar *data;
 } MexWebRemote;
+
+static GMainLoop *main_loop;
 
 typedef enum
 {
@@ -318,17 +323,30 @@ address_resolved_cb (SoupAddress *address,
 
 }
 
+void
+mex_webremote_quit ()
+{
+  g_main_loop_quit (main_loop);
+}
+
+static void
+sig_webremote_quit (int sig)
+{
+  mex_webremote_quit ();
+}
+
 int main (int argc, char **argv)
 {
   g_type_init ();
 
   MexWebRemote webremote = { 0, };
   SoupServer *server;
-  GMainLoop *loop;
   SoupAuthDomain *domain;
 
   SoupAddress *address;
   SoupAddress *interface_address;
+
+  gint dbus_service_id;
 
   GOptionContext *context;
 
@@ -337,7 +355,6 @@ int main (int argc, char **argv)
   const gchar *opt_auth = NULL;
 
   GError *error=NULL;
-
 
   GOptionEntry entries[] =
     {
@@ -364,6 +381,9 @@ int main (int argc, char **argv)
   webremote.dbus_client = dbus_client_new ();
   webremote.tracker_interface = tracker_interface_new ();
   webremote.mdns_service = mdns_service_info_new ();
+
+  /* Start the our own dbus service for the Quit method and auto activation */
+  dbus_service_id = dbus_service_start ();
 
   if (opt_interface)
     {
@@ -445,10 +465,17 @@ int main (int argc, char **argv)
                            (gpointer)&webremote,
                            NULL);
 
-  loop = g_main_loop_new (NULL, TRUE);
-  g_main_loop_run (loop);
+  signal (SIGINT, sig_webremote_quit);
+  signal (SIGTERM, sig_webremote_quit);
+
+  main_loop = g_main_loop_new (NULL, TRUE);
+
+  g_main_loop_run (main_loop);
 
 clean_up:
+
+  if (dbus_service_id > 0)
+    dbus_service_stop (dbus_service_id);
 
   if (error)
     g_error_free (error);
