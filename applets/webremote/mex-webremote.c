@@ -42,6 +42,8 @@ typedef struct
 
   gboolean opt_debug;
   guint userpass;
+  const gchar *mex_data_dir;
+
   gchar *data;
 } MexWebRemote;
 
@@ -72,6 +74,7 @@ send_response (SoupServer   *server,
   gsize data_size;
   gchar *mime_type;
 
+  /* Normal request or Unspecified */
   if (response_type == NORMAL || !response_type)
     {
       gchar *uri;
@@ -83,11 +86,10 @@ send_response (SoupServer   *server,
       g_utf8_strncpy (token, path, 8);
 
       if (g_strcmp0 (token, "/DATADIR") == 0)
-          uri = g_strconcat (mex_get_data_dir(), "/common/",
+          uri = g_strconcat (self->mex_data_dir, "/common/",
                              (path + sizeof ("DATADIR/")), NULL);
       else
-        uri = g_strconcat (mex_get_data_dir(), "/webremote/", path, NULL);
-
+        uri = g_strconcat (self->mex_data_dir, "/webremote/", path, NULL);
 
       mime_type = g_content_type_guess (uri, NULL, 0, NULL);
 
@@ -95,17 +97,22 @@ send_response (SoupServer   *server,
         g_debug ("Requested: %s", uri);
 
       g_file_get_contents (uri, &processed_data, &data_size, &error);
-      g_free (uri);
 
-      if (error)
+      /* This is to protect against the corner case where the uri may be
+       * NULL if mex_data_dir failed.
+       */
+
+      if (uri)
+        g_free (uri);
+
+      if (error || !uri)
         {
           if (self->opt_debug)
-            g_debug ("404: No such file or directory: %s", error->message);
+            g_debug ("404: No such file or directory: %s",
+                     error ? error->message : path);
 
-          g_error_free (error);
-
-          if (processed_data)
-            g_free (processed_data);
+          if (error)
+            g_error_free (error);
 
           soup_message_set_status (msg, SOUP_STATUS_NOT_FOUND);
           return;
@@ -372,9 +379,20 @@ int main (int argc, char **argv)
   context = g_option_context_new ("- Media explorer web remote");
 
   g_option_context_add_main_entries (context, entries, "mex");
+
   if (!g_option_context_parse (context, &argc, &argv, &error))
+    g_warning ("Failed to parse options: %s\n", error->message);
+
+  webremote.mex_data_dir = mex_get_data_dir ();
+
+  /* Fallback method */
+  if (!webremote.mex_data_dir)
+    webremote.mex_data_dir = MEXPKGDATADIR;
+
+  if (!webremote.mex_data_dir)
     {
-      g_print ("Failed to parse options: %s\n", error->message);
+      g_warning ("Could not find program data please verify your installation");
+      goto clean_up;
     }
 
   /* We want to talk to dbus, tracker and avahi/mdns */
@@ -489,7 +507,8 @@ clean_up:
   if (webremote.mdns_service)
     mdns_service_info_free (webremote.mdns_service);
 
-  g_option_context_free (context);
+  if (context)
+    g_option_context_free (context);
 
   return EXIT_SUCCESS;
 }
