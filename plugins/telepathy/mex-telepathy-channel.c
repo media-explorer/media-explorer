@@ -58,7 +58,7 @@ struct _MexTelepathyChannelPrivate {
     guint width;
     guint height;
     guint framerate;
-    };
+};
 
 enum {
     SHOW_ACTOR,
@@ -76,14 +76,6 @@ enum
     PROP_CONNECTION
 };
 
-void channel_debug(MexTelepathyChannel *self)
-{
-    g_debug("channel self is %x", self);
-    g_debug("channel priv is %x", self->priv);
-    g_debug("channel channel is %x", self->priv->channel);
-    g_debug("channel tf_channel is %x", self->priv->tf_channel);
-}
-
 static void
 mex_telepathy_channel_finalize (GObject *gobject)
 {
@@ -95,7 +87,6 @@ mex_telepathy_channel_finalize (GObject *gobject)
 void on_hangup(MxAction *action, gpointer user_data)
 {
     MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
-    channel_debug(self);
     tp_channel_close_async (self->priv->channel, NULL, NULL);
 }
 
@@ -557,7 +548,6 @@ new_tf_channel_cb (GObject *source,
                                    G_ASYNC_INITABLE (source), result, NULL));
 
 
-    channel_debug(self);
     if (priv->tf_channel == NULL)
     {
         g_warning ("Failed to create channel");
@@ -766,7 +756,6 @@ static void
 mex_telepathy_channel_init (MexTelepathyChannel  *self)
 {
     self->priv = TELEPATHY_CHANNEL_PRIVATE(self);
-    channel_debug(self);
     self->priv->connection = NULL;
     self->priv->channel = NULL;
     self->priv->tf_channel = NULL;
