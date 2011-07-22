@@ -33,7 +33,7 @@
 
 typedef struct
 {
-  HTTPDBusInterface *dbus_interface;
+  DBusClient *dbus_client;
   TrackerInterface *tracker_interface;
   MdnsServiceInfo *mdns_service;
 
@@ -139,12 +139,6 @@ http_post (SoupServer   *server,
 {
   const gchar *post_request;
 
-  if (self->dbus_interface == NULL)
-  {
-    g_error ("failed to initiate dbus interface");
-    return;
-  }
-
   post_request = msg->request_body->data;
 
   /* prefix is "="
@@ -156,10 +150,10 @@ http_post (SoupServer   *server,
         gint keyvalue;
         keyvalue = atoi ((post_request + strlen ("keyvalue=")));
 
-        httpdbus_send_keyvalue (self->dbus_interface, keyvalue);
+        dbus_client_input_set (self->dbus_client, keyvalue);
       }
 
-  if (g_str_has_prefix (post_request, "trackersearch"))
+  else if (g_str_has_prefix (post_request, "trackersearch"))
     {
       gchar *search_term;
       gchar *sparql_request;
@@ -200,7 +194,7 @@ http_post (SoupServer   *server,
       return;
     }
 
-  if (g_str_has_prefix (post_request, "setmedia"))
+  else if (g_str_has_prefix (post_request, "setmedia"))
     {
       gchar *media_uri;
 
@@ -209,12 +203,12 @@ http_post (SoupServer   *server,
       if (self->opt_debug)
         g_debug ("Resquesting setmedia = %s", media_uri);
 
-      httpdbus_media_player_set_uri (self->dbus_interface, media_uri);
+      dbus_client_player_set (self->dbus_client, "seturi", media_uri);
 
       g_free (media_uri);
     }
 
-  if (g_str_has_prefix (post_request, "mediaplayerget"))
+  else if (g_str_has_prefix (post_request, "mediaplayerget"))
     {
       gchar *get;
 
@@ -223,20 +217,20 @@ http_post (SoupServer   *server,
       if (self->opt_debug)
         g_debug ("mediaplayerget = %s", get);
 
-      self->data = httpdbus_media_player_get (self->dbus_interface, get);
+      self->data = dbus_client_player_get (self->dbus_client, get);
       g_free (get);
 
       if (self->opt_debug)
         g_debug ("result \"%s\"", self->data);
 
-      if (strlen (self->data) == 0)
-        self->data = g_strdup ("Unknown");
+      if (!self->data || strlen (self->data) == 0)
+        self->data = g_strdup ("Unknown media");
 
       send_response (server, msg, path, self, CUSTOM);
       return;
     }
 
-  if (g_str_has_prefix (post_request, "playeraction"))
+  else if (g_str_has_prefix (post_request, "playeraction"))
     {
       gchar *action;
 
@@ -245,7 +239,7 @@ http_post (SoupServer   *server,
       if (self->opt_debug)
         g_debug ("playeraction = %s", action);
 
-      httpdbus_media_player_action (self->dbus_interface, action);
+      dbus_client_player_action (self->dbus_client, action);
 
       g_free (action);
     }
@@ -367,7 +361,7 @@ int main (int argc, char **argv)
     }
 
   /* We want to talk to dbus, tracker and avahi/mdns */
-  webremote.dbus_interface = httpdbus_interface_new ();
+  webremote.dbus_client = dbus_client_new ();
   webremote.tracker_interface = tracker_interface_new ();
   webremote.mdns_service = mdns_service_info_new ();
 
@@ -459,8 +453,8 @@ clean_up:
   if (error)
     g_error_free (error);
 
-  if (webremote.dbus_interface)
-    httpdbus_interface_free (webremote.dbus_interface);
+  if (webremote.dbus_client)
+    dbus_client_free (webremote.dbus_client);
 
   if (webremote.tracker_interface)
     tracker_interface_free (webremote.tracker_interface);

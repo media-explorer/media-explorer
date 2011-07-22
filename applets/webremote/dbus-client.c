@@ -21,15 +21,95 @@
 #include <gio/gio.h>
 #include "dbus-client.h"
 
-void
-httpdbus_send_keyvalue (HTTPDBusInterface *dbus_interface, gint keyval)
+static GDBusProxy *
+dbus_player_proxy_new (DBusClient *dbus_client)
 {
-  /* we're using sync at the moment because we don't have a queue for events
-   * yet. And besides.. we're calling this all aysnc from the web server.
-   */
+  GError *error=NULL;
+  GDBusProxy *proxy;
+
+  if (dbus_client->mex_player)
+    g_object_unref (dbus_client->mex_player);
+
+  proxy = g_dbus_proxy_new_sync (dbus_client->connection,
+                                 G_DBUS_PROXY_FLAGS_NONE,
+                                 NULL,
+                                 "com.meego.mex.player",
+                                 "/com/meego/mex/player",
+                                 "com.meego.mex.MediaPlayer",
+                                 NULL,
+                                 &error);
+  if (error)
+    {
+      g_warning ("Could not create media player proxy: %s", error->message);
+      g_error_free (error);
+    }
+  return proxy;
+}
+
+static GDBusProxy *
+dbus_input_proxy_new (DBusClient *dbus_client)
+{
+  GError *error=NULL;
+  GDBusProxy *proxy;
+
+  if (dbus_client->mex_input)
+    g_object_unref (dbus_client->mex_input);
+
+  proxy = g_dbus_proxy_new_sync (dbus_client->connection,
+                                 G_DBUS_PROXY_FLAGS_NONE,
+                                 NULL,
+                                 "com.meego.mex.inputctrl",
+                                 "/com/meego/mex/InputControl",
+                                 "com.meego.mex.Input",
+                                 NULL,
+                                 &error);
+  if (error)
+    {
+      g_warning ("Could not create dbus input proxy: %s", error->message);
+      g_error_free (error);
+    }
+  return proxy;
+}
+
+static gboolean
+verify_dbus_player_proxy (DBusClient *dbus_client)
+{
+  if (dbus_client->mex_player)
+      return TRUE;
+  else
+    {
+      if (dbus_client->mex_player = dbus_player_proxy_new (dbus_client))
+        return TRUE;
+      else
+        return FALSE;
+    }
+  return FALSE;
+}
+
+static gboolean
+verify_dbus_input_proxy (DBusClient *dbus_client)
+{
+  if (dbus_client->mex_player)
+      return TRUE;
+  else
+    {
+      if (dbus_client->mex_player = dbus_input_proxy_new (dbus_client))
+        return TRUE;
+      else
+        return FALSE;
+    }
+  return FALSE;
+}
+
+void
+dbus_client_input_set (DBusClient *dbus_client, gint keyval)
+{
   GError *error=NULL;
 
-  g_dbus_proxy_call_sync (dbus_interface->dbusinput_proxy,
+  if (!verify_dbus_input_proxy (dbus_client))
+    return;
+
+  g_dbus_proxy_call_sync (dbus_client->mex_input,
                           "ControlKey",
                           g_variant_new ("(u)", keyval),
                           0,
@@ -44,132 +124,122 @@ httpdbus_send_keyvalue (HTTPDBusInterface *dbus_interface, gint keyval)
 }
 
 void
-httpdbus_media_player_set_uri (HTTPDBusInterface *dbus_interface,
-                               gchar *uri)
+dbus_client_player_set (DBusClient  *dbus_client,
+                        const gchar *action,
+                        gchar       *value)
 {
   GError *error=NULL;
 
-  g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
-                          "SetUri",
-                          g_variant_new ("(s)", uri),
-                          0,
-                          -1,
-                          NULL,
-                          &error);
+  if (!verify_dbus_player_proxy (dbus_client))
+    return;
+
+  if (g_strcmp0 (action, "seturi") == 0)
+      {
+        g_dbus_proxy_call_sync (dbus_client->mex_player,
+                                "SetUri",
+                                g_variant_new ("(s)", value),
+                                0,
+                                -1,
+                                NULL,
+                                &error);
+      }
+
   if (error)
     {
-      g_warning ("Problem calling SetUri: %s", error->message);
+      g_warning ("Problem calling %s: %s", action, error->message);
       g_error_free (error);
     }
 }
 
 
 gchar *
-httpdbus_media_player_get (HTTPDBusInterface *dbus_interface, gchar *get)
+dbus_client_player_get (DBusClient *dbus_client, const gchar *get)
 {
   GVariant *result;
-  gchar *string;
+  gchar *string = NULL;
   GError *error=NULL;
+
+  if (!verify_dbus_player_proxy (dbus_client))
+    return NULL;
 
   if (g_strcmp0 (get, "uri") == 0)
     {
-      result = g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
-                                       "GetUri", NULL, 0, -1, NULL, &error);
-      if (error)
-        {
-          g_warning ("problem calling GetUri %s", error->message);
-          g_clear_error (&error);
-        }
+      result = g_dbus_proxy_call_sync (dbus_client->mex_player,
+                                       "GetUri", NULL, 0, -1, NULL,
+                                       &error);
+
     }
   else if (g_strcmp0 (get, "duration") == 0)
     {
-      result = g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
-                                      "GetDuration", NULL, 0, -1, NULL, &error);
-      if (error)
-        {
-          g_warning ("problem calling GetDuration %s", error->message);
-          g_clear_error (&error);
-        }
+      result = g_dbus_proxy_call_sync (dbus_client->mex_player,
+                                      "GetDuration", NULL, 0, -1, NULL,
+                                      &error);
     }
   else if (g_strcmp0 (get, "progress") == 0)
     {
-      result = g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
+      result = g_dbus_proxy_call_sync (dbus_client->mex_player,
                                        "GetProgress", NULL, 0, -1, NULL,
                                        &error);
-      if (error)
-        {
-          g_warning ("problem calling GetProgress %s", error->message);
-          g_clear_error (&error);
-        }
     }
 
-  if (!result)
-    return NULL;
 
   if (error)
-    g_error_free (error);
+    {
+      g_warning ("problem calling %s: %s", get, error->message);
+      g_error_free (error);
+      return NULL;
+    }
 
   g_variant_get (result, "(s)", &string);
-
   g_variant_unref (result);
 
-  /* soup take memory takes care of the memory here */
   return string;
 }
 
 void
-httpdbus_media_player_action (HTTPDBusInterface *dbus_interface, gchar *action)
+dbus_client_player_action (DBusClient *dbus_client, const gchar *action)
 {
   GError *error=NULL;
   gboolean seek_forward;
+
+  if (!verify_dbus_player_proxy (dbus_client))
+    return;
 
   if (g_strcmp0 (action, "playpause") == 0)
     {
       GVariant *playing;
       gboolean isplaying;
 
-      playing = g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
+      playing = g_dbus_proxy_call_sync (dbus_client->mex_player,
                                         "GetPlaying", NULL, 0, -1, NULL,
                                         &error);
-
       if (error)
-        {
-          g_warning ("problem calling GetPlaying %s", error->message);
-          g_clear_error (&error);
-        }
+        goto fail_out;
 
       g_variant_get (playing, "(b)", &isplaying);
 
       g_variant_unref (playing);
 
-      g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
+      g_dbus_proxy_call_sync (dbus_client->mex_player,
                               "SetPlaying",
                               g_variant_new ("(b)", !isplaying),
                               0,
                               -1,
                               NULL,
                               &error);
-      if (error)
-        {
-          g_warning ("problem calling SetPlaying %s", error->message);
-          g_clear_error (&error);
-        }
-    }
 
+    }
   else if ((seek_forward = (g_strcmp0 (action, "seekfwd") == 0)) ||
            g_strcmp0 (action, "seekbk") == 0)
     {
       GVariant *v_progress;
       gdouble progress;
 
-      v_progress = g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
-                                         "GetProgress", NULL, 0, -1,
-                                         NULL, &error);
+      v_progress = g_dbus_proxy_call_sync (dbus_client->mex_player,
+                                           "GetProgress", NULL, 0, -1,
+                                           NULL, &error);
       if (error)
-        {
-          g_warning ("problem calling GetProgress %s", error->message);
-          g_clear_error (&error);
-        }
+        goto fail_out;
 
       g_variant_get (v_progress, "(d)", &progress);
 
@@ -183,47 +253,37 @@ httpdbus_media_player_action (HTTPDBusInterface *dbus_interface, gchar *action)
           progress = progress - 0.01;
         }
 
-      g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
+      g_dbus_proxy_call_sync (dbus_client->mex_player,
                               "SetProgress",
                               g_variant_new ("(d)", progress),
                               0,
                               -1,
                               NULL,
                               &error);
-      if (error)
-        {
-          g_warning ("problem calling SetProgress %s", error->message);
-          g_clear_error (&error);
-        }
+
     }
 
-  /*
-    v_duration = g_dbus_proxy_call_sync (dbus_interface->mediaplayer_proxy,
-                                         "GetDuration", NULL, 0, -1,
-                                         NULL, &error);
-      if (error)
-        {
-          g_warning ("problem calling GetDuration %s", error->message);
-          g_clear_error (&error);
-        }
-
-      g_variant_get (v_duration, "(d)", &duration);
-      */
+fail_out:
 
   if (error)
-    g_error_free (error);
+    {
+      g_warning ("problem calling %s: %s", action, error->message);
+      g_error_free (error);
+    }
 }
 
 
-
-HTTPDBusInterface *httpdbus_interface_new (void)
+DBusClient *dbus_client_new (void)
 {
-  HTTPDBusInterface *dbus_interface;
+  DBusClient *dbus_client;
 
-  dbus_interface = g_new0 (HTTPDBusInterface, 1);
+  dbus_client = g_new0 (DBusClient, 1);
   GError *error=NULL;
 
-  dbus_interface->connection = g_bus_get_sync (G_BUS_TYPE_SESSION,
+  dbus_client->mex_input = NULL;
+  dbus_client->mex_player = NULL;
+
+  dbus_client->connection = g_bus_get_sync (G_BUS_TYPE_SESSION,
                                                NULL, &error);
   if (error)
     {
@@ -233,44 +293,17 @@ HTTPDBusInterface *httpdbus_interface_new (void)
     }
   else
     {
-      dbus_interface->dbusinput_proxy =
-        g_dbus_proxy_new_sync (dbus_interface->connection,
-                               G_DBUS_PROXY_FLAGS_NONE,
-                               NULL,
-                               "com.meego.mex.inputctrl",
-                               "/com/meego/mex/InputControl",
-                               "com.meego.mex.Input",
-                               NULL,
-                               &error);
-      if (error)
-        {
-          g_warning ("Could not create dbus input proxy: %s", error->message);
-          g_clear_error (&error);
-        }
-
-      dbus_interface->mediaplayer_proxy =
-        g_dbus_proxy_new_sync (dbus_interface->connection,
-                               G_DBUS_PROXY_FLAGS_NONE,
-                               NULL,
-                               "com.meego.mex.player",
-                               "/com/meego/mex/player",
-                               "com.meego.mex.MediaPlayer",
-                               NULL,
-                               &error);
-      if (error)
-        {
-          g_warning ("Could not create media player proxy: %s", error->message);
-          g_error_free (error);
-        }
-    }
-  return dbus_interface;
+      dbus_client->mex_input = dbus_input_proxy_new (dbus_client);
+      dbus_client->mex_player = dbus_player_proxy_new (dbus_client);
+     }
+  return dbus_client;
 }
 
 
-void httpdbus_interface_free (HTTPDBusInterface *dbus_interface)
+void dbus_client_free (DBusClient *dbus_client)
 {
-  g_object_unref (dbus_interface->connection);
-  g_object_unref (dbus_interface->dbusinput_proxy);
-  g_object_unref (dbus_interface->mediaplayer_proxy);
-  g_free (dbus_interface);
+  g_object_unref (dbus_client->connection);
+  g_object_unref (dbus_client->mex_input);
+  g_object_unref (dbus_client->mex_player);
+  g_free (dbus_client);
 }

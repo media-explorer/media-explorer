@@ -13,7 +13,7 @@
  * details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>
+ * along with this program; if not, see <://www.gnu.org/licenses>
  */
 
 #ifndef __DBUS_CLIENT_H__
@@ -23,29 +23,25 @@
 
 G_BEGIN_DECLS
 
-typedef struct _HTTPDBusInterface HTTPDBusInterface;
+typedef struct _DBusClient DBusClient;
 
-struct _HTTPDBusInterface 
+struct _DBusClient
 {
   GDBusConnection *connection;
-  GDBusProxy *dbusinput_proxy;
-  GDBusProxy *mediaplayer_proxy;
+  GDBusProxy *mex_input;
+  GDBusProxy *mex_player;
 };
 
-HTTPDBusInterface *httpdbus_interface_new (void);
-void httpdbus_interface_free (HTTPDBusInterface *dbus_interface);
+DBusClient *dbus_client_new (void);
 
-gchar *httpdbus_media_player_get (HTTPDBusInterface *dbus_interface,
-                                  gchar *get);
+void dbus_client_free (DBusClient *dbus_client);
+gchar *dbus_client_player_get (DBusClient *dbus_client, const gchar *get);
+void dbus_client_input_set (DBusClient *dbus_client, gint keyval);
+void dbus_client_player_action (DBusClient *dbus_client, const gchar *action);
 
-void
-httpdbus_media_player_set_uri (HTTPDBusInterface *dbus_interface,
-                               gchar *uri);
-
-void
-httpdbus_send_keyvalue (HTTPDBusInterface *dbus_interface, gint keyval);
-
-
+void dbus_client_player_set (DBusClient  *dbus_client,
+                             const gchar *action,
+                             gchar       *uri);
 G_END_DECLS
 
 #endif
