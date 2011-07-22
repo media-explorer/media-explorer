@@ -187,7 +187,7 @@ do_diff (GObject             *instance,
   gint cmp;
 
   if (priv->snapshot == NULL)
-    return;
+    return TRUE;
 
   new_snapshot = priv->gobject_list.get_summary ();
   new_snapshot = g_list_sort (new_snapshot, tuplestrcmp);
