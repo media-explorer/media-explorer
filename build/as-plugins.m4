@@ -63,7 +63,7 @@ AC_DEFUN([AS_MEX_PLUGIN],
   if echo " [$WITHOUT_PLUGINS] " | tr , ' ' | grep -i " [$1] " > /dev/null; then
     MEX_PLUGINS_SELECTED=`echo " $MEX_PLUGINS_SELECTED " | $SED -e 's/ [$1] / /'`
   fi
-  AM_CONDITIONAL([USE_PLUGIN_]translit([$1], a-z, A-Z), echo " $MEX_PLUGINS_SELECTED " | grep -i " [$1] " > /dev/null)
+  AM_CONDITIONAL([USE_]PNAME_DEF, echo " $MEX_PLUGINS_SELECTED " | grep -i " [$1] " > /dev/null)
   undefine([PNAME_DEF])
 ])
 
