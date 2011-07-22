@@ -62,6 +62,7 @@ struct _MexTelepathyChannelPrivate {
 
 enum {
     SHOW_ACTOR,
+    HIDE_ACTOR,
     LAST_SIGNAL
 };
 
@@ -588,6 +589,11 @@ proxy_invalidated_cb (TpProxy *proxy,
     g_list_free (priv->notifiers);
 
     g_object_unref (priv->channel);
+
+    g_signal_emit(self,
+                  mex_telepathy_channel_signals[HIDE_ACTOR],
+                  0,
+                  g_object_ref(priv->video_call_page));
 }
 
 static void on_contact_fetched(TpConnection *connection,
@@ -727,6 +733,17 @@ mex_telepathy_channel_class_init (MexTelepathyChannelClass *klass)
     // Signals
     mex_telepathy_channel_signals[SHOW_ACTOR] =
         g_signal_new("show-actor",
+                     MEX_TYPE_TELEPATHY_CHANNEL,
+                     G_SIGNAL_RUN_LAST,
+                     0,
+                     NULL,
+                     NULL,
+                     g_cclosure_marshal_VOID__BOOLEAN,
+                     G_TYPE_NONE,
+                     1,
+                     CLUTTER_TYPE_ACTOR);
+    mex_telepathy_channel_signals[HIDE_ACTOR] =
+        g_signal_new("hide-actor",
                      MEX_TYPE_TELEPATHY_CHANNEL,
                      G_SIGNAL_RUN_LAST,
                      0,

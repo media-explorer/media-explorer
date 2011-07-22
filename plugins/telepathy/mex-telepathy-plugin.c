@@ -44,14 +44,14 @@ static const gchar *audio_contact_mimetypes[] = { "x-mex-audio-contact", "x-mex-
 static const gchar *av_contact_mimetypes[] = { "x-mex-av-contact", NULL };
 static const gchar *pending_contact_mimetypes[] = { "x-mex-pending-contact", NULL };
 
-static void mex_tool_provider_iface_init (MexToolProviderInterface *iface);
+static void tool_provider_iface_init (MexToolProviderInterface *iface);
 static void model_provider_iface_init (MexModelProviderInterface *iface);
 static void action_provider_iface_init (MexActionProviderInterface *iface);
 G_DEFINE_TYPE_WITH_CODE (MexTelepathyPlugin,
                          mex_telepathy_plugin,
                          G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_TOOL_PROVIDER,
-                                                mex_tool_provider_iface_init)
+                                                tool_provider_iface_init)
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_MODEL_PROVIDER,
                                                 model_provider_iface_init)
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_ACTION_PROVIDER,
@@ -73,12 +73,6 @@ struct _MexTelepathyPluginPrivate {
   GList *channels;
   TpAccountManager *account_manager;
 };
-
-void show_debug(MexTelepathyPlugin *self)
-{
-    g_debug("self is %x", self);
-    g_debug("priv is %x", self->priv);
-}
 
 static void
 remove_model (gpointer key, gpointer value, gpointer user_data)
@@ -450,7 +444,7 @@ void mex_telepathy_plugin_on_account_status_changed(TpAccount  *account,
 }
 
 static void
-mex_tool_provider_iface_init (MexToolProviderInterface *iface)
+tool_provider_iface_init (MexToolProviderInterface *iface)
 {
 }
 
@@ -560,7 +554,7 @@ mex_telepathy_plugin_add_action (gchar              *action_id,
 }
 
 static void
-show_call_cb (MexTelepathyChannel *channel, ClutterActor *page, gpointer user_data)
+mex_telepathy_plugin_on_show_call (MexTelepathyChannel *channel, ClutterActor *page, gpointer user_data)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
     mex_tool_provider_present_actor(MEX_TOOL_PROVIDER(self),
@@ -568,7 +562,16 @@ show_call_cb (MexTelepathyChannel *channel, ClutterActor *page, gpointer user_da
 }
 
 static void
-new_call_channel_cb (TpSimpleHandler *handler,
+mex_telepathy_plugin_on_hide_call (MexTelepathyChannel *channel, ClutterActor *page, gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    if (CLUTTER_ACTOR_IS_VISIBLE(page))
+        mex_tool_provider_remove_actor(MEX_TOOL_PROVIDER(self),
+                                    page);
+}
+
+static void
+mex_telepathy_on_new_call_channel (TpSimpleHandler *handler,
                      TpAccount *account,
                      TpConnection *connection,
                      GList *channels,
@@ -591,13 +594,17 @@ new_call_channel_cb (TpSimpleHandler *handler,
                            NULL);
     g_signal_connect(channel,
                      "show-actor",
-                     G_CALLBACK(show_call_cb),
+                     G_CALLBACK(mex_telepathy_plugin_on_show_call),
+                     self);
+    g_signal_connect(channel,
+                     "hide-actor",
+                     G_CALLBACK(mex_telepathy_plugin_on_hide_call),
                      self);
 
     priv->channels = g_list_append(priv->channels, g_object_ref(channel));
 }
 
-void handler_create(MexTelepathyPlugin *self)
+void mex_telepathy_plugin_create_handler(MexTelepathyPlugin *self)
 {
     TpBaseClient *client;
     TpDBusDaemon *bus;
@@ -609,7 +616,7 @@ void handler_create(MexTelepathyPlugin *self)
                                     FALSE,
                                     "TpMexPlugin",
                                     TRUE,
-                                    new_call_channel_cb,
+                                    mex_telepathy_on_new_call_channel,
                                     self,
                                     NULL);
 
@@ -725,7 +732,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 
     tf_init ();
 
-    handler_create(self);
+    mex_telepathy_plugin_create_handler(self);
 }
 
 MexTelepathyPlugin *
