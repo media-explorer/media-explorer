@@ -104,6 +104,11 @@ mex_settings_get_config_dir (MexSettings *settings)
       g_clear_error (&error);
       return NULL;
     }
+  else
+    {
+      /* directory already exists */
+      g_clear_error (&error);
+    }
 
   return priv->config_dir;
 }
