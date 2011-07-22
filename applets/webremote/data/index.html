@@ -21,7 +21,7 @@
 <html>
 <head>
 <title>Media explorer 5-way</title>
-<script src="http://code.jquery.com/jquery-1.6.1.min.js" type="text/javascript"></script>
+<script src="jquery-1.6.1.min.js" type="text/javascript"></script>
 <!-- JS version of clutter key value mappings clutter/clutter-keysyms.h -->
 <script src="clutter-keysyms.js" type="text/javascript"></script>
 
@@ -219,7 +219,6 @@ a
 
 #menu
 {
-  width: 100%;
   background: url("/DATADIR/style/item-title-bg.png");
   background-repeat: repeat-x;
   padding: 1em;
@@ -256,9 +255,13 @@ a
 </tr>
 </table>
 <br />
+<table>
+<tr>
 <td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_INFO})" value="Info" /></td>
 <td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_BACK})" value="Back" /></td>
 <td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_HOME})" value="Home" /></td>
+</tr>
+</table>
 </center>
 </form>
 </div>
