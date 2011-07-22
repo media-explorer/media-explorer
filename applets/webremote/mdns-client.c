@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <glib.h>
 
-#include "mdns.h"
+#include "mdns-client.h"
 #include <avahi-common/error.h>
 
 static gchar *

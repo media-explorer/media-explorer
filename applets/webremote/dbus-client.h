@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef __DBUS_INTERFACE_H__
-#define __DBUS_INTERFACE_H__
+#ifndef __DBUS_CLIENT_H__
+#define __DBUS_CLIENT_H__
 
 #include <glib.h>
 

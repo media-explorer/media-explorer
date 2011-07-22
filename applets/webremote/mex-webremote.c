@@ -22,9 +22,11 @@
 #include <glib.h>
 #include <string.h>
 #include <libsoup/soup.h>
-#include "dbus-interface.h"
-#include "tracker-interface.h"
-#include "mdns.h"
+
+#include "dbus-client.h"
+#include "tracker-client.h"
+#include "mdns-client.h"
+
 #include <mex/mex.h>
 
 /* TODO #ifdef HAVE_TRACKER etc */

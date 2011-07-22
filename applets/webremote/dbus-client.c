@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <glib.h>
 #include <gio/gio.h>
-#include "dbus-interface.h"
+#include "dbus-client.h"
 
 void
 httpdbus_send_keyvalue (HTTPDBusInterface *dbus_interface, gint keyval)

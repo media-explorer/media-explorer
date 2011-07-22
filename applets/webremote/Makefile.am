@@ -2,9 +2,9 @@ bin_PROGRAMS = mex-webremote
 
 mex_webremote_SOURCES = \
 		mex-webremote.c \
-		dbus-interface.c dbus-interface.h \
-		tracker-interface.c tracker-interface.h \
-		mdns.c mdns.h
+		dbus-client.c dbus-client.h \
+		tracker-client.c tracker-client.h \
+		mdns-client.c mdns-client.h
 
 mex_webremote_CFLAGS = \
 		-I$(top_srcdir) \

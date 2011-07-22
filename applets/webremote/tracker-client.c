@@ -24,7 +24,7 @@
 #include <glib.h>
 #include <json-glib/json-glib.h>
 
-#include "tracker-interface.h"
+#include "tracker-client.h"
 
 /* Returns the tracker query result in json format */
 gchar *
