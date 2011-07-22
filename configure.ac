@@ -417,6 +417,7 @@ AS_MEX_PLUGIN(dbusinput)
 AS_MEX_PLUGIN(bliptv)
 AS_MEX_PLUGIN(justintv)
 AS_MEX_PLUGIN(debug)
+AS_MEX_PLUGIN(gnome-dvb)
 
 AC_CONFIG_FILES([
   Makefile

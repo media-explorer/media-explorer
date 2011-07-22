@@ -202,6 +202,10 @@ _reset_thumbnail (MexContentTile *tile)
     {
       placeholder_filename = "thumb-image.png";
     }
+  else if (mime && g_str_equal (mime, "x-mex/tv"))
+    {
+      placeholder_filename = "thumb-tv.png";
+    }
   else if (mime && (g_str_has_prefix (mime, "video/") ||
                     g_str_equal (mime, "x-mex/media")))
     {

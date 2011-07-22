@@ -1823,7 +1823,7 @@ static GOptionEntry entries[] =
   { NULL }
 };
 
-static const gchar *play_action_mimetypes[] = { "video/", "x-mex/media", NULL };
+static const gchar *play_action_mimetypes[] = { "video/", "x-mex/media", "x-mex/tv", NULL };
 static const gchar *listen_action_mimetypes[] = { "audio/", NULL };
 static const gchar *resume_action_mimetypes[] = { "video/", "audio/", "x-mex/media", NULL };
 static const gchar *folder_action_mimetypes[] = { "x-grl/box", NULL };
