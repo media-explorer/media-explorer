@@ -46,6 +46,10 @@
 #include "rebinder.h"
 #endif
 
+#if HAVE_WEBREMOTE
+#include "webremote.h"
+#endif
+
 #define ALPHA CLUTTER_EASE_OUT_QUAD
 #define DURATION 400
 
@@ -1685,6 +1689,40 @@ rebinder_quit (void)
 }
 #endif
 
+#if HAVE_WEBREMOTE
+static void
+webremote_quit (void)
+{
+  DBusGConnection *connection;
+  DBusGProxy *proxy;
+  guint32 request_status;
+  GError *error = NULL;
+
+  connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
+  if (connection == NULL)
+    {
+      g_warning ("Failed to open connection to DBus: %s", error->message);
+      g_error_free (error);
+      return;
+    }
+
+  proxy = dbus_g_proxy_new_for_name (connection,
+                                     MEX_WEBREMOTE_DBUS_SERVICE,
+                                     MEX_WEBREMOTE_DBUS_PATH,
+                                     MEX_WEBREMOTE_DBUS_INTERFACE);
+  if (proxy == NULL)
+    {
+      g_message ("Could not create proxy for %s", MEX_WEBREMOTE_DBUS_SERVICE);
+      return;
+    }
+
+  dbus_g_proxy_call_no_reply (proxy, "Quit", G_TYPE_INVALID);
+
+  g_object_unref (proxy);
+  dbus_g_connection_unref (connection);
+}
+#endif
+
 static void
 out_of_box (MexData *data)
 {
@@ -1797,6 +1835,10 @@ cleanup_before_exit (void)
 {
 #if HAVE_REBINDER
   rebinder_quit ();
+#endif
+
+#if HAVE_WEBREMOTE
+  webremote_quit ();
 #endif
 }
 
@@ -2346,6 +2388,9 @@ main (int argc, char **argv)
 
       mex_player_content_set_externally_cb (&data);
     }
+
+  /* TODO check webremote config if we should auto start or not */
+  auto_start_dbus_service (MEX_WEBREMOTE_DBUS_INTERFACE);
 
   application_for_signal = app;
   signal (SIGINT, on_int_term_signaled);
