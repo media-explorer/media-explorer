@@ -641,7 +641,12 @@ mex_info_bar_init (MexInfoBar *self)
 }
 
 ClutterActor *
-mex_info_bar_new (void)
+mex_info_bar_get_default (void)
 {
-  return g_object_new (MEX_TYPE_INFO_BAR, NULL);
+  static ClutterActor *singleton = NULL;
+
+  if (singleton)
+    return singleton;
+
+  return singleton = g_object_new (MEX_TYPE_INFO_BAR, NULL);
 }

@@ -58,8 +58,8 @@ dbus_input_proxy_new (DBusClient *dbus_client)
   proxy = g_dbus_proxy_new_sync (dbus_client->connection,
                                  G_DBUS_PROXY_FLAGS_NONE,
                                  NULL,
-                                 "com.meego.mex.inputctrl",
-                                 "/com/meego/mex/InputControl",
+                                 "com.meego.mex.Input",
+                                 "/com/meego/mex/Input",
                                  "com.meego.mex.Input",
                                  NULL,
                                  &error);
@@ -102,7 +102,7 @@ verify_dbus_input_proxy (DBusClient *dbus_client)
 }
 
 void
-dbus_client_input_set (DBusClient *dbus_client, gint keyval)
+dbus_client_input_set_key (DBusClient *dbus_client, gint keyval)
 {
   GError *error=NULL;
 
@@ -119,6 +119,30 @@ dbus_client_input_set (DBusClient *dbus_client, gint keyval)
   if (error)
     {
       g_warning ("Problem calling ControlKey: %s", error->message);
+      g_error_free (error);
+    }
+}
+
+void
+dbus_client_input_set_message (DBusClient  *dbus_client,
+                               const gchar *message,
+                               guint        timeout)
+{
+  GError *error=NULL;
+
+  if (!verify_dbus_input_proxy (dbus_client))
+    return;
+
+  g_dbus_proxy_call_sync (dbus_client->mex_input,
+                          "Notification",
+                          g_variant_new ("(su)", message, timeout),
+                          0,
+                          -1,
+                          NULL,
+                          &error);
+  if (error)
+    {
+      g_warning ("Problem calling Notification: %s", error->message);
       g_error_free (error);
     }
 }

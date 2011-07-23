@@ -68,14 +68,17 @@ struct _MexInfoBarClass
 void mex_info_bar_close_dialog (MexInfoBar *self);
 void mex_info_bar_show_buttons (MexInfoBar *self, gboolean visible);
 void mex_info_bar_show_notifications (MexInfoBar *self, gboolean visible);
+
+gboolean mex_info_bar_notifications_visible (MexInfoBar *self);
 gboolean mex_info_bar_dialog_visible (MexInfoBar *self);
+
 void mex_info_bar_new_notification (MexInfoBar *self,
                                     const gchar *message,
                                     gint timeout);
 
 GType mex_info_bar_get_type (void) G_GNUC_CONST;
 
-ClutterActor *mex_info_bar_new (void);
+ClutterActor *mex_info_bar_get_default (void);
 
 G_END_DECLS
 

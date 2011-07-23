@@ -38,7 +38,7 @@ main (int argc, char **argv)
   clutter_stage_set_color (CLUTTER_STAGE (stage), &grey);
   clutter_stage_set_user_resizable (CLUTTER_STAGE (stage), TRUE);
 
-  info_bar = mex_info_bar_new ();
+  info_bar = mex_info_bar_get_default ();
   constraint = clutter_bind_constraint_new (stage, CLUTTER_BIND_WIDTH, 0.0);
   clutter_actor_add_constraint (info_bar, constraint);
 

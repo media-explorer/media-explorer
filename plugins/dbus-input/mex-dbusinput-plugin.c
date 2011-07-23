@@ -35,6 +35,10 @@ static const gchar introspection_xml[] =
 "    <method name='ControlKey'>"
 "      <arg name='keyflag' direction='in' type='u'/>"
 "    </method>"
+"    <method name='Notification'>"
+"      <arg name='notification' direction='in' type='s'/>"
+"      <arg name='timeout' direction='in' type='u'/>"
+"    </method>"
 "  </interface>"
 "</node>";
 
@@ -124,6 +128,21 @@ _method_cb (GDBusConnection *connection,
 
       clutter_event_free (event);
     }
+  else if (g_strcmp0 (method_name, "Notification") == 0)
+    {
+      gchar *message;
+      gint timeout;
+      MexInfoBar *info_bar;
+
+      g_variant_get (parameters, "(su)", &message, &timeout);
+
+      info_bar = MEX_INFO_BAR (mex_info_bar_get_default ());
+
+      mex_info_bar_new_notification (info_bar,
+                                     message,
+                                     timeout);
+      g_free (message);
+    }
   g_dbus_method_invocation_return_value (invocation, NULL);
 }
 
@@ -152,7 +171,7 @@ _bus_acquired (GDBusConnection *connection,
 
   /* Note: Dbus object and name subject to change */
   g_dbus_connection_register_object (connection,
-                                     "/com/meego/mex/InputControl",
+                                     "/com/meego/mex/Input",
                                      priv->introspection_data->interfaces[0],
                                      &interface_table,
                                      self,
@@ -178,14 +197,13 @@ mex_dbusinput_plugin_init (MexDbusinputPlugin *self)
 
 
   priv->owner_id = g_bus_own_name (G_BUS_TYPE_SESSION,
-                                   "com.meego.mex.inputctrl",
+                                   "com.meego.mex.Input",
                                    G_BUS_NAME_OWNER_FLAGS_NONE,
                                    (GBusAcquiredCallback) _bus_acquired,
                                    NULL,
                                    NULL,
                                    self,
                                    NULL);
-
 }
 
 G_MODULE_EXPORT const GType

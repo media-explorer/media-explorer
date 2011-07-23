@@ -2022,7 +2022,7 @@ main (int argc, char **argv)
   /* Must set color after set use_alpha */
   clutter_stage_set_color (data.stage, &black);
 
-  data.info_bar = mex_info_bar_new ();
+  data.info_bar = mex_info_bar_get_default ();
 
   g_signal_connect_swapped (data.info_bar, "close-request",
                             G_CALLBACK (mx_application_quit), app);

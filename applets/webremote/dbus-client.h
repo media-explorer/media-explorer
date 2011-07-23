@@ -35,10 +35,14 @@ struct _DBusClient
 DBusClient *dbus_client_new (void);
 
 void dbus_client_free (DBusClient *dbus_client);
-gchar *dbus_client_player_get (DBusClient *dbus_client, const gchar *get);
-void dbus_client_input_set (DBusClient *dbus_client, gint keyval);
-void dbus_client_player_action (DBusClient *dbus_client, const gchar *action);
 
+void dbus_client_input_set_key (DBusClient *dbus_client, gint keyval);
+void dbus_client_input_set_message (DBusClient  *dbus_client,
+                                    const gchar *message,
+                                    guint        timeout);
+
+gchar *dbus_client_player_get (DBusClient *dbus_client, const gchar *get);
+void dbus_client_player_action (DBusClient *dbus_client, const gchar *action);
 void dbus_client_player_set (DBusClient  *dbus_client,
                              const gchar *action,
                              gchar       *uri);
