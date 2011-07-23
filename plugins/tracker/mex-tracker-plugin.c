@@ -141,7 +141,9 @@ add_model (MexTrackerPlugin *self,
     {
     case MEX_TRACKER_CATEGORY_IMAGE:
       cat_name = "pictures";
-      query = "?urn a nmm:Photo . ?urn tracker:available true";
+      query = "?urn a nfo:FileDataObject . "
+              "?urn tracker:available true . "
+              "FILTER (fn:starts-with(nie:mimeType(?urn),'image/'))";
       models = self->priv->image_models;
       metadata_keys = self->priv->image_keys;
       box = grl_media_image_new ();
@@ -149,7 +151,9 @@ add_model (MexTrackerPlugin *self,
 
     case MEX_TRACKER_CATEGORY_VIDEO:
       cat_name = "videos";
-      query = "?urn a nmm:Video . ?urn tracker:available true";
+      query = "?urn a nfo:FileDataObject . "
+              "?urn tracker:available true . "
+              "FILTER (fn:starts-with(nie:mimeType(?urn),'video/'))";
       models = self->priv->video_models;
       metadata_keys = self->priv->video_keys;
       box = grl_media_video_new ();
@@ -157,7 +161,9 @@ add_model (MexTrackerPlugin *self,
 
     case MEX_TRACKER_CATEGORY_MUSIC:
       cat_name = "music";
-      query = "?urn a nmm:MusicPiece . ?urn tracker:available true";
+      query = "?urn a nfo:FileDataObject . "
+              "?urn tracker:available true . "
+              "FILTER (fn:starts-with(nie:mimeType(?urn),'audio/'))";
       models = self->priv->music_models;
       metadata_keys = self->priv->music_keys;
       box = grl_media_audio_new ();
