@@ -24,18 +24,6 @@
 #include "mdns-client.h"
 #include <avahi-common/error.h>
 
-static gchar *
-mdns_service_make_alternative_name (MdnsServiceInfo *info)
-{
-  gchar *new_name;
-
-  info->service_instance++;
-
-  new_name = g_strdup_printf ("%s %d", info->name, info->service_instance);
-
-  return new_name;
-}
-
 static void
 mdns_service_add_service (AvahiClient *client, MdnsServiceInfo *info);
 
@@ -44,9 +32,6 @@ mdns_service_group_state_changed (AvahiEntryGroup      *entry_group,
                                   AvahiEntryGroupState  state,
                                   MdnsServiceInfo      *info)
 {
-  gchar *new_name;
-  const gchar *old_name;
-
   switch (state)
     {
       case AVAHI_ENTRY_GROUP_ESTABLISHED:
@@ -54,15 +39,8 @@ mdns_service_group_state_changed (AvahiEntryGroup      *entry_group,
       break;
 
       case AVAHI_ENTRY_GROUP_COLLISION:
-      /* The o'switch-a-roo */
-      old_name = info->name;
-      new_name = mdns_service_make_alternative_name (info);
-      info->name = new_name;
-
+      info->service_instance++;
       mdns_service_add_service (info->mdns_client, info);
-
-      info->name = old_name;
-      g_free (new_name);
       break;
 
       case AVAHI_ENTRY_GROUP_FAILURE:
@@ -76,6 +54,7 @@ static void
 mdns_service_add_service (AvahiClient *client, MdnsServiceInfo *info)
 {
   gint ret;
+  gchar *service_name;
 
   if (!info->mdns_entry_group)
     {
@@ -85,16 +64,30 @@ mdns_service_add_service (AvahiClient *client, MdnsServiceInfo *info)
                                info);
     }
 
+  g_debug ("%d", info->service_instance);
+
+  if (info->service_instance > 0)
+    service_name = g_strdup_printf ("%s on %s %d",
+                                    info->name,
+                                    avahi_client_get_host_name (client),
+                                    info->service_instance);
+  else
+    service_name = g_strdup_printf ("%s on %s",
+                                    info->name,
+                                    avahi_client_get_host_name (client));
+
   ret = avahi_entry_group_add_service (info->mdns_entry_group,
                                        AVAHI_IF_UNSPEC,
                                        AVAHI_PROTO_UNSPEC,
                                        0,
-                                       info->name,
+                                       service_name,
                                        info->type,
                                        NULL,
                                        NULL,
                                        info->port,
                                        NULL);
+  g_free (service_name);
+
   if (ret < 0)
     {
       if (ret == AVAHI_ERR_COLLISION)
@@ -108,18 +101,23 @@ mdns_service_add_service (AvahiClient *client, MdnsServiceInfo *info)
 
           while (retry == AVAHI_ERR_COLLISION && i <= 100)
             {
-              new_name = mdns_service_make_alternative_name (info);
+              service_name =
+                g_strdup_printf ("%s on %s %d",
+                                 info->name,
+                                 avahi_client_get_host_name (client),
+                                 i);
+
               retry = avahi_entry_group_add_service (info->mdns_entry_group,
                                                      AVAHI_IF_UNSPEC,
                                                      AVAHI_PROTO_UNSPEC,
                                                      0,
-                                                     new_name,
+                                                     service_name,
                                                      info->type,
                                                      NULL,
                                                      NULL,
                                                      info->port,
                                                      NULL);
-              g_free (new_name);
+              g_free (service_name);
               i++;
             }
 
@@ -190,8 +188,8 @@ mdns_service_start (MdnsServiceInfo *info)
                       info,
                       &ret);
 
-    if (!info->mdns_client)
-      g_warning ("Failed to create client: %s", avahi_strerror (ret));
+  if (!info->mdns_client)
+    g_warning ("Failed to create client: %s", avahi_strerror (ret));
 }
 
 MdnsServiceInfo *mdns_service_info_new (void)
