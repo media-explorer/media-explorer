@@ -4,6 +4,7 @@ AM_CFLAGS =					\
 	-I$(top_srcdir)				\
 	-I$(top_srcdir)/mex			\
 	-I$(top_srcdir)/applets/rebinder	\
+	-I$(top_srcdir)/applets/webremote	\
 	$(MEX_CFLAGS)				\
 	$(MEX_DEBUG_CFLAGS)			\
 	$(MAINTAINER_FLAGS) 			\
