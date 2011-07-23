@@ -1,4 +1,4 @@
-SUBDIRS = build mex player applets shell plugins tools
+SUBDIRS = build mex applets shell plugins tools
 
 if ENABLE_TESTS
 SUBDIRS += tests
@@ -6,6 +6,10 @@ endif
 
 if ENABLE_EXAMPLES
 SUBDIRS += examples
+endif
+
+if ENABLE_SURFACE_PLAYER
+SUBDIRS += player
 endif
 
 SUBDIRS += data doc po
