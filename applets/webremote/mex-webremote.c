@@ -41,8 +41,10 @@ typedef struct
   MdnsServiceInfo *mdns_service;
 
   gboolean opt_debug;
-  guint userpass;
+  gchar *userpass;
   const gchar *mex_data_dir;
+  gboolean successful_auth;
+  GList *clients;
 
   gchar *data;
 } MexWebRemote;
@@ -162,7 +164,7 @@ http_post (SoupServer   *server,
         gint keyvalue;
         keyvalue = atoi ((post_request + strlen ("keyvalue=")));
 
-        dbus_client_input_set (self->dbus_client, keyvalue);
+        dbus_client_input_set_key (self->dbus_client, keyvalue);
       }
 
   else if (g_str_has_prefix (post_request, "trackersearch"))
@@ -283,6 +285,23 @@ server_cb (SoupServer        *server,
     soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
 }
 
+static void
+remind_user_pass (MexWebRemote *webremote)
+{
+  gchar **userpass;
+  gchar *message;
+
+  userpass = g_strsplit (webremote->userpass, ":", 2);
+
+  message = g_strdup_printf ("Webremote Username: %s Password: %s",
+                             userpass[0], userpass[1]);
+
+  dbus_client_input_set_message (webremote->dbus_client, message, 20);
+
+  g_free (message);
+  g_strfreev (userpass);
+}
+
 static gboolean
 auth_cb (SoupAuthDomain *domain,
          SoupMessage    *msg,
@@ -290,10 +309,12 @@ auth_cb (SoupAuthDomain *domain,
          const gchar    *password,
          MexWebRemote   *self)
 {
-  gchar *temp;
+  gchar *temp, *message;
+  gchar **userpass;
+
   temp = g_strdup_printf ("%s:%s", username, password);
 
-  if (g_str_hash (temp) == self->userpass)
+  if (g_strcmp0 (temp, self->userpass) == 0)
     {
       if (self->opt_debug)
         g_debug ("Authentication success");
@@ -304,6 +325,9 @@ auth_cb (SoupAuthDomain *domain,
     {
       if (self->opt_debug)
         g_debug ("Authentication failure");
+
+      remind_user_pass (self);
+
       g_free (temp);
       return FALSE;
     }
@@ -328,6 +352,32 @@ address_resolved_cb (SoupAddress *address,
             physical ? physical : "",
             soup_address_get_port (address));
 
+}
+
+static void
+new_connection_cb (SoupSocket *sock, SoupSocket *new, MexWebRemote *webremote)
+{
+  SoupAddress *client_address;
+  guint ipaddresshash;
+
+
+  /* create hash table of connected clients to see if they have connected
+     before if they haven't then */
+  client_address = soup_socket_get_remote_address (new);
+
+  ipaddresshash = g_str_hash (soup_address_get_physical (client_address));
+
+  if (g_list_find (webremote->clients, GUINT_TO_POINTER (ipaddresshash)))
+    return;
+
+  webremote->clients =
+    g_list_prepend (webremote->clients, GUINT_TO_POINTER (ipaddresshash));
+
+
+  remind_user_pass (webremote);
+
+  if (webremote->opt_debug)
+    g_debug ("New connection %s", soup_address_get_physical (client_address));
 }
 
 void
@@ -356,10 +406,12 @@ int main (int argc, char **argv)
   gint dbus_service_id;
 
   GOptionContext *context;
+  GRand *randomiser;
 
   guint opt_port = 9090;
   gchar *opt_interface = NULL;
   const gchar *opt_auth = NULL;
+  SoupSocket *server_socket;
 
   GError *error=NULL;
 
@@ -383,6 +435,8 @@ int main (int argc, char **argv)
   if (!g_option_context_parse (context, &argc, &argv, &error))
     g_warning ("Failed to parse options: %s\n", error->message);
 
+  webremote.clients = NULL;
+
   webremote.mex_data_dir = mex_get_data_dir ();
 
   /* Fallback method */
@@ -394,6 +448,7 @@ int main (int argc, char **argv)
       g_warning ("Could not find program data please verify your installation");
       goto clean_up;
     }
+
 
   /* We want to talk to dbus, tracker and avahi/mdns */
   webremote.dbus_client = dbus_client_new ();
@@ -454,6 +509,8 @@ int main (int argc, char **argv)
 
   g_message ("WebServer started");
 
+  dbus_client_input_set_message (webremote.dbus_client, "Webremote started", 5);
+
   g_object_get (server, "interface", &address, NULL);
 
   /* Probably don't need to run the resolve but it's more reliable to do so. */
@@ -462,26 +519,51 @@ int main (int argc, char **argv)
   /* use password */
   if (opt_auth)
     {
-     webremote.userpass = g_str_hash (opt_auth);
-
-     domain = soup_auth_domain_basic_new (SOUP_AUTH_DOMAIN_REALM,
-                                          "Authenticate",
-                                          SOUP_AUTH_DOMAIN_BASIC_AUTH_CALLBACK,
-                                          auth_cb,
-                                          SOUP_AUTH_DOMAIN_BASIC_AUTH_DATA,
-                                          (gpointer)&webremote,
-                                          SOUP_AUTH_DOMAIN_ADD_PATH, "/",
-                                          NULL);
-
-      soup_server_add_auth_domain (server, domain);
-      g_object_unref (domain);
+      /* Use the argument if set */
+      webremote.userpass = g_strdup (opt_auth);
     }
+  else
+    {
+      /* Generate a password */
+      randomiser = g_rand_new ();
+
+      webremote.userpass =
+        g_strdup_printf ("mex:%d%d%d%d",
+                         g_rand_int_range (randomiser, 0, 9),
+                         g_rand_int_range (randomiser, 0, 9),
+                         g_rand_int_range (randomiser, 0, 9),
+                         g_rand_int_range (randomiser, 0, 9));
+
+      g_rand_free (randomiser);
+
+      g_message ("User Password %s", webremote.userpass);
+    }
+
+  domain = soup_auth_domain_basic_new (SOUP_AUTH_DOMAIN_REALM,
+                                       "Authenticate",
+                                       SOUP_AUTH_DOMAIN_BASIC_AUTH_CALLBACK,
+                                       auth_cb,
+                                       SOUP_AUTH_DOMAIN_BASIC_AUTH_DATA,
+                                       (gpointer)&webremote,
+                                       SOUP_AUTH_DOMAIN_ADD_PATH, "/",
+                                       NULL);
+
+  soup_server_add_auth_domain (server, domain);
+  g_object_unref (domain);
 
   soup_server_add_handler (server,
                            NULL,
                            (SoupServerCallback)server_cb,
                            (gpointer)&webremote,
                            NULL);
+
+  server_socket = soup_server_get_listener (server);
+
+  g_signal_connect (server_socket, "new-connection",
+                    (GCallback) new_connection_cb,
+                    &webremote);
+
+
 
   signal (SIGINT, sig_webremote_quit);
   signal (SIGTERM, sig_webremote_quit);
@@ -497,6 +579,12 @@ clean_up:
 
   if (error)
     g_error_free (error);
+
+  if (webremote.userpass)
+    g_free (webremote.userpass);
+
+  if (webremote.clients)
+    g_list_free (webremote.clients);
 
   if (webremote.dbus_client)
     dbus_client_free (webremote.dbus_client);
