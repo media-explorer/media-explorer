@@ -114,6 +114,7 @@ create_channel_impl (TpSimpleClientFactory *self,
     GError **error)
 {
   const gchar *chan_type;
+  g_debug("Creating new channel from tpy_automatic_client_factory.");
 
   chan_type = tp_asv_get_string (properties, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
@@ -142,20 +143,6 @@ dup_channel_features_impl (TpSimpleClientFactory *self,
   feature = TP_CHANNEL_FEATURE_PASSWORD;
   g_array_append_val (features, feature);
 
-  if (TP_IS_TEXT_CHANNEL (channel))
-    {
-      feature = TP_TEXT_CHANNEL_FEATURE_INCOMING_MESSAGES;
-      g_array_append_val (features, feature);
-
-      feature = TP_TEXT_CHANNEL_FEATURE_SMS;
-      g_array_append_val (features, feature);
-    }
-  else if (TP_IS_FILE_TRANSFER_CHANNEL (channel))
-    {
-      feature = TP_FILE_TRANSFER_CHANNEL_FEATURE_CORE;
-      g_array_append_val (features, feature);
-    }
-
   return features;
 }
 
@@ -179,7 +166,7 @@ tpy_automatic_client_factory_class_init (TpyAutomaticClientFactoryClass *cls)
  *
  * Convenient function to create a new #TpAutomaticClientFactory instance.
  *
- * Returns: a new #TpAutomaticClientFactory
+ * Returns: a new #TpyAutomaticClientFactory
  *
  * Since: 0.UNRELEASED
  */
