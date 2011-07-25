@@ -9,7 +9,7 @@ AM_CFLAGS =					\
 	$(MEX_DEBUG_CFLAGS)			\
 	$(MAINTAINER_FLAGS) 			\
 	-DG_LOG_DOMAIN=\"Mex\"			\
-	-DPKGDATADIR=\""$(pkgdatadir)/shell"\"	\
+	-DPKGDATADIR=\""$(pkgdatadir)"\"	\
 	$(NULL)
 
 BUILT_SOURCES = mex-version.h

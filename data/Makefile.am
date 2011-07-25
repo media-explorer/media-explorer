@@ -2,11 +2,12 @@ SUBDIRS = appicons
 
 jsondir = $(pkgdatadir)/json
 dist_json_DATA = \
-	json/media-controls.json	\
-	json/slide-show.json		\
 	json/info-bar.json		\
 	json/info-panel-full.json	\
 	json/info-panel-simple.json	\
+	json/media-controls.json	\
+	json/slide-show.json		\
+	json/welcome.json		\
 	$(NULL)
 
 if HAVE_LIRC
@@ -16,23 +17,29 @@ endif
 
 styledir = $(pkgdatadir)/style
 dist_style_DATA = \
+	style/button-bg-highlight.png \
+	style/button-bg.png \
 	style/controls-bg.png \
 	style/details-actions-separator.png \
 	style/details-bg.png \
-	style/folder-tile.png \
 	style/folder-tile-up.png \
+	style/folder-tile.png \
+	style/frame-bg.png \
 	style/graphic-network.png \
 	style/graphic-rebinder.png \
 	style/grid-content-bg.png \
 	style/harderror-bg.png \
 	style/header-vr.png \
-	style/highlight-bg.png \
 	style/highlight-bg-white.png \
+	style/highlight-bg.png \
 	style/highlight.png \
 	style/icon-actualsize-highlight.png \
 	style/icon-actualsize.png \
+	style/icon-back.png \
 	style/icon-fullscreen-highlight.png \
 	style/icon-fullscreen.png \
+	style/icon-home.png \
+	style/icon-info.png \
 	style/icon-pause-highlight.png \
 	style/icon-pause.png \
 	style/icon-play-highlight.png \
@@ -51,6 +58,16 @@ dist_style_DATA = \
 	style/panel-shadow.png \
 	style/queue-spinner-highlight.png \
 	style/queue-spinner.png \
+	style/remote-back-error.png \
+	style/remote-back-hl.png \
+	style/remote-back.png \
+	style/remote-home-error.png \
+	style/remote-home-hl.png \
+	style/remote-home.png \
+	style/remote-info-error.png \
+	style/remote-info-hl.png \
+	style/remote-info.png \
+	style/remote.png \
 	style/scroll-bar.png \
 	style/scroll-bg.png \
 	style/spinner.png \
@@ -63,12 +80,12 @@ dist_style_DATA = \
 	style/thumb-video.png \
 	style/timeline-bg.png \
 	style/timeline-buffer.png \
-	style/timeline-highlight.png \
 	style/timeline-highlight-white.png \
+	style/timeline-highlight.png \
 	style/timeline-playhead.png \
 	style/volume-0.png \
-	style/volume-10.png \
 	style/volume-1.png \
+	style/volume-10.png \
 	style/volume-2.png \
 	style/volume-3.png \
 	style/volume-4.png \
@@ -147,28 +164,8 @@ dist_rebinder_DATA = 				\
 	rebinder/back.json			\
 	rebinder/home.json			\
 	rebinder/info.json			\
-	rebinder/welcome.json			\
 	rebinder/done.json			\
 	rebinder/setup.json			\
-	rebinder/error-back.json		\
-	rebinder/error-home.json		\
-	rebinder/error-info.json		\
-	rebinder/button-bg.png			\
-	rebinder/button-bg-highlight.png	\
-	rebinder/frame-bg.png			\
-	rebinder/icon-back.png			\
-	rebinder/icon-home.png			\
-	rebinder/icon-info.png			\
-	rebinder/remote.png			\
-	rebinder/remote-back.png		\
-	rebinder/remote-back-error.png		\
-	rebinder/remote-back-hl.png		\
-	rebinder/remote-home.png		\
-	rebinder/remote-home-error.png		\
-	rebinder/remote-home-hl.png		\
-	rebinder/remote-info.png		\
-	rebinder/remote-info-error.png		\
-	rebinder/remote-info-hl.png		\
 	rebinder/style.css			\
 	$(NULL)
 endif

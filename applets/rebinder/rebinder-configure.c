@@ -31,7 +31,6 @@
 typedef enum
 {
   PANE_FIRST   = -1,
-  PANE_WELCOME = 0,
   PANE_SETUP,
   PANE_BACK,
   PANE_HOME,
@@ -91,7 +90,6 @@ typedef struct
 
 static const PaneDescription panes[6] =
 {
-  { "welcome", PKGDATADIR "/welcome.json" },
   { "setup",   PKGDATADIR "/setup.json" },
   { "back",    PKGDATADIR "/back.json" },
   { "home",    PKGDATADIR "/home.json" },
@@ -436,7 +434,7 @@ static void
 on_restart_button_clicked (MxButton  *button,
                            Configure *config)
 {
-  show_pane (config, PANE_WELCOME);
+  show_pane (config, PANE_SETUP);
 }
 
 static void
@@ -577,7 +575,7 @@ show_pane (Configure *config,
 
     }
 
-  /* Connect the "goto-welcome" */
+  /* Connect the "goto-start" */
   restart = CLUTTER_ACTOR (clutter_script_get_object (config->script,
                                                       "restart"));
   if (restart)
@@ -621,7 +619,7 @@ load_style (void)
 {
   GError *error = NULL;
   mx_style_load_from_file (mx_style_get_default (),
-                           PKGDATADIR "/style.css",
+                           PKGDATADIR "/../style/style.css",
                            &error);
 
   if (error)

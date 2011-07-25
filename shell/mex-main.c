@@ -1629,30 +1629,57 @@ request_dbus_name (const gchar *name)
 }
 
 static void
-rebinder_configure_run (MxWindow *window)
+close_welcome_cb (MxButton *button,
+                  MexData  *data)
 {
-#if HAVE_REBINDER
-  const gchar dbus_name[] = MEX_REBINDER_CONFIGURE_DBUS_INTERFACE;
-  Rebinder the_rebinder;
+  mx_window_set_child (data->window, data->stack);
+  mex_show_home_screen (data);
+}
 
-  if (request_dbus_name (dbus_name) == FALSE)
+static void
+welcome_run (MexData *data)
+{
+  GError *error = NULL;
+  ClutterScript *script;
+  ClutterActor *welcome, *main_frame, *old_child;
+
+  script = clutter_script_new ();
+
+  clutter_script_load_from_file (script,
+                                 PKGDATADIR "/json/welcome.json",
+                                 &error);
+  if (error)
     {
-      g_message ("Could not request DBus name: %s", dbus_name);
+      g_warning ("Could not load welcome screen: %s", error->message);
+      g_clear_error (&error);
+      g_object_unref (script);
       return;
     }
 
-  /* we expect to be build against clutter-glx */
-  the_rebinder.dpy = clutter_x11_get_default_display ();
+  main_frame = mx_frame_new ();
+  clutter_actor_set_name (main_frame, "main-frame");
+  mx_bin_set_alignment (MX_BIN (main_frame),
+                        MX_ALIGN_MIDDLE,
+                        MX_ALIGN_MIDDLE);
+  mx_bin_set_fill (MX_BIN (main_frame), FALSE, FALSE);
 
-  the_rebinder.config = rebinder_configure (&the_rebinder,
-					    window,
-					    TRUE,
-					    opt_fullscreen);
 
-  clutter_main ();
+  /* take a reference to the current window child (the stack), to prevent it
+   * being destroyed when the new child is set */
+  g_object_ref (data->stack);
+  mx_window_set_child (data->window, main_frame);
 
-  rebinder_configure_free (the_rebinder.config);
-#endif /* HAVE_REBINDER */
+  welcome = (ClutterActor*) clutter_script_get_object (script, "pane");
+  /* override width and minimum height so panels are consistent */
+  g_object_set (G_OBJECT (welcome),
+                "width", 740.0,
+                "min-height", 550.0,
+                NULL);
+  mx_bin_set_child (MX_BIN (main_frame), welcome);
+  mex_push_focus (MX_FOCUSABLE (welcome));
+
+  g_signal_connect (clutter_script_get_object (script, "next"),
+                    "clicked", G_CALLBACK (close_welcome_cb), data);
 }
 
 #if HAVE_REBINDER
@@ -1743,7 +1770,7 @@ out_of_box (MexData *data)
       return;
     }
 
-  rebinder_configure_run (data->window);
+  welcome_run (data);
 
   /* Add a help hint for usage of the columns */
   if (data->info_bar)
@@ -2068,8 +2095,6 @@ main (int argc, char **argv)
 
   g_signal_connect_swapped (data.info_bar, "close-request",
                             G_CALLBACK (mx_application_quit), app);
-  /* Out of the box experience */
-  out_of_box (&data);
 
   /* Create bindings pool */
   data.bindings = clutter_binding_pool_new ("Media Explorer");
@@ -2395,6 +2420,10 @@ main (int argc, char **argv)
   application_for_signal = app;
   signal (SIGINT, on_int_term_signaled);
   signal (SIGTERM, on_int_term_signaled);
+
+  /* Out of the box experience */
+  out_of_box (&data);
+
 
   mx_application_run (app);
 

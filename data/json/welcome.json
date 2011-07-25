@@ -101,7 +101,7 @@
       "type": "MxButton",
       "id": "next",
       "style-class": "Next",
-      "label": "Next",
+      "label": "Let's Go!",
       "child::expand": true,
       "child::x-fill": false,
       "child::x-align": "end",
