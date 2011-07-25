@@ -139,26 +139,26 @@ mex_telepathy_plugin_compare_mex_contact(gconstpointer a,
 }
 
 static void
-mex_telepathy_plugin_on_channel_created (GObject *source,
+mex_telepathy_plugin_on_channel_ensured (GObject *source,
                                          GAsyncResult *result,
                                          gpointer user_data)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
     MexTelepathyPluginPrivate *priv = self->priv;
 
-    TpChannel *channel;
+    gboolean success;
     GError *error = NULL;
 
-    channel = tp_account_channel_request_create_and_handle_channel_finish (
-        TP_ACCOUNT_CHANNEL_REQUEST (source), result, NULL, &error);
-    if (channel == NULL) {
+    success = tp_account_channel_request_ensure_channel_finish (
+        TP_ACCOUNT_CHANNEL_REQUEST (source), result, &error);
+    if (!success) {
         g_debug ("Failed to create channel: %s", error->message);
 
         g_error_free (error);
         return;
+    } else {
+        g_debug ("Channel successfully ensured");
     }
-
-    g_debug ("Channel created: %s", tp_proxy_get_object_path (channel));
 }
 
 static void
@@ -261,10 +261,11 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
     req = tp_account_channel_request_new (account, request,
         TP_USER_ACTION_TIME_CURRENT_TIME);
 
-    tp_account_channel_request_create_and_handle_channel_async (req,
-                                                                NULL,
-                                                                mex_telepathy_plugin_on_channel_created,
-                                                                self);
+    tp_account_channel_request_ensure_channel_async (req,
+                                                     tp_base_client_get_bus_name(self->priv->client),
+                                                     NULL,
+                                                     mex_telepathy_plugin_on_channel_ensured,
+                                                     self);
 
     g_hash_table_unref (request);
 }
