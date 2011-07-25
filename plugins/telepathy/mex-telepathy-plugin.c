@@ -19,6 +19,8 @@
 #include "mex-telepathy-plugin.h"
 
 #include "mex-contact.h"
+#include "mex-telepathy-channel.h"
+#include "tpy-client-factory.h"
 
 #include <gst/gst.h>
 #include <telepathy-glib/account.h>
@@ -37,8 +39,6 @@
 #include <telepathy-yell/interfaces.h>
 
 #include <glib/gi18n.h>
-
-#include "mex-telepathy-channel.h"
 
 static const gchar *audio_contact_mimetypes[] = { "x-mex-audio-contact", "x-mex-av-contact", NULL };
 static const gchar *av_contact_mimetypes[] = { "x-mex-av-contact", NULL };
@@ -716,15 +716,15 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     };
 
     TpDBusDaemon *daemon = tp_dbus_daemon_dup(NULL);
-    TpSimpleClientFactory *factory = tp_simple_client_factory_new(daemon);
-    tp_simple_client_factory_add_account_features(factory, account_features);
-    tp_simple_client_factory_add_connection_features(factory, connection_features);
-    tp_simple_client_factory_add_contact_features(factory,
+    TpyAutomaticClientFactory *factory = tpy_automatic_client_factory_new(daemon);
+    tp_simple_client_factory_add_account_features(TP_SIMPLE_CLIENT_FACTORY(factory), account_features);
+    tp_simple_client_factory_add_connection_features(TP_SIMPLE_CLIENT_FACTORY(factory), connection_features);
+    tp_simple_client_factory_add_contact_features(TP_SIMPLE_CLIENT_FACTORY(factory),
                                                   G_N_ELEMENTS (contact_features),
                                                   contact_features);
 
     // Tp init
-    priv->account_manager = tp_simple_client_factory_ensure_account_manager (factory);
+    priv->account_manager = tp_simple_client_factory_ensure_account_manager (TP_SIMPLE_CLIENT_FACTORY(factory));
     tp_proxy_prepare_async (priv->account_manager,
                             account_manager_features,
                             mex_telepathy_plugin_on_account_manager_ready,
