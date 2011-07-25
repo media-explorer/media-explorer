@@ -40,13 +40,6 @@ endif
 if USE_PLUGIN_SEARCH
 plugins_LTLIBRARIES += 00mex-search.la
 
-search_datadir = $(datadir)/mex/plugins/search
-dist_search_data_DATA =		\
-	search/style.css	\
-	search/search-bg.png 	\
-	search/textInput-bg.png \
-	$(NULL)
-
 00mex_search_la_SOURCES =		\
 	search/mex-search-plugin.c	\
 	search/mex-search-plugin.h	\

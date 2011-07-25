@@ -72,6 +72,7 @@ dist_style_DATA = \
 	style/scroll-bg.png \
 	style/spinner.png \
 	style/style.css \
+	style/text-input-bg.png \
 	style/thumb-bg.png \
 	style/thumb-image.png \
 	style/thumb-music.png \
