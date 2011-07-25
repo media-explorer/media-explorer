@@ -51,6 +51,7 @@ struct _MexTelepathyChannelPrivate {
     TpChannel *channel;
     TfChannel *tf_channel;
     GList *notifiers;
+    GTimer *timer;
 
     GstElement *video_input;
     GstElement *video_capsfilter;
@@ -84,6 +85,12 @@ mex_telepathy_channel_finalize (GObject *gobject)
     MexTelepathyChannelPrivate *priv = self->priv;
     G_OBJECT_CLASS (mex_telepathy_channel_parent_class)->finalize (gobject);
 }
+static void on_video_closed(ClutterActor *actor,
+                            gpointer user_data)
+{
+    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
+    tp_channel_close_async (self->priv->channel, NULL, NULL);
+}
 
 void on_hangup(MxAction *action, gpointer user_data)
 {
@@ -91,8 +98,11 @@ void on_hangup(MxAction *action, gpointer user_data)
     tp_channel_close_async (self->priv->channel, NULL, NULL);
 }
 
-void on_pause_resume(MexTelepathyChannel *self)
+void on_hold(MxAction *action, gpointer user_data)
 {
+    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
+    TpyCallChannel * channel = TPY_CALL_CHANNEL(self->priv->channel);
+
 }
 
 void create_video_page(MexTelepathyChannel *self)
@@ -138,7 +148,9 @@ void create_video_page(MexTelepathyChannel *self)
     mx_button_set_action(MX_BUTTON(end_button), end_action);
     mx_stylable_set_style_class (MX_STYLABLE (end_button), "MediaStop");
 
+    MxAction *hold_action = mx_action_new_full("Hold", "Hold Call", (GCallback)on_hold, self);
     ClutterActor *hold_button = mx_button_new();
+    mx_button_set_action(MX_BUTTON(hold_button), hold_action);
     mx_stylable_set_style_class (MX_STYLABLE (hold_button), "MediaPause");
 
     priv->duration_label = mx_label_new_with_text("Duration - 0:00");
@@ -168,6 +180,24 @@ void create_video_page(MexTelepathyChannel *self)
 
     // Finally put the vertical container in the frame.
     clutter_container_add(CLUTTER_CONTAINER(priv->video_call_page), vertical, NULL);
+}
+
+static gboolean
+update_duration_label(gpointer user_data)
+{
+    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
+
+    // Get the elapsed time
+    guint elapsed = g_timer_elapsed(self->priv->timer, NULL);
+    guint minutes = elapsed / 60;
+    guint seconds = elapsed % 60 % 10;
+    gchar *text;
+    text = g_strdup_printf("Duration - %d:%02d", minutes, seconds);
+
+    // Update the label
+    mx_label_set_text( MX_LABEL(self->priv->duration_label), text);
+
+    return TRUE;
 }
 
 static gboolean
@@ -331,6 +361,11 @@ static gboolean on_video_start_sending(TfContent *content,
                   mex_telepathy_channel_signals[SHOW_ACTOR],
                   0,
                   g_object_ref(priv->video_call_page));
+
+    g_signal_connect(priv->video_call_page,
+                     "hide",
+                     G_CALLBACK(on_video_closed),
+                     self);
 
     return TRUE;
 }
@@ -524,9 +559,9 @@ conference_added_cb (TfChannel *channel,
 }
 
 static gboolean
-dump_pipeline_cb (gpointer data)
+dump_pipeline_cb (gpointer user_data)
 {
-    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(data);
+    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
 
     GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (self->priv->pipeline),
                                        GST_DEBUG_GRAPH_SHOW_ALL,
@@ -557,6 +592,7 @@ new_tf_channel_cb (GObject *source,
 
     g_debug ("Adding timeout");
     g_timeout_add_seconds (5, dump_pipeline_cb, self);
+    g_timeout_add_seconds (1, update_duration_label, self);
 
     g_signal_connect (priv->tf_channel, "fs-conference-added",
                       G_CALLBACK (conference_added_cb), self);
@@ -776,6 +812,7 @@ mex_telepathy_channel_init (MexTelepathyChannel  *self)
     self->priv->connection = NULL;
     self->priv->channel = NULL;
     self->priv->tf_channel = NULL;
+    self->priv->timer = g_timer_new();
     create_video_page(self);
 }
 
