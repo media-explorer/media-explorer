@@ -6,4 +6,5 @@ Icon=tv
 Categories=AudioVideo;Video;TV;Player;
 Terminal=false
 StartupNotify=true
+NoDisplay=true
 
