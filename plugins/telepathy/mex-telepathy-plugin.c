@@ -72,6 +72,7 @@ struct _MexTelepathyPluginPrivate {
 
   GList *channels;
   TpAccountManager *account_manager;
+  TpBaseClient *client;
 };
 
 static void
@@ -105,6 +106,7 @@ mex_telepathy_plugin_dispose (GObject *gobject)
     }
 
     g_object_unref(priv->account_manager);
+    g_object_unref(priv->client);
 
     G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->dispose (gobject);
 }
@@ -606,21 +608,21 @@ mex_telepathy_on_new_call_channel (TpSimpleHandler *handler,
 
 void mex_telepathy_plugin_create_handler(MexTelepathyPlugin *self)
 {
-    TpBaseClient *client;
     TpDBusDaemon *bus;
+    MexTelepathyPluginPrivate *priv = self->priv;
 
     bus = tp_dbus_daemon_dup (NULL);
 
-    client = tp_simple_handler_new (bus,
-                                    FALSE,
-                                    FALSE,
-                                    "TpMexPlugin",
-                                    TRUE,
-                                    mex_telepathy_on_new_call_channel,
-                                    self,
-                                    NULL);
+    priv->client = tp_simple_handler_new (bus,
+                                          FALSE,
+                                          FALSE,
+                                          "TpMexPlugin",
+                                          TRUE,
+                                          mex_telepathy_on_new_call_channel,
+                                          self,
+                                          NULL);
 
-    tp_base_client_take_handler_filter (client,
+    tp_base_client_take_handler_filter (priv->client,
                                         tp_asv_new (
                                             TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
                                             TPY_IFACE_CHANNEL_TYPE_CALL,
@@ -630,7 +632,7 @@ void mex_telepathy_plugin_create_handler(MexTelepathyPlugin *self)
                                             TRUE,
                                             NULL));
 
-    tp_base_client_take_handler_filter (client,
+    tp_base_client_take_handler_filter (priv->client,
                                         tp_asv_new (
                                             TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
                                             TPY_IFACE_CHANNEL_TYPE_CALL,
@@ -640,14 +642,14 @@ void mex_telepathy_plugin_create_handler(MexTelepathyPlugin *self)
                                             TRUE,
                                             NULL));
 
-    tp_base_client_add_handler_capabilities_varargs (client,
+    tp_base_client_add_handler_capabilities_varargs (priv->client,
             TPY_IFACE_CHANNEL_TYPE_CALL "/video/h264",
             TPY_IFACE_CHANNEL_TYPE_CALL "/shm",
             TPY_IFACE_CHANNEL_TYPE_CALL "/ice",
             TPY_IFACE_CHANNEL_TYPE_CALL "/gtalk-p2p",
             NULL);
 
-    tp_base_client_register (client, NULL);
+    tp_base_client_register (priv->client, NULL);
 }
 
 static void
