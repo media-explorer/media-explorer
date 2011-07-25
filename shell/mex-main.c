@@ -380,6 +380,7 @@ mex_show_cb (MxAction *action, MexData *data)
   mex_hide_actor (data, data->player);
 
   /* stop any playing video, even in idle mode */
+  clutter_actor_hide (data->player);
   mex_player_set_idle_mode (MEX_PLAYER (data->player), FALSE);
 
   /* show the slide show */
@@ -657,7 +658,13 @@ mex_show_actor (MexData      *data,
     {
       /* main menu view */
       mx_widget_set_disabled (MX_WIDGET (data->layout), FALSE);
+      mex_player_set_idle_mode (MEX_PLAYER (data->player), TRUE);
+      clutter_actor_show (data->player);
       clutter_actor_set_opacity (data->layout, 0xff);
+
+      mex_player_set_idle_mode (MEX_PLAYER (data->player), TRUE);
+      clutter_actor_lower_bottom (data->player);
+      clutter_actor_show (data->player);
     }
   else if (actor == data->player)
     {
