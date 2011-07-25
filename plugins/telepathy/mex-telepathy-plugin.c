@@ -73,6 +73,7 @@ struct _MexTelepathyPluginPrivate {
   GList *channels;
   TpAccountManager *account_manager;
   TpBaseClient *client;
+  TpyAutomaticClientFactory * factory;
 };
 
 static void
@@ -136,29 +137,6 @@ mex_telepathy_plugin_compare_mex_contact(gconstpointer a,
     TpContact *contact_a = mex_contact_get_tp_contact(mex_contact);
 
     return tp_strdiff(tp_contact_get_identifier(contact_a), tp_contact_get_identifier(contact_b));
-}
-
-static void
-mex_telepathy_plugin_on_channel_ensured (GObject *source,
-                                         GAsyncResult *result,
-                                         gpointer user_data)
-{
-    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
-    MexTelepathyPluginPrivate *priv = self->priv;
-
-    gboolean success;
-    GError *error = NULL;
-
-    success = tp_account_channel_request_ensure_channel_finish (
-        TP_ACCOUNT_CHANNEL_REQUEST (source), result, &error);
-    if (!success) {
-        g_debug ("Failed to create channel: %s", error->message);
-
-        g_error_free (error);
-        return;
-    } else {
-        g_debug ("Channel successfully ensured");
-    }
 }
 
 static void
@@ -226,7 +204,7 @@ mex_telepathy_plugin_on_accept_contact (MxAction *action,
 
 static void
 mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
-                                            TpAccount *account,
+                                            TpConnection *connection,
                                             TpContact *contact,
                                             gboolean audio,
                                             gboolean video)
@@ -258,14 +236,12 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
 
     g_debug ("Offer video channel to %s", tp_contact_get_identifier(contact));
 
-    req = tp_account_channel_request_new (account, request,
-        TP_USER_ACTION_TIME_CURRENT_TIME);
-
-    tp_account_channel_request_ensure_channel_async (req,
-                                                     tp_base_client_get_bus_name(self->priv->client),
-                                                     NULL,
-                                                     mex_telepathy_plugin_on_channel_ensured,
-                                                     self);
+    GError *error = NULL;
+    tp_simple_client_factory_dup_channel (TP_SIMPLE_CLIENT_FACTORY(self->priv->factory),
+                                          connection,
+                                          tp_base_client_get_bus_name(self->priv->client),
+                                          request,
+                                          &error);
 
     g_hash_table_unref (request);
 }
@@ -280,11 +256,10 @@ mex_telepathy_plugin_on_start_video_call (MxAction *action,
     MexContent *content = mex_action_get_content (action);
     MexContact *mex_contact = MEX_CONTACT (content);
     TpContact *contact = mex_contact_get_tp_contact (mex_contact);
-    TpAccount *account = tp_connection_get_account (
-                            tp_contact_get_connection (contact));
+    TpConnection *connection = tp_contact_get_connection (contact);
 
     mex_telepathy_plugin_craft_channel_request (self,
-                                                account,
+                                                connection,
                                                 contact,
                                                 TRUE,
                                                 TRUE);
@@ -300,11 +275,10 @@ mex_telepathy_plugin_on_start_audio_call (MxAction *action,
     MexContent *content = mex_action_get_content (action);
     MexContact *mex_contact = MEX_CONTACT (content);
     TpContact *contact = mex_contact_get_tp_contact (mex_contact);
-    TpAccount *account = tp_connection_get_account (
-                            tp_contact_get_connection (contact));
+    TpConnection *connection = tp_contact_get_connection (contact);
 
     mex_telepathy_plugin_craft_channel_request (self,
-                                                account,
+                                                connection,
                                                 contact,
                                                 TRUE,
                                                 FALSE);
@@ -698,10 +672,10 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 
     priv->models = g_list_append (priv->models, info);
 
-    const GQuark account_features[] = {
+    GQuark account_features[] = {
         TP_ACCOUNT_FEATURE_CONNECTION,
         0 };
-    const GQuark connection_features[] = {
+    GQuark connection_features[] = {
         TP_CONNECTION_FEATURE_CONTACT_LIST,
         0 };
     static TpContactFeature contact_features[] = {
@@ -713,22 +687,21 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     };
 
     TpDBusDaemon *daemon = tp_dbus_daemon_dup(NULL);
-    TpyAutomaticClientFactory *factory = tpy_automatic_client_factory_new(daemon);
-    tp_simple_client_factory_add_account_features(TP_SIMPLE_CLIENT_FACTORY(factory), account_features);
-    tp_simple_client_factory_add_connection_features(TP_SIMPLE_CLIENT_FACTORY(factory), connection_features);
-    tp_simple_client_factory_add_contact_features(TP_SIMPLE_CLIENT_FACTORY(factory),
+    priv->factory = tpy_automatic_client_factory_new(daemon);
+    tp_simple_client_factory_add_account_features(TP_SIMPLE_CLIENT_FACTORY(priv->factory), account_features);
+    tp_simple_client_factory_add_connection_features(TP_SIMPLE_CLIENT_FACTORY(priv->factory), connection_features);
+    tp_simple_client_factory_add_contact_features(TP_SIMPLE_CLIENT_FACTORY(priv->factory),
                                                   G_N_ELEMENTS (contact_features),
                                                   contact_features);
 
     // Tp init
-    priv->account_manager = tp_simple_client_factory_ensure_account_manager (TP_SIMPLE_CLIENT_FACTORY(factory));
+    priv->account_manager = tp_simple_client_factory_dup_account_manager (TP_SIMPLE_CLIENT_FACTORY(priv->factory));
     tp_proxy_prepare_async (priv->account_manager,
                             NULL,
                             mex_telepathy_plugin_on_account_manager_ready,
                             self);
 
     g_object_unref(daemon);
-    g_object_unref(factory);
 
     tf_init ();
 
