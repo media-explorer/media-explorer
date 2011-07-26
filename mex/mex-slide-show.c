@@ -618,7 +618,7 @@ captured_event_cb (ClutterActor *actor,
     return FALSE;
 
 
-  if (event->key.keyval == MEX_KEY_INFO)
+  if (MEX_KEY_INFO (event->key.keyval))
     {
       mex_slide_show_set_playing (MEX_SLIDE_SHOW (actor), FALSE);
 

@@ -193,11 +193,11 @@ mex_lirc_read_cb (GIOChannel         *source,
               else if (g_str_equal (lirc_char, "right"))
                 mex_lirc_do_key_event (CLUTTER_KEY_Right);
               else if (g_str_equal (lirc_char, "enter"))
-                mex_lirc_do_key_event (MEX_KEY_OK);
+                mex_lirc_do_key_event (CLUTTER_KEY_Return);
               else if (g_str_equal (lirc_char, "back"))
-                mex_lirc_do_key_event (MEX_KEY_BACK);
+                mex_lirc_do_key_event (CLUTTER_KEY_Back);
               else if (g_str_equal (lirc_char, "home"))
-                mex_lirc_do_key_event (MEX_KEY_HOME);
+                mex_lirc_do_key_event (CLUTTER_KEY_Home);
             }
 
           g_free (lirc_code);

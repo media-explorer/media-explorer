@@ -456,6 +456,71 @@ mex_player_key_press_event (ClutterActor    *actor,
   stage = (ClutterStage*) clutter_actor_get_stage (actor);
   fmanager = mx_focus_manager_get_for_stage (stage);
 
+  if (MEX_KEY_INFO (event->keyval))
+    {
+      MexContent *content;
+
+      content = priv->content;
+
+      if (priv->info_visible)
+        {
+          /* hide the info panel */
+          clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
+                                 250, "opacity", 0x00, NULL);
+
+          mx_widget_set_disabled (MX_WIDGET (priv->info_panel), TRUE);
+          mx_widget_set_disabled (MX_WIDGET (priv->controls), FALSE);
+
+          priv->info_visible = FALSE;
+
+          if (priv->controls_prev_visible)
+            mex_player_set_controls_visible (player, TRUE);
+        }
+      else
+        {
+          MxFocusable *focusable;
+
+          /* if you're pressing info button while the media controls are up
+             set them as previously visible */
+          if (priv->controls_visible)
+            priv->controls_prev_visible = TRUE;
+
+          focusable = mx_focus_manager_get_focused (fmanager);
+          if (MEX_IS_CONTENT_TILE (focusable) &&
+              priv->controls_prev_visible == TRUE)
+            {
+              content =
+                mex_content_view_get_content (MEX_CONTENT_VIEW (focusable));
+
+              /* to avoid any accidental leak */
+              if (priv->related_tile)
+                {
+                  g_object_unref (priv->related_tile);
+                  priv->related_tile = NULL;
+                }
+              priv->related_tile = g_object_ref (focusable);
+            }
+
+          mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel),
+                                        content);
+
+          /* show the info panel */
+          clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
+                                 250, "opacity", 0xff, NULL);
+
+          mx_widget_set_disabled (MX_WIDGET (priv->info_panel), FALSE);
+          mx_widget_set_disabled (MX_WIDGET (priv->controls), TRUE);
+
+          priv->info_visible = TRUE;
+
+          mex_player_set_controls_visible (player, FALSE);
+
+          mex_push_focus (MX_FOCUSABLE (priv->info_panel));
+        }
+
+      return TRUE;
+    }
+
   switch (event->keyval)
     {
     case CLUTTER_KEY_Down:
@@ -473,71 +538,6 @@ mex_player_key_press_event (ClutterActor    *actor,
           else
             mex_player_play (player);
           break;
-        }
-
-    case MEX_KEY_INFO:
-        {
-          MexContent *content;
-
-          content = priv->content;
-
-          if (priv->info_visible)
-            {
-              /* hide the info panel */
-              clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
-                                     250, "opacity", 0x00, NULL);
-
-              mx_widget_set_disabled (MX_WIDGET (priv->info_panel), TRUE);
-              mx_widget_set_disabled (MX_WIDGET (priv->controls), FALSE);
-
-              priv->info_visible = FALSE;
-
-              if (priv->controls_prev_visible)
-                mex_player_set_controls_visible (player, TRUE);
-            }
-          else
-            {
-              MxFocusable *focusable;
-
-              /* if you're pressing info button while the media controls are up
-               set them as previously visible */
-              if (priv->controls_visible)
-                priv->controls_prev_visible = TRUE;
-
-              focusable = mx_focus_manager_get_focused (fmanager);
-              if (MEX_IS_CONTENT_TILE (focusable) &&
-                  priv->controls_prev_visible == TRUE)
-                {
-                  content =
-                    mex_content_view_get_content (MEX_CONTENT_VIEW (focusable));
-
-                  /* to avoid any accidental leak */
-                  if (priv->related_tile)
-                    {
-                      g_object_unref (priv->related_tile);
-                      priv->related_tile = NULL;
-                    }
-                  priv->related_tile = g_object_ref (focusable);
-                }
-
-              mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel),
-                                            content);
-
-              /* show the info panel */
-              clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
-                                     250, "opacity", 0xff, NULL);
-
-              mx_widget_set_disabled (MX_WIDGET (priv->info_panel), FALSE);
-              mx_widget_set_disabled (MX_WIDGET (priv->controls), TRUE);
-
-              priv->info_visible = TRUE;
-
-              mex_player_set_controls_visible (player, FALSE);
-
-              mex_push_focus (MX_FOCUSABLE (priv->info_panel));
-            }
-
-          return TRUE;
         }
     }
 

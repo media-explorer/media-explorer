@@ -34,7 +34,7 @@ G_BEGIN_DECLS
  *
  * Since: 1.0
  */
-#define MEX_KEY_BACK  CLUTTER_KEY_Escape
+#define MEX_KEY_BACK(x) ((x == CLUTTER_KEY_Escape) || (x == CLUTTER_KEY_Back))
 
 /**
  * MEX_KEY_HOME:
@@ -43,7 +43,10 @@ G_BEGIN_DECLS
  *
  * Since: 1.0
  */
-#define MEX_KEY_HOME  CLUTTER_KEY_Super_L
+#define MEX_KEY_HOME(x)  ((x == CLUTTER_KEY_Super_L) \
+                          || (x == CLUTTER_KEY_Home)\
+                          || (x == CLUTTER_KEY_AudioMedia) \
+                          || (x == CLUTTER_KEY_HomePage))
 
 /**
  * MEX_KEY_INFO:
@@ -52,7 +55,7 @@ G_BEGIN_DECLS
  *
  * Since: 1.0
  */
-#define MEX_KEY_INFO  CLUTTER_KEY_Menu
+#define MEX_KEY_INFO(x)  ((x == CLUTTER_KEY_Menu) || (x == 0x1005ff70))
 
 /**
  * MEX_KEY_OK:
@@ -61,7 +64,7 @@ G_BEGIN_DECLS
  *
  * Since: 1.0
  */
-#define MEX_KEY_OK    CLUTTER_KEY_Return
+#define MEX_KEY_OK(x)    (x == CLUTTER_KEY_Return)
 
 gboolean        mex_init                    (int    *argc,
                                              char ***argv);

@@ -592,7 +592,7 @@ key_press_event_cb (ClutterActor    *actor,
 {
   MexMediaControls *self = MEX_MEDIA_CONTROLS (user_data);
 
-  if (event->keyval == MEX_KEY_OK)
+  if (MEX_KEY_OK (event->keyval))
     {
       MexContent *content =
         mex_content_view_get_content (MEX_CONTENT_VIEW (actor));

@@ -990,6 +990,20 @@ mex_captured_event_cb (ClutterActor *actor,
 
   key_event = (ClutterKeyEvent *)event;
 
+  if (MEX_KEY_HOME (key_event->keyval))
+    {
+      /* stop all playing content and show the home screen */
+      mex_show_home_screen (data);
+      return TRUE;
+    }
+
+  if (MEX_KEY_BACK (key_event->keyval))
+    {
+      /* move back */
+      mex_go_back (data);
+      return TRUE;
+    }
+
   /* Check for keys that should always work first */
   switch (key_event->keyval)
     {
@@ -999,16 +1013,6 @@ mex_captured_event_cb (ClutterActor *actor,
     case CLUTTER_KEY_Down :
       mex_enable_touch_events (data, FALSE);
       break;
-
-    case MEX_KEY_HOME :
-      /* stop all playing content and show the home screen */
-      mex_show_home_screen (data);
-      return TRUE;
-
-    case MEX_KEY_BACK :
-      /* move back */
-      mex_go_back (data);
-      return TRUE;
 
     case CLUTTER_KEY_AudioRaiseVolume :
       mex_volume_control_volume_up (MEX_VOLUME_CONTROL (data->volume_control));

@@ -426,13 +426,13 @@ mex_content_box_key_press_event_cb (ClutterActor    *actor,
   MexActionManager *manager = mex_action_manager_get_default ();
   MexContentBoxPrivate *priv = MEX_CONTENT_BOX (drawer)->priv;
 
-  if (event->keyval != MEX_KEY_OK &&
-      event->keyval != MEX_KEY_INFO)
+  if (!MEX_KEY_OK (event->keyval) &&
+      !MEX_KEY_INFO (event->keyval))
     {
       return FALSE;
     }
 
-  if (event->keyval == MEX_KEY_OK)
+  if (MEX_KEY_OK (event->keyval))
     {
       GList *actions;
 
