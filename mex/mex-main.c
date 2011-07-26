@@ -198,6 +198,8 @@ mex_lirc_read_cb (GIOChannel         *source,
                 mex_lirc_do_key_event (CLUTTER_KEY_Back);
               else if (g_str_equal (lirc_char, "home"))
                 mex_lirc_do_key_event (CLUTTER_KEY_Home);
+              else if (g_str_equal (lirc_char, "info"))
+                mex_lirc_do_key_event (CLUTTER_KEY_Menu);
             }
 
           g_free (lirc_code);

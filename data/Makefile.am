@@ -11,7 +11,7 @@ dist_json_DATA = \
 	$(NULL)
 
 if HAVE_LIRC
-extradir = $(pkgdatadir)/common
+extradir = $(pkgdatadir)
 dist_extra_DATA = mex-lircrc
 endif
 

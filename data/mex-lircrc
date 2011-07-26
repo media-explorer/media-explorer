@@ -50,6 +50,24 @@ end
 
 begin
   prog = mex
+  button = KEY_EXIT
+  config = back
+end
+
+begin
+  prog = mex
   button = KEY_HOME
   config = home
+end
+
+begin
+  prog = mex
+  button = KEY_LEFTMETA
+  config = home
+end
+
+begin
+  prog = mex
+  button = KEY_INFO
+  config = info
 end
