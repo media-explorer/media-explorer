@@ -16,6 +16,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <gst/gst.h>
@@ -56,6 +60,38 @@ main (int argc, char **argv)
   return !generated;
 }
 
+#if defined (MEX_THUMBNAIL_FORMAT_JPEG)
+static gboolean
+mex_internal_thumbnail_save (GdkPixbuf    *pixbuf,
+                             const gchar  *path,
+                             GError      **error_out)
+{
+  GError *error = NULL;
+  gboolean saved;
+
+  saved = gdk_pixbuf_save (pixbuf, path, "jpeg", &error, NULL);
+  g_propagate_error (error_out, error);
+
+  return saved;
+}
+#elif defined (MEX_THUMBNAIL_FORMAT_PVR_PVRTC)
+static gboolean
+mex_internal_thumbnail_save (GdkPixbuf    *pixbuf,
+                             const gchar  *path,
+                             GError      **error_out)
+{
+  GError *error = NULL;
+  gboolean saved;
+
+  saved = gdk_pixbuf_save (pixbuf, path, "pvr", &error, NULL);
+  g_propagate_error (error_out, error);
+
+  return saved;
+}
+#else
+#error "You need to define which format you want to use to save thumbnails"
+#endif
+
 /* image thumbnailer */
 static gboolean
 mex_internal_thumbnail_image (const gchar *uri,
@@ -79,7 +115,7 @@ mex_internal_thumbnail_image (const gchar *uri,
     }
   else
     {
-      gdk_pixbuf_save (pixbuf, thumbnail_path, "jpeg", &err, NULL);
+      mex_internal_thumbnail_save (pixbuf, thumbnail_path, &err);
 
       if (err)
         {
@@ -460,7 +496,9 @@ mex_internal_thumbnail_video (const gchar *uri,
     {
       GError *error = NULL;
 
-      if (gdk_pixbuf_save (shot, thumbnail_path, "jpeg", &error, NULL) == FALSE)
+      mex_internal_thumbnail_save (shot, thumbnail_path, &error);
+
+      if (error)
         {
           g_warning ("Error saving file %s for %s: %s", thumbnail_path, uri,
                      error->message);

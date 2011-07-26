@@ -287,6 +287,7 @@ _update_thumbnail (MexContentTile *tile)
 
           if (path)
             {
+              g_message ("Loading %s", path);
               mx_image_set_from_file_at_size (MX_IMAGE (priv->image), path,
                                               priv->thumb_width,
                                               priv->thumb_height,

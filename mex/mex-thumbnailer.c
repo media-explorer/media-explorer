@@ -26,6 +26,7 @@
 
 #include "mex-thumbnailer.h"
 #include "mex-marshal.h"
+#include "mex-private.h"
 
 #ifdef WITH_THUMBNAILER_TUMBLER
 static DBusGProxy *thumb_proxy = NULL;
@@ -46,12 +47,11 @@ mex_get_thumbnail_path_for_uri (const gchar *uri)
 #ifdef WITH_THUMBNAILER_INTERNAL
   basepath = g_build_filename (g_get_user_cache_dir (), "mex", "thumbnails",
                                NULL);
-  file = g_strconcat (md5, ".jpg", NULL);
 #else
   basepath = g_build_filename (g_get_home_dir (), ".thumbnails", "x-huge",
                                NULL);
-  file = g_strconcat (md5, ".png", NULL);
 #endif
+  file = g_strconcat (md5, MEX_THUMBNAIL_EXTENSION, NULL);
   g_free (md5);
 
   g_mkdir_with_parents (basepath, 0777);

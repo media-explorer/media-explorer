@@ -16,6 +16,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib-object.h>
 
 #ifndef __MEX_PRIVATE_H__
@@ -36,6 +40,17 @@ G_BEGIN_DECLS
 #define MEX_PARAM_READWRITE    \
         (G_PARAM_READABLE | G_PARAM_WRITABLE | \
          G_PARAM_STATIC_NICK | G_PARAM_STATIC_NAME | G_PARAM_STATIC_BLURB)
+
+/* Automatically determine which file extension to use for thumbnails */
+#ifdef WITH_THUMBNAILER_INTERNAL
+#  if defined (MEX_THUMBNAIL_FORMAT_JPEG)
+#    define MEX_THUMBNAIL_EXTENSION   ".jpg"
+#  elif defined (MEX_THUMBNAIL_FORMAT_PVR_PVRTC)
+#    define MEX_THUMBNAIL_EXTENSION   ".pvr"
+#  endif
+#else /* tumbler */
+#  define MEX_THUMBNAIL_EXTENSION   ".png"
+#endif
 
 gboolean mex_content_title_fallback_cb (GBinding     *binding,
                                         const GValue *source_value,

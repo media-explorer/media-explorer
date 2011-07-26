@@ -248,6 +248,7 @@ AS_IF([test "x$enable_idle_video" = "xyes"],
                  [Play the idle video in the background])])
 AM_CONDITIONAL([ENABLE_IDLE_VIDEO], [test "x$enable_idle_video" = "xyes"])
 
+# thumbnailer
 
 AC_ARG_WITH([thumbnailer],
             [AS_HELP_STRING([--with-thumbnailer],
@@ -274,6 +275,24 @@ AS_CASE(["$with_thumbnailer"],
 AM_CONDITIONAL([ENABLE_INTERNAL_THUMBNAILER],
                [test "x$with_thumbnailer" = "xinternal"])
 
+
+AC_ARG_WITH([thumbnail-format],
+            [AS_HELP_STRING([--with-thumbnail-format],
+                            [which file format and compression to use for thumbnails (jpeg/pvr-pvrtc)])],
+                            [],
+                            [with_thumbnail_format=jpeg])
+
+AS_CASE(["$with_thumbnail_format"],
+
+        ["jpeg"],
+        [AC_DEFINE([MEX_THUMBNAIL_FORMAT_JPEG], [1], [Use JPEG thumbnails])],
+
+        ["pvr-pvrtc"],
+        [AC_DEFINE([MEX_THUMBNAIL_FORMAT_PVR_PVRTC], [1],
+                   [Use PVR/PVRTC thumbnails])],
+
+        [AC_MSG_ERROR([Unknown argument "$with_thumbnail_format" for --with-thumbnail-format])]
+)
 
 # enable strict compiler flags
 AC_ARG_ENABLE([maintainer-flags],
