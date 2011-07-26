@@ -626,9 +626,9 @@ mex_alt_model_cb (MxAction    *action,
     {
       MexModel *old_model;
 
-      old_model = mex_proxy_model_get_model (MEX_PROXY_MODEL (priv->model));
+      old_model = mex_proxy_get_model (priv->proxy);
 
-      mex_proxy_model_set_model (MEX_PROXY_MODEL (priv->proxy), priv->alt_model);
+      mex_proxy_set_model (priv->proxy, priv->alt_model);
 
       priv->alt_model = old_model;
     }
