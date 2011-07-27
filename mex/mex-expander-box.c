@@ -1254,8 +1254,6 @@ mex_expander_box_set_important (MexExpanderBox *box,
       priv->important = important;
 
       g_object_notify (G_OBJECT (box), "important");
-      mx_stylable_set_style_class (MX_STYLABLE (box),
-                                   important ? "Important" : NULL);
 
       /* Animate the centre child open/closed, if necessary */
       mex_expander_box_open_primary (box, important);
