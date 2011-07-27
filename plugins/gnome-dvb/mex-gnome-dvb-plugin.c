@@ -251,57 +251,34 @@ device_group_proxy_ready_cb (GObject      *proxy,
 }
 
 static void
-get_device_group_ready_cb (GObject      *proxy,
-                           GAsyncResult *res,
-                           gpointer      plugin)
+get_device_groups_ready_cb (GObject      *proxy,
+                            GAsyncResult *res,
+                            gpointer      plugin)
 {
   GError *err = NULL;
   GVariant *variant;
-  int i, size;
+  GVariantIter iter;
   gchar *object_path;
-  gboolean result;
 
   variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), res, &err);
 
   if (_handle_error (&err))
     return;
 
-  g_variant_get (variant, "(ob)", &object_path, &result);
+  g_variant_iter_init (&iter, g_variant_get_child_value (variant, 0));
 
-  /* create a new proxy for device group */
-  g_dbus_proxy_new_for_bus (G_BUS_TYPE_SESSION,
-                            G_DBUS_PROXY_FLAGS_NONE,
-                            NULL,
-                            "org.gnome.DVB",
-                            object_path,
-                            "org.gnome.DVB.DeviceGroup",
-                            NULL,
-                            device_group_proxy_ready_cb,
-                            plugin);
-  g_free (object_path);
-}
-
-static void
-get_device_group_size_ready_cb (GObject      *proxy,
-                                GAsyncResult *res,
-                                gpointer      plugin)
-{
-  GError *err = NULL;
-  GVariant *variant;
-  gint32 i, size = 0;
-
-  variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), res, &err);
-
-  if (_handle_error (&err))
-    return;
-
-  g_variant_get (variant, "(i)", &size);
-
-  for (i = 0; i < size; i++)
+  while (g_variant_iter_next (&iter, "o", &object_path))
     {
-      g_dbus_proxy_call (G_DBUS_PROXY (proxy), "GetDeviceGroup",
-                         g_variant_new ("(u)", i+1), G_DBUS_CALL_FLAGS_NONE, -1,
-                         NULL, get_device_group_ready_cb, plugin);
+      /* create a new proxy for device group */
+      g_dbus_proxy_new_for_bus (G_BUS_TYPE_SESSION,
+                                G_DBUS_PROXY_FLAGS_NONE,
+                                NULL,
+                                "org.gnome.DVB",
+                                object_path,
+                                "org.gnome.DVB.DeviceGroup",
+                                NULL,
+                                device_group_proxy_ready_cb,
+                                plugin);
     }
 
   g_variant_unref (variant);
@@ -320,8 +297,8 @@ proxy_ready_cb (GObject      *source_object,
   if (_handle_error (&err))
     return;
 
-  g_dbus_proxy_call (proxy, "GetDeviceGroupSize", NULL, G_DBUS_CALL_FLAGS_NONE,
-                     -1, NULL, get_device_group_size_ready_cb, plugin);
+  g_dbus_proxy_call (proxy, "GetRegisteredDeviceGroups", NULL, G_DBUS_CALL_FLAGS_NONE,
+                     -1, NULL, get_device_groups_ready_cb, plugin);
   g_object_unref (proxy);
 }
 
