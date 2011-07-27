@@ -1107,13 +1107,10 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
 {
   GList *c;
   MxPadding padding;
-  ClutterActorBox actor_box;
   ClutterActorBox child_box;
   gfloat min_width, nat_width, height, width;
 
   MexResizingHBoxPrivate *priv = self->priv;
-
-  actor_box = *box;
 
   mx_widget_get_padding (MX_WIDGET (self), &padding);
 
