@@ -41,9 +41,11 @@ struct _MexTelepathyChannelPrivate {
     ClutterActor *video_incoming;
     ClutterActor *video_outgoing;
     ClutterActor *title_label;
+    ClutterActor *hold_button;
     ClutterActor *duration_label;
     GstElement *incoming_sink;
     GstElement *outgoing_sink;
+    gboolean sending_video;
 
     GstElement *pipeline;
     guint buswatch;
@@ -101,8 +103,19 @@ void on_hangup(MxAction *action, gpointer user_data)
 void on_hold(MxAction *action, gpointer user_data)
 {
     MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
+    MexTelepathyChannelPrivate *priv = self->priv;
     TpyCallChannel * channel = TPY_CALL_CHANNEL(self->priv->channel);
 
+    tpy_call_channel_send_video(channel, !priv->sending_video);
+    priv->sending_video = !priv->sending_video;
+
+    if (priv->sending_video) {
+        // We are starting, so change the button to pause.
+        mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "MediaPause");
+    } else {
+        // We are stopping, so change the button to play.
+        mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "MediaPlay");
+    }
 }
 
 void create_video_page(MexTelepathyChannel *self)
@@ -149,24 +162,24 @@ void create_video_page(MexTelepathyChannel *self)
     mx_stylable_set_style_class (MX_STYLABLE (end_button), "MediaStop");
 
     MxAction *hold_action = mx_action_new_full("Hold", "Hold Call", (GCallback)on_hold, self);
-    ClutterActor *hold_button = mx_button_new();
-    mx_button_set_action(MX_BUTTON(hold_button), hold_action);
-    mx_stylable_set_style_class (MX_STYLABLE (hold_button), "MediaPause");
+    priv->hold_button = mx_button_new();
+    mx_button_set_action(MX_BUTTON(priv->hold_button), hold_action);
+    mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "MediaPause");
 
     priv->duration_label = mx_label_new_with_text("Duration - 0:00");
     mx_label_set_x_align(MX_LABEL(priv->duration_label), MX_ALIGN_MIDDLE);
     mx_label_set_y_align(MX_LABEL(priv->duration_label), MX_ALIGN_MIDDLE);
 
     // Put the buttons in the toolbar
-    clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, hold_button, priv->duration_label, NULL);
+    clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, priv->hold_button, priv->duration_label, NULL);
     // Align button to end so it will be centered
     mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), end_button, MX_ALIGN_END);
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), end_button, TRUE);
     mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), end_button, FALSE);
     mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), end_button, FALSE);
 
-    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), hold_button, FALSE);
-    mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), hold_button, FALSE);
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), priv->hold_button, FALSE);
+    mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), priv->hold_button, FALSE);
 
     // Align label to start so it will be centered.
     mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), priv->duration_label, MX_ALIGN_START);
@@ -366,6 +379,8 @@ static gboolean on_video_start_sending(TfContent *content,
                      "hide",
                      G_CALLBACK(on_video_closed),
                      self);
+
+    priv->sending_video = TRUE;
 
     return TRUE;
 }
