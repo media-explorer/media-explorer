@@ -1092,6 +1092,9 @@ mex_expander_box_timeline_completed_cb (ClutterTimeline *timeline,
       priv->open = (direction == CLUTTER_TIMELINE_FORWARD);
       g_object_notify (G_OBJECT (box), "open");
     }
+
+  if (!priv->open && priv->secondary)
+    clutter_actor_hide (priv->secondary);
 }
 
 static void
@@ -1168,7 +1171,10 @@ mex_expander_box_set_child (MexExpanderBox *box,
       g_signal_emit_by_name (box, "actor-added", actor);
     }
 
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (box));
+  if (!primary && !priv->open)
+    clutter_actor_hide (actor);
+  else
+    clutter_actor_queue_relayout (CLUTTER_ACTOR (box));
 
   g_object_notify (G_OBJECT (box),
                    primary ? "primary-child" : "secondary-child");
@@ -1280,6 +1286,9 @@ mex_expander_box_set_open (MexExpanderBox *box,
       if (open)
         {
           priv->open = open;
+
+          if (priv->secondary)
+            clutter_actor_show (priv->secondary);
 
           if (!priv->notify_open)
             g_object_notify (G_OBJECT (box), "open");
