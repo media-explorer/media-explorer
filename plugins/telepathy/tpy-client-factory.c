@@ -106,6 +106,40 @@ G_DEFINE_TYPE (TpyAutomaticClientFactory, tpy_automatic_client_factory,
 #define chainup ((TpSimpleClientFactoryClass *) \
     tpy_automatic_client_factory_parent_class)
 
+TpyCallChannel *
+tpy_call_channel_new_with_factory (TpSimpleClientFactory *factory,
+                              TpConnection *conn,
+                              const gchar *object_path,
+                              const GHashTable *immutable_properties,
+                              GError **error)
+{
+    TpProxy *conn_proxy = (TpProxy *) conn;
+    TpyCallChannel *ret = NULL;
+
+    g_return_val_if_fail (TP_IS_CONNECTION (conn), NULL);
+    g_return_val_if_fail (object_path != NULL, NULL);
+    g_return_val_if_fail (immutable_properties != NULL, NULL);
+
+    if (tp_dbus_check_valid_object_path (object_path, error))
+
+    /* An unfortunate collision between the default value in
+     * TpChannelIface (0), and the default we want (-1), means that
+     * we have to pass TP_UNKNOWN_HANDLE_TYPE to the constructor
+     * explicitly, even if providing channel-properties. */
+
+    ret = TPY_CALL_CHANNEL (g_object_new (TPY_TYPE_CALL_CHANNEL,
+                                    "connection", conn,
+                                    "dbus-daemon", conn_proxy->dbus_daemon,
+                                    "bus-name", conn_proxy->bus_name,
+                                    "object-path", object_path,
+                                    "handle-type", (guint) TP_UNKNOWN_HANDLE_TYPE,
+                                    "channel-properties", immutable_properties,
+                                    "factory", factory,
+                                    NULL));
+
+    return ret;
+}
+
 static TpChannel *
 create_channel_impl (TpSimpleClientFactory *self,
     TpConnection *conn,
@@ -120,7 +154,7 @@ create_channel_impl (TpSimpleClientFactory *self,
   g_debug("Creating new channel from tpy_automatic_client_factory %s.", chan_type);
   if (!tp_strdiff (chan_type, TPY_IFACE_CHANNEL_TYPE_CALL))
     {
-      return (TpChannel *) tpy_call_channel_new(conn, object_path, properties, error);
+      return (TpChannel *) tpy_call_channel_new_with_factory(self, conn, object_path, properties, error);
     }
 
   /* Chainup on parent implementation as fallback */
