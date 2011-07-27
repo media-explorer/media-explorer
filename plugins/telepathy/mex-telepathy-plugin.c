@@ -203,8 +203,32 @@ mex_telepathy_plugin_on_accept_contact (MxAction *action,
 }
 
 static void
+mex_telepathy_plugin_on_channel_ensured (GObject *source,
+                                         GAsyncResult *result,
+                                         gpointer user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    gboolean success;
+    GError *error = NULL;
+
+    success = tp_account_channel_request_ensure_channel_finish (
+        TP_ACCOUNT_CHANNEL_REQUEST (source), result, &error);
+    if (!success) {
+        g_debug ("Failed to create channel: %s", error->message);
+
+        g_error_free (error);
+    } else {
+        g_debug ("Channel successfully ensured");
+    }
+
+    g_object_unref (source);
+}
+
+static void
 mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
-                                            TpConnection *connection,
+                                            TpAccount *account,
                                             TpContact *contact,
                                             gboolean audio,
                                             gboolean video)
@@ -237,11 +261,15 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
     g_debug ("Offer video channel to %s", tp_contact_get_identifier(contact));
 
     GError *error = NULL;
-    tp_simple_client_factory_dup_channel (TP_SIMPLE_CLIENT_FACTORY(self->priv->factory),
-                                          connection,
-                                          tp_base_client_get_bus_name(self->priv->client),
-                                          request,
-                                          &error);
+
+    req = tp_account_channel_request_new (account, request,
+                                          TP_USER_ACTION_TIME_CURRENT_TIME);
+
+    tp_account_channel_request_ensure_channel_async (req,
+                                                     NULL,
+                                                     NULL,
+                                                     mex_telepathy_plugin_on_channel_ensured,
+                                                     self);
 
     g_hash_table_unref (request);
 }
@@ -256,10 +284,11 @@ mex_telepathy_plugin_on_start_video_call (MxAction *action,
     MexContent *content = mex_action_get_content (action);
     MexContact *mex_contact = MEX_CONTACT (content);
     TpContact *contact = mex_contact_get_tp_contact (mex_contact);
-    TpConnection *connection = tp_contact_get_connection (contact);
+    TpAccount *account = tp_connection_get_account (
+                            tp_contact_get_connection (contact));
 
     mex_telepathy_plugin_craft_channel_request (self,
-                                                connection,
+                                                account,
                                                 contact,
                                                 TRUE,
                                                 TRUE);
@@ -275,10 +304,11 @@ mex_telepathy_plugin_on_start_audio_call (MxAction *action,
     MexContent *content = mex_action_get_content (action);
     MexContact *mex_contact = MEX_CONTACT (content);
     TpContact *contact = mex_contact_get_tp_contact (mex_contact);
-    TpConnection *connection = tp_contact_get_connection (contact);
+    TpAccount *account = tp_connection_get_account (
+                            tp_contact_get_connection (contact));
 
     mex_telepathy_plugin_craft_channel_request (self,
-                                                connection,
+                                                account,
                                                 contact,
                                                 TRUE,
                                                 FALSE);
@@ -588,14 +618,14 @@ void mex_telepathy_plugin_create_handler(MexTelepathyPlugin *self)
 
     bus = tp_dbus_daemon_dup (NULL);
 
-    priv->client = tp_simple_handler_new (bus,
-                                          FALSE,
-                                          FALSE,
-                                          "TpMexPlugin",
-                                          TRUE,
-                                          mex_telepathy_on_new_call_channel,
-                                          self,
-                                          NULL);
+    priv->client = tp_simple_handler_new_with_am (priv->account_manager,
+                                                  FALSE,
+                                                  FALSE,
+                                                  "TpMexPlugin",
+                                                  TRUE,
+                                                  mex_telepathy_on_new_call_channel,
+                                                  self,
+                                                  NULL);
 
     tp_base_client_take_handler_filter (priv->client,
                                         tp_asv_new (
@@ -672,9 +702,6 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 
     priv->models = g_list_append (priv->models, info);
 
-    GQuark account_manager_features[] = {
-        TP_ACCOUNT_MANAGER_FEATURE_ACCOUNT,
-        0 };
     GQuark account_features[] = {
         TP_ACCOUNT_FEATURE_CONNECTION,
         0 };
@@ -698,9 +725,9 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
                                                   contact_features);
 
     // Tp init
-    priv->account_manager = tp_simple_client_factory_dup_account_manager (TP_SIMPLE_CLIENT_FACTORY(priv->factory));
+    priv->account_manager = tp_simple_client_factory_ensure_account_manager (TP_SIMPLE_CLIENT_FACTORY(priv->factory));
     tp_proxy_prepare_async (priv->account_manager,
-                            account_manager_features,
+                            NULL,
                             mex_telepathy_plugin_on_account_manager_ready,
                             self);
 
