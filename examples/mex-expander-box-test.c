@@ -232,7 +232,6 @@ main (int argc, char **argv)
 
   mex_init (&argc, &argv);
   app = mx_application_new (&argc, &argv, "test-mex-expander-box", 0);
-  clutter_init (&argc, &argv);
 
   mex_style_load_default ();
 
