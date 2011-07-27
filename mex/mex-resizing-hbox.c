@@ -19,7 +19,6 @@
 
 #include "mex-resizing-hbox.h"
 #include "mex-resizing-hbox-child.h"
-#include "mex-scrollable-container.h"
 #include "mex-utils.h"
 #include "mex-scene.h"
 #include "mex-column.h"
@@ -27,23 +26,17 @@
 #include <math.h>
 
 static void clutter_container_iface_init (ClutterContainerIface *iface);
-static void mx_scrollable_iface_init (MxScrollableIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 static void mx_stylable_iface_init (MxStylableIface *iface);
-static void mex_scrollable_container_iface_init (MexScrollableContainerInterface *iface);
 static void mex_scene_iface_init (MexSceneInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexResizingHBox, mex_resizing_hbox, MX_TYPE_WIDGET,
                          G_IMPLEMENT_INTERFACE (CLUTTER_TYPE_CONTAINER,
                                                 clutter_container_iface_init)
-                         G_IMPLEMENT_INTERFACE (MX_TYPE_SCROLLABLE,
-                                                mx_scrollable_iface_init)
                          G_IMPLEMENT_INTERFACE (MX_TYPE_FOCUSABLE,
                                                 mx_focusable_iface_init)
                          G_IMPLEMENT_INTERFACE (MX_TYPE_STYLABLE,
                                                 mx_stylable_iface_init)
-                         G_IMPLEMENT_INTERFACE (MEX_TYPE_SCROLLABLE_CONTAINER,
-                                                mex_scrollable_container_iface_init)
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_SCENE,
                                                 mex_scene_iface_init))
 
@@ -58,8 +51,6 @@ enum
   PROP_0,
 
   PROP_RESIZING_ENABLED,
-  PROP_HADJUST,
-  PROP_VADJUST,
   PROP_HDEPTH_SCALE,
   PROP_VDEPTH_SCALE,
   PROP_DEPTH_FADE,
@@ -88,8 +79,6 @@ struct _MexResizingHBoxPrivate
   gfloat           prev_offset;
   gfloat           prev_width;
   gfloat           current_width;
-
-  MxAdjustment    *hadjust;
 
   CoglHandle       highlight;
   CoglHandle       shadow;
@@ -121,9 +110,6 @@ enum
 static GQuark mex_resizing_hbox_meta_quark = 0;
 
 static void mex_resizing_hbox_start_animation (MexResizingHBox *self);
-static void mex_resizing_hbox_get_allocation (MexScrollableContainer *self,
-                                              ClutterActor           *child,
-                                              ClutterActorBox        *box);
 
 /* MexSceneInterface */
 static void
@@ -553,39 +539,6 @@ clutter_container_iface_init (ClutterContainerIface *iface)
   iface->child_meta_type = MEX_TYPE_RESIZING_HBOX_CHILD;
 }
 
-/* MxScrollableIface */
-
-static void
-mex_resizing_hbox_get_adjustments (MxScrollable  *scrollable,
-                                   MxAdjustment **hadjust,
-                                   MxAdjustment **vadjust)
-{
-  MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (scrollable)->priv;
-
-  if (vadjust)
-    *vadjust = NULL;
-
-  if (hadjust)
-    {
-      if (!priv->hadjust)
-        {
-          priv->hadjust = mx_adjustment_new ();
-          g_signal_connect_swapped (priv->hadjust, "notify::value",
-                                    G_CALLBACK (clutter_actor_queue_redraw),
-                                    scrollable);
-          clutter_actor_queue_relayout (CLUTTER_ACTOR (scrollable));
-        }
-
-      *hadjust = priv->hadjust;
-    }
-}
-
-static void
-mx_scrollable_iface_init (MxScrollableIface *iface)
-{
-  iface->get_adjustments = mex_resizing_hbox_get_adjustments;
-}
-
 /* MxFocusableIface */
 
 static MxFocusable *
@@ -739,21 +692,6 @@ mx_stylable_iface_init (MxStylableIface *iface)
     }
 }
 
-/* MexScrollableContainerInterface */
-
-static void
-mex_scrollable_container_iface_init (MexScrollableContainerInterface *iface)
-{
-  static gboolean is_initialized = FALSE;
-
-  if (G_UNLIKELY (!is_initialized))
-    {
-      is_initialized = TRUE;
-
-      iface->get_allocation = mex_resizing_hbox_get_allocation;
-    }
-}
-
 /* Actor implementation */
 
 static void
@@ -769,14 +707,6 @@ mex_resizing_hbox_get_property (GObject    *object,
     case PROP_RESIZING_ENABLED:
       g_value_set_boolean (value,
                            mex_resizing_hbox_get_resizing_enabled (self));
-      break;
-
-    case PROP_HADJUST:
-      g_value_set_object (value, self->priv->hadjust);
-      break;
-
-    case PROP_VADJUST:
-      g_value_set_object (value, NULL);
       break;
 
     case PROP_HDEPTH_SCALE:
@@ -822,12 +752,6 @@ mex_resizing_hbox_set_property (GObject      *object,
                                               g_value_get_boolean (value));
       break;
 
-    case PROP_HADJUST:
-    case PROP_VADJUST:
-      g_warning (G_STRLOC ": MexResizingHBox doesn't support "
-                 "setting adjustments");
-      break;
-
     case PROP_HDEPTH_SCALE:
       mex_resizing_hbox_set_horizontal_depth_scale (self,
                                                     g_value_get_float (value));
@@ -861,15 +785,6 @@ mex_resizing_hbox_dispose (GObject *object)
   MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (object)->priv;
 
   priv->in_dispose = TRUE;
-
-  if (priv->hadjust)
-    {
-      g_signal_handlers_disconnect_by_func (priv->hadjust,
-                                            clutter_actor_queue_redraw,
-                                            object);
-      g_object_unref (priv->hadjust);
-      priv->hadjust = NULL;
-    }
 
   if (priv->highlight)
     {
@@ -1188,9 +1103,7 @@ static void
 mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
                                      const ClutterActorBox  *box,
                                      ClutterAllocationFlags  flags,
-                                     gdouble                 progress,
-                                     ClutterActor           *find,
-                                     ClutterActorBox        *find_box)
+                                     gdouble                 progress)
 {
   GList *c;
   MxPadding padding;
@@ -1373,12 +1286,6 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
       child_box.y1 = (padding.top + (height - child_height));
       child_box.y2 = child_box.y1 + height;
 
-      if (child == find)
-        {
-          *find_box = child_box;
-          return;
-        }
-
       /* Change the offset for the staggered expanding of children. */
       if (meta->stagger)
         {
@@ -1395,23 +1302,12 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
           meta->staggered_width = new_width;
         }
 
-      if (!find)
-        clutter_actor_allocate (child, &child_box, flags);
+      clutter_actor_allocate (child, &child_box, flags);
 
       child_box.x1 = (int)child_box.x2;
     }
 
   clutter_alpha_set_timeline (priv->alpha, priv->timeline);
-
-  /* Update adjustment */
-  if (priv->hadjust)
-    {
-      mx_adjustment_set_page_size (priv->hadjust,
-                                   actor_box.x2 - actor_box.x1 -
-                                   padding.left - padding.right);
-      mx_adjustment_set_upper (priv->hadjust,
-                               nat_width - padding.left - padding.right);
-    }
 }
 
 static void
@@ -1427,7 +1323,7 @@ mex_resizing_hbox_allocate (ClutterActor           *actor,
   CLUTTER_ACTOR_CLASS (mex_resizing_hbox_parent_class)->
     allocate (actor, box, flags);
 
-  /* Allocate children and update adjustments */
+  /* Allocate children */
   if (clutter_timeline_is_playing (priv->timeline))
     {
       clutter_alpha_set_timeline (priv->alpha, priv->timeline);
@@ -1436,23 +1332,7 @@ mex_resizing_hbox_allocate (ClutterActor           *actor,
   else
     progress = 1.0;
 
-  mex_resizing_hbox_allocate_children (self, box, flags, progress, NULL, NULL);
-}
-
-static void
-mex_resizing_hbox_get_allocation (MexScrollableContainer *self,
-                                  ClutterActor           *child,
-                                  ClutterActorBox        *box)
-{
-  ClutterActorBox self_box;
-
-  g_return_if_fail (MEX_IS_RESIZING_HBOX (self));
-  g_return_if_fail (CLUTTER_IS_ACTOR (child));
-  g_return_if_fail (box != NULL);
-
-  clutter_actor_get_allocation_box (CLUTTER_ACTOR (self), &self_box);
-  mex_resizing_hbox_allocate_children ((MexResizingHBox *) self,
-                                       &self_box, 0, 1.0, child, box);
+  mex_resizing_hbox_allocate_children (self, box, flags, progress);
 }
 
 static void
@@ -1572,20 +1452,6 @@ mex_resizing_hbox_draw_child (MexResizingHBox *self,
 
   if (meta->stagger)
     cogl_clip_pop ();
-}
-
-static void
-mex_resizing_hbox_apply_transform (ClutterActor *actor,
-                                   CoglMatrix   *matrix)
-{
-  MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (actor)->priv;
-
-  CLUTTER_ACTOR_CLASS (mex_resizing_hbox_parent_class)->
-    apply_transform (actor, matrix);
-
-  if (priv->hadjust)
-    cogl_matrix_translate (matrix,
-                           -mx_adjustment_get_value (priv->hadjust), 0, 0);
 }
 
 static void
@@ -1778,7 +1644,6 @@ mex_resizing_hbox_class_init (MexResizingHBoxClass *klass)
   actor_class->get_preferred_width = mex_resizing_hbox_get_preferred_width;
   actor_class->get_preferred_height = mex_resizing_hbox_get_preferred_height;
   actor_class->allocate = mex_resizing_hbox_allocate;
-  actor_class->apply_transform = mex_resizing_hbox_apply_transform;
   actor_class->paint = mex_resizing_hbox_paint;
   actor_class->pick = mex_resizing_hbox_pick;
   actor_class->map = mex_resizing_hbox_map;
@@ -1834,15 +1699,6 @@ mex_resizing_hbox_class_init (MexResizingHBoxClass *klass)
                             0, G_MAXINT, 5,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_MAX_DEPTH, pspec);
-
-  /* MxScrollable properties */
-  g_object_class_override_property (object_class,
-                                    PROP_HADJUST,
-                                    "horizontal-adjustment");
-
-  g_object_class_override_property (object_class,
-                                    PROP_VADJUST,
-                                    "vertical-adjustment");
 
   mex_resizing_hbox_meta_quark =
     g_quark_from_static_string ("mex-resizing-hbox-meta");

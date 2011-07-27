@@ -855,7 +855,6 @@ mex_explorer_push_model (MexExplorer *explorer,
     {
       GList *m;
       const GList *models;
-      MxAdjustment *hadjust;
       ClutterActor *resizing_hbox;
 
       /* Create container actors */
@@ -869,12 +868,6 @@ mex_explorer_push_model (MexExplorer *explorer,
             MEX_RESIZING_HBOX (resizing_hbox), 1);
           mex_resizing_hbox_set_vertical_depth_scale (
             MEX_RESIZING_HBOX (resizing_hbox), 0.98f);
-        }
-      else
-        {
-          mx_scrollable_get_adjustments (MX_SCROLLABLE (resizing_hbox),
-                                         &hadjust, NULL);
-          mx_adjustment_set_clamp_value (hadjust, FALSE);
         }
 
       /* Store the container on the aggregate model */
