@@ -1615,6 +1615,10 @@ mex_resizing_hbox_get_paint_volume (ClutterActor       *actor,
       ClutterActor *child = l->data;
       const ClutterPaintVolume *child_volume;
 
+      /* don't include hidden children in the paint volume */
+      if (!CLUTTER_ACTOR_IS_VISIBLE (child))
+        continue;
+
       child_volume = clutter_actor_get_transformed_paint_volume (child, actor);
       if (!child_volume)
         return FALSE;
