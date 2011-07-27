@@ -157,6 +157,6 @@ plugins_LTLIBRARIES += 20mex-gnome-dvb.la
 20mex_gnome_dvb_la_SOURCES = 			\
 	gnome-dvb/mex-gnome-dvb-plugin.c	\
 	gnome-dvb/mex-gnome-dvb-plugin.h
-20mex_gnome_dvb_CFLAGS = -DG_LOG_DOMAIN=\"Mex-GNOME-DVB\"
-20mex_gnome_dvb_LIBADD = $(_libadd)
+20mex_gnome_dvb_la_CFLAGS = -DG_LOG_DOMAIN=\"Mex-GNOME-DVB\"
+20mex_gnome_dvb_la_LIBADD = $(_libadd)
 endif
