@@ -412,7 +412,12 @@ static void mex_telepathy_plugin_on_connection_ready(TpConnection *connection,
 
     GPtrArray *contacts = tp_connection_dup_contact_list(connection);
 
-    g_ptr_array_foreach(contacts, mex_telepathy_plugin_add_contact, self);
+    guint i;
+
+    for (i = 0; i < contacts->len; i++) {
+        TpContact *contact = g_ptr_array_index (contacts, i);
+        mex_telepathy_plugin_add_contact(contact, self);
+    }
 
     g_ptr_array_unref(contacts);
 
@@ -437,9 +442,9 @@ void mex_telepathy_plugin_on_account_status_changed(TpAccount  *account,
         case TP_CONNECTION_STATUS_CONNECTED:
             if (old_status != TP_CONNECTION_STATUS_CONNECTED) {
                 g_debug("Account got connected!");
-                tp_connection_call_when_ready(tp_account_get_connection(account),
-                                              mex_telepathy_plugin_on_connection_ready,
-                                              self);
+                mex_telepathy_plugin_on_connection_ready(tp_account_get_connection(account),
+                                                         NULL,
+                                                         self);
             }
             break;
         default:
@@ -524,9 +529,7 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
             g_free(message);
         } else {
             connection = tp_account_get_connection(account);
-            tp_connection_call_when_ready(connection,
-                                          mex_telepathy_plugin_on_connection_ready,
-                                          self);
+            mex_telepathy_plugin_on_connection_ready(connection, NULL, self);
         }
 
         g_signal_connect(account,
