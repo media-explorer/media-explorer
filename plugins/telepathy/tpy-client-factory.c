@@ -114,10 +114,10 @@ create_channel_impl (TpSimpleClientFactory *self,
     GError **error)
 {
   const gchar *chan_type;
-  g_debug("Creating new channel from tpy_automatic_client_factory.");
 
   chan_type = tp_asv_get_string (properties, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
+  g_debug("Creating new channel from tpy_automatic_client_factory %s.", chan_type);
   if (!tp_strdiff (chan_type, TPY_IFACE_CHANNEL_TYPE_CALL))
     {
       return (TpChannel *) tpy_call_channel_new(conn, object_path, properties, error);
@@ -149,11 +149,13 @@ dup_channel_features_impl (TpSimpleClientFactory *self,
 static void
 tpy_automatic_client_factory_init (TpyAutomaticClientFactory *self)
 {
+  g_debug("initializing tpy_automatic_client_factory");
 }
 
 static void
 tpy_automatic_client_factory_class_init (TpyAutomaticClientFactoryClass *cls)
 {
+  g_debug("initializing tpy_automatic_client_factory_class");
   TpSimpleClientFactoryClass *simple_class = (TpSimpleClientFactoryClass *) cls;
 
   simple_class->create_channel = create_channel_impl;
@@ -173,6 +175,7 @@ tpy_automatic_client_factory_class_init (TpyAutomaticClientFactoryClass *cls)
 TpyAutomaticClientFactory *
 tpy_automatic_client_factory_new (TpDBusDaemon *dbus)
 {
+  g_debug("allocating new tpy_automatic_client_factory");
   return g_object_new (TPY_TYPE_AUTOMATIC_CLIENT_FACTORY,
       "dbus-daemon", dbus,
       NULL);
