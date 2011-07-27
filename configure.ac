@@ -403,7 +403,7 @@ AS_CASE([`pkg-config --variable soname_infix clutter-1.0`],
 )
 
 # Default list of plugins to compile
-WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv"
+WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,gnome-dvb"
 
 # the debug plugin is enabled in debug mode
 AS_IF([test "x$enable_debug" = "xyes"], [WITH_PLUGINS="$WITH_PLUGINS,debug"])
