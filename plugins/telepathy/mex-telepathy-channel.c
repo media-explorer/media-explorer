@@ -602,6 +602,22 @@ new_tf_channel_cb (GObject *source,
 }
 
 static void
+on_call_state_changed_cb (TpyCallChannel *channel,
+                          TpyCallState state,
+                          TpyCallFlags flags,
+                          GValueArray *state_reason,
+                          GHashTable *state_details,
+                          gpointer user_data)
+{
+    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
+    MexTelepathyChannelPrivate *priv = self->priv;
+
+    if (state == TPY_CALL_STATE_ENDED) {
+        tp_channel_close_async (self->priv->channel, NULL, NULL);
+    }
+}
+
+static void
 proxy_invalidated_cb (TpProxy *proxy,
                       guint domain,
                       gint code,
@@ -626,6 +642,7 @@ proxy_invalidated_cb (TpProxy *proxy,
 
     g_object_unref (priv->channel);
 
+    g_timer_stop(self->priv->timer);
     g_signal_emit(self,
                   mex_telepathy_channel_signals[HIDE_ACTOR],
                   0,
@@ -701,6 +718,10 @@ initialize_channel (MexTelepathyChannel *self)
     priv->channel = g_object_ref (priv->channel);
     g_signal_connect (priv->channel, "invalidated",
                       G_CALLBACK (proxy_invalidated_cb),
+                      self);
+
+    g_signal_connect (TPY_CALL_CHANNEL(priv->channel), "state-changed",
+                      G_CALLBACK (on_call_state_changed_cb),
                       self);
 }
 
