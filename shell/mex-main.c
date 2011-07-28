@@ -1196,7 +1196,17 @@ mex_plugin_present_model_cb (GObject      *plugin,
   mex_model_manager_add_model (mex_model_manager_get_default (), info);
 
   /* Activate the model */
-  mex_header_activated_cb (explorer, info->model, data);
+  if (MEX_IS_AGGREGATE_MODEL (info->model))
+    {
+      mex_explorer_push_model (explorer, g_object_ref (info->model));
+    }
+  else
+    {
+      MexModel *new_model = mex_proxy_model_new ();
+      mex_proxy_model_set_model (MEX_PROXY_MODEL (new_model), info->model);
+      mex_explorer_push_model (explorer, new_model);
+    }
+
   mex_show_actor (data, data->explorer);
 
   /* Use a weak reference on the created page to remove the model from the
