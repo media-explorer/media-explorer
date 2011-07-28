@@ -825,7 +825,7 @@ _entry_key_release (ClutterActor    *actor,
                     ClutterKeyEvent *event,
                     MtnApp          *app)
 {
-    if (event->keyval == MEX_KEY_OK) {
+    if (MEX_KEY_OK (event->keyval)) {
         mtn_app_forward (app);
         return TRUE;
     }
@@ -892,13 +892,14 @@ _stage_key_release (ClutterActor    *actor,
                     ClutterKeyEvent *event,
                     MtnApp          *app)
 {
+    if (MEX_KEY_BACK (event->keyval)) {
+        mtn_app_back_key_release (app);
+        return TRUE;
+    }
+
     switch (event->keyval) {
     case CLUTTER_Forward:
         mtn_app_forward_key_release (app);
-        return TRUE;
-    case MEX_KEY_BACK:
-    case CLUTTER_Back:
-        mtn_app_back_key_release (app);
         return TRUE;
 
 #ifdef DEBUG
