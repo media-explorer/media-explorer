@@ -82,6 +82,45 @@ AC_SUBST(GLIB_REQ_VERSION)
 AC_SUBST(MX_REQ_VERSION)
 AC_SUBST(GRILO_REQ_VERSION)
 
+# you can specify a --with-profile=$profile as a configuration option to hopefully
+# get sane defaults.
+
+# we base our OS detection on the winsys soname of the clutter library. This
+# soname reflects which GL winsys has been when compiling clutter and we can use
+# it to set our default profile (see --with-profile)
+clutter_soname=`pkg-config --variable soname_infix clutter-1.0`
+
+AS_CASE([$clutter_soname],
+        [cex100], [default_profile=intelce],
+        [glx|eglx], [default_profile=gnome],
+        [AC_MSG_ERROR([Unknown clutter winsys $clutter_soname, please add it and optionlly create a new profile])])
+
+AC_ARG_WITH([profile],
+            [AC_HELP_STRING([--with-profile=@<:@gnome/intelce@:>@].
+                            [Specify the configuration profile @<:@default=auto@:>@])],
+            [],
+            [with_profile=$default_profile])
+
+AS_CASE([$with_profile],
+
+        [gnome],
+        [
+          mex_default_with_player=clutter-gst
+          mex_default_enable_networks=no
+          mex_default_enable_lirc=yes
+
+          PROFILE_PLUGINS="gnome-dvb"
+        ],
+
+        [intelce],
+        [
+          mex_default_with_player=d-bus
+          mex_default_enable_networks=yes
+          mex_default_enable_lirc=no
+        ],
+
+        [AC_MSG_ERROR([Unknown profile $with_profile])])
+
 modules="glib-2.0 >= $GLIB_REQ_VERSION    \
          gio-2.0                          \
          gio-unix-2.0                     \
@@ -101,7 +140,7 @@ AC_ARG_WITH([player],
               [AC_HELP_STRING([--with-player=@<:@d-bus/clutter-gst/surface@:>@].
                               [Set mode for media playback @<:@default=clutter-gst@:>@])],
               [],
-              [with_player=clutter-gst])
+              [with_player=$mex_default_with_player])
 
 player_deps=""
 
@@ -144,7 +183,7 @@ AC_ARG_ENABLE([lirc],
               [AC_HELP_STRING([--enable-lirc],
                               [Enables LIRC remote control support])],
               [],
-              [enable_lirc=no])
+              [enable_lirc=$mex_default_enable_lirc])
 
 if test "x$enable_lirc" = "xyes"; then
   AC_CHECK_LIB([lirc_client],
@@ -351,7 +390,7 @@ AC_ARG_ENABLE([networks],
               [AC_HELP_STRING([--enable-networks=@<:@yes/no@:>@],
                               [Enable the network configuration UI @<:@default=no@:>@])],
               [],
-              [enable_networks=no])
+              [enable_networks=$mex_default_enable_networks])
 
 AS_IF([test "x$enable_networks" = "xyes"],
       [PKG_CHECK_MODULES(NETWORKS, [glib-2.0 mx-1.0])],
@@ -389,7 +428,7 @@ AM_CONDITIONAL(ENABLE_DISPLAYCONF, test "x$enable_displayconf" = "xyes")
 
 PKG_CHECK_MODULES(SHELL, [gio-unix-2.0 mx-1.0 clutter-1.0 glib-2.0 rest-0.7 dbus-glib-1])
 
-AS_CASE([`pkg-config --variable soname_infix clutter-1.0`],
+AS_CASE([$clutter_soname],
 
         [cex100],
         [
@@ -403,10 +442,14 @@ AS_CASE([`pkg-config --variable soname_infix clutter-1.0`],
 )
 
 # Default list of plugins to compile
-WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,gnome-dvb"
+WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv"
 
 # the debug plugin is enabled in debug mode
 AS_IF([test "x$enable_debug" = "xyes"], [WITH_PLUGINS="$WITH_PLUGINS,debug"])
+
+# profile specific plugins
+AS_IF([test -n "$PROFILE_PLUGINS"],
+      [WITH_PLUGINS="$WITH_PLUGINS,$PROFILE_PLUGINS"])
 
 # Provide a --with-plugins/--without-plugins configure option
 AS_MEX_ARG_WITH_PLUGINS
@@ -457,6 +500,8 @@ MEX_PLUGINS_SELECTED=`echo $MEX_PLUGINS_SELECTED | tr -s ' ' | sed 's/^ //'`
 
 echo ""
 echo "media explorer - $VERSION"
+echo ""
+echo " • Profile: ${with_profile}"
 echo ""
 echo " • Build:"
 echo "        Debugging flags   : ${enable_debug}"
