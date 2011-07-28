@@ -55,7 +55,8 @@ G_BEGIN_DECLS
  *
  * Since: 1.0
  */
-#define MEX_KEY_INFO(x)  ((x == CLUTTER_KEY_Menu) || (x == 0x1005ff70))
+#define MEX_KEY_INFO(x)  ((x == CLUTTER_KEY_Menu) || (x == 0x1005ff70) \
+                          || (x == CLUTTER_KEY_i))
 
 /**
  * MEX_KEY_OK:
