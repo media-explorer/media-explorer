@@ -521,20 +521,15 @@ MxDialog.MexInfoBarDialog MexTile MxButton
 }
 
 /* Search Column */
-MexColumn.Search MexTile.Important MxTable.MexTile
+MexColumn.Search MexTile.Important
 {
   border-image: none;
+  x-mex-header-background: none;
 }
 
-MexColumn.Search MexTile.Important:focus MxTable.MexTile
+MexColumn.Search MexTile.Important:focus
 {
-  -mx-border-image-transition-duration: 0;
-  border-image: url("highlight-bg.png") 0;
-}
-
-MexColumn.Search MexContentBox.Important
-{
-  border-image: none;
+  x-mex-header-background: url("highlight-bg.png");
 }
 
 /* Volume Control */
