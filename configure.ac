@@ -336,9 +336,9 @@ AM_CONDITIONAL([BUILD_GTK_DOC], [test "x$enable_gtk_doc" = "xyes"])
 # Check the dependencies of rebinder
 AC_ARG_ENABLE([rebinder],
               [AC_HELP_STRING([--enable-rebinder=@<:@yes/no@:>@],
-                              [Enable the keyboard rebinder utility @<:@default=yes@:>@])],
+                              [Enable the keyboard rebinder utility @<:@default=no@:>@])],
               [],
-              [enable_rebinder=yes])
+              [enable_rebinder=no])
 
 AS_IF([test "x$enable_rebinder" = "xyes"],
       [PKG_CHECK_MODULES(REBINDER, [mx-1.0 dbus-glib-1 glib-2.0 gio-2.0 gudev-1.0 x11 xtst])
