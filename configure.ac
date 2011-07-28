@@ -143,7 +143,7 @@ PKG_CHECK_MODULES(GCONTROLLER, [gobject-2.0 >= 2.20])
 AC_ARG_ENABLE([lirc],
               [AC_HELP_STRING([--enable-lirc],
                               [Enables LIRC remote control support])],
-              [enable_lirc=yes],
+              [],
               [enable_lirc=no])
 
 if test "x$enable_lirc" = "xyes"; then
