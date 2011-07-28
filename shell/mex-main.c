@@ -536,13 +536,43 @@ mex_header_activated_cb (MexExplorer *explorer,
   /* If the aggregate model only houses one model, push that model instead */
   if (MEX_IS_AGGREGATE_MODEL (model))
     {
-      const GList *models =
+      const GList *l, *models =
         mex_aggregate_model_get_models (MEX_AGGREGATE_MODEL (model));
+      gint n_items, n_models_with_items;
+
+      /* count the total number of items and the number of columns with items */
+      n_items = 0;
+      n_models_with_items = 0;
+      for (l = models; l; l = g_list_next (l))
+        {
+          gint length;
+
+          length = mex_model_get_length (l->data);
+
+          if (length > 0)
+            n_models_with_items++;
+
+          n_items += length;
+        }
+
+      /* no items in the models */
+      if (n_items == 0)
+        return;
 
       /* only one model */
       if (models && !models->next)
         {
           mex_header_activated_cb (explorer, models->data, data);
+          return;
+        }
+
+      /* only one model with any items */
+      if (n_models_with_items == 1)
+        {
+          /* find the model with the items */
+          for (l = models; l; l = g_list_next (l))
+            if (mex_model_get_length (l->data))
+              mex_header_activated_cb (explorer, l->data, data);
           return;
         }
 
