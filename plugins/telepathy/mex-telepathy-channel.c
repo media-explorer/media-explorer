@@ -193,6 +193,12 @@ void create_video_page(MexTelepathyChannel *self)
 
     // Finally put the vertical container in the frame.
     clutter_container_add(CLUTTER_CONTAINER(priv->video_call_page), vertical, NULL);
+
+    // Connect to hide signals.
+    g_signal_connect(priv->video_call_page,
+                     "hide",
+                     G_CALLBACK(on_video_closed),
+                     self);
 }
 
 static gboolean
@@ -370,16 +376,6 @@ static gboolean on_video_start_sending(TfContent *content,
 {
     MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
     MexTelepathyChannelPrivate *priv = self->priv;
-    g_signal_emit(self,
-                  mex_telepathy_channel_signals[SHOW_ACTOR],
-                  0,
-                  g_object_ref(priv->video_call_page));
-
-    g_signal_connect(priv->video_call_page,
-                     "hide",
-                     G_CALLBACK(on_video_closed),
-                     self);
-
     priv->sending_video = TRUE;
 
     return TRUE;
@@ -502,6 +498,7 @@ content_added_cb (TfChannel *channel,
     switch (mtype)
     {
         case FS_MEDIA_TYPE_AUDIO:
+            g_debug ("Audio content added");
             element = gst_parse_bin_from_description (
                           "audiotestsrc is-live=1 ! audio/x-raw-int,rate=8000 ! queue"
                           " ! audioconvert ! audioresample ! audioconvert ",
@@ -509,6 +506,7 @@ content_added_cb (TfChannel *channel,
                           TRUE, NULL);
             break;
         case FS_MEDIA_TYPE_VIDEO:
+            g_debug ("Video content added");
             element = setup_video_source (self, content);
             break;
         default:
@@ -568,9 +566,13 @@ conference_added_cb (TfChannel *channel,
         priv->notifiers = g_list_prepend (priv->notifiers, notifier);
     }
 
-
     gst_bin_add (GST_BIN (priv->pipeline), conference);
     gst_element_set_state (conference, GST_STATE_PLAYING);
+
+    g_signal_emit(self,
+                  mex_telepathy_channel_signals[SHOW_ACTOR],
+                  0,
+                  g_object_ref(priv->video_call_page));
 }
 
 static gboolean
