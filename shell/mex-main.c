@@ -2467,8 +2467,10 @@ main (int argc, char **argv)
       mex_player_content_set_externally_cb (&data);
     }
 
+#if HAVE_WEBREMOTE
   /* TODO check webremote config if we should auto start or not */
   auto_start_dbus_service (MEX_WEBREMOTE_DBUS_INTERFACE);
+#endif
 
   application_for_signal = app;
   signal (SIGINT, on_int_term_signaled);
