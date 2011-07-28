@@ -269,9 +269,14 @@ MxButton#rotate-button:focus
 }
 
 /* Action Buttons */
-MexActionButton
+MexActionButton, MexActionButton:hover
 {
   border-image: url("details-actions-separator.png") 0 15 1;
+}
+
+MexActionButton:focus:hover
+{
+  border-image: url("highlight-bg.png");
 }
 
 MxButton.Watch
@@ -492,10 +497,18 @@ MxDialog.MexErrorDialog > MxLabel
   color: white;
 }
 
-MxDialog MxButton
+MxDialog MxButton,
+MxDialog MxButton:hover
 {
   border-image: url("item-title-bg.png") 1 0 0;
 }
+
+MxDialog MxButton:hover:focus
+{
+  border-image: url("highlight-bg.png") 1 0 0;
+}
+
+
 
 /* Settings Dialog */
 MxDialog.MexInfoBarDialog
