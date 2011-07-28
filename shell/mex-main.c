@@ -1419,6 +1419,8 @@ mex_tool_remove_actor_cb (MexToolProvider *provider,
     }
 
   mex_hide_actor (data, actor);
+
+  mex_show_home_screen (data);
 }
 
 static void
