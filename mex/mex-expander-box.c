@@ -1095,6 +1095,9 @@ mex_expander_box_timeline_completed_cb (ClutterTimeline *timeline,
 
   if (!priv->open && priv->secondary)
     clutter_actor_hide (priv->secondary);
+
+  if (!priv->open)
+    mx_stylable_set_style_class (MX_STYLABLE (box), NULL);
 }
 
 static void
@@ -1294,6 +1297,8 @@ mex_expander_box_set_open (MexExpanderBox *box,
             priv->notify_open = FALSE;
 
           mex_expander_box_open_primary (box, TRUE);
+
+          mx_stylable_set_style_class (MX_STYLABLE (box), "open");
         }
       else
         {
