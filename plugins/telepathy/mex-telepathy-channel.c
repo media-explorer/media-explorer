@@ -580,11 +580,15 @@ dump_pipeline_cb (gpointer user_data)
 {
     MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
 
-    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (self->priv->pipeline),
-                                       GST_DEBUG_GRAPH_SHOW_ALL,
-                                       "call-handler");
+    if (self->priv->pipeline) {
+        GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN(self->priv->pipeline),
+                                           GST_DEBUG_GRAPH_SHOW_ALL,
+                                           "call-handler");
 
-    return TRUE;
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 static void
@@ -649,6 +653,7 @@ proxy_invalidated_cb (TpProxy *proxy,
     {
         gst_element_set_state (priv->pipeline, GST_STATE_NULL);
         g_object_unref (priv->pipeline);
+        priv->pipeline = NULL;
     }
 
     if (priv->tf_channel != NULL)
