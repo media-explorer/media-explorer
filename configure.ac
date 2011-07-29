@@ -71,6 +71,8 @@ AM_PROG_CC_C_O
 
 AM_PATH_GLIB_2_0
 
+PKG_PROG_PKG_CONFIG
+
 # check for headers
 AC_HEADER_STDC
 
@@ -88,7 +90,7 @@ AC_SUBST(GRILO_REQ_VERSION)
 # we base our OS detection on the winsys soname of the clutter library. This
 # soname reflects which GL winsys has been when compiling clutter and we can use
 # it to set our default profile (see --with-profile)
-clutter_soname=`pkg-config --variable soname_infix clutter-1.0`
+clutter_soname=`$PKG_CONFIG --variable soname_infix clutter-1.0`
 
 AS_CASE([$clutter_soname],
         [cex100], [default_profile=intelce],
