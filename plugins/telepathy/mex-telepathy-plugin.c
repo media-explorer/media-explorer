@@ -73,6 +73,8 @@ struct _MexTelepathyPluginPrivate {
   TpAccountManager *account_manager;
   TpBaseClient *client;
   TpyAutomaticClientFactory * factory;
+
+  gboolean building_contact_list;
 };
 
 static void
@@ -413,10 +415,14 @@ static void mex_telepathy_plugin_on_connection_ready(TpConnection *connection,
 
     guint i;
 
+    priv->building_contact_list = TRUE;
+
     for (i = 0; i < contacts->len; i++) {
         TpContact *contact = g_ptr_array_index (contacts, i);
         mex_telepathy_plugin_add_contact(contact, self);
     }
+
+    priv->building_contact_list = FALSE;
 
     g_ptr_array_unref(contacts);
 
