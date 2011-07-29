@@ -10,12 +10,9 @@ RELEASE_UPLOAD_HOST = clutter-project.org
 RELEASE_UPLOAD_USER = clutter
 RELEASE_UPLOAD_DIR  = $(RELEASE_UPLOAD_USER)@$(RELEASE_UPLOAD_HOST):upload-source
 
-RELEASE_URL_BASE = http://source.clutter-project.org/sources/$(PACKAGE)
-RELEASE_URL      = $(RELEASE_URL_BASE)/$(MEX_MAJOR_VERSION).$(MEX_MINOR_VERSION)
+RELEASE_URL      = http://media-explorer.github.com/releases
 
-RELEASE_API_URL = http://docs.clutter-project.org/docs/$(PACKAGE)
-
-RELEASE_ANNOUNCE_LIST = clutter-announce@clutter-project.org (Cc: gnome-announce-list@gnome.org)
+RELEASE_ANNOUNCE_LIST = mex-list@clutter-project.org (Cc: gnome-announce-list@gnome.org)
 
 tar_file = $(distdir).tar.bz2
 sha256_file = $(distdir).sha256sum
@@ -80,6 +77,7 @@ release-message: $(sha256_file)
 	@echo "  • Dbus-glib"
 	@echo "  • Grilo 0.1.x"
 	@echo "  • GStreamer-0.10"
+	@echo "  • LIRC"
 	@echo ""
 	@echo "(some plugins will have additional dependencies)"
 	@echo ""
