@@ -97,10 +97,7 @@ mex_program_dispose (GObject *object)
   MexProgramPrivate *priv = self->priv;
 
   if (priv->feed)
-    {
-      g_object_unref (priv->feed);
-      priv->feed = NULL;
-    }
+    priv->feed = NULL;
 
   G_OBJECT_CLASS (mex_program_parent_class)->dispose (object);
 }
@@ -116,7 +113,10 @@ mex_program_set_property (GObject      *object,
 
   switch (prop_id) {
   case PROP_FEED:
-    priv->feed = (MexFeed *) g_value_dup_object (value);
+    priv->feed =  g_value_get_object (value);
+    if (priv->feed)
+      g_object_add_weak_pointer (G_OBJECT (priv->feed),
+                                 (gpointer *) &priv->feed);
     break;
 
   default:
