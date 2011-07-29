@@ -149,8 +149,6 @@ player_deps=""
 CLUTTER_GST_REQ_VERSION=1.3.12
 AC_SUBST(CLUTTER_GST_REQ_VERSION)
 
-AM_CONDITIONAL(ENABLE_SURFACE_PLAYER, [0])
-
 AS_CASE([$with_player],
         [clutter-gst],
         [
@@ -163,7 +161,6 @@ AS_CASE([$with_player],
         [
           AC_DEFINE([USE_PLAYER_DBUS], 1, [Use "d-bus" for playback])
           player_deps="gstreamer-0.10"
-          AM_CONDITIONAL(ENABLE_SURFACE_PLAYER, [1])
         ],
 
         [surface],
@@ -175,7 +172,7 @@ AS_CASE([$with_player],
         [AC_MSG_ERROR([Invalid value for --with-player])]
 )
 
-
+AM_CONDITIONAL(ENABLE_SURFACE_PLAYER, [test x"$with_player" = x"d-bus"])
 
 PKG_CHECK_MODULES(MEX, "$modules $player_deps")
 
