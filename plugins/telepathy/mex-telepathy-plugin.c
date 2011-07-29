@@ -316,6 +316,38 @@ mex_telepathy_plugin_on_start_audio_call (MxAction *action,
 }
 
 static void
+mex_telepathy_plugin_trigger_notification_for_contact (MexTelepathyPlugin *self,
+                                                       TpContact *contact,
+                                                       gboolean added)
+{
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    if (priv->building_contact_list) {
+        return;
+    }
+
+    if (added) {
+        if (tp_contact_get_subscribe_state(contact) == TP_SUBSCRIPTION_STATE_ASK) {
+            mex_info_bar_new_notification (priv->info_bar,
+                                           g_strdup_printf(_("The contact %s has added you to his contact list. Go to "
+                                                             "\"Contacts\" to accept his request and start interacting "
+                                                             "with him."), tp_contact_get_alias(contact)),
+                                           20);
+        } else {
+            mex_info_bar_new_notification (priv->info_bar,
+                                           g_strdup_printf(_("%s is now Online"),
+                                                           tp_contact_get_alias(contact)),
+                                           5);
+        }
+    } else {
+        mex_info_bar_new_notification (priv->info_bar,
+                                       g_strdup_printf(_("%s has gone Offline"),
+                                                       tp_contact_get_alias(contact)),
+                                       5);
+    }
+}
+
+static void
 mex_telepathy_plugin_on_should_add_to_model_changed (gpointer instance,
                                                      gboolean should_add,
                                                      gpointer user_data)
@@ -327,8 +359,16 @@ mex_telepathy_plugin_on_should_add_to_model_changed (gpointer instance,
 
     if (should_add) {
         mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(contact));
+
+        mex_telepathy_plugin_trigger_notification_for_contact(self,
+                                                              mex_contact_get_tp_contact(contact),
+                                                              TRUE);
     } else {
         mex_model_remove_content(MEX_MODEL(priv->feed), MEX_CONTENT(contact));
+
+        mex_telepathy_plugin_trigger_notification_for_contact(self,
+                                                              mex_contact_get_tp_contact(contact),
+                                                              FALSE);
     }
 }
 
@@ -350,6 +390,10 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
 
     if (mex_contact_should_add_to_model(mex_contact)) {
         mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
+
+        mex_telepathy_plugin_trigger_notification_for_contact(self,
+                                                              contact,
+                                                              TRUE);
     }
 
     g_signal_connect(mex_contact,
