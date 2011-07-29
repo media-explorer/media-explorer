@@ -1070,6 +1070,44 @@ mex_telepathy_plugin_create_handler (MexTelepathyPlugin *self)
   tp_base_client_register (priv->client, NULL);
 }
 
+gint
+mex_telepathy_plugin_sort_call_number (MexContent *a,
+                                       MexContent *b,
+                                       gpointer    user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    guint number_a, number_b;
+
+    g_debug("Sort function called");
+
+    TpContact *contact_a = mex_contact_get_tp_contact (MEX_CONTACT (a));
+    TpContact *contact_b = mex_contact_get_tp_contact (MEX_CONTACT (b));
+
+    gpointer value_a = g_hash_table_lookup (priv->contact_events, tp_contact_get_identifier (contact_a));
+    gpointer value_b = g_hash_table_lookup (priv->contact_events, tp_contact_get_identifier (contact_b));
+
+    if (value_a == NULL) {
+        g_debug("No values for %s", tp_contact_get_identifier (contact_a));
+        number_a = 0;
+    } else {
+        number_a = GPOINTER_TO_UINT (value_a);
+    }
+
+    if (value_b == NULL) {
+        g_debug("No values for %s", tp_contact_get_identifier (contact_b));
+        number_b = 0;
+    } else {
+        number_b = GPOINTER_TO_UINT (value_b);
+    }
+
+    g_debug ("%s %i, %s %i", tp_contact_get_identifier (contact_a), number_a,
+                             tp_contact_get_identifier (contact_b), number_b);
+
+    return value_a - value_b;
+}
+
 static void
 mex_telepathy_plugin_parse_zeitgeist_event (MexTelepathyPlugin *self,
                                             ZeitgeistEvent *event)
@@ -1218,6 +1256,10 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   mex_model_manager_add_category(priv->manager, &contacts);
 
   priv->model = mex_generic_model_new("Contacts", "Feed");
+  // Install the sort function
+  mex_model_set_sort_func (priv->model,
+                           mex_telepathy_plugin_sort_call_number,
+                           self);
 
   mex_telepathy_plugin_add_action ("startavcall",
                                    _("Video Call"),
