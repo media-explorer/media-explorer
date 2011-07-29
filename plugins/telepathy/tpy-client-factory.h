@@ -1,5 +1,5 @@
 /*
- * Factory creating higher level objects
+ * Factory creating telepathy-yell call channels.
  *
  * Copyright © 2011 Collabora Ltd.
  *
