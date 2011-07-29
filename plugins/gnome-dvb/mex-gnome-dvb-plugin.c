@@ -23,6 +23,7 @@
 #include "mex-gnome-dvb-plugin.h"
 #include <mex/mex-grilo-feed.h>
 #include <mex/mex-generic-content.h>
+#include <stdlib.h>
 
 #include <glib/gi18n.h>
 
@@ -125,6 +126,25 @@ get_channel_url_ready_cb (GObject      *proxy,
   g_free (url);
 }
 
+static gint
+channel_insert_sort_func (gconstpointer content1,
+                          gconstpointer content2)
+{
+  const gchar *uid1, *uid2;
+  gint id1, id2;
+
+  uid1 = mex_content_get_metadata (MEX_CONTENT (content1),
+                                   MEX_CONTENT_METADATA_ID);
+  uid2 = mex_content_get_metadata (MEX_CONTENT (content2),
+                                   MEX_CONTENT_METADATA_ID);
+
+
+  id1 = (uid1) ? atoi (uid1) : 0;
+  id2 = (uid2) ? atoi (uid2) : 0;
+
+  return id1 - id2;
+}
+
 static void
 get_channel_infos_ready_cb (GObject      *proxy,
                             GAsyncResult *res,
@@ -140,6 +160,7 @@ get_channel_infos_ready_cb (GObject      *proxy,
   gchar *name, *id;
   guint32 uid;
   gboolean boolean;
+  GList *list = NULL, *l;
 
   variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), res, &err);
 
@@ -167,16 +188,22 @@ get_channel_infos_ready_cb (GObject      *proxy,
       mex_content_set_metadata (content, MEX_CONTENT_METADATA_MIMETYPE,
                                 "x-mex/tv");
 
-      mex_model_add_content (((MexModelInfo*) priv->models->data)->model,
-                             content);
-
       g_dbus_proxy_call (G_DBUS_PROXY (proxy), "GetChannelURL",
                          g_variant_new ("(u)", uid), G_DBUS_CALL_FLAGS_NONE,
                          -1, NULL, get_channel_url_ready_cb, content);
 
       g_free (name);
       g_free (id);
+
+      list = g_list_insert_sorted (list, content, channel_insert_sort_func);
     }
+
+  for (l = list; l; l = g_list_next (l))
+    {
+      mex_model_add_content (((MexModelInfo*) priv->models->data)->model,
+                             l->data);
+    }
+  g_list_free (list);
 }
 
 static void
