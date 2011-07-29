@@ -144,7 +144,7 @@ do_subst = sed -e 's,[@]pkglibdir[@],$(pkglibdir),'
 bin_SCRIPTS = debug/mex-debug
 
 debug/mex-debug: $(srcdir)/debug/mex-debug.in Makefile
-	test -d debug || mkdir debug
+	@test -d debug || mkdir debug
 	$(AM_V_GEN)$(do_subst) < $(srcdir)/debug/mex-debug.in > $@
 	chmod +x $@
 
