@@ -1961,7 +1961,6 @@ main (int argc, char **argv)
   MexActionInfo back = { 0, };
 
   /* FIXME: Replace this with a configuration file */
-  MexModelCategoryInfo search = { "search", _("Search"), "icon-panelheader-search", 0, "" };
   MexModelCategoryInfo videos = { "videos", _("Videos"), "icon-panelheader-videos", 20, _("Connect an external drive or update your network settings to see Videos here.") };
   MexModelCategoryInfo live = { "live", _("Live TV"), "icon-panelheader-tv", 25, "" };
   MexModelCategoryInfo pictures = { "pictures", _("Photos"), "icon-panelheader-photos", 30, _("Connect an external drive or update your network settings to see Photos here.") };
@@ -2380,7 +2379,6 @@ main (int argc, char **argv)
 
   /* Add the default categories to the model manager */
   mmanager = mex_model_manager_get_default ();
-  mex_model_manager_add_category (mmanager, &search);
   mex_model_manager_add_category (mmanager, &live);
   mex_model_manager_add_category (mmanager, &videos);
   mex_model_manager_add_category (mmanager, &music);

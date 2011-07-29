@@ -76,10 +76,19 @@ mex_search_plugin_dispose (GObject *object)
   MexSearchPlugin *self = MEX_SEARCH_PLUGIN (object);
   MexSearchPluginPrivate *priv = self->priv;
 
+  mex_model_manager_remove_category (mex_model_manager_get_default (),
+                                     "search");
+
   if (priv->model_info)
     {
       mex_model_info_free (priv->model_info);
       priv->model_info = NULL;
+    }
+
+  if (priv->history_model)
+    {
+      g_object_unref (priv->history_model);
+      priv->history_model = NULL;
     }
 
   if (priv->suggest_model)
@@ -710,6 +719,11 @@ mex_search_plugin_init (MexSearchPlugin *self)
   MexProxy *suggest_proxy;
   ClutterActor *icon, *header, *text, *frame, *box, *hbox;
   MexSearchPluginPrivate *priv = self->priv = SEARCH_PLUGIN_PRIVATE (self);
+  MexModelCategoryInfo search = { "search", _("Search"), "icon-panelheader-search", 0, "" };
+  MexModelManager *manager = mex_model_manager_get_default ();
+
+  manager = mex_model_manager_get_default ();
+  mex_model_manager_add_category (manager, &search);
 
   /* Create the history model and models list */
   priv->history_model = mex_feed_new (_("Search"), _("Search"));
@@ -717,7 +731,6 @@ mex_search_plugin_init (MexSearchPlugin *self)
   priv->model_info =
     mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->history_model),
                                         "search", 0);
-  g_object_unref (priv->history_model);
   priv->models = g_list_append (NULL, priv->model_info);
 
   /* Create the actions list */
