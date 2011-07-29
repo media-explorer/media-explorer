@@ -22,7 +22,6 @@
 #include "mex-telepathy-channel.h"
 #include "tpy-client-factory.h"
 
-#include <gst/gst.h>
 #include <telepathy-glib/account.h>
 #include <telepathy-glib/account-channel-request.h>
 #include <telepathy-glib/account-manager.h>
@@ -34,7 +33,6 @@
 #include <telepathy-glib/simple-client-factory.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/telepathy-glib.h>
-#include <telepathy-yell/telepathy-yell.h>
 
 #include <telepathy-yell/interfaces.h>
 

@@ -18,14 +18,14 @@
 
 #include "mex-telepathy-channel.h"
 
-#include <gst/gst.h>
-#include <telepathy-glib/channel.h>
+#include <clutter-gst/clutter-gst.h>
 #include <gst/farsight/fs-element-added-notifier.h>
 #include <gst/farsight/fs-utils.h>
+#include <gst/gstelement.h>
 #include <telepathy-farstream/channel.h>
 #include <telepathy-farstream/content.h>
-#include <telepathy-yell/telepathy-yell.h>
-#include <clutter-gst/clutter-gst.h>
+#include <telepathy-glib/channel.h>
+#include <telepathy-yell/call-channel.h>
 
 #include <mex/mex.h>
 
