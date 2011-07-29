@@ -84,6 +84,11 @@ enum
 
 /* functions */
 static void mex_grid_view_set_model (MexGridView *view, MexModel *model);
+static void mex_grid_view_timeline_cb (ClutterTimeline *timeline,
+                                       gint             msecs,
+                                       MexGridView     *view);
+static void mex_grid_view_timeline_complete_cb (ClutterTimeline *timeline,
+                                                MexGridView     *view);
 
 /* focusable implementation */
 static MxFocusable *
@@ -178,6 +183,12 @@ mex_grid_view_dispose (GObject *object)
 
   if (priv->timeline)
     {
+      g_signal_handlers_disconnect_by_func (priv->timeline,
+                                            mex_grid_view_timeline_cb,
+                                            object);
+      g_signal_handlers_disconnect_by_func (priv->timeline,
+                                            mex_grid_view_timeline_complete_cb,
+                                            object);
       g_object_unref (priv->timeline);
       priv->timeline = NULL;
     }
@@ -382,12 +393,16 @@ mex_grid_view_timeline_complete_cb (ClutterTimeline *timeline,
       mex_proxy_set_model (priv->proxy, priv->model);
     }
 
-
   if (priv->callback)
-    priv->callback (CLUTTER_ACTOR (view), priv->userdata);
+    {
+      g_object_ref (G_OBJECT (view));
 
-  priv->callback = NULL;
-  priv->userdata = NULL;
+      priv->callback (CLUTTER_ACTOR (view), priv->userdata);
+      priv->callback = NULL;
+      priv->userdata = NULL;
+
+      g_object_unref (G_OBJECT (view));
+    }
 }
 
 static void
