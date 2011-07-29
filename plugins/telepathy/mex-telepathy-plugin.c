@@ -72,6 +72,9 @@ struct _MexTelepathyPluginPrivate {
   GList *channels;
   TpAccountManager *account_manager;
   TpBaseClient *client;
+  TpBaseClient *approver;
+  TpChannelDispatchOperation *dispatch_operation;
+  ClutterActor *dialog;
   TpyAutomaticClientFactory * factory;
 
   gboolean building_contact_list;
@@ -678,6 +681,157 @@ mex_telepathy_on_new_call_channel (TpSimpleHandler *handler,
     priv->channels = g_list_append(priv->channels, g_object_ref(channel));
 }
 
+static void
+mex_telepathy_plugin_on_handle_with (GObject *source,
+                                     GAsyncResult *result,
+                                     gpointer user_data)
+{
+    TpChannelDispatchOperation *cdo = TP_CHANNEL_DISPATCH_OPERATION (source);
+    GError *error;
+
+    if (!tp_channel_dispatch_operation_handle_with_finish (cdo, result, &error))
+    {
+        g_print ("HandleWith() failed: %s\n", error->message);
+        g_error_free (error);
+        return;
+    }
+
+    g_print ("HandleWith() succeeded\n");
+}
+
+static void
+mex_telepathy_plugin_on_claim (GObject *source,
+          GAsyncResult *result,
+          gpointer user_data)
+
+{
+    TpChannelDispatchOperation *cdo = TP_CHANNEL_DISPATCH_OPERATION (source);
+    GError *error;
+    GPtrArray *channels;
+    guint i;
+
+    if (!tp_channel_dispatch_operation_claim_with_finish (cdo, result, &error))
+    {
+        g_print ("Claim() failed: %s\n", error->message);
+        g_error_free (error);
+        return;
+    }
+
+    g_print ("Claim() succeeded, close channels\n");
+
+    channels = tp_channel_dispatch_operation_borrow_channels (cdo);
+    for (i = 0; i < channels->len; i++)
+    {
+        TpChannel *channel = g_ptr_array_index (channels, i);
+
+        tp_cli_channel_call_close (channel, -1, NULL, NULL, NULL, NULL);
+    }
+}
+
+
+static void
+on_incoming_call_accept(MxAction *action, gpointer user_data)
+{
+    g_debug("accept chosen");
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    tp_channel_dispatch_operation_handle_with_async(self->priv->dispatch_operation, NULL,
+            mex_telepathy_plugin_on_handle_with, NULL);
+}
+
+static void
+on_incoming_call_deny(MxAction *action, gpointer user_data)
+{
+    g_debug("deny chosen");
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    tp_channel_dispatch_operation_claim_with_async(self->priv->dispatch_operation,
+            TP_BASE_CLIENT (self->priv->approver), mex_telepathy_plugin_on_claim, NULL);
+
+    // Hide the dialog.
+    mex_tool_provider_remove_actor(MEX_TOOL_PROVIDER(self), self->priv->dialog);
+}
+
+void show_accept_deny_dialog(MexTelepathyPlugin *self)
+{
+    g_debug("showing accept/deny dialog");
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    MxAction *accept_action = mx_action_new_full ("accept", "Accept",
+                              (GCallback)on_incoming_call_accept,
+                              self);
+
+    MxAction *deny_action = mx_action_new_full("deny", "Deny",
+                            (GCallback)on_incoming_call_deny,
+                            self);
+
+    priv->dialog = mx_dialog_new ();
+    mx_stylable_set_style_class (MX_STYLABLE (priv->dialog),
+                                 "MexErrorDialog");
+    clutter_actor_set_name (priv->dialog, "telepathy-prompt-dialog");
+    //mx_dialog_set_transient_parent (MX_DIALOG (priv->dialog),
+    //                                );
+    mx_dialog_add_action (MX_DIALOG (priv->dialog), accept_action);
+    mx_dialog_add_action (MX_DIALOG (priv->dialog), deny_action);
+    ClutterActor *label = mx_label_new_with_text ("Incoming call from X");
+    clutter_container_add_actor (CLUTTER_CONTAINER (priv->dialog), label);
+
+    clutter_actor_show (priv->dialog);
+    mex_push_focus (MX_FOCUSABLE (priv->dialog));
+    mex_tool_provider_present_actor(MEX_TOOL_PROVIDER(self), priv->dialog);
+}
+
+static void
+mex_telepathy_plugin_add_dispatch_operation (TpSimpleApprover *approver,
+    TpAccount *account,
+    TpConnection *connection,
+    GList *channels,
+    TpChannelDispatchOperation *dispatch_operation,
+    TpAddDispatchOperationContext *context,
+    gpointer user_data)
+{
+    g_debug("add dispatch operation called");
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    priv->dispatch_operation = g_object_ref(dispatch_operation);
+
+    tp_add_dispatch_operation_context_accept(context);
+
+    show_accept_deny_dialog(self);
+}
+
+void mex_telepathy_plugin_create_approver(MexTelepathyPlugin *self)
+{
+    MexTelepathyPluginPrivate *priv = self->priv;
+    priv->approver = tp_simple_approver_new_with_am (priv->account_manager,
+                     "TpMexApprover",
+                     FALSE,
+                     mex_telepathy_plugin_add_dispatch_operation,
+                     self,
+                     NULL);
+
+    tp_base_client_take_approver_filter (priv->approver,
+                                         tp_asv_new (
+                                                 TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+                                                 TPY_IFACE_CHANNEL_TYPE_CALL,
+                                                 TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+                                                 TP_HANDLE_TYPE_CONTACT,
+                                                 TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, G_TYPE_BOOLEAN,
+                                                 TRUE,
+                                                 NULL));
+
+    tp_base_client_take_approver_filter (priv->approver,
+                                         tp_asv_new (
+                                                 TP_PROP_CHANNEL_CHANNEL_TYPE, G_TYPE_STRING,
+                                                 TPY_IFACE_CHANNEL_TYPE_CALL,
+                                                 TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, G_TYPE_UINT,
+                                                 TP_HANDLE_TYPE_CONTACT,
+                                                 TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, G_TYPE_BOOLEAN,
+                                                 TRUE,
+                                                 NULL));
+
+    tp_base_client_register (priv->approver, NULL);
+}
+
 void mex_telepathy_plugin_create_handler(MexTelepathyPlugin *self)
 {
     MexTelepathyPluginPrivate *priv = self->priv;
@@ -685,7 +839,7 @@ void mex_telepathy_plugin_create_handler(MexTelepathyPlugin *self)
     priv->client = tp_simple_handler_new_with_am (priv->account_manager,
                                                   FALSE,
                                                   FALSE,
-                                                  "TpMexPlugin",
+                                                  "TpMexHandler",
                                                   TRUE,
                                                   mex_telepathy_on_new_call_channel,
                                                   self,
@@ -799,6 +953,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 
     tf_init ();
 
+    mex_telepathy_plugin_create_approver(self);
     mex_telepathy_plugin_create_handler(self);
 
     g_object_unref(daemon);
