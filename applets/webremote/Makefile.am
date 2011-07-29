@@ -24,7 +24,7 @@ mex_webremote_LDADD = \
 		$(top_builddir)/mex/libmex-@MEX_API_VERSION@.la
 
 mex_webremotedir = $(pkgdatadir)/webremote
-mex_webremote_DATA = \
+dist_mex_webremote_DATA = \
 		data/index.html \
 		data/jquery-1.6.1.min.js \
 		data/mex-spinner.gif \
