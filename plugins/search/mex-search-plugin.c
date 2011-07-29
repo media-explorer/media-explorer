@@ -363,7 +363,8 @@ mex_search_plugin_search (MexSearchPlugin *self,
     {
       /* Create search model */
       priv->search_model = mex_aggregate_model_new ();
-      g_object_set (G_OBJECT (priv->search_model), "title", "Search results", NULL);
+      g_object_set (G_OBJECT (priv->search_model),
+                    "title", _("Search results"), NULL);
     }
 
   /* Kill the last search */
