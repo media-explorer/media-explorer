@@ -586,9 +586,13 @@ mex_order_menu_cb (MxAction    *action,
   if (priv->order_by_layout)
     return;
 
-  info =
-    mex_model_manager_get_model_info (mex_model_manager_get_default (),
-                                      mex_model_get_model (priv->model));
+  if (MEX_IS_PROXY_MODEL (priv->model))
+    model = mex_proxy_model_get_model (MEX_PROXY_MODEL (priv->model));
+  else
+    model = priv->model;
+
+  info = mex_model_manager_get_model_info (mex_model_manager_get_default (),
+                                           model);
 
   if (!info)
     return;
