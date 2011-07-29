@@ -346,28 +346,32 @@ static void
 mex_search_plugin_search (MexSearchPlugin *self,
                           const gchar     *search)
 {
-  GList *s, *sources;
+  GList *l, *list;
   MexSearchPluginPrivate *priv = self->priv;
+  MexModelManager *manager = mex_model_manager_get_default ();
 
-  /* Kill the last search */
-  if (priv->search_model)
+  if (!priv->search_model)
     {
-      g_object_unref (priv->search_model);
-      priv->search_model = NULL;
+      /* Create search model */
+      priv->search_model = mex_aggregate_model_new ();
+      g_object_set (G_OBJECT (priv->search_model), "title", "Search results", NULL);
     }
 
-  /* Create search model */
-  priv->search_model = mex_aggregate_model_new ();
-  g_object_set (G_OBJECT (priv->search_model), "title", "Search results", NULL);
+  /* Kill the last search */
+  list = (GList *) mex_aggregate_model_get_models (
+                       MEX_AGGREGATE_MODEL (priv->search_model));
+  for (l = list; l; l = l->next)
+    mex_model_manager_remove_model (manager, l->data);
+  mex_aggregate_model_clear (MEX_AGGREGATE_MODEL (priv->search_model));
 
   /* Iterate over searchable Grilo sources */
-  sources = grl_plugin_registry_get_sources (grl_plugin_registry_get_default (),
+  list = grl_plugin_registry_get_sources (grl_plugin_registry_get_default (),
                                              FALSE);
 
   /* find the local files source and place it first */
-  for (s = sources; s; s = s->next)
+  for (l = list; l; l = l->next)
     {
-      GrlMetadataSource *meta_src = s->data;
+      GrlMetadataSource *meta_src = l->data;
       const gchar *name = grl_metadata_source_get_name (meta_src);
 
       if (!GRL_IS_METADATA_SOURCE (meta_src))
@@ -375,18 +379,18 @@ mex_search_plugin_search (MexSearchPlugin *self,
 
       if (name && !strcmp (name, "Local files"))
         {
-          sources = g_list_remove_link (sources, s);
-          sources = g_list_concat (sources, s);
+          list = g_list_remove_link (list, l);
+          list = g_list_concat (list, l);
           break;
         }
     }
 
 
-  for (s = sources; s; s = s->next)
+  for (l = list; l; l = l->next)
     {
       const gchar *source_id;
       GrlSupportedOps supported;
-      GrlMetadataSource *meta_src = s->data;
+      GrlMetadataSource *meta_src = l->data;
 
       if (!GRL_IS_METADATA_SOURCE (meta_src))
         continue;
@@ -398,6 +402,7 @@ mex_search_plugin_search (MexSearchPlugin *self,
       if ((supported & GRL_OP_SEARCH) || (supported & GRL_OP_QUERY))
         {
           MexFeed *feed;
+          MexModelInfo *info;
 
           if (g_str_equal (source_id, "grl-tracker"))
             feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (meta_src),
@@ -408,6 +413,10 @@ mex_search_plugin_search (MexSearchPlugin *self,
           mex_model_set_sort_func (MEX_MODEL (feed),
                                    mex_model_sort_time_cb,
                                    GINT_TO_POINTER (TRUE));
+
+          info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
+                                                     "search", 0);
+          mex_model_manager_add_model (manager, info);
 
           g_object_set (G_OBJECT (feed), "placeholder-text",
                         _("No videos found"), NULL);
@@ -425,9 +434,12 @@ mex_search_plugin_search (MexSearchPlugin *self,
 
           /* FIXME: Arbitrary 50 item limit... */
           mex_grilo_feed_search (MEX_GRILO_FEED (feed), search, 0, 50);
+
+          mex_model_info_free (info);
+          g_object_unref (G_OBJECT (feed));
         }
     }
-  g_list_free (sources);
+  g_list_free (list);
 }
 
 static void
@@ -453,7 +465,7 @@ mex_search_plugin_search_cb (MexSearchPlugin *self)
 
   /* Present the search model */
   info = mex_model_info_new_with_sort_funcs (priv->search_model,
-                                             "search-results", 0);
+                                             "search", 0);
   mex_model_provider_present_model (MEX_MODEL_PROVIDER (self), info);
   mex_model_info_free (info);
 

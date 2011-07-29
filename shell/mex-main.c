@@ -1178,22 +1178,11 @@ mex_remove_model_provider_cb (MexData *data,
 }
 
 static void
-mex_remove_plugin_model_info_cb (MexModelInfo *info)
-{
-  mex_model_manager_remove_model (mex_model_manager_get_default (),
-                                  info->model);
-  mex_model_info_free (info);
-}
-
-static void
 mex_plugin_present_model_cb (GObject      *plugin,
                              MexModelInfo *info,
                              MexData      *data)
 {
   MexExplorer *explorer = MEX_EXPLORER (data->explorer);
-
-  /* Add the model to the model manager and set the top-level plugin model */
-  mex_model_manager_add_model (mex_model_manager_get_default (), info);
 
   /* Activate the model */
   if (MEX_IS_AGGREGATE_MODEL (info->model))
@@ -1208,14 +1197,6 @@ mex_plugin_present_model_cb (GObject      *plugin,
     }
 
   mex_show_actor (data, data->explorer);
-
-  /* Use a weak reference on the created page to remove the model from the
-   * model manager.
-   */
-  g_object_weak_ref (G_OBJECT (mex_explorer_get_container_for_model (
-                                 explorer, mex_explorer_get_model (explorer))),
-                     (GWeakNotify)mex_remove_plugin_model_info_cb,
-                     mex_model_info_copy (info));
 }
 
 static void
@@ -1264,7 +1245,7 @@ mex_refresh_root_model (MexData *data)
       for (m = models; m; m = m->next)
         {
           mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (aggregate),
-                                         g_object_ref (m->data));
+                                         m->data);
         }
 
       g_list_free (models);

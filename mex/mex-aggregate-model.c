@@ -261,7 +261,8 @@ mex_aggregate_model_add_model (MexAggregateModel *aggregate,
 
   /* Add a link back to the model from the controller */
   controller = mex_model_get_controller (model);
-  g_hash_table_insert (priv->controller_to_model, controller, model);
+  g_hash_table_insert (priv->controller_to_model, controller,
+                       g_object_ref_sink (G_OBJECT (model)));
 
   /* Add model to list */
   priv->models = g_list_insert_sorted (priv->models, model,
