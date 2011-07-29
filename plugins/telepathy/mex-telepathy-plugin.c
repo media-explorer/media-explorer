@@ -1105,7 +1105,7 @@ mex_telepathy_plugin_sort_call_number (MexContent *a,
     g_debug ("%s %i, %s %i", tp_contact_get_identifier (contact_a), number_a,
                              tp_contact_get_identifier (contact_b), number_b);
 
-    return value_a - value_b;
+    return number_a - number_b;
 }
 
 static void
