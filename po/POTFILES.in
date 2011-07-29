@@ -1,6 +1,7 @@
 applets/networks/mtn-app.c
 mex/mex-content.c
 mex/mex-gio-notification-source.c
+mex/mex-grid-view.c
 mex/mex-info-bar.c
 mex/mex-info-panel.c
 mex/mex-metadata-utils.c
@@ -10,6 +11,7 @@ mex/mex-queue-button.c
 mex/mex-queue-model.c
 mex/mex-utils.c
 plugins/applications/mex-applications-plugin.c
+plugins/gnome-dvb/mex-gnome-dvb-plugin.c
 plugins/queue/mex-queue-plugin.c
 plugins/search/mex-search-plugin.c
 plugins/tracker/mex-tracker-plugin.c
