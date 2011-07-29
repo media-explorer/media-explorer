@@ -63,6 +63,7 @@ G_DEFINE_TYPE_WITH_CODE (MexTelepathyPlugin,
 struct _MexTelepathyPluginPrivate {
   MexModelManager *manager;
   MexFeed *feed;
+  MexInfoBar *info_bar;
 
   GList *models;
   GList *actions;
@@ -702,6 +703,8 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
 
     priv->models = g_list_append (priv->models, info);
+
+    priv->info_bar = mex_info_bar_get_default ();
 
     GQuark account_features[] = {
         TP_ACCOUNT_FEATURE_CONNECTION,
