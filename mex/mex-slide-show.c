@@ -1045,8 +1045,6 @@ mex_slide_show_set_model (MexContentView *view,
     {
       ClutterContainer *container;
 
-      priv->model = g_object_ref (model);
-
       container = CLUTTER_CONTAINER (clutter_script_get_object (priv->script,
                                                                 "photo-strip"));
 
@@ -1066,7 +1064,6 @@ mex_slide_show_set_model (MexContentView *view,
                                   "model", orig_model,
                                   "limit", 200,
                                   NULL);
-      g_object_ref_sink (priv->model);
 
       priv->proxy = mex_content_proxy_new (priv->model,
                                            container,
