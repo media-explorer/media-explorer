@@ -40,6 +40,8 @@
 
 #include <telepathy-yell/interfaces.h>
 
+#include <zeitgeist.h>
+
 #include <glib/gi18n.h>
 
 #define MEX_LOG_DOMAIN_DEFAULT  telepathy_log_domain
@@ -88,7 +90,12 @@ struct _MexTelepathyPluginPrivate
   ClutterActor               *prompt_label;
   TpyAutomaticClientFactory  *factory;
 
+
   gboolean building_contact_list;
+
+  ZeitgeistLog *zeitgeist_log;
+  ZeitgeistMonitor *zeitgeist_monitor;
+  GHashTable *contact_events;
 };
 
 G_GNUC_UNUSED static void
@@ -158,6 +165,10 @@ mex_telepathy_plugin_dispose (GObject *gobject)
       g_object_unref (priv->prompt_label);
       priv->prompt_label = NULL;
     }
+
+  zeitgeist_log_remove_monitor (priv->zeitgeist_log, priv->zeitgeist_monitor);
+  g_object_unref (priv->zeitgeist_monitor);
+  g_object_unref (priv->zeitgeist_log);
 
   G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->dispose (gobject);
 }
@@ -1060,6 +1071,129 @@ mex_telepathy_plugin_create_handler (MexTelepathyPlugin *self)
 }
 
 static void
+mex_telepathy_plugin_parse_zeitgeist_event (MexTelepathyPlugin *self,
+                                            ZeitgeistEvent *event)
+{
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    ZeitgeistSubject *subject = zeitgeist_event_get_subject (event, 0);
+    gchar *subject_uri = g_strdup (zeitgeist_subject_get_uri(subject));
+
+    gchar **subject_split = g_strsplit(subject_uri, "/", 0);
+    gchar *subject_name;
+
+    guint n;
+    for (n = 0; subject_split != NULL && subject_split[n] != NULL; ++n) {
+        if (subject_split[n+1] == NULL) {
+            subject_name = g_strdup (subject_split[n]);
+        }
+    }
+
+    g_strfreev (subject_split);
+    g_free (subject_uri);
+
+    gpointer value = g_hash_table_lookup (priv->contact_events, subject_name);
+
+    if (value == NULL) {
+        g_hash_table_insert(priv->contact_events, subject_name, GUINT_TO_POINTER (1));
+    } else {
+        guint number = GPOINTER_TO_UINT (value);
+        ++number;
+        g_hash_table_replace(priv->contact_events, subject_name, GUINT_TO_POINTER (number));
+    }
+}
+
+static void
+mex_telepathy_plugin_parse_zeitgeist_result_set (MexTelepathyPlugin *self,
+                                                 ZeitgeistResultSet *events)
+{
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    while (zeitgeist_result_set_has_next(events)) {
+        mex_telepathy_plugin_parse_zeitgeist_event (self, zeitgeist_result_set_next (events));
+    }
+}
+
+static void
+mex_telepathy_plugin_on_zeitgeist_events_found (GObject      *source_object,
+                                                GAsyncResult *res,
+                                                gpointer      user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    ZeitgeistResultSet *results;
+    GError *error = NULL;
+
+    results = zeitgeist_log_find_events_finish(priv->zeitgeist_log,
+                                               res,
+                                               &error);
+
+    if (error != NULL) {
+        g_warning ("Failed to fetch zeitgeist events: %s", error->message);
+
+        g_error_free (error);
+        return;
+    }
+
+    mex_telepathy_plugin_parse_zeitgeist_result_set (self, results);
+}
+
+static void
+mex_telepathy_plugin_on_zeitgeist_events_inserted (ZeitgeistMonitor   *monitor,
+                                                   ZeitgeistTimeRange *time_range,
+                                                   ZeitgeistResultSet *events,
+                                                   gpointer            user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+
+    mex_telepathy_plugin_parse_zeitgeist_result_set (self, events);
+}
+
+static void
+mex_telepathy_plugin_setup_zeitgeist (MexTelepathyPlugin *self)
+{
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    priv->zeitgeist_log = zeitgeist_log_new ();
+    priv->contact_events = g_hash_table_new (g_str_hash, g_str_equal);
+
+    // Create the event template
+    GPtrArray *event_template = g_ptr_array_new ();
+
+    ZeitgeistEvent *event = zeitgeist_event_new ();
+    ZeitgeistSubject *subject = zeitgeist_subject_new ();
+    zeitgeist_subject_set_uri (subject, "telepathy://*");
+    zeitgeist_event_add_subject(event, subject);
+    g_ptr_array_add(event_template, event);
+
+    // Install a monitor
+    priv->zeitgeist_monitor = zeitgeist_monitor_new (zeitgeist_time_range_new_from_now(),
+                                                     event_template);
+
+    // Set a time range, last 14 days
+    time_t end = time(NULL) * 1000;
+    time_t start = end - (14*86400*1000);
+
+    // Start fetching previous events
+    zeitgeist_log_find_events(priv->zeitgeist_log,
+                              zeitgeist_time_range_new(start, end),
+                              event_template,
+                              ZEITGEIST_STORAGE_STATE_ANY,
+                              100,
+                              ZEITGEIST_RESULT_TYPE_MOST_RECENT_EVENTS,
+                              NULL,
+                              mex_telepathy_plugin_on_zeitgeist_events_found,
+                              self);
+
+    // Connect to the monitor
+    g_signal_connect (priv->zeitgeist_monitor,
+                      "events-inserted",
+                      G_CALLBACK(mex_telepathy_plugin_on_zeitgeist_events_inserted),
+                      self);
+}
+
+static void
 mex_telepathy_plugin_init (MexTelepathyPlugin *self)
 {
   MexModelInfo *info;
@@ -1118,6 +1252,9 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   priv->models = g_list_append (priv->models, info);
 
   priv->info_bar = MEX_INFO_BAR (mex_info_bar_get_default ());
+
+  // Zeitgeist init
+  mex_telepathy_plugin_setup_zeitgeist (self);
 
   GQuark account_features[] = {
     TP_ACCOUNT_FEATURE_CONNECTION,
