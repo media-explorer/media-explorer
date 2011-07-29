@@ -1187,7 +1187,17 @@ mex_plugin_present_model_cb (GObject      *plugin,
   /* Activate the model */
   if (MEX_IS_AGGREGATE_MODEL (info->model))
     {
-      mex_explorer_push_model (explorer, g_object_ref (info->model));
+      GList *models = (GList *)
+        mex_aggregate_model_get_models (MEX_AGGREGATE_MODEL (info->model));
+      if (g_list_length (models) > 1)
+        mex_explorer_push_model (explorer, g_object_ref (info->model));
+      else
+        {
+          MexModel *new_model = mex_proxy_model_new ();
+          mex_proxy_model_set_model (MEX_PROXY_MODEL (new_model),
+                                     MEX_MODEL (models->data));
+          mex_explorer_push_model (explorer, new_model);
+        }
     }
   else
     {
