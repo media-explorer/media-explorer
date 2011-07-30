@@ -691,12 +691,12 @@ mex_telepathy_plugin_on_handle_with (GObject *source,
 
     if (!tp_channel_dispatch_operation_handle_with_finish (cdo, result, &error))
     {
-        g_print ("HandleWith() failed: %s\n", error->message);
+        g_warning ("HandleWith() failed: %s\n", error->message);
         g_error_free (error);
         return;
     }
 
-    g_print ("HandleWith() succeeded\n");
+    g_debug ("HandleWith() succeeded\n");
 }
 
 static void
@@ -712,12 +712,12 @@ mex_telepathy_plugin_on_claim (GObject *source,
 
     if (!tp_channel_dispatch_operation_claim_with_finish (cdo, result, &error))
     {
-        g_print ("Claim() failed: %s\n", error->message);
+        g_warning ("Claim() failed: %s\n", error->message);
         g_error_free (error);
         return;
     }
 
-    g_print ("Claim() succeeded, close channels\n");
+    g_debug ("Claim() succeeded, close channels\n");
 
     channels = tp_channel_dispatch_operation_borrow_channels (cdo);
     for (i = 0; i < channels->len; i++)
