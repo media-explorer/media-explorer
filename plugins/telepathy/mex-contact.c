@@ -361,6 +361,15 @@ mex_contact_on_presence_changed (TpContact *contact,
   }
 }
 
+static void
+mex_contact_on_capabilities_changed (TpContact *contact,
+                                     GParamSpec *spec,
+                                     MexContact *self)
+{
+    g_debug("Capabilities changed");
+    mex_contact_compute_mimetype(self);
+}
+
 void
 mex_contact_set_tp_contact (MexContact *self,
                             TpContact *contact)
@@ -405,6 +414,11 @@ mex_contact_set_tp_contact (MexContact *self,
                    "presence-changed",
                    G_CALLBACK(mex_contact_on_presence_changed),
                    self);
+
+  g_signal_connect (contact,
+                    "notify::capabilities",
+                    G_CALLBACK (mex_contact_on_capabilities_changed),
+                    self);
 
   g_object_notify (G_OBJECT (self), "contact");
 }
