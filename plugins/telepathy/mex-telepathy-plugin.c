@@ -747,7 +747,7 @@ on_incoming_call_deny(MxAction *action, gpointer user_data)
             TP_BASE_CLIENT (self->priv->approver), mex_telepathy_plugin_on_claim, NULL);
 
     // Hide the dialog.
-    mex_tool_provider_remove_actor(MEX_TOOL_PROVIDER(self), self->priv->dialog);
+    clutter_actor_hide(self->priv->dialog);
 }
 
 void show_accept_deny_dialog(MexTelepathyPlugin *self)
@@ -767,16 +767,15 @@ void show_accept_deny_dialog(MexTelepathyPlugin *self)
     mx_stylable_set_style_class (MX_STYLABLE (priv->dialog),
                                  "MexErrorDialog");
     clutter_actor_set_name (priv->dialog, "telepathy-prompt-dialog");
-    //mx_dialog_set_transient_parent (MX_DIALOG (priv->dialog),
-    //                                );
+    mx_dialog_set_transient_parent (MX_DIALOG (priv->dialog), clutter_stage_get_default());
     mx_dialog_add_action (MX_DIALOG (priv->dialog), accept_action);
     mx_dialog_add_action (MX_DIALOG (priv->dialog), deny_action);
     ClutterActor *label = mx_label_new_with_text ("Incoming call from X");
     clutter_container_add_actor (CLUTTER_CONTAINER (priv->dialog), label);
 
     clutter_actor_show (priv->dialog);
+    clutter_actor_raise_top(priv->dialog);
     mex_push_focus (MX_FOCUSABLE (priv->dialog));
-    mex_tool_provider_present_actor(MEX_TOOL_PROVIDER(self), priv->dialog);
 }
 
 static void
