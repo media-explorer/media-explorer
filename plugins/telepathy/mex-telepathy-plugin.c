@@ -62,7 +62,8 @@ G_DEFINE_TYPE_WITH_CODE (MexTelepathyPlugin,
 
 struct _MexTelepathyPluginPrivate {
   MexModelManager *manager;
-  MexFeed *feed;
+  MexModel *model;
+  MexInfoBar *info_bar;
 
   GList *models;
   GList *actions;
@@ -72,6 +73,8 @@ struct _MexTelepathyPluginPrivate {
   TpAccountManager *account_manager;
   TpBaseClient *client;
   TpyAutomaticClientFactory * factory;
+
+  gboolean building_contact_list;
 };
 
 static void
@@ -313,6 +316,38 @@ mex_telepathy_plugin_on_start_audio_call (MxAction *action,
 }
 
 static void
+mex_telepathy_plugin_trigger_notification_for_contact (MexTelepathyPlugin *self,
+                                                       TpContact *contact,
+                                                       gboolean added)
+{
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    if (priv->building_contact_list) {
+        return;
+    }
+
+    if (added) {
+        if (tp_contact_get_subscribe_state(contact) == TP_SUBSCRIPTION_STATE_ASK) {
+            mex_info_bar_new_notification (priv->info_bar,
+                                           g_strdup_printf(_("The contact %s has added you to his contact list. Go to "
+                                                             "\"Contacts\" to accept his request and start interacting "
+                                                             "with him."), tp_contact_get_alias(contact)),
+                                           20);
+        } else {
+            mex_info_bar_new_notification (priv->info_bar,
+                                           g_strdup_printf(_("%s is now Online"),
+                                                           tp_contact_get_alias(contact)),
+                                           5);
+        }
+    } else {
+        mex_info_bar_new_notification (priv->info_bar,
+                                       g_strdup_printf(_("%s has gone Offline"),
+                                                       tp_contact_get_alias(contact)),
+                                       5);
+    }
+}
+
+static void
 mex_telepathy_plugin_on_should_add_to_model_changed (gpointer instance,
                                                      gboolean should_add,
                                                      gpointer user_data)
@@ -323,9 +358,17 @@ mex_telepathy_plugin_on_should_add_to_model_changed (gpointer instance,
     MexContact *contact = MEX_CONTACT(instance);
 
     if (should_add) {
-        mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(contact));
+        mex_model_add_content(priv->model, MEX_CONTENT(contact));
+
+        mex_telepathy_plugin_trigger_notification_for_contact(self,
+                                                              mex_contact_get_tp_contact(contact),
+                                                              TRUE);
     } else {
-        mex_model_remove_content(MEX_MODEL(priv->feed), MEX_CONTENT(contact));
+        mex_model_remove_content(priv->model, MEX_CONTENT(contact));
+
+        mex_telepathy_plugin_trigger_notification_for_contact(self,
+                                                              mex_contact_get_tp_contact(contact),
+                                                              FALSE);
     }
 }
 
@@ -346,7 +389,11 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
     priv->contacts = g_list_append (priv->contacts, mex_contact);
 
     if (mex_contact_should_add_to_model(mex_contact)) {
-        mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
+        mex_model_add_content(priv->model, MEX_CONTENT(mex_contact));
+
+        mex_telepathy_plugin_trigger_notification_for_contact(self,
+                                                              contact,
+                                                              TRUE);
     }
 
     g_signal_connect(mex_contact,
@@ -371,7 +418,7 @@ static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer u
 
     gpointer found_element = found->data;
 
-    mex_model_remove_content(MEX_MODEL(priv->feed), MEX_CONTENT(found_element));
+    mex_model_remove_content(priv->model, MEX_CONTENT(found_element));
     priv->contacts = g_list_remove(priv->contacts, found_element);
 
     g_debug ("Contact %s removed successfully.", tp_contact_get_identifier(
@@ -412,10 +459,14 @@ static void mex_telepathy_plugin_on_connection_ready(TpConnection *connection,
 
     guint i;
 
+    priv->building_contact_list = TRUE;
+
     for (i = 0; i < contacts->len; i++) {
         TpContact *contact = g_ptr_array_index (contacts, i);
         mex_telepathy_plugin_add_contact(contact, self);
     }
+
+    priv->building_contact_list = FALSE;
 
     g_ptr_array_unref(contacts);
 
@@ -673,7 +724,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
                                       _("None of your contacts are online at the moment") };
     mex_model_manager_add_category(priv->manager, &contacts);
 
-    priv->feed = mex_feed_new("Contacts", "Feed");
+    priv->model = mex_generic_model_new("Contacts", "Feed");
 
     mex_telepathy_plugin_add_action("startavcall",
                                     _("Video Call"),
@@ -699,9 +750,11 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
                                     100,
                                     self);
 
-    info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
+    info = mex_model_info_new_with_sort_funcs (priv->model, "contacts", 0);
 
     priv->models = g_list_append (priv->models, info);
+
+    priv->info_bar = mex_info_bar_get_default ();
 
     GQuark account_features[] = {
         TP_ACCOUNT_FEATURE_CONNECTION,
