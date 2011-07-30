@@ -62,7 +62,7 @@ G_DEFINE_TYPE_WITH_CODE (MexTelepathyPlugin,
 
 struct _MexTelepathyPluginPrivate {
   MexModelManager *manager;
-  MexFeed *feed;
+  MexModel *model;
   MexInfoBar *info_bar;
 
   GList *models;
@@ -358,13 +358,13 @@ mex_telepathy_plugin_on_should_add_to_model_changed (gpointer instance,
     MexContact *contact = MEX_CONTACT(instance);
 
     if (should_add) {
-        mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(contact));
+        mex_model_add_content(priv->model, MEX_CONTENT(contact));
 
         mex_telepathy_plugin_trigger_notification_for_contact(self,
                                                               mex_contact_get_tp_contact(contact),
                                                               TRUE);
     } else {
-        mex_model_remove_content(MEX_MODEL(priv->feed), MEX_CONTENT(contact));
+        mex_model_remove_content(priv->model, MEX_CONTENT(contact));
 
         mex_telepathy_plugin_trigger_notification_for_contact(self,
                                                               mex_contact_get_tp_contact(contact),
@@ -389,7 +389,7 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
     priv->contacts = g_list_append (priv->contacts, mex_contact);
 
     if (mex_contact_should_add_to_model(mex_contact)) {
-        mex_model_add_content(MEX_MODEL(priv->feed), MEX_CONTENT(mex_contact));
+        mex_model_add_content(priv->model, MEX_CONTENT(mex_contact));
 
         mex_telepathy_plugin_trigger_notification_for_contact(self,
                                                               contact,
@@ -418,7 +418,7 @@ static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer u
 
     gpointer found_element = found->data;
 
-    mex_model_remove_content(MEX_MODEL(priv->feed), MEX_CONTENT(found_element));
+    mex_model_remove_content(priv->model, MEX_CONTENT(found_element));
     priv->contacts = g_list_remove(priv->contacts, found_element);
 
     g_debug ("Contact %s removed successfully.", tp_contact_get_identifier(
@@ -724,7 +724,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
                                       _("None of your contacts are online at the moment") };
     mex_model_manager_add_category(priv->manager, &contacts);
 
-    priv->feed = mex_feed_new("Contacts", "Feed");
+    priv->model = mex_generic_model_new("Contacts", "Feed");
 
     mex_telepathy_plugin_add_action("startavcall",
                                     _("Video Call"),
@@ -750,7 +750,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
                                     100,
                                     self);
 
-    info = mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->feed), "contacts", 0);
+    info = mex_model_info_new_with_sort_funcs (priv->model, "contacts", 0);
 
     priv->models = g_list_append (priv->models, info);
 
