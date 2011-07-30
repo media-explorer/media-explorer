@@ -75,6 +75,7 @@ struct _MexTelepathyPluginPrivate {
   TpBaseClient *approver;
   TpChannelDispatchOperation *dispatch_operation;
   ClutterActor *dialog;
+  ClutterActor *prompt_label;
   TpyAutomaticClientFactory * factory;
 
   gboolean building_contact_list;
@@ -648,7 +649,7 @@ mex_telepathy_plugin_on_hide_call (MexTelepathyChannel *channel, ClutterActor *p
 }
 
 static void
-mex_telepathy_on_new_call_channel (TpSimpleHandler *handler,
+mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler *handler,
                      TpAccount *account,
                      TpConnection *connection,
                      GList *channels,
@@ -730,7 +731,7 @@ mex_telepathy_plugin_on_claim (GObject *source,
 
 
 static void
-on_incoming_call_accept(MxAction *action, gpointer user_data)
+mex_telepathy_plugin_on_incoming_call_accept(MxAction *action, gpointer user_data)
 {
     g_debug("accept chosen");
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
@@ -742,7 +743,7 @@ on_incoming_call_accept(MxAction *action, gpointer user_data)
 }
 
 static void
-on_incoming_call_deny(MxAction *action, gpointer user_data)
+mex_telepathy_plugin_on_incoming_call_deny(MxAction *action, gpointer user_data)
 {
     g_debug("deny chosen");
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
@@ -753,17 +754,42 @@ on_incoming_call_deny(MxAction *action, gpointer user_data)
     clutter_actor_hide(self->priv->dialog);
 }
 
-void show_accept_deny_dialog(MexTelepathyPlugin *self)
+static void mex_telepathy_plugin_on_contact_fetched(TpConnection *connection,
+                               guint n_contacts,
+                               TpContact * const *contacts,
+                               guint n_failed,
+                               const TpHandle *failed,
+                               const GError *error,
+                               gpointer user_data,
+                               GObject *weak_object)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+
+    int i = 0;
+    for (i = 0; i < n_contacts; ++i) {
+        // Get the contacts.
+        TpContact *current = contacts[i];
+
+        // Add the alias to the label.
+        gchar * label_text = g_strdup_printf(_("Incoming call from %s "),
+                                            tp_contact_get_alias(current));
+        mx_label_set_text( MX_LABEL(self->priv->prompt_label), label_text);
+    }
+}
+
+void mex_telepathy_plugin_incoming_call_prompt(MexTelepathyPlugin *self,
+                             TpConnection *connection,
+                             TpChannel *channel)
 {
     g_debug("showing accept/deny dialog");
     MexTelepathyPluginPrivate *priv = self->priv;
 
     MxAction *accept_action = mx_action_new_full ("accept", "Accept",
-                              (GCallback)on_incoming_call_accept,
+                              (GCallback)mex_telepathy_plugin_on_incoming_call_accept,
                               self);
 
     MxAction *deny_action = mx_action_new_full("deny", "Deny",
-                            (GCallback)on_incoming_call_deny,
+                            (GCallback)mex_telepathy_plugin_on_incoming_call_deny,
                             self);
 
     priv->dialog = mx_dialog_new ();
@@ -776,8 +802,16 @@ void show_accept_deny_dialog(MexTelepathyPlugin *self)
 
     mx_dialog_add_action (MX_DIALOG (priv->dialog), accept_action);
     mx_dialog_add_action (MX_DIALOG (priv->dialog), deny_action);
-    ClutterActor *label = mx_label_new_with_text ("Incoming call from X");
-    clutter_container_add_actor (CLUTTER_CONTAINER (priv->dialog), label);
+
+    priv->prompt_label = mx_label_new();
+    clutter_container_add_actor (CLUTTER_CONTAINER (priv->dialog), priv->prompt_label);
+
+    TpHandle contactHandle = tp_channel_get_handle(channel, NULL);
+    TpContactFeature features[] = {TP_CONTACT_FEATURE_ALIAS};
+    if (contactHandle)
+        tp_connection_get_contacts_by_handle(connection, 1, &contactHandle, 1,
+                                             features, mex_telepathy_plugin_on_contact_fetched,
+                                             self, NULL, NULL);
 
     clutter_actor_show (priv->dialog);
     clutter_actor_raise_top(priv->dialog);
@@ -801,7 +835,11 @@ mex_telepathy_plugin_add_dispatch_operation (TpSimpleApprover *approver,
 
     tp_add_dispatch_operation_context_accept(context);
 
-    show_accept_deny_dialog(self);
+    int i;
+    for (i = 0; i < g_list_length(channels); i++) {
+        TpChannel *channel = g_list_nth_data (channels, i);
+        mex_telepathy_plugin_incoming_call_prompt(self, connection, channel);
+    }
 }
 
 void mex_telepathy_plugin_create_approver(MexTelepathyPlugin *self)
@@ -846,7 +884,7 @@ void mex_telepathy_plugin_create_handler(MexTelepathyPlugin *self)
                                                   FALSE,
                                                   "TpMexHandler",
                                                   TRUE,
-                                                  mex_telepathy_on_new_call_channel,
+                                                  mex_telepathy_plugin_on_new_call_channel,
                                                   self,
                                                   NULL);
 
