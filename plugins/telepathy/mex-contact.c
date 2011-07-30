@@ -311,6 +311,19 @@ mex_contact_on_subscription_states_changed (TpContact *contact,
   mex_contact_compute_mimetype(self);
 }
 
+void
+mex_contact_on_contact_upgraded (TpConnection *connection,
+                                 guint n_contacts,
+                                 TpContact * const *contacts,
+                                 const GError *error,
+                                 gpointer user_data,
+                                 GObject *weak_object)
+{
+  MexContact *self = MEX_CONTACT (user_data);
+
+  mex_contact_compute_mimetype(self);
+}
+
 static void
 mex_contact_on_presence_changed (TpContact *contact,
                                  guint      type,
@@ -320,7 +333,32 @@ mex_contact_on_presence_changed (TpContact *contact,
 {
   MexContact *self = MEX_CONTACT (user_data);
 
-  mex_contact_compute_mimetype(self);
+  if (!tp_contact_has_feature(contact, TP_CONTACT_FEATURE_CAPABILITIES)) {
+    g_debug("Feature capabilities is not ready yet");
+    static TpContactFeature contact_features[] = {
+      TP_CONTACT_FEATURE_ALIAS,
+      TP_CONTACT_FEATURE_AVATAR_DATA,
+      TP_CONTACT_FEATURE_AVATAR_TOKEN,
+      TP_CONTACT_FEATURE_PRESENCE,
+      TP_CONTACT_FEATURE_CAPABILITIES
+    };
+
+    TpContact *contacts[] = {
+      contact
+    };
+
+    tp_connection_upgrade_contacts (tp_contact_get_connection (contact),
+                                    G_N_ELEMENTS (contacts),
+                                    contacts,
+                                    G_N_ELEMENTS (contact_features),
+                                    contact_features,
+                                    mex_contact_on_contact_upgraded,
+                                    self,
+                                    NULL,
+                                    NULL);
+  } else {
+    mex_contact_compute_mimetype(self);
+  }
 }
 
 void
