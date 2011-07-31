@@ -107,6 +107,11 @@ mex_telepathy_plugin_dispose (GObject *gobject)
         priv->actions = g_list_delete_link (priv->actions, priv->actions);
     }
 
+    while (priv->contacts) {
+        g_object_unref (priv->contacts->data);
+        priv->contacts = g_list_delete_link (priv->contacts, priv->contacts);
+    }
+
     g_object_unref(priv->account_manager);
     g_object_unref(priv->client);
 
@@ -385,6 +390,9 @@ static void mex_telepathy_plugin_add_contact(gpointer contact_ptr, gpointer user
     mex_contact = g_object_new (MEX_TYPE_CONTACT,
                                 "contact", contact,
                                 NULL);
+
+    // Ref this object: we need it alive until its removal
+    g_object_ref (mex_contact);
 
     priv->contacts = g_list_append (priv->contacts, mex_contact);
 
