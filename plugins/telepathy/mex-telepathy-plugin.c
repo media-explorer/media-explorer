@@ -112,8 +112,17 @@ mex_telepathy_plugin_dispose (GObject *gobject)
         priv->contacts = g_list_delete_link (priv->contacts, priv->contacts);
     }
 
+    while (priv->channels) {
+        g_object_unref (priv->channels->data);
+        priv->channels = g_list_delete_link (priv->channels, priv->channels);
+    }
+
+    mex_model_clear (priv->model);
+    g_object_unref (priv->model);
+
     g_object_unref(priv->account_manager);
     g_object_unref(priv->client);
+    g_object_unref(priv->factory);
 
     G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->dispose (gobject);
 }
@@ -265,8 +274,6 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
         NULL);
 
     g_debug ("Offer video channel to %s", tp_contact_get_identifier(contact));
-
-    GError *error = NULL;
 
     req = tp_account_channel_request_new (account, request,
                                           TP_USER_ACTION_TIME_CURRENT_TIME);
@@ -673,10 +680,7 @@ mex_telepathy_on_new_call_channel (TpSimpleHandler *handler,
 
 void mex_telepathy_plugin_create_handler(MexTelepathyPlugin *self)
 {
-    TpDBusDaemon *bus;
     MexTelepathyPluginPrivate *priv = self->priv;
-
-    bus = tp_dbus_daemon_dup (NULL);
 
     priv->client = tp_simple_handler_new_with_am (priv->account_manager,
                                                   FALSE,
@@ -793,11 +797,11 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
                             mex_telepathy_plugin_on_account_manager_ready,
                             self);
 
-    g_object_unref(daemon);
-
     tf_init ();
 
     mex_telepathy_plugin_create_handler(self);
+
+    g_object_unref(daemon);
 }
 
 MexTelepathyPlugin *
