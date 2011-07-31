@@ -167,8 +167,8 @@ mex_telepathy_plugin_on_request_subscription(GObject *source_object,
     GError *error = NULL;
 
     if (!tp_contact_request_subscription_finish (contact, res, &error)) {
-        g_print ("Error subscribing to contact: %s\n", error->message);
-        g_object_unref(error);
+        g_warning ("Error subscribing to contact: %s\n", error->message);
+        g_error_free (error);
         // TODO: Maybe show stuff in the UI here?
     }
 }
@@ -186,8 +186,8 @@ mex_telepathy_plugin_on_authorize_publication(GObject *source_object,
     GError *error = NULL;
 
     if (!tp_contact_authorize_publication_finish (contact, res, &error)) {
-        g_print ("Error authorizing contact: %s\n", error->message);
-        g_object_unref(error);
+        g_warning ("Error authorizing contact: %s\n", error->message);
+        g_error_free (error);
         // TODO: Maybe show stuff in the UI here?
         return;
     }
@@ -231,7 +231,7 @@ mex_telepathy_plugin_on_channel_ensured (GObject *source,
     success = tp_account_channel_request_ensure_channel_finish (
         TP_ACCOUNT_CHANNEL_REQUEST (source), result, &error);
     if (!success) {
-        g_debug ("Failed to create channel: %s", error->message);
+        g_warning ("Failed to create channel: %s", error->message);
 
         g_error_free (error);
     } else {
@@ -553,8 +553,8 @@ void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
     GError *error = NULL;
 
     if (!tp_proxy_prepare_finish (priv->account_manager, res, &error)) {
-        g_print ("Error preparing AM: %s\n", error->message);
-        g_object_unref(error);
+        g_warning ("Error preparing AM: %s\n", error->message);
+        g_error_free (error);
         // TODO: Maybe show stuff in the UI here?
         return;
     }
