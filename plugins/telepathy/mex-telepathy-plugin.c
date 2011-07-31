@@ -762,7 +762,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 
     priv->models = g_list_append (priv->models, info);
 
-    priv->info_bar = mex_info_bar_get_default ();
+    priv->info_bar = MEX_INFO_BAR (mex_info_bar_get_default ());
 
     GQuark account_features[] = {
         TP_ACCOUNT_FEATURE_CONNECTION,
