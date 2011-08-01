@@ -1231,9 +1231,15 @@ mex_refresh_root_model (MexData *data)
 
       /* Create a new aggregate model for this category */
       aggregate = mex_aggregate_model_new ();
-      mex_model_set_sort_func (MEX_MODEL (aggregate),
-                               mex_model_sort_smart_cb,
-                               GINT_TO_POINTER (FALSE));
+
+      if (c_info->sort_func)
+        mex_model_set_sort_func (MEX_MODEL (aggregate),
+                                 c_info->sort_func,
+                                 c_info->userdata);
+      else
+        mex_model_set_sort_func (MEX_MODEL (aggregate),
+                                 mex_model_sort_smart_cb,
+                                 GINT_TO_POINTER (FALSE));
 
       /* prevent the length display in the search column */
       if (!g_strcmp0 (c_info->name, "search"))

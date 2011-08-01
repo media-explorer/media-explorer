@@ -74,12 +74,15 @@ typedef struct
 
 typedef struct
 {
-  gchar *name;
-  gchar *display_name;
-  gchar *icon_name;
-  gint   priority;
-  gchar *placeholder_text;
-  gboolean show_length;
+  gchar            *name;
+  gchar            *display_name;
+  gchar            *icon_name;
+  gint              priority;
+  gchar            *placeholder_text;
+  gboolean          show_length;
+
+  MexModelSortFunc  sort_func;
+  gpointer          userdata;
 } MexModelCategoryInfo;
 
 struct _MexModelManager
