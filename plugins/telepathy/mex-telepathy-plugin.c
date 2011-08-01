@@ -713,12 +713,10 @@ mex_telepathy_plugin_on_claim (GObject *source,
     }
 }
 
-
 void
 mex_telepathy_plugin_hide_prompt_dialog(MexTelepathyPlugin *self)
 {
     // Hide the dialog.
-    clutter_actor_hide(self->priv->dialog);
     clutter_actor_destroy(self->priv->dialog);
     g_object_unref(self->priv->dispatch_operation);
 }
