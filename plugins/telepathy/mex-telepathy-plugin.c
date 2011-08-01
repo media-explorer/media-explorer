@@ -672,7 +672,7 @@ mex_telepathy_plugin_on_handle_with (GObject *source,
                                      gpointer user_data)
 {
     TpChannelDispatchOperation *cdo = TP_CHANNEL_DISPATCH_OPERATION (source);
-    GError *error;
+    GError *error = NULL;
 
     if (!tp_channel_dispatch_operation_handle_with_finish (cdo, result, &error))
     {
@@ -691,7 +691,7 @@ mex_telepathy_plugin_on_claim (GObject *source,
 
 {
     TpChannelDispatchOperation *cdo = TP_CHANNEL_DISPATCH_OPERATION (source);
-    GError *error;
+    GError *error = NULL;
     GPtrArray *channels;
     guint i;
 
@@ -719,7 +719,7 @@ mex_telepathy_plugin_hide_prompt_dialog(MexTelepathyPlugin *self)
 {
     // Hide the dialog.
     clutter_actor_hide(self->priv->dialog);
-    g_object_unref(self->priv->dialog);
+    clutter_actor_destroy(self->priv->dialog);
     g_object_unref(self->priv->dispatch_operation);
 }
 
