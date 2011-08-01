@@ -83,8 +83,6 @@ enum
 static void
 mex_telepathy_channel_finalize (GObject *gobject)
 {
-    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (gobject);
-    MexTelepathyChannelPrivate *priv = self->priv;
     G_OBJECT_CLASS (mex_telepathy_channel_parent_class)->finalize (gobject);
 }
 static void on_video_closed(ClutterActor *actor,
@@ -511,7 +509,8 @@ content_added_cb (TfChannel *channel,
             break;
         default:
             g_warning ("Unknown media type");
-            goto out;
+            g_object_unref (sinkpad);
+            return;
     }
 
     g_signal_connect (content, "src-pad-added",
@@ -536,7 +535,6 @@ content_added_cb (TfChannel *channel,
     }
 
     g_object_unref (srcpad);
-out:
     g_object_unref (sinkpad);
 }
 
@@ -631,7 +629,6 @@ on_call_state_changed_cb (TpyCallChannel *channel,
                           gpointer user_data)
 {
     MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
-    MexTelepathyChannelPrivate *priv = self->priv;
 
     if (state == TPY_CALL_STATE_ENDED) {
         tp_channel_close_async (self->priv->channel, NULL, NULL);
