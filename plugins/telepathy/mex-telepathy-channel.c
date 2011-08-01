@@ -26,6 +26,7 @@
 #include <telepathy-farstream/content.h>
 #include <telepathy-glib/channel.h>
 #include <telepathy-yell/call-channel.h>
+#include <telepathy-yell/cli-call.h>
 
 #include <mex/mex.h>
 
@@ -436,14 +437,14 @@ setup_video_source (MexTelepathyChannel *self, TfContent *content)
     GstElement *tee = gst_element_factory_make("tee", NULL);
     if (!tee) {
         g_warning("Couldn't create tee element !?");
-        return;
+        return NULL;
     }
     GstPad *teesink = gst_element_get_pad(tee, "sink");
     gst_bin_add (GST_BIN(result), tee);
     if (GST_PAD_LINK_FAILED (gst_pad_link (pad, teesink)))
     {
         g_warning ("Couldn't link source pipeline to tee !?");
-        return;
+        return NULL;
     }
     pad = gst_element_get_request_pad (tee, "src%d");
 
