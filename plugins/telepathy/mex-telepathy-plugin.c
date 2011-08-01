@@ -720,6 +720,7 @@ mex_telepathy_plugin_hide_prompt_dialog(MexTelepathyPlugin *self)
     // Hide the dialog.
     clutter_actor_hide(self->priv->dialog);
     g_object_unref(self->priv->dialog);
+    g_object_unref(self->priv->dispatch_operation);
 }
 
 static void
