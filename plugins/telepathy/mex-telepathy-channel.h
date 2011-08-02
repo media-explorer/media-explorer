@@ -2,6 +2,7 @@
  * Mex - a media explorer
  *
  * Copyright © 2011 Collabora Ltd.
+ *   @author Jeremy Whiting <jeremy.whiting@collabora.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
