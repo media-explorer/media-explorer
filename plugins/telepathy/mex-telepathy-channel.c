@@ -500,8 +500,7 @@ content_added_cb (TfChannel *channel,
         case FS_MEDIA_TYPE_AUDIO:
             g_debug ("Audio content added");
             element = gst_parse_bin_from_description (
-                          "audiotestsrc is-live=1 ! audio/x-raw-int,rate=8000 ! queue"
-                          " ! audioconvert ! audioresample ! audioconvert ",
+                "autoaudiosrc ! audioresample ! audioconvert ",
 
                           TRUE, NULL);
             break;
