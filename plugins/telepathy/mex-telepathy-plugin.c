@@ -36,6 +36,8 @@
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/telepathy-glib.h>
 
+#include <telepathy-farstream/telepathy-farstream.h>
+
 #include <telepathy-yell/interfaces.h>
 
 #include <glib/gi18n.h>
@@ -83,8 +85,8 @@ struct _MexTelepathyPluginPrivate {
   gboolean building_contact_list;
 };
 
-static void
-remove_model (gpointer key, gpointer value, gpointer user_data)
+G_GNUC_UNUSED static void
+remove_model (gpointer key G_GNUC_UNUSED, gpointer value, gpointer user_data)
 {
   MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
   MexModel *model = MEX_MODEL (value);
@@ -92,7 +94,7 @@ remove_model (gpointer key, gpointer value, gpointer user_data)
   mex_model_manager_remove_model (self->priv->manager, model);
 }
 
-static void
+G_GNUC_UNUSED static void
 mex_telepathy_plugin_dispose (GObject *gobject)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (gobject);
@@ -163,7 +165,7 @@ mex_telepathy_plugin_compare_mex_contact(gconstpointer a,
 static void
 mex_telepathy_plugin_on_request_subscription(GObject *source_object,
                                              GAsyncResult *res,
-                                             gpointer user_data)
+                                             gpointer user_data G_GNUC_UNUSED)
 {
     TpContact *contact = TP_CONTACT (source_object);
 
@@ -221,7 +223,7 @@ mex_telepathy_plugin_on_accept_contact (MxAction *action,
 static void
 mex_telepathy_plugin_on_channel_ensured (GObject *source,
                                          GAsyncResult *result,
-                                         gpointer user_data)
+                                         gpointer user_data G_GNUC_UNUSED)
 {
     gboolean success;
     GError *error = NULL;
@@ -438,7 +440,7 @@ static void mex_telepathy_plugin_remove_contact(gpointer contact_ptr, gpointer u
     g_object_unref (found_element);
 }
 
-static void mex_telepathy_plugin_on_contact_list_changed(TpConnection *connection,
+static void mex_telepathy_plugin_on_contact_list_changed(TpConnection *connection G_GNUC_UNUSED,
                                                          GPtrArray    *added,
                                                          GPtrArray    *removed,
                                                          gpointer      user_data)
@@ -489,9 +491,9 @@ static void mex_telepathy_plugin_on_connection_ready(TpConnection *connection,
 void mex_telepathy_plugin_on_account_status_changed(TpAccount  *account,
                                                     guint       old_status,
                                                     guint       new_status,
-                                                    guint       reason,
+                                                    guint       reason G_GNUC_UNUSED,
                                                     gchar      *dbus_error_name,
-                                                    GHashTable *details,
+                                                    GHashTable *details G_GNUC_UNUSED,
                                                     gpointer    user_data)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
@@ -514,13 +516,13 @@ void mex_telepathy_plugin_on_account_status_changed(TpAccount  *account,
 }
 
 static void
-tool_provider_iface_init (MexToolProviderInterface *iface)
+tool_provider_iface_init (MexToolProviderInterface *iface G_GNUC_UNUSED)
 {
 }
 
 void mex_telepathy_plugin_on_presence_request_finished(GObject *source_object,
                                                        GAsyncResult *res,
-                                                       gpointer user_data)
+                                                       gpointer user_data G_GNUC_UNUSED)
 {
     TpAccount *account = TP_ACCOUNT(source_object);
 
@@ -535,7 +537,7 @@ void mex_telepathy_plugin_on_presence_request_finished(GObject *source_object,
     }
 }
 
-void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object,
+void mex_telepathy_plugin_on_account_manager_ready(GObject *source_object G_GNUC_UNUSED,
                                                    GAsyncResult *res,
                                                    gpointer user_data)
 {
@@ -618,7 +620,9 @@ mex_telepathy_plugin_add_action (gchar              *action_id,
 }
 
 static void
-mex_telepathy_plugin_on_show_call (MexTelepathyChannel *channel, ClutterActor *page, gpointer user_data)
+mex_telepathy_plugin_on_show_call (MexTelepathyChannel *channel G_GNUC_UNUSED,
+                                   ClutterActor *page,
+                                   gpointer user_data)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
     mex_tool_provider_present_actor(MEX_TOOL_PROVIDER(self),
@@ -626,7 +630,9 @@ mex_telepathy_plugin_on_show_call (MexTelepathyChannel *channel, ClutterActor *p
 }
 
 static void
-mex_telepathy_plugin_on_hide_call (MexTelepathyChannel *channel, ClutterActor *page, gpointer user_data)
+mex_telepathy_plugin_on_hide_call (MexTelepathyChannel *channel G_GNUC_UNUSED,
+                                   ClutterActor *page,
+                                   gpointer user_data)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
     if (CLUTTER_ACTOR_IS_VISIBLE(page))
@@ -635,12 +641,12 @@ mex_telepathy_plugin_on_hide_call (MexTelepathyChannel *channel, ClutterActor *p
 }
 
 static void
-mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler *handler,
-                     TpAccount *account,
+mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler *handler G_GNUC_UNUSED,
+                     TpAccount *account G_GNUC_UNUSED,
                      TpConnection *connection,
                      GList *channels,
-                     GList *requests_satisfied,
-                     gint64 user_action_time,
+                     GList *requests_satisfied G_GNUC_UNUSED,
+                     gint64 user_action_time G_GNUC_UNUSED,
                      TpHandleChannelsContext *handler_context,
                      gpointer user_data)
 {
@@ -671,7 +677,7 @@ mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler *handler,
 static void
 mex_telepathy_plugin_on_handle_with (GObject *source,
                                      GAsyncResult *result,
-                                     gpointer user_data)
+                                     gpointer user_data G_GNUC_UNUSED)
 {
     TpChannelDispatchOperation *cdo = TP_CHANNEL_DISPATCH_OPERATION (source);
     GError *error = NULL;
@@ -688,8 +694,8 @@ mex_telepathy_plugin_on_handle_with (GObject *source,
 
 static void
 mex_telepathy_plugin_on_claim (GObject *source,
-          GAsyncResult *result,
-          gpointer user_data)
+                               GAsyncResult *result,
+                               gpointer user_data G_GNUC_UNUSED)
 
 {
     TpChannelDispatchOperation *cdo = TP_CHANNEL_DISPATCH_OPERATION (source);
@@ -724,7 +730,8 @@ mex_telepathy_plugin_hide_prompt_dialog(MexTelepathyPlugin *self)
 }
 
 static void
-mex_telepathy_plugin_on_incoming_call_accept(MxAction *action, gpointer user_data)
+mex_telepathy_plugin_on_incoming_call_accept(MxAction *action G_GNUC_UNUSED,
+                                             gpointer user_data)
 {
     g_debug("accept chosen");
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
@@ -735,7 +742,8 @@ mex_telepathy_plugin_on_incoming_call_accept(MxAction *action, gpointer user_dat
 }
 
 static void
-mex_telepathy_plugin_on_incoming_call_deny(MxAction *action, gpointer user_data)
+mex_telepathy_plugin_on_incoming_call_deny(MxAction *action G_GNUC_UNUSED,
+                                           gpointer user_data)
 {
     g_debug("deny chosen");
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
@@ -745,18 +753,18 @@ mex_telepathy_plugin_on_incoming_call_deny(MxAction *action, gpointer user_data)
     mex_telepathy_plugin_hide_prompt_dialog(self);
 }
 
-static void mex_telepathy_plugin_on_contact_fetched(TpConnection *connection,
-                               guint n_contacts,
-                               TpContact * const *contacts,
-                               guint n_failed,
-                               const TpHandle *failed,
-                               const GError *error,
-                               gpointer user_data,
-                               GObject *weak_object)
+static void mex_telepathy_plugin_on_contact_fetched(TpConnection *connection G_GNUC_UNUSED,
+                                                    guint n_contacts,
+                                                    TpContact * const *contacts,
+                                                    guint n_failed G_GNUC_UNUSED,
+                                                    const TpHandle *failed G_GNUC_UNUSED,
+                                                    const GError *error G_GNUC_UNUSED,
+                                                    gpointer user_data,
+                                                    GObject *weak_object G_GNUC_UNUSED)
 {
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
 
-    int i = 0;
+    guint i = 0;
     for (i = 0; i < n_contacts; ++i) {
         // Get the contacts.
         TpContact *current = contacts[i];
@@ -810,13 +818,13 @@ void mex_telepathy_plugin_incoming_call_prompt(MexTelepathyPlugin *self,
 }
 
 static void
-mex_telepathy_plugin_add_dispatch_operation (TpSimpleApprover *approver,
-    TpAccount *account,
-    TpConnection *connection,
-    GList *channels,
-    TpChannelDispatchOperation *dispatch_operation,
-    TpAddDispatchOperationContext *context,
-    gpointer user_data)
+mex_telepathy_plugin_add_dispatch_operation (TpSimpleApprover *approver G_GNUC_UNUSED,
+                                             TpAccount *account G_GNUC_UNUSED,
+                                             TpConnection *connection,
+                                             GList *channels,
+                                             TpChannelDispatchOperation *dispatch_operation,
+                                             TpAddDispatchOperationContext *context,
+                                             gpointer user_data)
 {
     g_debug("add dispatch operation called");
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
@@ -826,7 +834,7 @@ mex_telepathy_plugin_add_dispatch_operation (TpSimpleApprover *approver,
 
     tp_add_dispatch_operation_context_accept(context);
 
-    int i;
+    guint i;
     for (i = 0; i < g_list_length(channels); i++) {
         TpChannel *channel = g_list_nth_data (channels, i);
         mex_telepathy_plugin_incoming_call_prompt(self, connection, channel);
@@ -921,7 +929,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
 
     priv->manager = mex_model_manager_get_default ();
     MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 10,
-                                      _("None of your contacts are online at the moment") };
+                                      _("None of your contacts are online at the moment"), TRUE };
     mex_model_manager_add_category(priv->manager, &contacts);
 
     priv->model = mex_generic_model_new("Contacts", "Feed");
