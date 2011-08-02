@@ -80,6 +80,7 @@ struct _MexTelepathyPluginPrivate
   GList *models;
   GList *actions;
   GList *contacts;
+  GList *model_contacts;
 
   GList                      *channels;
   TpAccountManager           *account_manager;
@@ -187,6 +188,50 @@ mex_telepathy_plugin_class_init (MexTelepathyPluginClass *klass)
   object_class->finalize = mex_telepathy_plugin_finalize;
 
   g_type_class_add_private (klass, sizeof (MexTelepathyPluginPrivate));
+}
+
+/*
+ * HACK: This function should be a MexModel compare function, although it
+ *       is a GCompareDataFunc for the time being.
+ */
+gint
+mex_telepathy_plugin_sort_call_number (/*MexContent *a,
+                                       MexContent *b,*/
+                                       gconstpointer a,
+                                       gconstpointer b,
+                                       gpointer    user_data)
+{
+    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    guint number_a, number_b;
+
+    g_debug("Sort function called");
+
+    TpContact *contact_a = mex_contact_get_tp_contact (MEX_CONTACT (a));
+    TpContact *contact_b = mex_contact_get_tp_contact (MEX_CONTACT (b));
+
+    gpointer value_a = g_hash_table_lookup (priv->contact_events, tp_contact_get_identifier (contact_a));
+    gpointer value_b = g_hash_table_lookup (priv->contact_events, tp_contact_get_identifier (contact_b));
+
+    if (value_a == NULL) {
+        g_debug("No values for %s", tp_contact_get_identifier (contact_a));
+        number_a = 0;
+    } else {
+        number_a = GPOINTER_TO_UINT (value_a);
+    }
+
+    if (value_b == NULL) {
+        g_debug("No values for %s", tp_contact_get_identifier (contact_b));
+        number_b = 0;
+    } else {
+        number_b = GPOINTER_TO_UINT (value_b);
+    }
+
+    g_debug ("%s %i, %s %i", tp_contact_get_identifier (contact_a), number_a,
+                             tp_contact_get_identifier (contact_b), number_b);
+
+    return number_b - number_a;
 }
 
 static gint
@@ -420,6 +465,33 @@ mex_telepathy_plugin_trigger_notification_for_contact (MexTelepathyPlugin *self,
     }
 }
 
+/*
+ * HACK: This function serves the purpose of "sorting" while MexModel is not able to.
+ */
+static void
+mex_telepathy_plugin_add_to_model (MexTelepathyPlugin *self,
+                                   MexContact *contact)
+{
+    MexTelepathyPluginPrivate *priv = self->priv;
+
+    priv->model_contacts = g_list_insert_sorted_with_data (priv->model_contacts,
+                                                           contact,
+                                                           mex_telepathy_plugin_sort_call_number,
+                                                           self);
+
+    // Now, refill the model
+
+    mex_model_clear (priv->model);
+
+    GList *it = g_list_first (priv->model_contacts);
+
+    while (it != NULL) {
+        mex_model_add_content (priv->model, MEX_CONTENT (it->data));
+
+        it = g_list_next (it);
+    }
+}
+
 static void
 mex_telepathy_plugin_on_should_add_to_model_changed (gpointer instance,
                                                      gboolean should_add,
@@ -432,22 +504,22 @@ mex_telepathy_plugin_on_should_add_to_model_changed (gpointer instance,
 
   if (should_add)
     {
-      mex_model_add_content (priv->model, MEX_CONTENT (contact));
+      mex_telepathy_plugin_add_to_model (self, contact);
 
       mex_telepathy_plugin_trigger_notification_for_contact (
         self,
-        mex_contact_get_tp_contact (
-          contact),
+        mex_contact_get_tp_contact (contact),
         TRUE);
     }
   else
     {
       mex_model_remove_content (priv->model, MEX_CONTENT (contact));
 
+      priv->model_contacts = g_list_remove (priv->model_contacts, contact);
+
       mex_telepathy_plugin_trigger_notification_for_contact (
         self,
-        mex_contact_get_tp_contact (
-          contact),
+        mex_contact_get_tp_contact (contact),
         FALSE);
     }
 }
@@ -476,7 +548,7 @@ mex_telepathy_plugin_add_contact (gpointer contact_ptr,
 
   if (mex_contact_should_add_to_model (mex_contact))
     {
-      mex_model_add_content (priv->model, MEX_CONTENT (mex_contact));
+      mex_telepathy_plugin_add_to_model (self, mex_contact);
 
       mex_telepathy_plugin_trigger_notification_for_contact (self,
                                                              contact,
@@ -1070,44 +1142,6 @@ mex_telepathy_plugin_create_handler (MexTelepathyPlugin *self)
   tp_base_client_register (priv->client, NULL);
 }
 
-gint
-mex_telepathy_plugin_sort_call_number (MexContent *a,
-                                       MexContent *b,
-                                       gpointer    user_data)
-{
-    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
-    MexTelepathyPluginPrivate *priv = self->priv;
-
-    guint number_a, number_b;
-
-    g_debug("Sort function called");
-
-    TpContact *contact_a = mex_contact_get_tp_contact (MEX_CONTACT (a));
-    TpContact *contact_b = mex_contact_get_tp_contact (MEX_CONTACT (b));
-
-    gpointer value_a = g_hash_table_lookup (priv->contact_events, tp_contact_get_identifier (contact_a));
-    gpointer value_b = g_hash_table_lookup (priv->contact_events, tp_contact_get_identifier (contact_b));
-
-    if (value_a == NULL) {
-        g_debug("No values for %s", tp_contact_get_identifier (contact_a));
-        number_a = 0;
-    } else {
-        number_a = GPOINTER_TO_UINT (value_a);
-    }
-
-    if (value_b == NULL) {
-        g_debug("No values for %s", tp_contact_get_identifier (contact_b));
-        number_b = 0;
-    } else {
-        number_b = GPOINTER_TO_UINT (value_b);
-    }
-
-    g_debug ("%s %i, %s %i", tp_contact_get_identifier (contact_a), number_a,
-                             tp_contact_get_identifier (contact_b), number_b);
-
-    return number_a - number_b;
-}
-
 static void
 mex_telepathy_plugin_parse_zeitgeist_event (MexTelepathyPlugin *self,
                                             ZeitgeistEvent *event)
@@ -1254,10 +1288,13 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   mex_model_manager_add_category(priv->manager, &contacts);
 
   priv->model = mex_generic_model_new("Contacts", "Feed");
-  // Install the sort function
-  mex_model_set_sort_func (priv->model,
-                           mex_telepathy_plugin_sort_call_number,
-                           self);
+  /* Install the sort function */
+  /* HACK: At the moment, model sorting does not work for category models. For that reason,
+   *       we need to implement sorting on our own. As soon as the problem is fixed, rely
+   *       on mex for sorting.
+   * mex_model_set_sort_func (priv->model,
+                              mex_telepathy_plugin_sort_call_number,
+                              self);*/
 
   mex_telepathy_plugin_add_action ("startavcall",
                                    _("Video Call"),
