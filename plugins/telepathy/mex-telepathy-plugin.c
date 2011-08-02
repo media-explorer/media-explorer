@@ -1145,15 +1145,13 @@ static void
 mex_telepathy_plugin_parse_zeitgeist_result_set (MexTelepathyPlugin *self,
                                                  ZeitgeistResultSet *events)
 {
-    MexTelepathyPluginPrivate *priv = self->priv;
-
     while (zeitgeist_result_set_has_next(events)) {
         mex_telepathy_plugin_parse_zeitgeist_event (self, zeitgeist_result_set_next (events));
     }
 }
 
 static void
-mex_telepathy_plugin_on_zeitgeist_events_found (GObject      *source_object,
+mex_telepathy_plugin_on_zeitgeist_events_found (GObject      *source_object G_GNUC_UNUSED,
                                                 GAsyncResult *res,
                                                 gpointer      user_data)
 {
@@ -1178,8 +1176,8 @@ mex_telepathy_plugin_on_zeitgeist_events_found (GObject      *source_object,
 }
 
 static void
-mex_telepathy_plugin_on_zeitgeist_events_inserted (ZeitgeistMonitor   *monitor,
-                                                   ZeitgeistTimeRange *time_range,
+mex_telepathy_plugin_on_zeitgeist_events_inserted (ZeitgeistMonitor   *monitor G_GNUC_UNUSED,
+                                                   ZeitgeistTimeRange *time_range G_GNUC_UNUSED,
                                                    ZeitgeistResultSet *events,
                                                    gpointer            user_data)
 {
