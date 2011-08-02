@@ -188,8 +188,8 @@ plugins_LTLIBRARIES += 40mex-telepathy.la
 	telepathy/mex-telepathy-plugin.h	\
 	telepathy/mex-contact.c 	\
 	telepathy/mex-contact.h
-40mex_telepathy_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Telepathy\" $(PLUGIN_TELEPATHY_CFLAGS)
-40mex_telepathy_la_LIBADD = $(_libadd) $(PLUGIN_TELEPATHY_LIBS)
+40mex_telepathy_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Telepathy\" $(PLUGIN_TELEPATHY_CFLAGS) $(ZEITGEIST_CFLAGS)
+40mex_telepathy_la_LIBADD = $(_libadd) $(PLUGIN_TELEPATHY_LIBS) $(ZEITGEIST_LIBS)
 endif
 
 if USE_PLUGIN_JUSTINTV

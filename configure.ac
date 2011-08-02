@@ -516,7 +516,7 @@ AS_MEX_PLUGIN(tracker)
 AS_MEX_PLUGIN(dbusinput)
 AS_MEX_PLUGIN(bliptv)
 AS_MEX_PLUGIN(justintv)
-AS_MEX_PLUGIN(telepathy, [telepathy-glib >= 0.15.5 gstreamer-0.10 telepathy-farstream telepathy-yell farsight2-0.10 zeitgeist-1.0])
+AS_MEX_PLUGIN(telepathy, [telepathy-glib >= 0.15.5 gstreamer-0.10 telepathy-farstream telepathy-yell farsight2-0.10])
 AS_MEX_PLUGIN(debug-buddy)
 AS_MEX_PLUGIN(gnome-dvb)
 AS_MEX_PLUGIN(opticaldisc)
@@ -526,6 +526,18 @@ AS_IF([test "x$mex_use_debug_buddy_plugin" = "xyes"],
       [AC_CHECK_HEADER([libunwind.h],
                        [],
                        [AC_MSG_ERROR([The debug plugin needs libunwind])])])
+
+AC_ARG_WITH([zeitgeist],
+    AC_HELP_STRING([--with-zeitgeist],
+                   [for extra features using zeitgeist]),
+                   [],
+                   [with_zeitgeist=check])
+
+if test x$with_zeitgeist != xno; then
+    PKG_CHECK_MODULES(ZEITGEIST, [ zeitgeist-1.0 >= 0.0 ], [
+        AC_DEFINE(HAVE_ZEITGEIST, 1, [Whether zeitgeist is available and enabled])
+    ])
+fi
 
 AC_CONFIG_FILES([
   Makefile
