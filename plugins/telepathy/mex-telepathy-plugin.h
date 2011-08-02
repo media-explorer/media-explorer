@@ -1,7 +1,9 @@
 /*
  * Mex - a media explorer
  *
- * Copyright © 2011 Intel Corporation.
+ * Copyright © 2011 Collabora Ltd.
+ *   @author Dario Freddi <dario.freddi@collabora.com>
+ *   @author Jeremy Whiting <jeremy.whiting@collabora.com>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
