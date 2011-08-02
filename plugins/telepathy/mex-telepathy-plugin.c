@@ -40,9 +40,13 @@
 
 #include <telepathy-yell/interfaces.h>
 
-#include <zeitgeist.h>
-
 #include <glib/gi18n.h>
+
+#include <config.h>
+
+#ifdef HAVE_ZEITGEIST
+#include <zeitgeist.h>
+#endif
 
 #define MEX_LOG_DOMAIN_DEFAULT  telepathy_log_domain
 MEX_LOG_DOMAIN_STATIC(telepathy_log_domain);
@@ -94,8 +98,10 @@ struct _MexTelepathyPluginPrivate
 
   gboolean building_contact_list;
 
+#ifdef HAVE_ZEITGEIST
   ZeitgeistLog *zeitgeist_log;
   ZeitgeistMonitor *zeitgeist_monitor;
+#endif
   GHashTable *contact_events;
 };
 
@@ -167,9 +173,11 @@ mex_telepathy_plugin_dispose (GObject *gobject)
       priv->prompt_label = NULL;
     }
 
+#ifdef HAVE_ZEITGEIST
   zeitgeist_log_remove_monitor (priv->zeitgeist_log, priv->zeitgeist_monitor);
   g_object_unref (priv->zeitgeist_monitor);
   g_object_unref (priv->zeitgeist_log);
+#endif
 
   G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->dispose (gobject);
 }
@@ -474,6 +482,7 @@ mex_telepathy_plugin_add_to_model (MexTelepathyPlugin *self,
 {
     MexTelepathyPluginPrivate *priv = self->priv;
 
+#ifdef HAVE_ZEITGEIST
     priv->model_contacts = g_list_insert_sorted_with_data (priv->model_contacts,
                                                            contact,
                                                            mex_telepathy_plugin_sort_call_number,
@@ -490,6 +499,10 @@ mex_telepathy_plugin_add_to_model (MexTelepathyPlugin *self,
 
         it = g_list_next (it);
     }
+#else
+    // Simply add to the model
+    mex_model_add_content (priv->model, MEX_CONTENT (contact));
+#endif
 }
 
 static void
@@ -1142,6 +1155,8 @@ mex_telepathy_plugin_create_handler (MexTelepathyPlugin *self)
   tp_base_client_register (priv->client, NULL);
 }
 
+#ifdef HAVE_ZEITGEIST
+
 static void
 mex_telepathy_plugin_parse_zeitgeist_event (MexTelepathyPlugin *self,
                                             ZeitgeistEvent *event)
@@ -1263,6 +1278,8 @@ mex_telepathy_plugin_setup_zeitgeist (MexTelepathyPlugin *self)
                       self);
 }
 
+#endif
+
 static void
 mex_telepathy_plugin_init (MexTelepathyPlugin *self)
 {
@@ -1275,6 +1292,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   priv = self->priv = TELEPATHY_PLUGIN_PRIVATE (self);
   priv->actions = NULL;
   priv->contacts = NULL;
+  priv->model_contacts = NULL;
   priv->dialog = NULL;
   priv->prompt_label = NULL;
 
@@ -1330,8 +1348,10 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
 
   priv->info_bar = MEX_INFO_BAR (mex_info_bar_get_default ());
 
-  // Zeitgeist init
+#ifdef HAVE_ZEITGEIST
+  /* Zeitgeist init */
   mex_telepathy_plugin_setup_zeitgeist (self);
+#endif
 
   GQuark account_features[] = {
     TP_ACCOUNT_FEATURE_CONNECTION,
