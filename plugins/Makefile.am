@@ -173,3 +173,15 @@ plugins_LTLIBRARIES += 00mex-bg-video.la
 00mex_bg_video_la_CFLAGS = -DG_LOG_DOMAIN=\"Mex-Background-Video\"
 00mex_bg_video_la_LIBADD = $(_libadd)
 endif
+
+if USE_PLUGIN_BG_DBUSVIDEO
+plugins_LTLIBRARIES += 01mex-bg-dbusvideo.la
+
+01mex_bg_dbusvideo_la_SOURCES =		 		\
+	bg-dbusvideo/mex-bg-dbusvideo-plugin.c		\
+	bg-dbusvideo/mex-bg-dbusvideo-plugin.h		\
+	bg-dbusvideo/mex-dbus-background-video.c	\
+	bg-dbusvideo/mex-dbus-background-video.h
+01mex_bg_dbusvideo_la_CFLAGS = -DG_LOG_DOMAIN=\"Mex-DBus-Background-Video\"
+01mex_bg_dbusvideo_la_LIBADD = $(_libadd)
+endif
