@@ -235,7 +235,7 @@ mex_contact_compute_mimetype (MexContact *self)
     new_mimetype = "x-mex-pending-contact";
   } else if (!mex_contact_validate_presence(priv->contact)) {
     new_mimetype = "x-mex-offline-contact";
-  } else {
+  } else if (tp_contact_has_feature (priv->contact, TP_CONTACT_FEATURE_CAPABILITIES)) {
     // Capabilities
     guint i;
 
@@ -286,6 +286,8 @@ mex_contact_compute_mimetype (MexContact *self)
         }
       }
     }
+  } else {
+    new_mimetype = "x-mex-contact";
   }
 
   if (mex_contact_should_add_to_model(self) !=
