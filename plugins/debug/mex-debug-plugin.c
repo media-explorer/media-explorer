@@ -29,9 +29,12 @@
 #include <gmodule.h>
 
 #include <mex/mex-tool-provider.h>
+#include <mex/mex-main.h>
 
 #include "mex-debug-plugin.h"
 #include "mex-gobject-list.h"
+
+#include <cogl/cogl-pango.h>
 
 static void mex_tool_provider_iface_init (MexToolProviderInterface *iface);
 G_DEFINE_TYPE_WITH_CODE (MexDebugPlugin,
@@ -270,6 +273,99 @@ do_diff (GObject             *instance,
   return TRUE;
 }
 
+static gboolean
+fps_queue_redraw ()
+{
+  clutter_actor_queue_redraw (CLUTTER_ACTOR (mex_get_stage ()));
+
+  return TRUE;
+}
+
+static void
+update_fps (ClutterActor *stage,
+            GTimer       *timer)
+{
+  static PangoLayout *layout = NULL;
+  static guint counter = 0;
+  static CoglColor white;
+  gdouble resolution;
+  gchar *text;
+
+  if (!layout)
+    {
+      PangoFontDescription *pango_font_desc;
+      CoglPangoFontMap *pango_font_map;
+      PangoContext *pango_context;
+
+      cogl_color_set_from_4ub (&white, 0xff, 0xff, 0xff, 0xff);
+
+      pango_font_map = COGL_PANGO_FONT_MAP (cogl_pango_font_map_new());
+
+      resolution = clutter_backend_get_resolution (clutter_get_default_backend ());
+
+      cogl_pango_font_map_set_resolution (pango_font_map, resolution);
+      cogl_pango_font_map_set_use_mipmapping (pango_font_map, TRUE);
+
+      pango_context = cogl_pango_font_map_create_context (pango_font_map);
+
+      pango_font_desc = pango_font_description_new ();
+      pango_font_description_set_family (pango_font_desc, "Sans");
+      pango_font_description_set_size (pango_font_desc, 30 * PANGO_SCALE);
+
+      layout = pango_layout_new (pango_context);
+      pango_layout_set_font_description (layout, pango_font_desc);
+
+      pango_font_description_free (pango_font_desc);
+      g_object_unref (pango_context);
+    }
+
+  if (g_timer_elapsed (timer, NULL) > 0.5)
+    {
+      text = g_strdup_printf ("%dfps", counter * 2);
+      pango_layout_set_text (layout, text, -1);
+      g_free (text);
+      g_timer_start (timer);
+      counter = 0;
+    }
+  else
+    counter++;
+
+  cogl_pango_render_layout (layout, 0, 0, &white, 0);
+}
+
+static gboolean
+do_fps (GObject             *instance,
+        const gchar         *action_name,
+        guint                key_val,
+        ClutterModifierType  modifiers,
+        gpointer             user_data)
+{
+  MexDebugPlugin *plugin = MEX_DEBUG_PLUGIN (user_data);
+  MexDebugPluginPrivate *priv = plugin->priv;
+  static guint source_id = 0;
+  static GTimer *timer = NULL;
+  static gulong handler_id = 0;
+
+  if (source_id)
+    {
+      g_source_remove (source_id);
+      source_id = 0;
+      g_timer_destroy (timer);
+      g_signal_handler_disconnect (mex_get_stage (), handler_id);
+    }
+  else
+    {
+      timer = g_timer_new ();
+      source_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE, fps_queue_redraw, NULL,
+                                   NULL);
+
+      handler_id = g_signal_connect_after (mex_get_stage (), "paint",
+                                           G_CALLBACK (update_fps), timer);
+    }
+
+  return TRUE;
+}
+
 /*
  * Log handler
  */
@@ -396,6 +492,9 @@ mex_debug_plugin_init (MexDebugPlugin *self)
       dlerror ();
       have_gobject_list = init_gobject_list (self, dlhandle);
     }
+
+  append_binding (self, "debug-fps", CLUTTER_KEY_r,
+                  G_CALLBACK (do_fps));
 
   if (have_gobject_list)
     {
