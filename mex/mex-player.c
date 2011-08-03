@@ -172,11 +172,12 @@ mex_player_set_content (MexContentView *view,
     {
       const gchar *sposition, *sduration;
 
-      if (priv->content) {
-        save_old_content (MEX_PLAYER (view));
-        g_object_unref (priv->content);
-        priv->content = NULL;
-      }
+      if (priv->content)
+        {
+          save_old_content (MEX_PLAYER (view));
+          g_object_unref (priv->content);
+          priv->content = NULL;
+        }
 
       priv->content = g_object_ref_sink (content);
 
@@ -230,12 +231,15 @@ mex_player_set_content (MexContentView *view,
 
       mex_player_set_controls_visible (MEX_PLAYER (view), TRUE);
     }
-  else {
-    if (priv->content) {
-      g_object_unref (priv->content);
-      priv->content = NULL;
+  else
+    {
+      if (priv->content)
+        {
+          save_old_content (MEX_PLAYER (view));
+          g_object_unref (priv->content);
+          priv->content = NULL;
+        }
     }
-  }
 }
 
 static MexContent *
@@ -637,6 +641,8 @@ static void
 controls_stopped_cb (MexMediaControls *controls,
                      MexPlayer        *player)
 {
+  save_old_content (player);
+
   if (player->priv->hide_controls_source)
     {
       g_source_remove (player->priv->hide_controls_source);
@@ -707,6 +713,9 @@ save_old_content (MexPlayer *player)
   MexPlayerPrivate *priv = player->priv;
   guint position;
   gchar str[20];
+
+  if (!priv->content)
+    return;
 
   if (priv->duration &&
       mex_generic_content_get_save_last_position (MEX_GENERIC_CONTENT (priv->content))) {
