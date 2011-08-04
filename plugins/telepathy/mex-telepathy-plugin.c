@@ -987,7 +987,8 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
                                                   contact_features);
 
     // Tp init
-    priv->account_manager = tp_simple_client_factory_ensure_account_manager (TP_SIMPLE_CLIENT_FACTORY(priv->factory));
+    priv->account_manager = tp_account_manager_new_with_factory (TP_SIMPLE_CLIENT_FACTORY(priv->factory));
+    tp_account_manager_set_default (priv->account_manager);
     tp_proxy_prepare_async (priv->account_manager,
                             NULL,
                             mex_telepathy_plugin_on_account_manager_ready,
