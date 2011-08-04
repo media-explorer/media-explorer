@@ -309,6 +309,7 @@ mex_grid_view_close (MexScene              *actor,
   MexGridViewPrivate *priv = MEX_GRID_VIEW (actor)->priv;
 
   clutter_timeline_start (priv->timeline);
+  clutter_actor_hide (priv->grid);
   priv->state = STATE_CLOSING_STAGE1;
   priv->target_box = *target;
 
