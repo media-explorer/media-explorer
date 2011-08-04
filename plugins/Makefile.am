@@ -161,3 +161,15 @@ plugins_LTLIBRARIES += 20mex-gnome-dvb.la
 20mex_gnome_dvb_la_CFLAGS = -DG_LOG_DOMAIN=\"Mex-GNOME-DVB\"
 20mex_gnome_dvb_la_LIBADD = $(_libadd)
 endif
+
+if USE_PLUGIN_BG_VIDEO
+plugins_LTLIBRARIES += 00mex-bg-video.la
+
+00mex_bg_video_la_SOURCES = 		\
+	bg-video/mex-bg-video-plugin.c	\
+	bg-video/mex-bg-video-plugin.h	\
+	bg-video/mex-background-video.c	\
+	bg-video/mex-background-video.h
+00mex_bg_video_la_CFLAGS = -DG_LOG_DOMAIN=\"Mex-Background-Video\"
+00mex_bg_video_la_LIBADD = $(_libadd)
+endif
