@@ -21,7 +21,7 @@
 #define _MEX_CONTENT_BOX_H
 
 #include <glib-object.h>
-#include <mex/mex-expander-box.h>
+#include <mx/mx.h>
 #include <mex/mex-content.h>
 
 G_BEGIN_DECLS
@@ -54,30 +54,24 @@ typedef struct _MexContentBoxPrivate MexContentBoxPrivate;
 
 struct _MexContentBox
 {
-  MexExpanderBox parent;
+  MxWidget parent;
 
   MexContentBoxPrivate *priv;
 };
 
 struct _MexContentBoxClass
 {
-  MexExpanderBoxClass parent_class;
+  MxWidgetClass parent_class;
 };
 
 GType mex_content_box_get_type (void) G_GNUC_CONST;
 
 ClutterActor *mex_content_box_new (void);
 
-ClutterActor *mex_content_box_get_tile (MexContentBox *box);
-ClutterActor *mex_content_box_get_menu (MexContentBox *box);
-ClutterActor *mex_content_box_get_info_panel (MexContentBox *box);
+gboolean mex_content_box_get_open (MexContentBox *box);
 
-void mex_content_box_set_thumbnail_size (MexContentBox *box,
-                                         gint           width,
-                                         gint           height);
-void mex_content_box_get_thumbnail_size (MexContentBox *box,
-                                         gint          *width,
-                                         gint          *height);
+void     mex_content_box_set_important (MexContentBox *box, gboolean important);
+gboolean mex_content_box_get_important (MexContentBox *box);
 
 G_END_DECLS
 

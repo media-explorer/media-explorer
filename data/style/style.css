@@ -104,12 +104,6 @@ MxIcon.Folder
   -mx-icon-name: "folder-mex";
 }
 
-MxIcon.Info
-{
-  -mx-icon-name: "icon-info-highlight";
-  -mx-icon-size: 22;
-}
-
 MxIcon.Usb
 {
   -mx-icon-name: "icon-panelheader-usb";
@@ -186,6 +180,16 @@ MexTile
   color: white;
   font-size: 18;
   font-family: "Droid Sans";
+}
+
+MexTile.Important > MxIcon.Info
+{
+  -mx-icon-size: 22;
+}
+
+MexTile.Important:focus > MxIcon.Info
+{
+  -mx-icon-name: "icon-info-highlight";
 }
 
 MexTile.Important

@@ -33,158 +33,98 @@
 #include "mex-content-tile.h"
 
 static void mex_content_view_iface_init (MexContentViewIface *iface);
-G_DEFINE_TYPE_WITH_CODE (MexContentBox, mex_content_box, MEX_TYPE_EXPANDER_BOX,
+static void mex_content_box_focusable_iface_init (MxFocusableIface *iface);
+G_DEFINE_TYPE_WITH_CODE (MexContentBox, mex_content_box, MX_TYPE_WIDGET,
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_CONTENT_VIEW,
-                                                mex_content_view_iface_init))
+                                                mex_content_view_iface_init)
+                         G_IMPLEMENT_INTERFACE (MX_TYPE_FOCUSABLE,
+                                                mex_content_box_focusable_iface_init))
 
 #define CONTENT_BOX_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_CONTENT_BOX, MexContentBoxPrivate))
+
+#define DEFAULT_THUMB_WIDTH 426
+#define DEFAULT_THUMB_HEIGHT 240
+#define DEFAULT_THUMB_RATIO ((float)DEFAULT_THUMB_HEIGHT/(float)DEFAULT_THUMB_WIDTH)
 
 enum
 {
   PROP_0,
 
-  PROP_MEDIA_URL,
-  PROP_LOGO_URL,
-
+  PROP_OPEN,
+  PROP_IMPORTANT,
   PROP_THUMB_WIDTH,
-  PROP_THUMB_HEIGHT
+  PROP_ACTION_LIST_WIDTH,
+
+  PROP_LAST
 };
 
-#define MAX_DESCRIPTION_HEIGHT 200.0
+static GParamSpec *properties[PROP_LAST];
 
 struct _MexContentBoxPrivate
 {
   MexContent   *content;
-  GList        *bindings;
+  MexModel     *context;
 
-  MexModel     *model;
-
-  ClutterActor *expander_box;
-  ClutterActor *action_list;
   ClutterActor *tile;
+  ClutterActor *action_list;
   ClutterActor *info_panel;
 
-  gchar        *thumb_url;
-  gchar        *media_url;
-  gchar        *logo_url;
-  gchar        *description;
+  guint is_open : 1;
+  guint extras_visible : 1;
 
-  gint          thumb_width;
-  gint          thumb_height;
+  ClutterTimeline *timeline;
+  ClutterAlpha *alpha;
+
+  gfloat thumb_width;
 };
 
-static ClutterColor hline_color = { 255, 255, 255, 51 };
+static void mex_content_box_toggle_open (MexContentBox *box);
 
 /* MexContentViewIface */
-
-static struct _Bindings {
-  MexContentMetadata id;
-  char *target;
-  GBindingTransformFunc fallback;
-} content_bindings[] = {
-  { MEX_CONTENT_METADATA_STREAM, "media-url", NULL },
-  { MEX_CONTENT_METADATA_STATION_LOGO, "logo-url", NULL },
-  { MEX_CONTENT_METADATA_NONE, NULL, NULL }
-};
 
 static void
 mex_content_box_set_content (MexContentView *view,
                              MexContent     *content)
 {
-  MexContentBox *box = (MexContentBox *) view;
-  MexContentBoxPrivate *priv;
-
-  priv = box->priv;
-
-  if (priv->content == content)
-    return;
-
-  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->tile), content);
-  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list), content);
+  MexContentBox *box = MEX_CONTENT_BOX (view);
+  MexContentBoxPrivate *priv = box->priv;
 
   if (priv->content)
-    {
-      GList *l;
+    g_object_unref (priv->content);
 
-      for (l = priv->bindings; l; l = l->next)
-        g_object_unref (l->data);
+  priv->content = g_object_ref (content);
+  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->tile), content);
+  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel), content);
 
-      g_list_free (priv->bindings);
-      priv->bindings = NULL;
-
-      g_object_unref (priv->content);
-      priv->content = NULL;
-    }
-
-  if (content)
-    {
-      int i;
-
-      priv->content = g_object_ref_sink (content);
-      for (i = 0; content_bindings[i].id != MEX_CONTENT_METADATA_NONE; i++)
-        {
-          const gchar *property;
-          GBinding *binding;
-
-          property = mex_content_get_property_name (content,
-                                                    content_bindings[i].id);
-
-          if (property == NULL)
-            {
-              /* The Content does not provide a GObject property for this
-               * kind of metadata, we can only sync at creation time */
-              const gchar *metadata;
-
-              metadata = mex_content_get_metadata (content,
-                                                   content_bindings[i].id);
-              g_object_set (box, content_bindings[i].target, metadata, NULL);
-
-              continue;
-            }
-
-          if (content_bindings[i].fallback)
-            binding = g_object_bind_property_full (content, property,
-                                                   box,
-                                                   content_bindings[i].target,
-                                                   G_BINDING_SYNC_CREATE,
-                                                   content_bindings[i].fallback,
-                                                   NULL,
-                                                   content, NULL);
-          else
-            binding = g_object_bind_property (content, property, box,
-                                              content_bindings[i].target,
-                                              G_BINDING_SYNC_CREATE);
-
-          priv->bindings = g_list_prepend (priv->bindings, binding);
-        }
-    }
+  /* setting the content on action_list is delayed until the box is opened to
+   * ensure any additional actions registered after set_content is called are
+   * available */
 }
 
 static MexContent *
 mex_content_box_get_content (MexContentView *view)
 {
-  MexContentBox *box = MEX_CONTENT_BOX (view);
-  MexContentBoxPrivate *priv = box->priv;
-
-  return priv->content;
+  return MEX_CONTENT_BOX (view)->priv->content;
 }
 
 static void
 mex_content_box_set_context (MexContentView *view,
-                             MexModel       *model)
+                             MexModel       *context)
 {
   MexContentBox *box = MEX_CONTENT_BOX (view);
   MexContentBoxPrivate *priv = box->priv;
 
-  if (priv->model == model)
+  if (priv->context == context)
     return;
 
-  if (priv->model)
-    g_object_unref (priv->model);
+  if (priv->context)
+    g_object_unref (priv->context);
 
-  priv->model = g_object_ref (model);
-  mex_content_view_set_context (MEX_CONTENT_VIEW (priv->action_list), model);
+  priv->context = g_object_ref (context);
+  mex_content_view_set_context (MEX_CONTENT_VIEW (priv->action_list), context);
+  mex_content_view_set_context (MEX_CONTENT_VIEW (priv->tile), context);
+  mex_content_view_set_context (MEX_CONTENT_VIEW (priv->info_panel), context);
 }
 
 static MexModel*
@@ -193,7 +133,7 @@ mex_content_box_get_context (MexContentView *view)
   MexContentBox *box = MEX_CONTENT_BOX (view);
   MexContentBoxPrivate *priv = box->priv;
 
-  return priv->model;
+  return priv->context;
 }
 
 static void
@@ -206,31 +146,81 @@ mex_content_view_iface_init (MexContentViewIface *iface)
   iface->get_context = mex_content_box_get_context;
 }
 
+/* MxFocusableIface */
+static MxFocusable*
+mex_content_box_accept_focus (MxFocusable *focusable,
+                              MxFocusHint  hint)
+{
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (focusable)->priv;
+  MxFocusable *focus = MX_FOCUSABLE (priv->tile);
+
+  clutter_actor_grab_key_focus (CLUTTER_ACTOR (focusable));
+
+  return mx_focusable_accept_focus (focus, hint);
+}
+
+static MxFocusable*
+mex_content_box_move_focus (MxFocusable      *focusable,
+                            MxFocusDirection  direction,
+                            MxFocusable      *from)
+{
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (focusable)->priv;
+  MxFocusable *result = NULL;
+
+  if (priv->is_open)
+    {
+      if (direction == MX_FOCUS_DIRECTION_RIGHT &&
+          (ClutterActor *) from != priv->action_list)
+        result = mx_focusable_accept_focus (MX_FOCUSABLE (priv->action_list), 0);
+      else if (direction == MX_FOCUS_DIRECTION_LEFT &&
+               (ClutterActor *) from != priv->tile)
+        result = mx_focusable_accept_focus (MX_FOCUSABLE (priv->tile), 0);
+
+      if (result == NULL)
+        {
+          /* close the content box if it is open */
+          if (priv->is_open)
+            mex_content_box_toggle_open (MEX_CONTENT_BOX (focusable));
+        }
+    }
+
+  return result;
+}
+
+static void
+mex_content_box_focusable_iface_init (MxFocusableIface *iface)
+{
+  iface->accept_focus = mex_content_box_accept_focus;
+  iface->move_focus = mex_content_box_move_focus;
+}
+
 static void
 mex_content_box_get_property (GObject    *object,
                               guint       property_id,
                               GValue     *value,
                               GParamSpec *pspec)
 {
-  MexContentBox *box = MEX_CONTENT_BOX (object);
-  MexContentBoxPrivate *priv = box->priv;
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (object)->priv;
+  gint int_value;
 
   switch (property_id)
     {
-    case PROP_MEDIA_URL:
-      g_value_set_string (value, priv->media_url);
+    case PROP_OPEN:
+      g_value_set_boolean (value, MEX_CONTENT_BOX (object)->priv->is_open);
       break;
 
-    case PROP_LOGO_URL:
-      g_value_set_string (value, priv->logo_url);
+    case PROP_IMPORTANT:
+      g_value_set_boolean (value,
+                           mex_content_box_get_important (MEX_CONTENT_BOX (object)));
       break;
 
     case PROP_THUMB_WIDTH:
-      g_value_set_int (value, priv->thumb_width);
+      g_object_get (priv->tile, "thumb-width", &int_value, NULL);
+      g_value_set_int (value, int_value);
       break;
 
-    case PROP_THUMB_HEIGHT:
-      g_value_set_int (value, priv->thumb_height);
+    case PROP_ACTION_LIST_WIDTH:
+      g_value_set_int (value, clutter_actor_get_width (priv->action_list));
       break;
 
     default:
@@ -244,80 +234,27 @@ mex_content_box_set_property (GObject      *object,
                               const GValue *value,
                               GParamSpec   *pspec)
 {
-  MexContentBox *self = MEX_CONTENT_BOX (object);
-  MexContentBoxPrivate *priv = self->priv;
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (object)->priv;
+  gint int_value;
 
   switch (property_id)
     {
-    case PROP_MEDIA_URL:
-      g_free (priv->media_url);
-      priv->media_url = g_value_dup_string (value);
+    case PROP_IMPORTANT:
+      mex_content_box_set_important (MEX_CONTENT_BOX (object),
+                                     g_value_get_boolean (value));
       break;
-
-    case PROP_LOGO_URL:
-      /* FIXME: We want the logo URL to be file:// to share the same
-       * underlying texture. This should be handled by a generic "download
-       * queue + texture cache" thingy that caches the same URL to a local
-       * file and hands over a ClutterTexure (or a MagicTexture) with the
-       * same underlying Cogl texture */
-    {
-      MxTextureCache *cache;
-      ClutterActor *logo, *logo_frame;
-      GFile *file;
-      gchar *path;
-      gint bw, bh;
-      gfloat ratio;
-
-      g_free (priv->logo_url);
-      priv->logo_url = g_value_dup_string (value);
-
-      if (priv->logo_url == NULL)
-        break;
-
-      file = g_file_new_for_uri (priv->logo_url);
-      path = g_file_get_path (file);
-      g_object_unref (file);
-      if (G_UNLIKELY (path == NULL))
-        {
-          g_warning ("The logo URL provided is not local, refusing to load it");
-          break;
-        }
-
-      cache = mx_texture_cache_get_default ();
-      logo = mx_texture_cache_get_actor (cache, path);
-      if (G_UNLIKELY (logo == NULL))
-        {
-          g_warning ("Could not retrieve texture for %s", path);
-          break;
-        }
-
-      logo_frame = mex_aspect_frame_new ();
-      /* FIXME, had to set the size (for now?) provides some GObject properties
-       * to tune that? expose it in the CSS */
-      clutter_actor_set_size (logo_frame, 60, 40);
-      clutter_texture_get_base_size (CLUTTER_TEXTURE (logo), &bw, &bh);
-      ratio = bh / 40.;
-      mex_aspect_frame_set_ratio (MEX_ASPECT_FRAME (logo_frame), ratio);
-      clutter_container_add_actor (CLUTTER_CONTAINER (logo_frame), logo);
-
-      mex_tile_set_primary_icon (MEX_TILE (priv->tile), logo_frame);
-    }
-    break;
 
     case PROP_THUMB_WIDTH:
-      priv->thumb_width = g_value_get_int (value);
-      g_object_set (G_OBJECT (priv->tile),
-                    "thumb-width",
-                    priv->thumb_width,
-                    NULL);
+      int_value = g_value_get_int (value);
+      if (int_value > 0)
+        g_object_set (priv->tile,
+                      "thumb-width", int_value,
+                      "thumb-height", (int) (int_value * DEFAULT_THUMB_RATIO),
+                      NULL);
       break;
 
-    case PROP_THUMB_HEIGHT:
-      priv->thumb_height = g_value_get_int (value);
-      g_object_set (G_OBJECT (priv->tile),
-                    "thumb-height",
-                    priv->thumb_height,
-                    NULL);
+    case PROP_ACTION_LIST_WIDTH:
+      clutter_actor_set_width (priv->action_list, g_value_get_int (value));
       break;
 
     default:
@@ -329,16 +266,6 @@ static void
 mex_content_box_dispose (GObject *object)
 {
   MexContentBoxPrivate *priv = MEX_CONTENT_BOX (object)->priv;
-  GList *l;
-
-  if (priv->bindings)
-    {
-      for (l = priv->bindings; l; l = l->next)
-        g_object_unref (l->data);
-
-      g_list_free (priv->bindings);
-      priv->bindings = NULL;
-    }
 
   if (priv->content)
     {
@@ -346,10 +273,40 @@ mex_content_box_dispose (GObject *object)
       priv->content = NULL;
     }
 
-  if (priv->model)
+  if (priv->context)
     {
-      g_object_unref (priv->model);
-      priv->model = NULL;
+      g_object_unref (priv->context);
+      priv->context = NULL;
+    }
+
+  if (priv->tile)
+    {
+      clutter_actor_destroy (priv->tile);
+      priv->tile = NULL;
+    }
+
+  if (priv->action_list)
+    {
+      clutter_actor_destroy (priv->action_list);
+      priv->action_list = NULL;
+    }
+
+  if (priv->info_panel)
+    {
+      clutter_actor_destroy (priv->info_panel);
+      priv->info_panel = NULL;
+    }
+
+  if (priv->timeline)
+    {
+      g_object_unref (priv->timeline);
+      priv->timeline = NULL;
+    }
+
+  if (priv->alpha)
+    {
+      g_object_unref (priv->alpha);
+      priv->alpha = NULL;
     }
 
   G_OBJECT_CLASS (mex_content_box_parent_class)->dispose (object);
@@ -358,79 +315,59 @@ mex_content_box_dispose (GObject *object)
 static void
 mex_content_box_finalize (GObject *object)
 {
-  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (object)->priv;
-
-  g_free (priv->thumb_url);
-  g_free (priv->media_url);
-  g_free (priv->logo_url);
-  g_free (priv->description);
-
   G_OBJECT_CLASS (mex_content_box_parent_class)->finalize (object);
 }
 
 static void
-mex_content_box_notify_open_cb (MexExpanderBox *box,
-                                GParamSpec     *pspec)
+mex_content_box_toggle_open (MexContentBox *box)
 {
-  GList *actions;
+  MexContentBoxPrivate *priv = box->priv;
+  gboolean close_notified;
 
-  ClutterStage *stage = CLUTTER_STAGE (
-                          clutter_actor_get_stage (CLUTTER_ACTOR (box)));
-  MxFocusManager *fmanager = mx_focus_manager_get_for_stage (stage);
-  MexActionManager *manager = mex_action_manager_get_default ();
-  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (box)->priv;
-  gboolean open = mex_expander_box_get_open (box);
+  /* if the close animation was cancelled then no notify for the closed state
+   * will have been sent, therefore notify for the opened state does not need 
+   * to be emitted */
+  close_notified = (!priv->is_open
+                    && !clutter_timeline_is_playing (priv->timeline));
 
-  if (!open)
+  priv->is_open = !priv->is_open;
+
+  priv->extras_visible = TRUE;
+  if (priv->is_open)
     {
-      /* If the action list has focus, push it back onto the tile */
-      if (mex_actor_has_focus (fmanager, priv->action_list))
-        mx_focus_manager_push_focus (fmanager, MX_FOCUSABLE (priv->tile));
-      return;
-    }
+      /* opening */
+      clutter_timeline_set_direction (priv->timeline,
+                                      CLUTTER_TIMELINE_FORWARD);
+      mx_stylable_set_style_class (MX_STYLABLE (box), "open");
 
-  /* Refresh the info panel and the action list */
-  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel),
-                                priv->content);
+      /* refresh the action list */
+      mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list),
+                                    priv->content);
 
-  mex_action_list_refresh (MEX_ACTION_LIST (priv->action_list));
-
-  /* See if we have any actions */
-  actions = mex_action_manager_get_actions_for_content (manager,
-                                                        priv->content);
-
-  /* Push focus onto the action list if we have actions, otherwise onto
-   * the tile.
-   */
-  if (actions)
-    {
-      clutter_actor_show (priv->action_list);
-      mx_focus_manager_push_focus (fmanager,
-                                   MX_FOCUSABLE (priv->action_list));
-      g_list_free (actions);
+      if (close_notified)
+        g_object_notify_by_pspec (G_OBJECT (box), properties[PROP_OPEN]);
     }
   else
     {
-      clutter_actor_hide (priv->action_list);
-      mx_focus_manager_push_focus (fmanager, MX_FOCUSABLE (priv->tile));
+      /* closing */
+      clutter_timeline_set_direction (priv->timeline,
+                                      CLUTTER_TIMELINE_BACKWARD);
     }
+
+  if (!clutter_timeline_is_playing (priv->timeline))
+    clutter_timeline_rewind (priv->timeline);
+
+  clutter_timeline_start (priv->timeline);
 }
 
 static gboolean
 mex_content_box_key_press_event_cb (ClutterActor    *actor,
                                     ClutterKeyEvent *event,
-                                    MexExpanderBox  *drawer)
+                                    gpointer         user_data)
 {
-  gboolean open;
 
   MexActionManager *manager = mex_action_manager_get_default ();
-  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (drawer)->priv;
-
-  if (!MEX_KEY_OK (event->keyval) &&
-      !MEX_KEY_INFO (event->keyval))
-    {
-      return FALSE;
-    }
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (actor)->priv;
 
   if (MEX_KEY_OK (event->keyval))
     {
@@ -439,11 +376,12 @@ mex_content_box_key_press_event_cb (ClutterActor    *actor,
       actions = mex_action_manager_get_actions_for_content (manager,
                                                             priv->content);
 
+      /* find the first action and "activate" it */
       if (actions)
         {
           MxAction *action = actions->data;
 
-          mex_action_set_context (action, priv->model);
+          mex_action_set_context (action, priv->context);
           mex_action_set_content (action, priv->content);
 
           g_signal_emit_by_name (action, "activated", 0);
@@ -453,21 +391,12 @@ mex_content_box_key_press_event_cb (ClutterActor    *actor,
           return TRUE;
         }
     }
+  else if (MEX_KEY_INFO (event->keyval))
+    {
+      mex_content_box_toggle_open (MEX_CONTENT_BOX (actor));
+    }
 
-  open = !mex_expander_box_get_open (drawer);
-
-  /* We only want to expand the box if we have either more than one action,
-   * or we have description metadata. We already track this when determining
-   * if the info icon should be visible, so use that to determine whether
-   * we should allow opening here.
-   */
-  if (open && !mex_tile_get_secondary_icon (MEX_TILE (priv->tile)))
-    return FALSE;
-
-  mex_expander_box_set_open (drawer, open);
-  mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->expander_box), open);
-
-  return TRUE;
+  return FALSE;
 }
 
 static void
@@ -475,80 +404,34 @@ mex_content_box_paint (ClutterActor *actor)
 {
   MexContentBoxPrivate *priv = MEX_CONTENT_BOX (actor)->priv;
 
-  if (MEX_IS_PROGRAM (priv->content))
-    _mex_program_complete (MEX_PROGRAM (priv->content));
-
   CLUTTER_ACTOR_CLASS (mex_content_box_parent_class)->paint (actor);
-}
 
-static void
-mex_content_box_notify_key_focus_cb (ClutterStage  *stage,
-                                     GParamSpec    *pspec,
-                                     MexContentBox *self)
-{
-  MexContentBoxPrivate *priv = self->priv;
-  ClutterActor *focus = clutter_stage_get_key_focus (stage);
+  clutter_actor_paint (priv->tile);
 
-  if (focus == priv->tile)
+  if (G_UNLIKELY (priv->extras_visible))
     {
-      gboolean show_info;
+      ClutterActorBox box;
 
-      if (mex_content_get_metadata (priv->content,
-                                    MEX_CONTENT_METADATA_SYNOPSIS) ||
-          mex_content_get_metadata (priv->content,
-                                    MEX_CONTENT_METADATA_DATE) ||
-          mex_content_get_metadata (priv->content,
-                                    MEX_CONTENT_METADATA_CREATION_DATE) ||
-          mex_content_get_metadata (priv->content,
-                                    MEX_CONTENT_METADATA_DURATION))
-        show_info = TRUE;
-      else
-        {
-          MexActionManager *manager = mex_action_manager_get_default ();
-          GList *actions =
-            mex_action_manager_get_actions_for_content (manager, priv->content);
+      clutter_actor_paint (priv->action_list);
+      clutter_actor_paint (priv->info_panel);
 
-          if (actions && actions->next)
-            show_info = TRUE;
-          else
-            show_info = FALSE;
-
-          g_list_free (actions);
-        }
-
-      if (show_info)
-        {
-          ClutterActor *icon = mx_icon_new ();
-          mx_stylable_set_style_class (MX_STYLABLE (icon), "Info");
-          mex_tile_set_secondary_icon (MEX_TILE (priv->tile), icon);
-        }
+      /* separator */
+      cogl_set_source_color4ub (255, 255, 255, 51);
+      clutter_actor_get_allocation_box (priv->info_panel, &box);
+      cogl_path_line (box.x1, box.y1, box.x2, box.y1);
+      cogl_path_stroke ();
     }
-  else
-    mex_tile_set_secondary_icon (MEX_TILE (priv->tile), NULL);
 }
 
 static void
-mex_content_box_map (ClutterActor *actor)
+mex_content_box_pick (ClutterActor       *actor,
+                      const ClutterColor *color)
 {
-  ClutterActor *stage;
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (actor)->priv;
 
-  CLUTTER_ACTOR_CLASS (mex_content_box_parent_class)->map (actor);
-
-  stage = clutter_actor_get_stage (actor);
-  g_signal_connect (stage, "notify::key-focus",
-                    G_CALLBACK (mex_content_box_notify_key_focus_cb), actor);
-}
-
-static void
-mex_content_box_unmap (ClutterActor *actor)
-{
-  ClutterActor *stage = clutter_actor_get_stage (actor);
-
-  g_signal_handlers_disconnect_by_func (stage,
-                                        mex_content_box_notify_key_focus_cb,
-                                        actor);
-
-  CLUTTER_ACTOR_CLASS (mex_content_box_parent_class)->unmap (actor);
+  clutter_actor_paint (priv->tile);
+  if (G_UNLIKELY (priv->extras_visible))
+    clutter_actor_paint (priv->action_list);
 }
 
 static gboolean
@@ -559,10 +442,115 @@ mex_content_box_get_paint_volume (ClutterActor       *actor,
 }
 
 static void
+mex_content_box_get_preferred_width (ClutterActor *actor,
+                                     gfloat        for_height,
+                                     gfloat       *min_width,
+                                     gfloat       *pref_width)
+{
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (actor)->priv;
+  gfloat list_w;
+
+  clutter_actor_get_preferred_width (priv->tile, for_height, min_width,
+                                     pref_width);
+  if (!priv->extras_visible)
+    return;
+
+  if (pref_width)
+    {
+      clutter_actor_get_preferred_width (priv->action_list, for_height, NULL,
+                                         &list_w);
+
+      if (clutter_timeline_is_playing (priv->timeline))
+        *pref_width = *pref_width +
+          (list_w * clutter_alpha_get_alpha (priv->alpha));
+      else
+        *pref_width = *pref_width + list_w;
+    }
+}
+
+static void
+mex_content_box_get_preferred_height (ClutterActor *actor,
+                                      gfloat        for_width,
+                                      gfloat       *min_height,
+                                      gfloat       *pref_height)
+{
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (actor)->priv;
+  gfloat info_h;
+
+  clutter_actor_get_preferred_height (priv->tile, for_width, min_height,
+                                      pref_height);
+  if (!priv->extras_visible)
+    return;
+
+  if (pref_height)
+    {
+      clutter_actor_get_preferred_height (priv->info_panel, for_width, NULL,
+                                          &info_h);
+      if (clutter_timeline_is_playing (priv->timeline))
+        *pref_height = *pref_height +
+          (info_h * clutter_alpha_get_alpha (priv->alpha));
+      else
+        *pref_height = *pref_height + info_h;
+    }
+}
+
+static void
+mex_content_box_allocate (ClutterActor           *actor,
+                          const ClutterActorBox  *box,
+                          ClutterAllocationFlags  flags)
+{
+  MexContentBoxPrivate *priv = MEX_CONTENT_BOX (actor)->priv;
+  ClutterActorBox child_box;
+  gfloat pref_w = 0, pref_h = 0, tile_w, tile_h;
+
+  CLUTTER_ACTOR_CLASS (mex_content_box_parent_class)->allocate (actor, box,
+                                                                flags);
+
+  tile_w = box->x2 - box->x1;
+  clutter_actor_get_preferred_width (priv->tile, -1, NULL, &tile_w);
+  if (tile_w > box->x2 - box->x1)
+    tile_w = box->x2 - box->x1;
+
+  clutter_actor_get_preferred_height (priv->tile, tile_w, NULL, &tile_h);
+  child_box.x1 = 0;
+  child_box.x2 = child_box.x1 + tile_w;
+  child_box.y1 = 0;
+  child_box.y2 = child_box.y1 + tile_h;
+
+  clutter_actor_allocate (priv->tile, &child_box, flags);
+
+  if (G_UNLIKELY (priv->extras_visible))
+    {
+      /* action list */
+      clutter_actor_get_preferred_width (priv->action_list, -1, NULL, &pref_w);
+      clutter_actor_get_preferred_height (priv->info_panel, -1, NULL, &pref_h);
+
+      child_box.x1 = tile_w;
+      child_box.x2 = tile_w + pref_w;
+      child_box.y1 = 0;
+      child_box.y2 = tile_h;
+      clutter_actor_allocate (priv->action_list, &child_box, flags);
+
+
+      child_box.x1 = 0;
+      child_box.x2 = tile_w + pref_w;
+      child_box.y1 = tile_h;
+      child_box.y2 = tile_h + pref_h;
+      clutter_actor_allocate (priv->info_panel, &child_box, flags);
+    }
+
+  if ((tile_w + pref_w) > (box->x2 - box->x1)
+      || (tile_h + pref_h) > (box->y2 - box->y1))
+    {
+      clutter_actor_set_clip_to_allocation (actor, TRUE);
+    }
+
+
+}
+
+static void
 mex_content_box_class_init (MexContentBoxClass *klass)
 {
-  GParamSpec *pspec;
-
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
 
@@ -574,42 +562,51 @@ mex_content_box_class_init (MexContentBoxClass *klass)
   object_class->finalize = mex_content_box_finalize;
 
   actor_class->paint = mex_content_box_paint;
+  actor_class->pick = mex_content_box_pick;
   actor_class->get_paint_volume = mex_content_box_get_paint_volume;
-  actor_class->map = mex_content_box_map;
-  actor_class->unmap = mex_content_box_unmap;
+  actor_class->get_preferred_width = mex_content_box_get_preferred_width;
+  actor_class->get_preferred_height = mex_content_box_get_preferred_height;
+  actor_class->allocate = mex_content_box_allocate;
 
-  pspec = g_param_spec_string ("media-url",
-                               "Media URL",
-                               "URL for the media this box represents.",
-                               NULL,
-                               G_PARAM_READWRITE |
-                               G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_MEDIA_URL, pspec);
+  properties[PROP_OPEN] = g_param_spec_boolean ("open",
+                                                "Open",
+                                                "Whether the action buttons and"
+                                                " info panel are visible.",
+                                                FALSE,
+                                                G_PARAM_READABLE
+                                                | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_OPEN,
+                                   properties[PROP_OPEN]);
 
-  pspec = g_param_spec_string ("logo-url",
-                               "Logo URL",
-                               "URL for the logo of the provider for this "
-                               "content",
-                               NULL,
-                               G_PARAM_READWRITE |
-                               G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_LOGO_URL, pspec);
 
-  pspec = g_param_spec_int ("thumb-width",
-                            "Thumbnail width",
-                            "Scale the width of the thumbnail while loading.",
-                            -1, G_MAXINT, 426,
-                            G_PARAM_READWRITE |
-                            G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_THUMB_WIDTH, pspec);
+  properties[PROP_IMPORTANT] = g_param_spec_boolean ("important",
+                                                "Important",
+                                                "Sets the \"important\" property"
+                                                " of the internal MxTile.",
+                                                FALSE,
+                                                G_PARAM_READWRITE
+                                                | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_IMPORTANT,
+                                   properties[PROP_IMPORTANT]);
 
-  pspec = g_param_spec_int ("thumb-height",
-                            "Thumbnail height",
-                            "Scale the height of the thumbnail while loading.",
-                            -1, G_MAXINT, 240,
-                            G_PARAM_READWRITE |
-                            G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_THUMB_HEIGHT, pspec);
+  properties[PROP_THUMB_WIDTH] =
+    g_param_spec_int ("thumb-width",
+                      "Thumbnail Width",
+                      "Width of the thumbail",
+                      -1, G_MAXINT, DEFAULT_THUMB_WIDTH,
+                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_THUMB_WIDTH,
+                                   properties[PROP_THUMB_WIDTH]);
+
+  properties[PROP_ACTION_LIST_WIDTH] =
+    g_param_spec_int ("action-list-width",
+                      "Action List Width",
+                      "Width of the action list, or -1 to use the natural"
+                      " width.",
+                      -1, G_MAXINT, -1,
+                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_ACTION_LIST_WIDTH,
+                                   properties[PROP_ACTION_LIST_WIDTH]);
 }
 
 static gboolean
@@ -617,85 +614,75 @@ mex_content_box_tile_clicked_cb (ClutterActor       *tile,
                                  ClutterButtonEvent *event,
                                  MexContentBox      *self)
 {
-  MexContentBoxPrivate *priv = self->priv;
+  mex_push_focus (MX_FOCUSABLE (tile));
 
-  if (mex_expander_box_get_open (MEX_EXPANDER_BOX (self)))
-    {
-      mex_expander_box_set_open (MEX_EXPANDER_BOX (self), FALSE);
-      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->expander_box), FALSE);
-    }
-  else
-    {
-      mex_expander_box_set_open (MEX_EXPANDER_BOX (self), TRUE);
-      mex_expander_box_set_open (MEX_EXPANDER_BOX (priv->expander_box), TRUE);
-    }
-
-  mex_push_focus (MX_FOCUSABLE (priv->tile));
+  mex_content_box_toggle_open (MEX_CONTENT_BOX (self));
 
   return TRUE;
+}
+
+static void
+mex_content_box_timeline_completed (ClutterTimeline *timeline,
+                                    MexContentBox   *box)
+{
+  MexContentBoxPrivate *priv = box->priv;
+
+  priv->extras_visible =
+    (clutter_timeline_get_direction (timeline) == CLUTTER_TIMELINE_FORWARD);
+
+  if (!priv->extras_visible)
+    {
+      /* box is now "closed" */
+      mx_stylable_set_style_class (MX_STYLABLE (box), "");
+      g_object_notify_by_pspec (G_OBJECT (box), properties[PROP_OPEN]);
+    }
 }
 
 static void
 mex_content_box_init (MexContentBox *self)
 {
   MexContentBoxPrivate *priv = self->priv = CONTENT_BOX_PRIVATE (self);
-  ClutterActor *hline, *info_container;
+  ClutterActor *icon;
 
-  priv->thumb_width = 426;
-  priv->thumb_height = 240;
-
-  /* Create description panel */
-  info_container = mx_box_layout_new ();
-  mx_box_layout_set_orientation (MX_BOX_LAYOUT (info_container),
-                                 MX_ORIENTATION_VERTICAL);
+  clutter_actor_push_internal (CLUTTER_ACTOR (self));
 
   priv->info_panel = mex_info_panel_new (MEX_INFO_PANEL_MODE_SIMPLE);
-
-  hline = clutter_rectangle_new_with_color (&hline_color);
-  clutter_actor_set_height (hline, 1);
-
-  clutter_container_add (CLUTTER_CONTAINER (info_container), hline,
-                         priv->info_panel, NULL);
+  clutter_actor_set_parent (priv->info_panel, CLUTTER_ACTOR (self));
 
   /* monitor key press events */
   g_signal_connect (self, "key-press-event",
-                    G_CALLBACK (mex_content_box_key_press_event_cb), self);
+                    G_CALLBACK (mex_content_box_key_press_event_cb), NULL);
 
   /* Create tile */
+  icon = mx_icon_new ();
   priv->tile = mex_content_tile_new ();
+  clutter_actor_set_parent (priv->tile, CLUTTER_ACTOR (self));
   g_object_set (G_OBJECT (priv->tile),
-                "thumb-width", priv->thumb_width,
-                "thumb-height", priv->thumb_height,
+                "thumb-width", DEFAULT_THUMB_WIDTH,
+                "thumb-height", DEFAULT_THUMB_HEIGHT,
                 NULL);
-  mx_bin_set_fill (MX_BIN (priv->tile), TRUE, TRUE);
+  mx_stylable_set_style_class (MX_STYLABLE (icon), "Info");
+  mex_tile_set_secondary_icon (MEX_TILE (priv->tile), icon);
+
 
   clutter_actor_set_reactive (priv->tile, TRUE);
   g_signal_connect (priv->tile, "button-release-event",
                     G_CALLBACK (mex_content_box_tile_clicked_cb), self);
 
-  /* Create secondary box for tile/menu */
-  priv->expander_box = mex_expander_box_new ();
-  mex_expander_box_set_important (MEX_EXPANDER_BOX (priv->expander_box), TRUE);
-  mex_expander_box_set_grow_direction (MEX_EXPANDER_BOX (priv->expander_box),
-                                      MEX_EXPANDER_BOX_RIGHT);
-  mex_expander_box_set_primary_child (MEX_EXPANDER_BOX (priv->expander_box),
-                                      priv->tile);
-
-  /* Pack box and panel into self */
-  mex_expander_box_set_primary_child (MEX_EXPANDER_BOX (self),
-                                      priv->expander_box);
-
-  mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (self),
-                                        info_container);
-
   /* Create the action list */
   priv->action_list = mex_action_list_new ();
-  mex_expander_box_set_secondary_child (MEX_EXPANDER_BOX (priv->expander_box),
-                                        priv->action_list);
+  clutter_actor_set_parent (priv->action_list, CLUTTER_ACTOR (self));
 
-  /* Connect to the open notify signal */
-  g_signal_connect (self, "notify::open",
-                    G_CALLBACK (mex_content_box_notify_open_cb), NULL);
+  clutter_actor_pop_internal (CLUTTER_ACTOR (self));
+
+
+  priv->timeline = clutter_timeline_new (200);
+  priv->alpha = clutter_alpha_new_full (priv->timeline, CLUTTER_EASE_OUT_CUBIC);
+
+  g_signal_connect_swapped (priv->timeline, "new-frame",
+                            G_CALLBACK (clutter_actor_queue_relayout), self);
+  g_signal_connect (priv->timeline, "completed",
+                    G_CALLBACK (mex_content_box_timeline_completed), self);
 }
 
 ClutterActor *
@@ -704,60 +691,21 @@ mex_content_box_new (void)
   return g_object_new (MEX_TYPE_CONTENT_BOX, NULL);
 }
 
-ClutterActor *
-mex_content_box_get_tile (MexContentBox *box)
+gboolean
+mex_content_box_get_open (MexContentBox *box)
 {
-  g_return_val_if_fail (MEX_IS_CONTENT_BOX (box), NULL);
-  return box->priv->tile;
-}
-
-ClutterActor *
-mex_content_box_get_menu (MexContentBox *box)
-{
-  g_return_val_if_fail (MEX_IS_CONTENT_BOX (box), NULL);
-  return box->priv->action_list;
-}
-
-ClutterActor *
-mex_content_box_get_info_panel (MexContentBox *box)
-{
-  g_return_val_if_fail (MEX_IS_CONTENT_BOX (box), NULL);
-  return box->priv->info_panel;
+  return box->priv->extras_visible;
 }
 
 void
-mex_content_box_set_thumbnail_size (MexContentBox *box,
-                                    gint           width,
-                                    gint           height)
+mex_content_box_set_important (MexContentBox *box,
+                               gboolean       important)
 {
-  MexContentBoxPrivate *priv;
-
-  g_return_if_fail (MEX_IS_CONTENT_BOX (box));
-
-  priv = box->priv;
-  priv->thumb_width = width;
-  priv->thumb_height = height;
-
-  g_object_set (G_OBJECT (priv->tile),
-                "thumb-width", priv->thumb_width,
-                "thumb-height", priv->thumb_height,
-                NULL);
+  mex_tile_set_important (MEX_TILE (box->priv->tile), important);
 }
 
-void
-mex_content_box_get_thumbnail_size (MexContentBox *box,
-                                    gint          *width,
-                                    gint          *height)
+gboolean
+mex_content_box_get_important (MexContentBox *box)
 {
-  MexContentBoxPrivate *priv;
-
-  g_return_if_fail (MEX_IS_CONTENT_BOX (box));
-
-  priv = box->priv;
-
-  if (width)
-    *width = priv->thumb_width;
-  if (height)
-    *height = priv->thumb_height;
+  return mex_tile_get_important (MEX_TILE (box->priv->tile));
 }
-

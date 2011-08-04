@@ -520,11 +520,11 @@ mex_grid_view_init (MexGridView *self)
 
 
 static void
-mex_explorer_grid_box_notify_open_cb (MexExpanderBox *box,
+mex_explorer_grid_box_notify_open_cb (MexContentBox *box,
                                       GParamSpec    *pspec,
                                       MexScrollView *view)
 {
-  mex_scroll_view_set_indicators_hidden (view, mex_expander_box_get_open (box));
+  mex_scroll_view_set_indicators_hidden (view, mex_content_box_get_open (box));
 }
 
 static void
@@ -534,20 +534,17 @@ mex_explorer_grid_object_created_cb (MexProxy      *proxy,
                                      gpointer       grid)
 {
   MexContentBox *content_box = MEX_CONTENT_BOX (object);
-  ClutterActor *tile = mex_content_box_get_tile (content_box);
-  ClutterActor *menu = mex_content_box_get_menu (content_box);
 
-  mex_tile_set_important (MEX_TILE (tile), TRUE);
-  mex_expander_box_set_important (MEX_EXPANDER_BOX (object), TRUE);
+  mex_content_box_set_important (content_box, TRUE);
 
   /* Make sure the tiles stay the correct size */
   g_object_bind_property (grid, "tile-width",
-                          tile, "width",
+                          content_box, "thumb-width",
                           G_BINDING_SYNC_CREATE);
 
   /* Make sure expanded grid tiles fill a nice-looking space */
   g_object_bind_property (grid, "tile-width",
-                          menu, "width",
+                          content_box, "action-list-width",
                           G_BINDING_SYNC_CREATE);
 
   g_signal_connect (object, "notify::open",

@@ -19,7 +19,6 @@
 
 #include "mex-column.h"
 #include "mex-content-box.h"
-#include "mex-expander-box.h"
 #include "mex-scroll-view.h"
 #include "mex-tile.h"
 #include "mex-shadow.h"
@@ -129,15 +128,15 @@ mex_scrollable_iface_init (MexScrollableContainerInterface *iface)
 }
 
 static void
-expander_box_open_notify (MexExpanderBox *box,
-                          GParamSpec     *pspec,
-                          MexColumn      *column)
+content_box_open_notify (MexContentBox *box,
+                         GParamSpec     *pspec,
+                         MexColumn      *column)
 {
   MexColumnPrivate *priv = MEX_COLUMN (column)->priv;
   GList *l;
   ClutterActorMeta *shadow;
 
-  if (mex_expander_box_get_open (box))
+  if (mex_content_box_get_open (box))
     {
       for (l = priv->children; l; l = l->next)
         {
@@ -193,7 +192,7 @@ mex_column_add (ClutterContainer *container,
   priv->n_items ++;
 
   /* Expand/collapse any drawer that gets added as appropriate */
-  if (MEX_IS_EXPANDER_BOX (actor))
+  if (MEX_IS_CONTENT_BOX (actor))
     {
       MexShadow *shadow;
       ClutterColor shadow_color = { 0, 0, 0, 128 };
@@ -209,17 +208,10 @@ mex_column_add (ClutterContainer *container,
       clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (shadow), FALSE);
 
       g_signal_connect (actor, "notify::open",
-                        G_CALLBACK (expander_box_open_notify), container);
+                        G_CALLBACK (content_box_open_notify), container);
 
-      mex_expander_box_set_important (MEX_EXPANDER_BOX (actor),
-                                      priv->has_focus);
+      mex_content_box_set_important (MEX_CONTENT_BOX (actor), priv->has_focus);
 
-      if (MEX_IS_CONTENT_BOX (actor))
-        {
-          ClutterActor *tile =
-            mex_content_box_get_tile (MEX_CONTENT_BOX (actor));
-          mex_tile_set_important (MEX_TILE (tile), priv->has_focus);
-        }
     }
 
   clutter_actor_set_parent (actor, CLUTTER_ACTOR (self));
@@ -259,8 +251,8 @@ mex_column_remove (ClutterContainer *container,
   priv->n_items --;
 
   /* children may not be at full opacity if the item removed was "open" */
-  if (MEX_IS_EXPANDER_BOX (actor)
-      && mex_expander_box_get_open (MEX_EXPANDER_BOX (actor)))
+  if (MEX_IS_CONTENT_BOX (actor)
+      && mex_content_box_get_open (MEX_CONTENT_BOX (actor)))
     {
       GList *l;
 
@@ -1107,9 +1099,47 @@ mex_column_pick (ClutterActor *actor, const ClutterColor *color)
 }
 
 static void
-mex_column_expand_drawer_cb (MexExpanderBox *box)
+child_expand_complete_cb (ClutterAnimation *animation,
+                     ClutterActor     *child)
 {
-  mex_expander_box_set_important (box, TRUE);
+  /* child should now be at it's natural height */
+  clutter_actor_set_height (child, -1);
+}
+
+static void
+mex_column_expand_child (ClutterActor *child)
+{
+  gfloat new_height, old_height;
+
+  old_height = clutter_actor_get_height (child);
+
+  clutter_actor_set_height (child, -1);
+  clutter_actor_get_preferred_height (child, -1, NULL, &new_height);
+  clutter_actor_set_height (child, old_height);
+
+  clutter_actor_animate (child, CLUTTER_EASE_OUT_CUBIC, 200,
+                         "height", new_height,
+                         "signal-after::completed", child_expand_complete_cb,
+                         child,
+                         NULL);
+}
+
+static void
+mex_column_shrink_child (ClutterActor *child)
+{
+  gfloat new_height, old_height;
+
+  old_height = clutter_actor_get_height (child);
+
+  clutter_actor_set_height (child, -1);
+  clutter_actor_get_preferred_height (child, -1, &new_height, NULL);
+  clutter_actor_set_height (child, old_height);
+
+  /* prevent the completed signal being called if the child was expanding */
+  clutter_actor_detach_animation (child);
+
+  clutter_actor_animate (child, CLUTTER_EASE_OUT_CUBIC, 200,
+                         "height", new_height, NULL);
 }
 
 static void
@@ -1193,10 +1223,8 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
       clutter_timeline_set_delay (priv->expand_timeline, 350);
     }
 
-  /* Loop through children and set the expander box important/unimportant
-   * as necessary, and if necessary, do the same for the tile inside the
-   * expander-box.
-   */
+  /* Loop through children and set the content box important/unimportant
+   * as necessary */
   open = has_focus && !cell_has_focus;
   for (c = priv->children; c; c = c->next)
     {
@@ -1206,22 +1234,16 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
       if ((!priv->collapse && priv->has_focus) || (child == focused_cell))
         open = TRUE;
 
-      if (!MEX_IS_EXPANDER_BOX (child))
+      if (!MEX_IS_CONTENT_BOX (child))
         continue;
 
       /* Note, 'marker-reached::' is 16 characters long */
       g_snprintf (signal_name, G_N_ELEMENTS (signal_name),
                   "marker-reached::%p", child);
 
-      if (MEX_IS_CONTENT_BOX (child))
-        {
-          ClutterActor *tile =
-            mex_content_box_get_tile (MEX_CONTENT_BOX (child));
-          mex_tile_set_important (MEX_TILE (tile), priv->has_focus);
-        }
-
       if (!open)
         {
+          /* close */
           if (priv->expand_timeline)
             {
               if (clutter_timeline_has_marker (priv->expand_timeline,
@@ -1229,25 +1251,25 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
                 clutter_timeline_remove_marker (priv->expand_timeline,
                                                 signal_name + 16);
               g_signal_handlers_disconnect_by_func (priv->expand_timeline,
-                                                    mex_column_expand_drawer_cb,
+                                                    mex_column_expand_child,
                                                     child);
             }
-          mex_expander_box_set_important (MEX_EXPANDER_BOX (child), FALSE);
+          mex_column_shrink_child (child);
         }
       else if (set_tile_important)
         {
-
-          mex_expander_box_set_important (MEX_EXPANDER_BOX (child), FALSE);
+          /* stagger opening */
           clutter_timeline_add_marker_at_time (priv->expand_timeline,
                                                signal_name + 16, offset);
           g_signal_connect_swapped (priv->expand_timeline, signal_name,
-                                    G_CALLBACK (mex_column_expand_drawer_cb),
+                                    G_CALLBACK (mex_column_expand_child),
                                     child);
 
           offset += increment;
         }
-      else if (priv->has_focus)
-        mex_expander_box_set_important (MEX_EXPANDER_BOX (child), TRUE);
+      else
+        mex_column_expand_child (child);
+      mex_content_box_set_important (MEX_CONTENT_BOX (child), priv->has_focus);
     }
 
   if (priv->expand_timeline && set_tile_important && (offset >= increment))

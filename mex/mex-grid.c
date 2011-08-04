@@ -554,25 +554,12 @@ mex_grid_get_tile_size (MexGrid               *grid,
 
   mx_widget_get_padding (MX_WIDGET (grid), &padding);
 
-  /* Calculate the basic size of a tile - The width is gotten from the
-   * available width of the grid divided by the stride, the height is derived
-   * from the preferred height of the first child. If the child is a content
-   * box, it's gotten from the tile within the content box.
-   */
   *basic_width = floorf ((box->x2 - box->x1 - padding.right - padding.left) /
                          (gfloat) priv->stride);
 
   first_child = g_array_index (priv->children, ClutterActor *, 0);
-  if (MEX_IS_CONTENT_BOX (first_child))
-    {
-      ClutterActor *tile =
-        mex_content_box_get_tile (MEX_CONTENT_BOX (first_child));
-      clutter_actor_get_preferred_height (tile, *basic_width,
-                                          NULL, basic_height);
-    }
-  else
-    clutter_actor_get_preferred_height (first_child, *basic_width,
-                                        NULL, basic_height);
+  clutter_actor_get_preferred_height (first_child, *basic_width, NULL,
+                                      basic_height);
 }
 
 static void
@@ -1047,8 +1034,8 @@ mex_grid_paint (ClutterActor *actor)
    */
   clipped = FALSE;
   if (priv->current_focus && priv->has_focus
-      && MEX_IS_EXPANDER_BOX (priv->current_focus)
-      && mex_expander_box_get_open (MEX_EXPANDER_BOX (priv->current_focus)))
+      && MEX_IS_CONTENT_BOX (priv->current_focus)
+      && mex_content_box_get_open (MEX_CONTENT_BOX (priv->current_focus)))
     {
       ClutterActorBox child_box;
 
