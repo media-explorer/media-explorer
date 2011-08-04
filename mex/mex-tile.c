@@ -632,6 +632,12 @@ mex_tile_style_changed_cb (MexTile *self, MxStyleChangedFlags flags)
   if (image)
     g_boxed_free (MX_TYPE_BORDER_IMAGE, image);
 
+  if (priv->icon1)
+    mx_stylable_style_changed (MX_STYLABLE (priv->icon1), flags);
+
+  if (priv->icon2)
+    mx_stylable_style_changed (MX_STYLABLE (priv->icon2), flags);
+
   clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
 }
 
