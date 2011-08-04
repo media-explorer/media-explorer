@@ -32,6 +32,8 @@
 #include <mex/mex-application.h>
 #include <mex/mex-application-category.h>
 #include <mex/mex-aspect-frame.h>
+#include <mex/mex-background.h>
+#include <mex/mex-background-manager.h>
 #include <mex/mex-channel.h>
 #include <mex/mex-channel-manager.h>
 #include <mex/mex-channel-provider.h>
