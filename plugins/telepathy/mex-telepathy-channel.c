@@ -83,6 +83,104 @@ enum
 };
 
 static void
+mex_telepathy_channel_dispose(GObject *gobject)
+{
+    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(gobject);
+    MexTelepathyChannelPrivate *priv = self->priv;
+
+    if (priv->timer)
+    {
+        g_timer_stop(priv->timer);
+        g_object_unref(priv->timer);
+        priv->timer = NULL;
+    }
+
+    if (priv->video_call_page)
+    {
+        g_object_unref(priv->video_call_page);
+        priv->video_call_page = NULL;
+    }
+
+    if (priv->video_incoming)
+    {
+        g_object_unref(priv->video_incoming);
+        priv->video_incoming = NULL;
+    }
+
+    if (priv->video_outgoing)
+    {
+        g_object_unref(priv->video_outgoing);
+        priv->video_outgoing = NULL;
+    }
+
+    if (priv->title_label)
+    {
+        g_object_unref(priv->title_label);
+        priv->title_label = NULL;
+    }
+
+    if (priv->hold_button)
+    {
+        g_object_unref(priv->hold_button);
+        priv->hold_button = NULL;
+    }
+
+    if (priv->duration_label)
+    {
+        g_object_unref(priv->duration_label);
+        priv->duration_label = NULL;
+    }
+
+    if (priv->incoming_sink)
+    {
+        g_object_unref(priv->incoming_sink);
+        priv->incoming_sink = NULL;
+    }
+
+    if (priv->outgoing_sink)
+    {
+        g_object_unref(priv->outgoing_sink);
+        priv->outgoing_sink = NULL;
+    }
+    if (priv->pipeline)
+    {
+        g_object_unref(priv->pipeline);
+        priv->pipeline = NULL;
+    }
+    if (priv->connection)
+    {
+        g_object_unref(priv->connection);
+        priv->connection = NULL;
+    }
+    if (priv->channel)
+    {
+        g_object_unref(priv->channel);
+        priv->channel = NULL;
+    }
+    if (priv->tf_channel)
+    {
+        g_object_unref(priv->tf_channel);
+        priv->tf_channel = NULL;
+    }
+    if (priv->notifiers)
+    {
+        g_object_unref(priv->notifiers);
+        priv->notifiers = NULL;
+    }
+
+    if (priv->video_input)
+    {
+        g_object_unref(priv->video_input);
+        priv->video_input = NULL;
+    }
+    if (priv->video_capsfilter)
+    {
+        g_object_unref(priv->video_capsfilter);
+        priv->video_capsfilter = NULL;
+    }
+}
+
+static void
 mex_telepathy_channel_finalize (GObject *gobject)
 {
     G_OBJECT_CLASS (mex_telepathy_channel_parent_class)->finalize (gobject);
@@ -701,9 +799,6 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
 {
     MexTelepathyChannelPrivate *priv = self->priv;
 
-    if (!priv->video_call_page)
-        mex_telepathy_channel_create_video_page(self);
-
     GstBus *bus;
     GstElement *pipeline;
     GstStateChangeReturn ret;
@@ -749,7 +844,6 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
                       G_CALLBACK (mex_telepathy_channel_on_call_state_changed),
                       self);
 }
-
 
 static void
 mex_telepathy_channel_get_property (GObject    *object,
@@ -808,6 +902,7 @@ mex_telepathy_channel_class_init (MexTelepathyChannelClass *klass)
 
     object_class->get_property = mex_telepathy_channel_get_property;
     object_class->set_property = mex_telepathy_channel_set_property;
+    object_class->dispose = mex_telepathy_channel_dispose;
     object_class->finalize = mex_telepathy_channel_finalize;
 
     g_type_class_add_private (klass, sizeof (MexTelepathyChannelPrivate));
