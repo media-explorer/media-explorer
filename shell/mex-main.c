@@ -72,6 +72,7 @@ typedef struct
   ClutterActor *info_bar;
   ClutterActor *volume_control;
 
+  MexBackground *background;
   ClutterActor *player;
   ClutterMedia *media;
 
@@ -119,6 +120,55 @@ mex_header_activated_cb (MexExplorer *explorer,
                          MexData     *data);
 
 static void
+mex_activate_background (MexData *data, gboolean active)
+{
+  MexBackgroundManager *manager = mex_background_manager_get_default ();
+
+  if (active == mex_background_manager_get_active (manager))
+    return;
+
+  mex_background_manager_set_active (manager, active);
+
+  if (!data->background)
+    return;
+
+  if (!active)
+    {
+      clutter_container_remove_actor (CLUTTER_CONTAINER (data->stack),
+                                      CLUTTER_ACTOR (data->background));
+    }
+  else
+    {
+      clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
+                                   CLUTTER_ACTOR (data->background));
+      clutter_actor_lower_bottom (CLUTTER_ACTOR (data->background));
+      clutter_actor_show (CLUTTER_ACTOR (data->background));
+    }
+}
+
+static void
+mex_background_changed_cb (MexBackgroundManager *manager,
+                           MexBackground        *new_background,
+                           MexData              *data)
+{
+  if (data->background)
+    clutter_actor_unparent (CLUTTER_ACTOR (data->background));
+
+  data->background = new_background;
+
+  if (data->background)
+    {
+      if (mex_background_manager_get_active (manager))
+        {
+          clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
+                                       CLUTTER_ACTOR (data->background));
+          clutter_actor_lower_bottom (CLUTTER_ACTOR (data->background));
+          clutter_actor_show (CLUTTER_ACTOR (data->background));
+        }
+    }
+}
+
+static void
 error_dialog_dismiss_action_cb (MxAction *action,
                                 MexData  *data)
 {
@@ -139,7 +189,7 @@ mex_player_media_error_cb (ClutterMedia *media,
   gchar *error_msg;
   MxAction *action;
 
-  if (mex_player_get_idle_mode (MEX_PLAYER (data->player)))
+  if (mex_background_manager_get_active (mex_background_manager_get_default ()))
     {
       g_warning ("Error playing content: %s", error->message);
       return;
@@ -381,7 +431,7 @@ mex_show_cb (MxAction *action, MexData *data)
 
   /* stop any playing video, even in idle mode */
   clutter_actor_hide (data->player);
-  mex_player_set_idle_mode (MEX_PLAYER (data->player), FALSE);
+  mex_activate_background (data, FALSE);
 
   /* show the slide show */
   run_play_transition (data, content, data->slide_show, FALSE);
@@ -688,17 +738,12 @@ mex_show_actor (MexData      *data,
     {
       /* main menu view */
       mx_widget_set_disabled (MX_WIDGET (data->layout), FALSE);
-      mex_player_set_idle_mode (MEX_PLAYER (data->player), TRUE);
-      clutter_actor_show (data->player);
       clutter_actor_set_opacity (data->layout, 0xff);
-
-      mex_player_set_idle_mode (MEX_PLAYER (data->player), TRUE);
-      clutter_actor_lower_bottom (data->player);
-      clutter_actor_show (data->player);
+      mex_activate_background (data, TRUE);
     }
   else if (actor == data->player)
     {
-      mex_player_set_idle_mode (MEX_PLAYER (data->player), FALSE);
+      mex_activate_background (data, FALSE);
     }
   else
     clutter_actor_animate (actor, ALPHA, DURATION,
@@ -730,9 +775,9 @@ mex_hide_actor (MexData      *data,
     }
   else if (actor == data->player)
     {
-      /* don't hide the player, just lower it and set idle mode */
-      mex_player_set_idle_mode (MEX_PLAYER (data->player), TRUE);
-      clutter_actor_lower_bottom (data->player);
+      mex_player_stop (data->player);
+      mex_activate_background (data, TRUE);
+      clutter_actor_hide (actor);
     }
   else
     clutter_actor_hide (actor);
@@ -1075,7 +1120,7 @@ mex_captured_event_cb (ClutterActor *actor,
       return TRUE;
 
     case CLUTTER_KEY_AudioStop:
-      mex_player_stop (MEX_PLAYER (data->player));
+      mex_player_quit (MEX_PLAYER (data->player));
       return TRUE;
 
     case CLUTTER_KEY_AudioRewind:
@@ -1961,6 +2006,7 @@ main (int argc, char **argv)
   MexModelManager *mmanager;
   MexPluginManager *pmanager;
   MexActionManager *amanager;
+  MexBackgroundManager *bmanager;
   GrlPluginRegistry *registry;
   gchar *tmp;
 
@@ -2202,6 +2248,7 @@ main (int argc, char **argv)
                             G_CALLBACK (mex_player_content_set_externally_cb),
                             &data);
 
+  clutter_actor_hide (data.player);
   clutter_container_add_actor (CLUTTER_CONTAINER (data.stack),
                                data.player);
 
@@ -2401,6 +2448,11 @@ main (int argc, char **argv)
   mex_model_manager_add_category (mmanager, &pictures);
   mex_model_manager_add_category (mmanager, &queue);
 
+  /* Background manager */
+  bmanager = mex_background_manager_get_default ();
+  g_signal_connect (bmanager, "background-changed",
+                    G_CALLBACK (mex_background_changed_cb), &data);
+
   /* Populate interface by loading plugins */
   pmanager = mex_plugin_manager_get_default ();
   g_signal_connect (pmanager, "plugin-loaded",
@@ -2474,6 +2526,8 @@ main (int argc, char **argv)
   /* Out of the box experience */
   out_of_box (&data);
 
+  /* Start with background video activated */
+  mex_activate_background (&data, TRUE);
 
   mx_application_run (app);
 

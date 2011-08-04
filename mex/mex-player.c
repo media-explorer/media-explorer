@@ -41,6 +41,7 @@
 #include "mex-player.h"
 
 #include "mex-main.h"
+#include "mex-background-manager.h"
 #include "mex-private.h"
 #include "mex-program.h"
 #include "mex-content-view.h"
@@ -84,7 +85,6 @@ struct _MexPlayerPrivate
   guint controls_visible : 1;
   guint controls_prev_visible : 1;
 
-  guint idle_mode : 1;
   guint at_eos : 1;
 
   guint playing_from_queue : 1;
@@ -107,8 +107,6 @@ enum
 enum
 {
   PROP_0,
-
-  PROP_IDLE_MODE,
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -283,14 +281,8 @@ mex_player_get_property (GObject    *object,
                          GValue     *value,
                          GParamSpec *pspec)
 {
-  MexPlayerPrivate *priv = MEX_PLAYER (object)->priv;
-
   switch (property_id)
     {
-    case PROP_IDLE_MODE:
-      g_value_set_boolean (value, priv->idle_mode);
-      break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -304,11 +296,6 @@ mex_player_set_property (GObject      *object,
 {
   switch (property_id)
     {
-    case PROP_IDLE_MODE:
-      mex_player_set_idle_mode (MEX_PLAYER (object),
-                                g_value_get_boolean (value));
-      break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -549,7 +536,6 @@ mex_player_class_init (MexPlayerClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
-  GParamSpec *pspec;
 
   g_type_class_add_private (klass, sizeof (MexPlayerPrivate));
 
@@ -574,13 +560,6 @@ mex_player_class_init (MexPlayerClass *klass)
                                         0, NULL, NULL,
                                         g_cclosure_marshal_VOID__VOID,
                                         G_TYPE_NONE, 0);
-
-  pspec = g_param_spec_boolean ("idle-mode",
-                                "Idle Mode",
-                                "Idle Mode",
-                                TRUE,
-                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_IDLE_MODE, pspec);
 }
 
 static gboolean
@@ -658,7 +637,6 @@ static void
 controls_stopped_cb (MexMediaControls *controls,
                      MexPlayer        *player)
 {
-
   if (player->priv->hide_controls_source)
     {
       g_source_remove (player->priv->hide_controls_source);
@@ -673,50 +651,40 @@ media_eos_cb (ClutterMedia *media,
               MexPlayer    *player)
 {
   MexPlayerPrivate *priv = player->priv;
+  MexContent *enqueued_content;
 
   priv->position = 0.0;
 
-  if (priv->idle_mode)
+  /* Check to see if we have enqueued content and if so play it next */
+  enqueued_content =
+    mex_media_controls_get_enqueued (MEX_MEDIA_CONTROLS (priv->controls),
+                                     priv->content);
+
+  /* set the control visible */
+  clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
+                         250, "opacity", 0x00, NULL);
+  mex_player_set_controls_visible (player, TRUE);
+
+  if (enqueued_content)
     {
-      /* loop the video in idle mode */
-      clutter_media_set_progress (media, priv->position);
-      clutter_media_set_playing (media, TRUE);
+      priv->playing_from_queue = TRUE;
+      mex_player_set_content (MEX_CONTENT_VIEW (player), enqueued_content);
     }
   else
     {
-      /* Check to see if we have enqueued content and if so play it next */
-      MexContent *enqueued_content;
+      priv->playing_from_queue = TRUE;
+      mex_screensaver_uninhibit (priv->screensaver);
 
-      enqueued_content =
-        mex_media_controls_get_enqueued (MEX_MEDIA_CONTROLS (priv->controls),
-                                         priv->content);
+      clutter_media_set_progress (media, priv->position);
+      clutter_media_set_playing (media, FALSE);
 
-      /* set the control visible */
-      clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
-                             250, "opacity", 0x00, NULL);
-      mex_player_set_controls_visible (player, TRUE);
-
-      if (enqueued_content)
-        {
-          priv->playing_from_queue = TRUE;
-          mex_player_set_content (MEX_CONTENT_VIEW (player), enqueued_content);
-        }
-      else
-        {
-          priv->playing_from_queue = TRUE;
-          mex_screensaver_uninhibit (priv->screensaver);
-
-          clutter_media_set_progress (media, priv->position);
-          clutter_media_set_playing (media, FALSE);
-
-          priv->current_position = 0.0;
-          priv->at_eos = TRUE;
-        }
-
-      /* focus the related content */
-      mex_media_controls_focus_content (MEX_MEDIA_CONTROLS (priv->controls),
-                                        priv->content);
+      priv->current_position = 0.0;
+      priv->at_eos = TRUE;
     }
+
+  /* focus the related content */
+  mex_media_controls_focus_content (MEX_MEDIA_CONTROLS (priv->controls),
+                                    priv->content);
 }
 
 static void
@@ -726,8 +694,7 @@ media_playing_cb (ClutterMedia *media,
 {
   MexPlayerPrivate *priv = player->priv;
 
-  if (!priv->idle_mode)
-    mex_screensaver_inhibit (priv->screensaver);
+  mex_screensaver_inhibit (priv->screensaver);
 
   /* reset at_eos flag if a video is now playing */
   if (clutter_media_get_playing (media))
@@ -855,9 +822,6 @@ mex_player_init (MexPlayer *self)
                                NULL);
 
   priv->screensaver = mex_screensaver_new ();
-
-  /* start in idle mode */
-  mex_player_set_idle_mode (MEX_PLAYER (self), TRUE);
 }
 
 MexPlayer *
@@ -892,10 +856,6 @@ mex_get_stream_cb (MexProgram   *program,
 #ifdef USE_PLAYER_CLUTTER_GST
   ClutterGstVideoTexture *video_texture;
 #endif
-
-  /* if idle mode has been set before the program stream was found */
-  if (priv->idle_mode)
-    return;
 
   if (G_UNLIKELY (error))
     {
@@ -948,72 +908,15 @@ mex_get_stream_cb (MexProgram   *program,
   clutter_media_set_playing (CLUTTER_MEDIA (priv->media), TRUE);
 }
 
-
-gboolean
-mex_player_get_idle_mode (MexPlayer *player)
-{
-  return player->priv->idle_mode;
-}
-
 void
-mex_player_set_idle_mode (MexPlayer *player,
-                          gboolean   idle)
+mex_player_quit (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
 
-  if (priv->idle_mode == idle)
-    return;
-
-  priv->idle_mode = idle;
-
-  mex_player_set_controls_visible (player, !idle);
-
-  if (idle)
-    {
-      clutter_actor_hide (priv->controls);
-      clutter_actor_hide (priv->info_panel);
-      mx_widget_set_disabled (MX_WIDGET (player), TRUE);
-      clutter_actor_set_reactive (CLUTTER_ACTOR (player), FALSE);
-
-      if (priv->content) {
-        save_old_content (player);
-        g_object_unref (priv->content);
-        priv->content = NULL;
-      }
-
-#ifdef ENABLE_IDLE_VIDEO
-      {
-        gchar *tmp;
-
-        tmp = g_strconcat ("file://", mex_get_data_dir (),
-                           "/style/background-loop.mkv", NULL);
-        clutter_media_set_uri (priv->media, tmp);
-        g_free (tmp);
-
-        clutter_media_set_playing (priv->media, TRUE);
-      }
-#else
-      clutter_media_set_uri (priv->media, NULL);
-#endif
-
-      /* we're idle so we don't mind the screensaver coming on */
-       mex_screensaver_uninhibit (priv->screensaver);
-    }
-  else
-    {
-      clutter_actor_show (priv->controls);
-      clutter_actor_show (priv->info_panel);
-      mx_widget_set_disabled (MX_WIDGET (player), FALSE);
-      clutter_actor_set_reactive (CLUTTER_ACTOR (player), TRUE);
-
-#ifdef ENABLE_IDLE_VIDEO
-      clutter_media_set_playing (priv->media, FALSE);
-      clutter_media_set_uri (priv->media, NULL);
-#endif
-
-      /* we're playing real content so don't allow the screensaver */
-      mex_screensaver_inhibit (priv->screensaver);
-    }
+  save_old_content (player);
+  clutter_media_set_uri (CLUTTER_MEDIA (priv->media), NULL);
+  clutter_media_set_playing (priv->media, FALSE);
+  g_signal_emit (player, signals[CLOSE_REQUEST], 0);
 }
 
 void
@@ -1021,21 +924,15 @@ mex_player_stop (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
 
-  if (priv->idle_mode)
-    return;
-
+  save_old_content (player);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), NULL);
   clutter_media_set_playing (priv->media, FALSE);
-  g_signal_emit (player, signals[CLOSE_REQUEST], 0);
 }
 
 void
 mex_player_pause (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
-
-  if (priv->idle_mode)
-    return;
 
   clutter_media_set_playing (priv->media, FALSE);
 }
@@ -1044,9 +941,6 @@ void
 mex_player_play (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
-
-  if (priv->idle_mode)
-    return;
 
   clutter_media_set_playing (priv->media, TRUE);
 }
@@ -1080,22 +974,12 @@ player_forward_rewind (MexPlayer *player, gboolean increment)
 void
 mex_player_forward (MexPlayer *player)
 {
-  MexPlayerPrivate *priv = player->priv;
-
-  if (priv->idle_mode)
-    return;
-
   player_forward_rewind (player, TRUE);
 }
 
 void
 mex_player_rewind (MexPlayer *player)
 {
-  MexPlayerPrivate *priv = player->priv;
-
-  if (priv->idle_mode)
-    return;
-
   player_forward_rewind (player, FALSE);
 }
 
@@ -1104,9 +988,6 @@ mex_player_next (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
 
-  if (priv->idle_mode)
-    return;
-
   clutter_media_set_progress (priv->media, 1.0);
 }
 
@@ -1114,9 +995,6 @@ void
 mex_player_previous (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
-
-  if (priv->idle_mode)
-    return;
 
   clutter_media_set_progress (priv->media, 0.0);
 }
