@@ -535,7 +535,8 @@ mex_scroll_view_allocate (ClutterActor           *actor,
     allocate (actor, box, flags);
 
   /* Allocate child */
-  mx_bin_allocate_child (MX_BIN (actor), box, flags);
+  if (CLUTTER_ACTOR_IS_VISIBLE (actor))
+    mx_bin_allocate_child (MX_BIN (actor), box, flags);
 
   /* Allocate scroll-bars */
   /* Note, purposefully ignoring padding */
