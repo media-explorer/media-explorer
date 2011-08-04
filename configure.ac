@@ -458,6 +458,7 @@ AS_MEX_ARG_WITH_PLUGINS
 # Declare all the plugins we have
 AS_MEX_PLUGIN(bg-video)
 AS_MEX_PLUGIN(bg-dbusvideo)
+AS_MEX_PLUGIN(bg-backdrop)
 AS_MEX_PLUGIN(library)
 AS_MEX_PLUGIN(recommended)
 AS_MEX_PLUGIN(search)
