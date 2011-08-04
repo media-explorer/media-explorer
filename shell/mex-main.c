@@ -775,7 +775,7 @@ mex_hide_actor (MexData      *data,
     }
   else if (actor == data->player)
     {
-      mex_player_stop (data->player);
+      mex_player_stop (MEX_PLAYER (data->player));
       mex_activate_background (data, TRUE);
       clutter_actor_hide (actor);
     }
