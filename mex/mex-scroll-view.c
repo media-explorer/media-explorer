@@ -66,6 +66,8 @@ struct _MexScrollViewPrivate
 
   gdouble         htarget;
   gdouble         vtarget;
+
+  guint           scroll_indicator_timeout;
 };
 
 static void
@@ -120,6 +122,23 @@ mex_scroll_view_update_visibility (MexScrollView *self,
     }
 }
 
+static gboolean
+hide_indicators_timeout (MexScrollView *self)
+{
+  MexScrollViewPrivate *priv = self->priv;
+
+  if (!priv->hscroll_hidden)
+    clutter_actor_animate (priv->hscroll, CLUTTER_EASE_OUT_QUAD, 100,
+                           "opacity", 0x00, NULL);
+
+  if (!priv->vscroll_hidden)
+    clutter_actor_animate (priv->vscroll, CLUTTER_EASE_OUT_QUAD, 100,
+                           "opacity", 0x00, NULL);
+
+
+  return FALSE;
+}
+
 static void
 mex_scroll_view_adjustment_changed (MexScrollView *self)
 {
@@ -149,6 +168,14 @@ mex_scroll_view_adjustment_changed (MexScrollView *self)
       else
         mex_scroll_view_focus_allocation_cb (priv->focus, &box, 0, self);
     }
+
+
+  if (priv->scroll_indicator_timeout)
+    g_source_remove (priv->scroll_indicator_timeout);
+
+  if (!priv->indicators_hidden)
+    priv->scroll_indicator_timeout =
+      g_timeout_add_seconds (1, (GSourceFunc) hide_indicators_timeout, self);
 }
 
 static void
@@ -387,6 +414,12 @@ static void
 mex_scroll_view_dispose (GObject *object)
 {
   MexScrollViewPrivate *priv = MEX_SCROLL_VIEW (object)->priv;
+
+  if (priv->scroll_indicator_timeout)
+    {
+      g_source_remove (priv->scroll_indicator_timeout);
+      priv->scroll_indicator_timeout = 0;
+    }
 
   if (priv->vscroll)
     {
