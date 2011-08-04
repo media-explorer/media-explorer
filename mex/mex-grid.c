@@ -1045,22 +1045,13 @@ mex_grid_paint (ClutterActor *actor)
           gfloat child_y1, child_y2;
 
           /* This path encloses the grid */
-          cogl_path_move_to (0, y);
-          cogl_path_line_to (box.x2 - box.x1, y);
-          cogl_path_line_to (box.x2 - box.x1, y + (box.y2 - box.y1));
-          cogl_path_line_to (0, y + (box.y2 - box.y1));
-          cogl_path_line_to (0, y);
+          cogl_path_rectangle (0, y, box.x2 - box.x1, y + (box.y2 - box.y1));
 
           /* This path excludes the currently focused actor */
           child_y1 = MAX (y, child_box.y1);
           child_y2 = MIN (child_box.y2, y + (box.y2 - box.y1));
-          cogl_path_line_to (child_box.x1, child_y1);
-          cogl_path_line_to (child_box.x1, child_y2);
-          cogl_path_line_to (child_box.x2, child_y2);
-          cogl_path_line_to (child_box.x2, child_y1);
-          cogl_path_line_to (child_box.x1, child_y1);
+          cogl_path_rectangle (child_box.x1, child_y1, child_box.x2, child_y2);
 
-          cogl_path_close ();
           cogl_clip_push_from_path ();
 
           clipped = TRUE;
