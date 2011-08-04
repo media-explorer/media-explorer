@@ -100,6 +100,9 @@ mex_telepathy_plugin_dispose (GObject *gobject)
     MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (gobject);
     MexTelepathyPluginPrivate *priv = self->priv;
 
+    mex_model_manager_remove_category (mex_model_manager_get_default (),
+                                       "contacts");
+
     while (priv->models) {
         mex_model_info_free (priv->models->data);
         priv->models = g_list_delete_link (priv->models, priv->models);
@@ -130,7 +133,21 @@ mex_telepathy_plugin_dispose (GObject *gobject)
 
     g_object_unref(priv->account_manager);
     g_object_unref(priv->client);
+    g_object_unref(priv->approver);
+    g_object_unref(priv->dispatch_operation);
     g_object_unref(priv->factory);
+
+    if (priv->dialog)
+    {
+        g_object_unref(priv->dialog);
+        priv->dialog = NULL;
+    }
+
+    if (priv->prompt_label)
+    {
+        g_object_unref(priv->prompt_label);
+        priv->prompt_label = NULL;
+    }
 
     G_OBJECT_CLASS (mex_telepathy_plugin_parent_class)->dispose (gobject);
 }
@@ -926,6 +943,8 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     priv = self->priv = TELEPATHY_PLUGIN_PRIVATE (self);
     priv->actions = NULL;
     priv->contacts = NULL;
+    priv->dialog = NULL;
+    priv->prompt_label = NULL;
 
     priv->manager = mex_model_manager_get_default ();
     MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 10,
