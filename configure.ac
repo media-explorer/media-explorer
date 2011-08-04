@@ -111,7 +111,7 @@ AS_CASE([$with_profile],
           mex_default_enable_networks=no
           mex_default_enable_lirc=yes
 
-          PROFILE_PLUGINS="gnome-dvb"
+          PROFILE_PLUGINS="bg-video,gnome-dvb"
         ],
 
         [intelce],
@@ -119,6 +119,8 @@ AS_CASE([$with_profile],
           mex_default_with_player=d-bus
           mex_default_enable_networks=yes
           mex_default_enable_lirc=no
+
+          PROFILE_PLUGINS="bg-dbusvideo"
         ],
 
         [AC_MSG_ERROR([Unknown profile $with_profile])])
@@ -441,7 +443,7 @@ AS_CASE([$clutter_soname],
 )
 
 # Default list of plugins to compile
-WITH_PLUGINS="bg-video,bg-dbusvideo,search,queue,tracker,dbusinput,bliptv,justintv"
+WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv"
 
 # the debug plugin is enabled in debug mode
 AS_IF([test "x$enable_debug" = "xyes"], [WITH_PLUGINS="$WITH_PLUGINS,debug"])
