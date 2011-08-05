@@ -21,7 +21,7 @@
 
 #include <glib-object.h>
 
-#include <clutter-gst/clutter-gst.h>
+#include <mx/mx.h>
 
 G_BEGIN_DECLS
 
@@ -53,14 +53,14 @@ typedef struct _MexBackgroundVideoPrivate MexBackgroundVideoPrivate;
 
 struct _MexBackgroundVideo
 {
-  ClutterGstVideoTexture parent;
+  MxStack parent;
 
   MexBackgroundVideoPrivate *priv;
 };
 
 struct _MexBackgroundVideoClass
 {
-  ClutterGstVideoTextureClass parent_class;
+  MxStackClass parent_class;
 };
 
 GType mex_background_video_get_type (void) G_GNUC_CONST;

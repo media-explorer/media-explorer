@@ -18,6 +18,10 @@
 
 #include "mex-background-video.h"
 
+#include <clutter-gst/clutter-gst.h>
+
+#include <mx/mx.h>
+
 #include <mex/mex-background.h>
 #include <mex/mex-utils.h>
 
@@ -25,7 +29,7 @@ static void mex_background_video_background_iface_init (MexBackgroundIface *ifac
 
 G_DEFINE_TYPE_WITH_CODE (MexBackgroundVideo,
                          mex_background_video,
-                         CLUTTER_GST_TYPE_VIDEO_TEXTURE,
+                         MX_TYPE_STACK,
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_BACKGROUND,
                                                 mex_background_video_background_iface_init))
 
@@ -36,7 +40,8 @@ G_DEFINE_TYPE_WITH_CODE (MexBackgroundVideo,
 
 struct _MexBackgroundVideoPrivate
 {
-  gchar *video_url;
+  gchar        *video_url;
+  ClutterMedia *media;
 };
 
 static void eos_cb (ClutterMedia *media, MexBackgroundVideo *background);
@@ -85,9 +90,16 @@ mex_background_video_constructed (GObject *object)
   if (G_OBJECT_CLASS (mex_background_video_parent_class)->constructed)
     G_OBJECT_CLASS (mex_background_video_parent_class)->constructed (object);
 
-  clutter_media_set_uri (CLUTTER_MEDIA (object), priv->video_url);
+  clutter_container_add_actor (CLUTTER_CONTAINER (object),
+                               CLUTTER_ACTOR (priv->media));
+  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->media), TRUE);
+  clutter_container_child_set (CLUTTER_CONTAINER (object),
+                               CLUTTER_ACTOR (priv->media),
+                               "fit", TRUE, NULL);
 
-  g_signal_connect (object, "eos", G_CALLBACK (eos_cb), object);
+  clutter_media_set_uri (priv->media, priv->video_url);
+
+  g_signal_connect (priv->media, "eos", G_CALLBACK (eos_cb), object);
 }
 
 static void
@@ -113,8 +125,10 @@ mex_background_video_init (MexBackgroundVideo *self)
   priv->video_url = g_strconcat ("file://", mex_get_data_dir (),
                                  "/style/background-loop.mkv", NULL);
 
-  clutter_media_set_uri (CLUTTER_MEDIA (self), priv->video_url);
+  priv->media = CLUTTER_MEDIA (clutter_gst_video_texture_new ());
+  clutter_media_set_uri (priv->media, priv->video_url);
 }
+
 
 MexBackgroundVideo *
 mex_background_video_new (void)
@@ -126,10 +140,12 @@ static void
 mex_background_video_set_active (MexBackground *self,
                                  gboolean       active)
 {
+  MexBackgroundVideoPrivate *priv = MEX_BACKGROUND_VIDEO (self)->priv;
+
   if (active)
-    clutter_media_set_playing (CLUTTER_MEDIA (self), TRUE);
+    clutter_media_set_playing (CLUTTER_MEDIA (priv->media), TRUE);
   else
-    clutter_media_set_playing (CLUTTER_MEDIA (self), FALSE);
+    clutter_media_set_playing (CLUTTER_MEDIA (priv->media), FALSE);
 }
 
 static void
