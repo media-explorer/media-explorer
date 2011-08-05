@@ -72,6 +72,7 @@ struct _MexContentBoxPrivate
 
   guint is_open : 1;
   guint extras_visible : 1;
+  guint clip_to_allocation : 1;
 
   ClutterTimeline *timeline;
   ClutterAlpha *alpha;
@@ -406,6 +407,13 @@ mex_content_box_paint (ClutterActor *actor)
 
   CLUTTER_ACTOR_CLASS (mex_content_box_parent_class)->paint (actor);
 
+  if (G_UNLIKELY (priv->clip_to_allocation))
+    {
+      ClutterActorBox box;
+      clutter_actor_get_allocation_box (actor, &box);
+      cogl_clip_push_rectangle (0, 0, box.x2 - box.x1, box.y2 - box.y1);
+    }
+
   clutter_actor_paint (priv->tile);
 
   if (G_UNLIKELY (priv->extras_visible))
@@ -421,6 +429,9 @@ mex_content_box_paint (ClutterActor *actor)
       cogl_path_line (box.x1, box.y1, box.x2, box.y1);
       cogl_path_stroke ();
     }
+
+  if (G_UNLIKELY (priv->clip_to_allocation))
+    cogl_clip_pop ();
 }
 
 static void
@@ -543,9 +554,9 @@ mex_content_box_allocate (ClutterActor           *actor,
    * box */
   if ((tile_w + pref_w) > (box->x2 - box->x1)
       || (tile_h + pref_h) > (box->y2 - box->y1))
-    clutter_actor_set_clip_to_allocation (actor, TRUE);
+    priv->clip_to_allocation = TRUE;
   else
-    clutter_actor_set_clip_to_allocation (actor, FALSE);
+    priv->clip_to_allocation = FALSE;
 }
 
 static void
