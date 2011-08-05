@@ -539,13 +539,13 @@ mex_content_box_allocate (ClutterActor           *actor,
       clutter_actor_allocate (priv->info_panel, &child_box, flags);
     }
 
+  /* enable clip-to-allocation if the children will extend beyond the allocated
+   * box */
   if ((tile_w + pref_w) > (box->x2 - box->x1)
       || (tile_h + pref_h) > (box->y2 - box->y1))
-    {
-      clutter_actor_set_clip_to_allocation (actor, TRUE);
-    }
-
-
+    clutter_actor_set_clip_to_allocation (actor, TRUE);
+  else
+    clutter_actor_set_clip_to_allocation (actor, FALSE);
 }
 
 static void
