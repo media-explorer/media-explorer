@@ -47,7 +47,6 @@ enum
 {
   PROP_0,
   PROP_MEDIA,
-  PROP_PLAYER,
 
   PROP_LAST
 };
@@ -55,16 +54,11 @@ enum
 struct _MexMediaDBUSBridgePrivate
 {
   ClutterMedia *media;
-  MexPlayer *player;
 };
 
 static void
 mex_media_dbus_bridge_set_media (MexMediaDBUSBridge *bridge,
                                  ClutterMedia       *media);
-
-static void
-mex_media_dbus_bridge_set_player (MexMediaDBUSBridge *bridge,
-                                  MexPlayer          *player);
 
 static void
 mex_media_dbus_bridge_get_property (GObject    *object,
@@ -80,9 +74,6 @@ mex_media_dbus_bridge_get_property (GObject    *object,
       case PROP_MEDIA:
         g_value_set_object (value, priv->media);
         break;
-      case PROP_PLAYER:
-        g_value_set_object (value, priv->player);
-        break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -96,17 +87,12 @@ mex_media_dbus_bridge_set_property (GObject      *object,
 {
   MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (object);
   ClutterMedia *media;
-  MexPlayer *player;
 
   switch (property_id)
     {
       case PROP_MEDIA:
         media = (ClutterMedia *)g_value_get_object (value);
         mex_media_dbus_bridge_set_media (bridge, media);
-        break;
-      case PROP_PLAYER:
-        player = (MexPlayer *)g_value_get_object (value);
-        mex_media_dbus_bridge_set_player (bridge, player);
         break;
       default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -148,13 +134,6 @@ mex_media_dbus_bridge_class_init (MexMediaDBUSBridgeClass *klass)
                                CLUTTER_TYPE_MEDIA,
                                G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (object_class, PROP_MEDIA, pspec);
-
- pspec = g_param_spec_object ("player",
-                              "MexPlayer",
-                              "The internal MexPlayer",
-                               MEX_TYPE_PLAYER,
-                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (object_class, PROP_PLAYER, pspec);
 }
 
 static void
@@ -179,14 +158,7 @@ mex_media_dbus_bridge_set_uri (MexMediaPlayerIface   *player_iface,
   MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
   MexMediaDBUSBridgePrivate *priv = bridge->priv;
 
-  if (priv->player)
-    {
-      mex_player_set_uri (priv->player, uri);
-    }
-  else
-    {
-      clutter_media_set_uri (priv->media, uri);
-    }
+  clutter_media_set_uri (priv->media, uri);
 
   mex_media_player_iface_return_from_set_uri (context);
 }
@@ -211,13 +183,6 @@ mex_media_dbus_bridge_set_progress (MexMediaPlayerIface   *player_iface,
 {
   MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
   MexMediaDBUSBridgePrivate *priv = bridge->priv;
-
-  if (priv->player)
-    if (mex_player_get_idle_mode (priv->player))
-      {
-        mex_media_player_iface_return_from_set_progress (context);
-        return;
-      }
 
   clutter_media_set_progress (priv->media, progress);
 
@@ -260,10 +225,6 @@ mex_media_dbus_bridge_get_playing (MexMediaPlayerIface   *player_iface,
 
   playing = clutter_media_get_playing (priv->media);
 
-  if (priv->player)
-    if (mex_player_get_idle_mode (priv->player))
-      playing = FALSE;
-
   mex_media_player_iface_return_from_get_playing (context, playing);
 }
 
@@ -276,10 +237,6 @@ mex_media_dbus_bridge_get_progress (MexMediaPlayerIface   *player_iface,
   gdouble progress;
 
   progress = clutter_media_get_progress (priv->media);
-
-  if (priv->player)
-    if (mex_player_get_idle_mode (priv->player))
-      progress = 0.0;
 
   mex_media_player_iface_return_from_get_progress (context, progress);
 }
@@ -306,10 +263,6 @@ mex_media_dbus_bridge_get_duration (MexMediaPlayerIface   *player_iface,
   gdouble duration;
 
   duration = clutter_media_get_duration (priv->media);
-
-  if (priv->player)
-    if (mex_player_get_idle_mode (priv->player))
-      duration = 0.0;
 
   mex_media_player_iface_return_from_get_duration (context, duration);
 }
@@ -374,10 +327,6 @@ _media_notify_cb (ClutterMedia       *media,
 
       playing = clutter_media_get_playing (priv->media);
 
-      if (priv->player)
-        if (mex_player_get_idle_mode (priv->player))
-          playing = FALSE;
-
       mex_media_player_iface_emit_playing_changed (bridge,
                                                    playing);
     }
@@ -387,10 +336,6 @@ _media_notify_cb (ClutterMedia       *media,
 
       progress = clutter_media_get_progress (priv->media);
 
-      if (priv->player)
-        if (mex_player_get_idle_mode (priv->player))
-          progress = 0.0;
-
       mex_media_player_iface_emit_progress_changed (bridge,
                                                     progress);
     }
@@ -399,10 +344,6 @@ _media_notify_cb (ClutterMedia       *media,
       gdouble duration;
 
       duration = clutter_media_get_duration (priv->media);
-
-      if (priv->player)
-        if (mex_player_get_idle_mode (priv->player))
-          duration = 0.0;
 
       mex_media_player_iface_emit_duration_changed (bridge,
                                                     duration);
@@ -449,16 +390,6 @@ _media_eos_cb (ClutterMedia       *media,
 }
 
 static void
-mex_media_dbus_bridge_set_player (MexMediaDBUSBridge *bridge,
-                                  MexPlayer *player)
-{
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-
-  priv->player = player;
-}
-
-
-static void
 mex_media_dbus_bridge_set_media (MexMediaDBUSBridge *bridge,
                                  ClutterMedia       *media)
 {
@@ -493,7 +424,7 @@ mex_media_dbus_bridge_set_media (MexMediaDBUSBridge *bridge,
                                bridge,
                                0);
 
-      /* 
+      /*
        * Trigger some notifications to ensure current state communicated over
        * the bus
        */
