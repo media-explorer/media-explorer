@@ -197,7 +197,8 @@ MexTile.Important
   x-mex-header-background: url("item-title-bg.png") 0;
 }
 
-MexContentBox MexTile.Important:focus
+MexContentBox MexTile.Important:focus,
+MxDialog MexTile.Important:focus
 {
   x-mex-header-background: url("highlight-bg.png");
   color: #464541;
