@@ -2144,6 +2144,8 @@ main (int argc, char **argv)
                         installed");
            }
         }
+
+      grl_plugin_registry_load_by_id (registry, "grl-lastfm-albumart", NULL);
     }
 
   /* Auto start the rebinder */
