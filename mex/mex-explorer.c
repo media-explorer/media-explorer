@@ -24,7 +24,6 @@
 #include "mex-content-box.h"
 #include "mex-content-proxy.h"
 #include "mex-content-view.h"
-#include "mex-expander-box.h"
 #include "mex-grid-view.h"
 #include "mex-marshal.h"
 #include "mex-resizing-hbox.h"

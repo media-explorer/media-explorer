@@ -46,7 +46,6 @@
 #include <mex/mex-content-tile.h>
 #include <mex/mex-content-view.h>
 #include <mex/mex-download-queue.h>
-#include <mex/mex-expander-box.h>
 #include <mex/mex-explorer.h>
 #include <mex/mex-epg.h>
 #include <mex/mex-epg-event.h>

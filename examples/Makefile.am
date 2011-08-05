@@ -1,6 +1,5 @@
 noinst_PROGRAMS = 			\
 	mex-epg-test			\
-	mex-expander-box-test		\
 	mex-grid-test			\
 	mex-grilo-model-test		\
 	mex-info-panel-test		\
@@ -29,7 +28,6 @@ AM_LDFLAGS =							\
 	$(NULL)
 
 mex_epg_test_SOURCES = mex-epg-test.c
-mex_expander_box_test_SOURCES = mex-expander-box-test.c
 mex_grid_test_SOURCES = mex-grid-test.c
 mex_grilo_model_test_SOURCES = mex-grilo-model-test.c
 mex_info_panel_test_SOURCES = mex-info-panel-test.c

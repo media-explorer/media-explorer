@@ -80,132 +80,41 @@ skip_file:
 }
 
 static void
-button_clicked_cb (ClutterActor       *button,
-                   MexExpanderBox      *drawer)
-{
-  gboolean open = !mex_expander_box_get_open (drawer);
-
-  mex_expander_box_set_open (drawer, open);
-
-  if (open)
-    {
-      MxFocusManager *manager =
-        mx_focus_manager_get_for_stage ((ClutterStage *)
-                                        clutter_actor_get_stage (button));
-      if ((ClutterActor *)mx_focus_manager_get_focused (manager) == button)
-        mx_focus_manager_move_focus (manager, MX_FOCUS_DIRECTION_RIGHT);
-    }
-}
-
-static void
 add_pictures (MexGrid *grid)
 {
   GList *files = get_pictures ();
-  MxTextureCache *cache = mx_texture_cache_get_default ();
-  const ClutterColor shadow_color = { 0x00, 0x00, 0x00, 0xb0 };
 
   while (files)
     {
-      gint i;
-      gchar *basename;
-      MexShadow *shadow;
-      ClutterActor *drawer, *tile, *button, *texture, *menu, *description;
+      gchar *basename, *url;
+      ClutterActor *tile;
+      MexContent *content;
 
       gchar *file = files->data;
 
-      /* Create texture */
-      button = mx_button_new ();
-      texture = (ClutterActor *)mx_texture_cache_get_texture (cache, file);
-      mx_bin_set_child (MX_BIN (button), texture);
-      mx_bin_set_fill (MX_BIN (button), TRUE, TRUE);
-
-      /* Create menu */
-      menu = mx_box_layout_new ();
-      mx_box_layout_set_orientation (MX_BOX_LAYOUT (menu),
-                                     MX_ORIENTATION_VERTICAL);
-      for (i = 0; i < 4; i++)
-        {
-          ClutterActor *item, *layout, *icon, *label;
-
-          item = mx_button_new ();
-
-          layout = mx_box_layout_new ();
-          icon = mx_icon_new ();
-          label = mx_label_new ();
-
-          mx_box_layout_set_spacing (MX_BOX_LAYOUT (layout), 8);
-
-          mx_icon_set_icon_size (MX_ICON (icon), 16);
-          clutter_actor_set_size (icon, 16, 16);
-
-          clutter_container_add (CLUTTER_CONTAINER (layout),
-                                 icon, label, NULL);
-          mx_bin_set_child (MX_BIN (item), layout);
-          mx_bin_set_alignment (MX_BIN (item),
-                                MX_ALIGN_START,
-                                MX_ALIGN_MIDDLE);
-
-          clutter_container_add_actor (CLUTTER_CONTAINER (menu), item);
-          mx_box_layout_child_set_x_fill (MX_BOX_LAYOUT (menu), item, TRUE);
-
-          switch (i)
-            {
-            case 0:
-              mx_icon_set_icon_name (MX_ICON (icon), "dialog-information");
-              mx_label_set_text (MX_LABEL (label), "This");
-              break;
-
-            case 1:
-              mx_icon_set_icon_name (MX_ICON (icon), "dialog-question");
-              mx_label_set_text (MX_LABEL (label), "is");
-              break;
-
-            case 2:
-              mx_icon_set_icon_name (MX_ICON (icon), "dialog-warning");
-              mx_label_set_text (MX_LABEL (label), "a");
-              break;
-
-            case 3:
-              mx_icon_set_icon_name (MX_ICON (icon), "dialog-error");
-              mx_label_set_text (MX_LABEL (label), "menu");
-              break;
-            }
-        }
-
-      /* Create description */
-      description = mx_label_new_with_text ("Here you could put a very "
-                                            "long description of whatever "
-                                            "is above it. Or you could put "
-                                            "another focusable widget here "
-                                            "and it'd be navigable, like "
-                                            "the menu on the right. Whoo!");
-      clutter_text_set_line_wrap ((ClutterText *)mx_label_get_clutter_text (
-                                    MX_LABEL (description)), TRUE);
-
-      drawer = mex_expander_box_new ();
+      tile = mex_tile_new ();
       tiles ++;
+
+      url = g_strconcat ("file://", file, NULL);
       basename = g_filename_display_basename (file);
-      tile = mex_tile_new_with_label (basename);
-      g_free (basename);
-      mx_bin_set_child (MX_BIN (tile), button);
 
-      clutter_container_add (CLUTTER_CONTAINER (drawer),
-                             tile, menu, description, NULL);
-      mex_expander_box_set_important (MEX_EXPANDER_BOX (drawer), TRUE);
+      content = g_object_new (MEX_TYPE_GENERIC_CONTENT, NULL);
+      mex_content_set_metadata (content, MEX_CONTENT_METADATA_STILL, url);
+      mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, basename);
 
-      clutter_container_add_actor (CLUTTER_CONTAINER (grid), drawer);
+      tile = mex_content_box_new ();
+      mex_content_view_set_content (tile, content);
 
-      g_signal_connect (button, "clicked",
-                        G_CALLBACK (button_clicked_cb), drawer);
+      mex_content_box_set_important (MEX_CONTENT_BOX (tile), TRUE);
+      g_object_bind_property (grid, "tile-width",
+                              tile, "thumb-width", G_BINDING_SYNC_CREATE);
 
-      g_free (file);
+      clutter_container_add_actor (CLUTTER_CONTAINER (grid), tile);
+
       files = g_list_delete_link (files, files);
-
-      shadow = mex_shadow_new ();
-      mex_shadow_set_radius_y (shadow, 24);
-      mex_shadow_set_radius_x (shadow, 0);
-      mex_shadow_set_color (shadow, &shadow_color);
-      clutter_actor_add_effect (drawer, CLUTTER_EFFECT (shadow));
+      g_free (basename);
+      g_free (file);
+      g_free (url);
     }
 }
 

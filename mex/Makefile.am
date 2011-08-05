@@ -76,7 +76,6 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-content-view.h			\
 	$(top_srcdir)/mex/mex-content.h				\
 	$(top_srcdir)/mex/mex-download-queue.h			\
-	$(top_srcdir)/mex/mex-expander-box.h			\
 	$(top_srcdir)/mex/mex-explorer.h			\
 	$(top_srcdir)/mex/mex-epg.h				\
 	$(top_srcdir)/mex/mex-epg-event.h			\
@@ -178,7 +177,6 @@ mex_sources =					\
 	mex-content-view.c			\
 	mex-content.c				\
 	mex-download-queue.c			\
-	mex-expander-box.c			\
 	mex-epg.c				\
 	mex-epg-event.c				\
 	mex-epg-grid.c				\
