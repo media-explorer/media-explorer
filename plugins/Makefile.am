@@ -158,6 +158,22 @@ dist_mex_bliptv_DATA =
 40mex_bliptv_la_LIBADD = $(_libadd)
 endif
 
+if USE_PLUGIN_TELEPATHY
+plugins_LTLIBRARIES += 40mex-telepathy.la
+
+40mex_telepathy_la_SOURCES = 		\
+	telepathy/tpy-client-factory.c		\
+	telepathy/tpy-client-factory.h		\
+	telepathy/mex-telepathy-channel.c	\
+	telepathy/mex-telepathy-channel.h	\
+	telepathy/mex-telepathy-plugin.c 	\
+	telepathy/mex-telepathy-plugin.h	\
+	telepathy/mex-contact.c 	\
+	telepathy/mex-contact.h
+40mex_telepathy_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Telepathy\" $(PLUGIN_TELEPATHY_CFLAGS)
+40mex_telepathy_la_LIBADD = $(_libadd) $(PLUGIN_TELEPATHY_LIBS)
+endif
+
 if USE_PLUGIN_JUSTINTV
 plugins_LTLIBRARIES += 40mex-justintv.la
 
