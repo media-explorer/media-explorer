@@ -133,6 +133,10 @@ static void media_update_progress (GObject    *gobject,
                                    GParamSpec *pspec,
                                    MexPlayer  *player);
 
+static void media_uri_changed_cb (GObject    *gobject,
+                                  GParamSpec *pspec,
+                                  MexPlayer  *player);
+
 /* MxFocusable implementation */
 static MxFocusable *
 mex_player_move_focus (MxFocusable      *focusable,
@@ -331,6 +335,8 @@ mex_player_dispose (GObject *object)
                                             media_playing_cb, player);
       g_signal_handlers_disconnect_by_func (priv->media,
                                             media_update_progress, player);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            media_uri_changed_cb, player);
 
       g_object_unref (priv->media);
       priv->media = NULL;
@@ -735,6 +741,12 @@ save_old_content (MexPlayer *player)
 }
 
 static void
+media_uri_changed_cb (GObject *object, GParamSpec *spec, MexPlayer *player)
+{
+  g_signal_emit (player, signals[OPEN_REQUEST], 0);
+}
+
+static void
 media_update_progress (GObject    *gobject,
                        GParamSpec *pspec,
                        MexPlayer  *player)
@@ -792,7 +804,9 @@ mex_player_init (MexPlayer *self)
                     G_CALLBACK (media_playing_cb), self);
   g_signal_connect (priv->media, "notify::progress",
                     G_CALLBACK (media_update_progress), self);
-
+  g_signal_connect (priv->media, "notify::uri",
+                    G_CALLBACK (media_uri_changed_cb),
+                    self);
 
 #if defined(USE_PLAYER_SURFACE) || defined (USE_PLAYER_CLUTTER_GST)
   {
