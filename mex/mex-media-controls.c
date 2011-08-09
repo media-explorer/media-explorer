@@ -533,14 +533,38 @@ static void
 mex_media_controls_update_header (MexMediaControls *self)
 {
   MexMediaControlsPrivate *priv = self->priv;
-  ClutterActor *label;
+  ClutterActor *label, *image;
+  const gchar *logo_url;
+  GError *err = NULL;
 
   label = (ClutterActor*) clutter_script_get_object (priv->script,
                                                      "title-label");
+  image = (ClutterActor*) clutter_script_get_object (priv->script, "logo");
 
   mx_label_set_text (MX_LABEL (label),
                      mex_content_get_metadata (priv->content,
                                                MEX_CONTENT_METADATA_TITLE));
+
+  logo_url = mex_content_get_metadata (priv->content,
+                                       MEX_CONTENT_METADATA_STATION_LOGO);
+  if (!logo_url)
+    {
+      clutter_actor_hide (image);
+    }
+  else
+    {
+      clutter_actor_show (image);
+
+      if (g_str_has_prefix (logo_url, "file://"))
+        logo_url = logo_url + 7;
+
+      mx_image_set_from_file (MX_IMAGE (image), logo_url, &err);
+      if (err)
+        {
+          g_warning ("Could not load logo: %s", err->message);
+          g_clear_error (&err);
+        }
+    }
 }
 
 static void

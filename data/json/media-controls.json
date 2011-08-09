@@ -39,6 +39,12 @@
                 "spacing" : 16,
                 "children" : [
                   {
+                    "type" : "MxImage",
+                    "id" : "logo",
+                    "child::expand" : false,
+                    "child::x-align" : "start"
+                  },
+                  {
                     "type" : "MxLabel",
                     "id" : "title-label",
                     "text" : "Content Title",
