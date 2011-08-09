@@ -381,7 +381,7 @@ mex_tile_allocate (ClutterActor           *actor,
           child_box.x2 = child_box.x1 + icon1_w;
 
           clutter_actor_allocate (priv->icon1, &child_box, flags);
-          child_box.x1 += icon1_w;
+          child_box.x1 += icon1_w + 8;
         }
       else
         child_box.x1 = padding.left;
