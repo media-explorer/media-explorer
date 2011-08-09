@@ -601,11 +601,7 @@ mex_info_bar_init (MexInfoBar *self)
   g_free (tmp);
 
   if (err)
-    {
-      g_warning ("Could not load info bar: %s", err->message);
-      g_clear_error (&err);
-      return;
-    }
+    g_error ("Could not load info bar: %s", err->message);
 
   priv->group =
     CLUTTER_ACTOR (clutter_script_get_object (script, "main-group"));

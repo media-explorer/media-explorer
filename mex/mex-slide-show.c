@@ -855,11 +855,7 @@ mex_slide_show_init (MexSlideShow *self)
   mx_bin_set_fill (MX_BIN (self), TRUE, TRUE);
 
   if (err)
-    {
-      g_warning ("Could not load slide show interface: %s", err->message);
-      g_clear_error (&err);
-      return;
-    }
+    g_error ("Could not load slide show interface: %s", err->message);
 
   actor = CLUTTER_ACTOR (clutter_script_get_object (priv->script,
                                                     "rotate-button"));

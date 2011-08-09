@@ -743,11 +743,7 @@ mex_media_controls_init (MexMediaControls *self)
   g_free (tmp);
 
   if (err)
-    {
-      g_warning ("Could not load media controls interface: %s", err->message);
-      g_clear_error (&err);
-      return;
-    }
+    g_error ("Could not load media controls interface: %s", err->message);
 
   priv->vbox =
     (ClutterActor*) clutter_script_get_object (script, "media-controls");

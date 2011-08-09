@@ -274,11 +274,7 @@ mex_info_panel_constructed (GObject *object)
     }
 
   if (err)
-    {
-      g_warning ("Could not load info panel: %s", err->message);
-      g_clear_error (&err);
-      return;
-    }
+    g_error ("Could not load info panel: %s", err->message);
 
   root = GET_ACTOR ("info-panel-container");
 
