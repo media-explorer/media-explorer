@@ -303,17 +303,50 @@ _update_thumbnail (MexContentTile *tile)
 }
 
 static void
+_update_logo (MexContentTile *tile)
+{
+  ClutterActor *image;
+  GError *err = NULL;
+  gchar *logo_url = mex_content_get_metadata (tile->priv->content,
+                                              MEX_CONTENT_METADATA_STATION_LOGO);
+
+  if (!logo_url)
+    {
+      mex_tile_set_primary_icon (tile, NULL);
+      return;
+    }
+
+  image = mx_image_new ();
+
+  if (g_str_has_prefix (logo_url, "file://"))
+    logo_url = logo_url + 7;
+
+  mx_image_set_from_file_at_size (image, logo_url, 26, 26, &err);
+
+  if (err)
+    {
+      g_warning ("Could not load station logo: %s", err->message);
+      g_clear_error (&err);
+      return;
+    }
+
+  mex_tile_set_primary_icon (tile, image);
+}
+
+static void
 _content_notify (MexContent     *content,
                  GParamSpec     *pspec,
                  MexContentTile *tile)
 {
   MexContentTilePrivate *priv = tile->priv;
-  const gchar *still_prop_name, *title_prop_name;
+  const gchar *still_prop_name, *title_prop_name, *logo_prop_name;
 
   still_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
                                                    MEX_CONTENT_METADATA_STILL);
   title_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
                                                    MEX_CONTENT_METADATA_TITLE);
+  logo_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
+                                                  MEX_CONTENT_METADATA_STATION_LOGO);
 
   if (!g_strcmp0 (pspec->name, still_prop_name))
     {
@@ -322,6 +355,10 @@ _content_notify (MexContent     *content,
   else if (!g_strcmp0 (pspec->name, title_prop_name))
     {
       _update_title (tile);
+    }
+  else if (!g_strcmp0 (pspec->name, logo_prop_name))
+    {
+      _update_logo (tile);
     }
 
 }
@@ -355,6 +392,7 @@ mex_content_tile_set_content (MexContentView *view,
 
   /* Update title/thumbnail display */
   _update_title (tile);
+  _update_logo (tile);
   _reset_thumbnail (tile);
 
   /* TODO: use g_object_bind_property */
