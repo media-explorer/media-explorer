@@ -241,12 +241,18 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
     mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(titlebar), priv->title_label, FALSE);
 
     // Create the horizontal video container to hold the two sinks.
-    ClutterActor *videocontainer = mx_box_layout_new();
+    ClutterActor *videocontainer = mx_stack_new();
     priv->video_outgoing = clutter_texture_new();
+    clutter_texture_set_keep_aspect_ratio(CLUTTER_TEXTURE(priv->video_outgoing), TRUE);
     priv->video_incoming = clutter_texture_new();
-    clutter_container_add(CLUTTER_CONTAINER(videocontainer), priv->video_outgoing, priv->video_incoming, NULL);
+    clutter_container_add(CLUTTER_CONTAINER(videocontainer), priv->video_incoming, priv->video_outgoing, NULL);
     priv->outgoing_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_outgoing));
     priv->incoming_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_incoming));
+    mx_stack_child_set_x_align(MX_STACK(videocontainer), priv->video_outgoing, MX_ALIGN_END);
+    mx_stack_child_set_y_align(MX_STACK(videocontainer), priv->video_outgoing, MX_ALIGN_END);
+    mx_stack_child_set_x_fill(MX_STACK(videocontainer), priv->video_outgoing, FALSE);
+    mx_stack_child_set_y_fill(MX_STACK(videocontainer), priv->video_outgoing, FALSE);
+    clutter_actor_set_height(priv->video_outgoing, 100);
 
     // Create the toolbar with a fixed height
     ClutterActor *toolbar = mx_box_layout_new();
