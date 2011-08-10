@@ -383,6 +383,7 @@ mex_grid_move_focus (MxFocusable      *focusable,
            */
           if (!focusable &&
               (direction == MX_FOCUS_DIRECTION_RIGHT) &&
+              (priv->children->len > priv->stride) &&
               ((index % priv->stride) != (priv->stride - 1)) &&
               ((index / priv->stride) ==
                ((priv->children->len - 1) / priv->stride)))
