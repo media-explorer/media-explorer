@@ -472,6 +472,7 @@ AS_MEX_PLUGIN(bliptv)
 AS_MEX_PLUGIN(justintv)
 AS_MEX_PLUGIN(debug)
 AS_MEX_PLUGIN(gnome-dvb)
+AS_MEX_PLUGIN(sub-extract, [gstreamer-app-0.10])
 
 # Define plugins paths
 

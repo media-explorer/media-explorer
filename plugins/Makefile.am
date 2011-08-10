@@ -276,3 +276,22 @@ dist_mex_bg_backdrop_DATA = \
 	-DMEX_DATA_PLUGIN_DIR=\"$(mex_bg_backdropdir)\"
 01mex_bg_backdrop_la_LIBADD = $(_libadd)
 endif
+
+if USE_PLUGIN_SUB_EXTRACT
+if ENABLE_EXTERNAL_PLAYER
+playerplugins_LTLIBRARIES += 60mex-sub-extract.la
+else
+plugins_LTLIBRARIES += 60mex-sub-extract.la
+endif
+mex_sub_extractdir = $(plugin_datadir)/sub-extract
+dist_mex_sub_extract_DATA =
+
+60mex_sub_extract_la_SOURCES =		 		\
+	sub-extract/mex-sub-extract-plugin.c		\
+	sub-extract/mex-sub-extract-plugin.h
+60mex_sub_extract_la_CFLAGS = 				\
+	-DG_LOG_DOMAIN=\"Mex-Sub-Extract\"		\
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_sub_extractdir)\"	\
+	$(PLUGIN_SUB_EXTRACT_CFLAGS)
+60mex_sub_extract_la_LIBADD = $(_libadd) $(PLUGIN_SUB_EXTRACT_LIBS)
+endif
