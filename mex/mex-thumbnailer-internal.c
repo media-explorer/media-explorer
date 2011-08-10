@@ -22,6 +22,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <mex/mex-settings.h>
+#include <mex/mex-utils.h>
+
 #define THUMBNAIL_SIZE 512
 
 static void mex_internal_thumbnail_image (const gchar *uri, const gchar *path);
@@ -30,12 +33,51 @@ static void mex_internal_thumbnail_video (const gchar *uri, const gchar *path);
 int
 main (int argc, char **argv)
 {
-  gchar *mime;
+  gchar *mime, *settings;
+  GstRegistry *registry;
+  GKeyFile *key_file;
 
   if (argc != 4)
     return 1;
 
   g_type_init ();
+  gst_init (&argc, &argv);
+
+  settings = mex_settings_find_config_file (mex_settings_get_default (),
+                                            "mex.conf");
+  if (settings)
+    {
+      key_file = g_key_file_new ();
+
+      if (g_key_file_load_from_file (key_file, settings,
+                                     G_KEY_FILE_NONE, NULL))
+        {
+          gint i;
+          gchar **denied_plugins;
+
+          denied_plugins = g_key_file_get_string_list (key_file,
+                                                       "gstreamer-plugins",
+                                                       "denied",
+                                                       NULL,
+                                                       NULL);
+
+          registry = gst_registry_get_default ();
+
+          for (i = 0; denied_plugins && denied_plugins[i]; i++)
+            {
+              GstPlugin *plugin = gst_registry_find_plugin (registry,
+                                                            denied_plugins[i]);
+              g_print ("Listed %s\n", denied_plugins[i]);
+              if (plugin)
+                {
+                  g_print ("\tRemoving %s\n", denied_plugins[i]);
+                  gst_registry_remove_plugin (registry, plugin);
+                }
+            }
+        }
+      g_key_file_free (key_file);
+      g_free (settings);
+    }
 
   mime = argv[1];
 

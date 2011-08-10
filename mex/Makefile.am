@@ -300,9 +300,12 @@ mex_thumbnailer_SOURCES = mex-thumbnailer-internal.c
 mex_thumbnailer_CFLAGS = $(MEX_THUMBNAILER_CFLAGS)	\
 			 $(MEX_MAINTAINER_CFLAGS)	\
 			 $(MEX_DEBUG_CFLAGS)		\
+			 $(MEX_CFLAGS)			\
 			 $(NULL)
-mex_thumbnailer_LDFLAGS = 				\
-			$(MEX_THUMBNAILER_LIBS)		\
+mex_thumbnailer_LDADD = 						\
+			$(top_builddir)/mex/libmex-@MEX_API_VERSION@.la	\
+			$(MEX_THUMBNAILER_LIBS)				\
+			$(MEX_LIBS)					\
 			$(NULL)
 endif
 
