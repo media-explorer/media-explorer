@@ -291,6 +291,9 @@ remind_user_pass (MexWebRemote *webremote)
   gchar **userpass;
   gchar *message;
 
+  if (!webremote->userpass)
+    return;
+
   userpass = g_strsplit (webremote->userpass, ":", 2);
 
   message = g_strdup_printf ("Webremote Username: %s Password: %s",
@@ -411,6 +414,7 @@ int main (int argc, char **argv)
   guint opt_port = 9090;
   gchar *opt_interface = NULL;
   const gchar *opt_auth = NULL;
+  gboolean opt_noauth;
   SoupSocket *server_socket;
 
   GError *error=NULL;
@@ -425,6 +429,8 @@ int main (int argc, char **argv)
           "Dispay debugging info", NULL },
         { "auth", 'a', 0, G_OPTION_ARG_STRING, &opt_auth,
           "username:password", NULL },
+        { "noauth", 'n', 0, G_OPTION_ARG_NONE, &opt_noauth,
+          "Disable authentication", NULL },
         { NULL }
     };
 
@@ -517,39 +523,43 @@ int main (int argc, char **argv)
   soup_address_resolve_async (address, NULL, NULL, address_resolved_cb, NULL);
 
   /* use password */
-  if (opt_auth)
+  if (!opt_noauth)
     {
-      /* Use the argument if set */
-      webremote.userpass = g_strdup (opt_auth);
+      if (opt_auth)
+        {
+          /* Use the argument if set */
+          webremote.userpass = g_strdup (opt_auth);
+        }
+      else
+        {
+          /* Generate a password */
+          randomiser = g_rand_new ();
+
+          webremote.userpass =
+            g_strdup_printf ("mex:%d%d%d%d",
+                             g_rand_int_range (randomiser, 0, 9),
+                             g_rand_int_range (randomiser, 0, 9),
+                             g_rand_int_range (randomiser, 0, 9),
+                             g_rand_int_range (randomiser, 0, 9));
+
+          g_rand_free (randomiser);
+
+          g_message ("User Password %s", webremote.userpass);
+        }
+
+      domain = soup_auth_domain_basic_new (SOUP_AUTH_DOMAIN_REALM,
+                                           "Authenticate",
+                                           SOUP_AUTH_DOMAIN_BASIC_AUTH_CALLBACK,
+                                           auth_cb,
+                                           SOUP_AUTH_DOMAIN_BASIC_AUTH_DATA,
+                                           (gpointer)&webremote,
+                                           SOUP_AUTH_DOMAIN_ADD_PATH, "/",
+                                           NULL);
+
+      soup_server_add_auth_domain (server, domain);
+      g_object_unref (domain);
+
     }
-  else
-    {
-      /* Generate a password */
-      randomiser = g_rand_new ();
-
-      webremote.userpass =
-        g_strdup_printf ("mex:%d%d%d%d",
-                         g_rand_int_range (randomiser, 0, 9),
-                         g_rand_int_range (randomiser, 0, 9),
-                         g_rand_int_range (randomiser, 0, 9),
-                         g_rand_int_range (randomiser, 0, 9));
-
-      g_rand_free (randomiser);
-
-      g_message ("User Password %s", webremote.userpass);
-    }
-
-  domain = soup_auth_domain_basic_new (SOUP_AUTH_DOMAIN_REALM,
-                                       "Authenticate",
-                                       SOUP_AUTH_DOMAIN_BASIC_AUTH_CALLBACK,
-                                       auth_cb,
-                                       SOUP_AUTH_DOMAIN_BASIC_AUTH_DATA,
-                                       (gpointer)&webremote,
-                                       SOUP_AUTH_DOMAIN_ADD_PATH, "/",
-                                       NULL);
-
-  soup_server_add_auth_domain (server, domain);
-  g_object_unref (domain);
 
   soup_server_add_handler (server,
                            NULL,
