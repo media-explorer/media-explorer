@@ -1559,8 +1559,6 @@ mex_resizing_hbox_notify_focused_cb (MxFocusManager  *manager,
 
   if (priv->has_focus)
     priv->has_focus = FALSE;
-
-  mex_resizing_hbox_start_animation (self);
 }
 
 static void
