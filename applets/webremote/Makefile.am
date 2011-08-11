@@ -4,6 +4,7 @@ bin_PROGRAMS = mex-webremote
 
 mex_webremote_SOURCES = \
 		webremote.h \
+		settings.c settings.h \
 		mex-webremote.c mex-webremote.h \
 		dbus-client.c dbus-client.h \
 		dbus-service.c dbus-service.h \

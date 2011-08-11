@@ -20,6 +20,7 @@
 #define __DBUS_CLIENT_H__
 
 #include <glib.h>
+#include <gio/gio.h>
 
 G_BEGIN_DECLS
 

@@ -23,31 +23,11 @@
 #include <string.h>
 #include <libsoup/soup.h>
 
-#include "dbus-client.h"
-#include "tracker-client.h"
-#include "mdns-client.h"
-
-#include "dbus-service.h"
+#include "settings.h"
 
 #include <mex/mex.h>
 
 /* TODO #ifdef HAVE_TRACKER etc split webserver into separate module */
-/* TODO web-service.h */
-
-typedef struct
-{
-  DBusClient *dbus_client;
-  TrackerInterface *tracker_interface;
-  MdnsServiceInfo *mdns_service;
-
-  gboolean opt_debug;
-  gchar *userpass;
-  const gchar *mex_data_dir;
-  gboolean successful_auth;
-  GList *clients;
-
-  gchar *data;
-} MexWebRemote;
 
 static GMainLoop *main_loop;
 
@@ -59,7 +39,6 @@ typedef enum
 
   LAST
 } MexWebRemoteResponseType;
-
 
 /* Send response after having done an HTTP post/get */
 static void
@@ -411,25 +390,21 @@ int main (int argc, char **argv)
   GOptionContext *context;
   GRand *randomiser;
 
-  guint opt_port = 9090;
-  gchar *opt_interface = NULL;
-  const gchar *opt_auth = NULL;
-  gboolean opt_noauth;
   SoupSocket *server_socket;
 
   GError *error=NULL;
 
   GOptionEntry entries[] =
     {
-        { "bind", 'b', 0, G_OPTION_ARG_STRING, &opt_interface,
+        { "bind", 'b', 0, G_OPTION_ARG_STRING, &webremote.opt_interface,
           "Bind to a particular ip address", NULL },
-        { "port", 'p', 0, G_OPTION_ARG_INT, &opt_port,
+        { "port", 'p', 0, G_OPTION_ARG_INT, &webremote.opt_port,
           "Port to listen to http requests on", NULL },
         { "debug", 'd', 0, G_OPTION_ARG_NONE, &webremote.opt_debug,
           "Dispay debugging info", NULL },
-        { "auth", 'a', 0, G_OPTION_ARG_STRING, &opt_auth,
+        { "auth", 'a', 0, G_OPTION_ARG_STRING, &webremote.opt_auth,
           "username:password", NULL },
-        { "noauth", 'n', 0, G_OPTION_ARG_NONE, &opt_noauth,
+        { "noauth", 'n', 0, G_OPTION_ARG_NONE, &webremote.opt_noauth,
           "Disable authentication", NULL },
         { NULL }
     };
@@ -438,23 +413,20 @@ int main (int argc, char **argv)
 
   g_option_context_add_main_entries (context, entries, "mex");
 
+  settings_load (&webremote);
+
+  /* Command line arguments override those specified in a config file */
+
   if (!g_option_context_parse (context, &argc, &argv, &error))
     g_warning ("Failed to parse options: %s\n", error->message);
 
   webremote.clients = NULL;
-
-  webremote.mex_data_dir = mex_get_data_dir ();
-
-  /* Fallback method */
-  if (!webremote.mex_data_dir)
-    webremote.mex_data_dir = MEXPKGDATADIR;
 
   if (!webremote.mex_data_dir)
     {
       g_warning ("Could not find program data please verify your installation");
       goto clean_up;
     }
-
 
   /* We want to talk to dbus, tracker and avahi/mdns */
   webremote.dbus_client = dbus_client_new ();
@@ -464,11 +436,12 @@ int main (int argc, char **argv)
   /* Start the our own dbus service for the Quit method and auto activation */
   dbus_service_id = dbus_service_start ();
 
-  if (opt_interface)
+  if (webremote.opt_interface)
     {
       gint resolve_status;
 
-      interface_address = soup_address_new (opt_interface, opt_port);
+      interface_address = soup_address_new (webremote.opt_interface,
+                                            webremote.opt_port);
 
       resolve_status = soup_address_resolve_sync (interface_address, NULL);
 
@@ -486,27 +459,27 @@ int main (int argc, char **argv)
       else
         {
           g_error ("Sorry, could not spawn server with %s address",
-                   opt_interface);
+                   webremote.opt_interface);
           goto clean_up;
         }
     }
   else
     {
-      server = soup_server_new (SOUP_SERVER_PORT, opt_port,
+      server = soup_server_new (SOUP_SERVER_PORT, webremote.opt_port,
                                 SOUP_SERVER_SERVER_HEADER, "mex-remote-control",
                                 NULL);
     }
 
   if (!server)
     {
-      g_error ("Sorry, unable to start server on port %d", opt_port);
+      g_error ("Sorry, unable to start server on port %d", webremote.opt_port);
       goto clean_up;
     }
 
   soup_server_run_async (server);
 
   /* Avahi/mdns advertise server */
-  webremote.mdns_service->port = opt_port;
+  webremote.mdns_service->port = webremote.opt_port;
   webremote.mdns_service->type = "_http._tcp";
   webremote.mdns_service->name = "Mex Webremote";
 
@@ -523,12 +496,12 @@ int main (int argc, char **argv)
   soup_address_resolve_async (address, NULL, NULL, address_resolved_cb, NULL);
 
   /* use password */
-  if (!opt_noauth)
+  if (!webremote.opt_noauth)
     {
-      if (opt_auth)
+      if (webremote.opt_auth)
         {
           /* Use the argument if set */
-          webremote.userpass = g_strdup (opt_auth);
+          webremote.userpass = g_strdup (webremote.opt_auth);
         }
       else
         {

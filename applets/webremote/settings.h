@@ -16,43 +16,17 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef __MEX_WEBREMOTE_H__
-#define __MEX_WEBREMOTE_H__
+#ifndef __SETTINGS_H__
+#define __SETTINGS_H__
 
 #include <glib.h>
-#include "dbus-client.h"
-#include "tracker-client.h"
-#include "mdns-client.h"
-
-#include "dbus-service.h"
+#include "mex-webremote.h"
 
 G_BEGIN_DECLS
 
-typedef struct _MexWebRemote MexWebRemote;
-
-struct _MexWebRemote
-{
-  DBusClient *dbus_client;
-  TrackerInterface *tracker_interface;
-  MdnsServiceInfo *mdns_service;
-
-  gboolean opt_debug;
-  guint opt_port;
-  gchar *opt_interface;
-  const gchar *opt_auth;
-  gboolean opt_noauth;
-
-  gchar *userpass;
-  const gchar *mex_data_dir;
-  gboolean successful_auth;
-  GList *clients;
-
-  gchar *data;
-};
-
-
-void mex_webremote_quit (void);
+void settings_load (MexWebRemote *webremote);
 
 G_END_DECLS
 
 #endif
+
