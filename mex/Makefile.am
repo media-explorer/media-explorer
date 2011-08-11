@@ -293,41 +293,6 @@ libmex_@MEX_API_VERSION@_la_LIBADD =					\
 	$(NM_LIBS)							\
 	$(NULL)
 
-if ENABLE_INTERNAL_THUMBNAILER
-libexec_PROGRAMS = mex-thumbnailer
-
-mex_thumbnailer_SOURCES = mex-thumbnailer-internal.c
-mex_thumbnailer_CFLAGS = $(MEX_THUMBNAILER_CFLAGS)	\
-			 $(MEX_MAINTAINER_CFLAGS)	\
-			 $(MEX_DEBUG_CFLAGS)		\
-			 $(MEX_CFLAGS)			\
-			 $(NULL)
-mex_thumbnailer_LDADD = 						\
-			$(top_builddir)/mex/libmex-@MEX_API_VERSION@.la	\
-			$(MEX_THUMBNAILER_LIBS)				\
-			$(MEX_LIBS)					\
-			$(NULL)
-endif
-
-#
-# Internal tests
-#
-if ENABLE_TESTS
-include $(top_srcdir)/build/Makefile.am.gtester
-
-TEST_ENVIRONMENT = srcdir=$(srcdir)
-
-noinst_PROGRAMS = $(TEST_PROGS)
-
-TEST_PROGS += test-libmex-internal
-test_libmex_internal_SOURCES = mex-test-internal.c
-test_libmex_internal_CFLAGS  = $(libmex_@MEX_API_VERSION@_la_CFLAGS)
-test_libmex_internal_LDADD   =			\
-	$(libmex_@MEX_API_VERSION@_la_LIBADD)	\
-	libmex-@MEX_API_VERSION@.la		\
-	$(NULL)
-endif
-
 #
 # Introspection
 #

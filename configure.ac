@@ -300,8 +300,6 @@ AS_CASE(["$with_thumbnailer"],
         ["internal"],
         [
         AC_DEFINE([WITH_THUMBNAILER_INTERNAL], 1, [Use internal thumbnailer])
-        PKG_CHECK_MODULES(MEX_THUMBNAILER,
-                          "gdk-pixbuf-2.0 glib-2.0 gstreamer-0.10")
         ],
 
         ["tumbler"],
@@ -495,6 +493,7 @@ AC_CONFIG_FILES([
   po/Makefile.in
   shell/Makefile
   tests/Makefile
+  thumbnailer/Makefile
   tools/Makefile
 ])
 

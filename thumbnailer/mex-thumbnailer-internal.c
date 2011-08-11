@@ -67,12 +67,8 @@ main (int argc, char **argv)
             {
               GstPlugin *plugin = gst_registry_find_plugin (registry,
                                                             denied_plugins[i]);
-              g_print ("Listed %s\n", denied_plugins[i]);
               if (plugin)
-                {
-                  g_print ("\tRemoving %s\n", denied_plugins[i]);
-                  gst_registry_remove_plugin (registry, plugin);
-                }
+                gst_registry_remove_plugin (registry, plugin);
             }
         }
       g_key_file_free (key_file);
