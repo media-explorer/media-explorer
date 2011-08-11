@@ -307,12 +307,13 @@ _update_logo (MexContentTile *tile)
 {
   ClutterActor *image;
   GError *err = NULL;
-  gchar *logo_url = mex_content_get_metadata (tile->priv->content,
-                                              MEX_CONTENT_METADATA_STATION_LOGO);
+  const gchar *logo_url;
 
+  logo_url = mex_content_get_metadata (tile->priv->content,
+                                       MEX_CONTENT_METADATA_STATION_LOGO);
   if (!logo_url)
     {
-      mex_tile_set_primary_icon (tile, NULL);
+      mex_tile_set_primary_icon (MEX_TILE (tile), NULL);
       return;
     }
 
@@ -321,7 +322,7 @@ _update_logo (MexContentTile *tile)
   if (g_str_has_prefix (logo_url, "file://"))
     logo_url = logo_url + 7;
 
-  mx_image_set_from_file_at_size (image, logo_url, 26, 26, &err);
+  mx_image_set_from_file_at_size (MX_IMAGE (image), logo_url, 26, 26, &err);
 
   if (err)
     {
@@ -330,7 +331,7 @@ _update_logo (MexContentTile *tile)
       return;
     }
 
-  mex_tile_set_primary_icon (tile, image);
+  mex_tile_set_primary_icon (MEX_TILE (tile), image);
 }
 
 static void
