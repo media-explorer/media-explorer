@@ -70,7 +70,8 @@ struct _MexContentBoxPrivate
   ClutterActor *action_list;
   ClutterActor *info_panel;
 
-  guint is_open : 1;
+  guint is_open    : 1;
+  guint is_closing : 1;
   guint extras_visible : 1;
   guint clip_to_allocation : 1;
 
@@ -180,7 +181,7 @@ mex_content_box_move_focus (MxFocusable      *focusable,
       if (result == NULL)
         {
           /* close the content box if it is open */
-          if (priv->is_open)
+          if (priv->is_open && !priv->is_closing)
             mex_content_box_toggle_open (MEX_CONTENT_BOX (focusable));
         }
     }
@@ -323,18 +324,18 @@ static void
 mex_content_box_toggle_open (MexContentBox *box)
 {
   MexContentBoxPrivate *priv = box->priv;
-  gboolean close_notified;
+  gboolean close_notified, next_is_open;
 
   /* if the close animation was cancelled then no notify for the closed state
-   * will have been sent, therefore notify for the opened state does not need 
+   * will have been sent, therefore notify for the opened state does not need
    * to be emitted */
   close_notified = (!priv->is_open
                     && !clutter_timeline_is_playing (priv->timeline));
 
-  priv->is_open = !priv->is_open;
+  next_is_open = !priv->is_open;
 
   priv->extras_visible = TRUE;
-  if (priv->is_open)
+  if (next_is_open)
     {
       /* opening */
       clutter_timeline_set_direction (priv->timeline,
@@ -347,18 +348,26 @@ mex_content_box_toggle_open (MexContentBox *box)
 
       if (close_notified)
         g_object_notify_by_pspec (G_OBJECT (box), properties[PROP_OPEN]);
+
+      mex_push_focus (MX_FOCUSABLE (priv->action_list));
     }
   else
     {
+      priv->is_closing = TRUE;
       /* closing */
+      mex_push_focus (MX_FOCUSABLE (priv->tile));
       clutter_timeline_set_direction (priv->timeline,
                                       CLUTTER_TIMELINE_BACKWARD);
+
+      priv->is_closing = FALSE;
     }
 
   if (!clutter_timeline_is_playing (priv->timeline))
     clutter_timeline_rewind (priv->timeline);
 
   clutter_timeline_start (priv->timeline);
+
+  priv->is_open = next_is_open;
 }
 
 static gboolean
