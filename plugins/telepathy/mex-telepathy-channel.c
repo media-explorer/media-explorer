@@ -222,9 +222,10 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
     g_debug("video page creating");
     MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL(self)->priv;
 
-    // VideoCall widget init
+    // VideoCall widget init.
     priv->video_call_page = mx_frame_new();
     clutter_actor_set_name(priv->video_call_page, "videocall-page");
+    ClutterActor *videocontainer = mx_stack_new();
 
     // Create the titlebar with a fixed height
     ClutterActor *titlebar = mx_box_layout_new();
@@ -240,19 +241,19 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(titlebar), priv->title_label, TRUE);
     mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(titlebar), priv->title_label, FALSE);
 
-    // Create the horizontal video container to hold the two sinks.
-    ClutterActor *videocontainer = mx_stack_new();
+    // Create the incoming and outgoing video textures.
     priv->video_outgoing = clutter_texture_new();
     clutter_texture_set_keep_aspect_ratio(CLUTTER_TEXTURE(priv->video_outgoing), TRUE);
-    priv->video_incoming = clutter_texture_new();
-    clutter_container_add(CLUTTER_CONTAINER(videocontainer), priv->video_incoming, priv->video_outgoing, NULL);
     priv->outgoing_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_outgoing));
+    clutter_actor_set_height(priv->video_outgoing, 200);
+
+    priv->video_incoming = clutter_texture_new();
+    clutter_texture_set_keep_aspect_ratio(CLUTTER_TEXTURE(priv->video_incoming), TRUE);
     priv->incoming_sink = clutter_gst_video_sink_new(CLUTTER_TEXTURE(priv->video_incoming));
-    mx_stack_child_set_x_align(MX_STACK(videocontainer), priv->video_outgoing, MX_ALIGN_END);
-    mx_stack_child_set_y_align(MX_STACK(videocontainer), priv->video_outgoing, MX_ALIGN_END);
-    mx_stack_child_set_x_fill(MX_STACK(videocontainer), priv->video_outgoing, FALSE);
-    mx_stack_child_set_y_fill(MX_STACK(videocontainer), priv->video_outgoing, FALSE);
-    clutter_actor_set_height(priv->video_outgoing, 100);
+
+    // Add the incoming video to the stack.
+    clutter_container_add(CLUTTER_CONTAINER(videocontainer), priv->video_incoming, NULL);
+    mx_stack_child_set_fit(MX_STACK(videocontainer), priv->video_incoming, TRUE);
 
     // Create the toolbar with a fixed height
     ClutterActor *toolbar = mx_box_layout_new();
@@ -279,6 +280,7 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
 
     // Put the buttons in the toolbar
     clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, priv->hold_button, priv->duration_label, NULL);
+
     // Align button to end so it will be centered
     mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), end_button, MX_ALIGN_END);
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), end_button, TRUE);
@@ -293,13 +295,22 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), priv->duration_label, TRUE);
     mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), priv->duration_label, FALSE);
 
-    // Create the vertical container to put video above the toolbar.
-    ClutterActor *vertical = mx_box_layout_new();
-    mx_box_layout_set_orientation(MX_BOX_LAYOUT(vertical), MX_ORIENTATION_VERTICAL);
-    clutter_container_add(CLUTTER_CONTAINER(vertical), titlebar, videocontainer, toolbar, NULL);
+    ClutterActor *bottom_box = mx_box_layout_new();
+    mx_box_layout_set_orientation(MX_BOX_LAYOUT(bottom_box), MX_ORIENTATION_VERTICAL);
+    clutter_container_add(CLUTTER_CONTAINER(bottom_box), priv->video_outgoing, toolbar, NULL);
+    // Put the outgoing video in the bottom right corner.
+    mx_box_layout_child_set_x_align(MX_BOX_LAYOUT(bottom_box), priv->video_outgoing, MX_ALIGN_END);
+    mx_box_layout_child_set_y_align(MX_BOX_LAYOUT(bottom_box), priv->video_outgoing, MX_ALIGN_END);
+    mx_box_layout_child_set_x_fill(MX_BOX_LAYOUT(bottom_box), priv->video_outgoing, FALSE);
+    mx_box_layout_child_set_y_fill(MX_BOX_LAYOUT(bottom_box), priv->video_outgoing, FALSE);
 
-    // Finally put the vertical container in the frame.
-    clutter_container_add(CLUTTER_CONTAINER(priv->video_call_page), vertical, NULL);
+    clutter_container_add(CLUTTER_CONTAINER(videocontainer), titlebar, bottom_box, NULL);
+    mx_stack_child_set_y_fill(MX_STACK(videocontainer), titlebar, FALSE);
+    mx_stack_child_set_y_align(MX_STACK(videocontainer), titlebar, MX_ALIGN_START);
+    mx_stack_child_set_y_fill(MX_STACK(videocontainer), bottom_box, FALSE);
+    mx_stack_child_set_y_align(MX_STACK(videocontainer), bottom_box, MX_ALIGN_END);
+
+    clutter_container_add(CLUTTER_CONTAINER(priv->video_call_page), videocontainer, NULL);
 
     // Connect to hide signals.
     g_signal_connect(priv->video_call_page,
@@ -316,7 +327,7 @@ mex_telepathy_channel_update_duration_label(gpointer user_data)
     // Get the elapsed time
     guint elapsed = g_timer_elapsed(self->priv->timer, NULL);
     guint minutes = elapsed / 60;
-    guint seconds = elapsed % 60 % 10;
+    guint seconds = elapsed % 60;
     gchar *text;
     text = g_strdup_printf("Duration - %d:%02d", minutes, seconds);
 
