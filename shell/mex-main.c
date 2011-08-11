@@ -1946,6 +1946,25 @@ check_resolution (MexData *data)
 }
 
 static void
+grilo_load_default_plugins (MexData *data, GrlPluginRegistry *registry)
+{
+  /* Tracker is our first choice of plugin */
+  if (!grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL))
+    {
+      /* try and load the upnp and filesystem plugins instead */
+      if (!grl_plugin_registry_load_by_id (registry, "grl-upnp", NULL) &&
+          !grl_plugin_registry_load_by_id (registry, "grl-filesystem", NULL))
+        {
+          g_warning ("Could not load fallback plugins\n \
+                        please check that grilo-plugins has been correctly \
+                        installed");
+        }
+    }
+
+  grl_plugin_registry_load_by_id (registry, "grl-lastfm-albumart", NULL);
+}
+
+static void
 mex_go_back_cb (MxAction *action,
                 MexData  *data)
 {
@@ -2127,26 +2146,17 @@ main (int argc, char **argv)
             }
           g_strfreev (enabled_plugins);
         }
+      else
+        {
+          MEX_DEBUG ("No enabled plugins in mex.conf, loading default plugins");
+          grilo_load_default_plugins (&data, registry);
+        }
       g_free (settings);
     }
   else
     {
       MEX_DEBUG ("No mex.conf found, loading default plugins");
-
-      /* Tracker is our first choice of plugin */
-      if (!grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL))
-        {
-          /* try and load the upnp and filesystem plugins instead */
-         if (!grl_plugin_registry_load_by_id (registry, "grl-upnp", NULL) &&
-             !grl_plugin_registry_load_by_id (registry, "grl-filesystem", NULL))
-           {
-             g_warning ("Could not load fallback plugins\n \
-                        please check that grilo-plugins has been correctly \
-                        installed");
-           }
-        }
-
-      grl_plugin_registry_load_by_id (registry, "grl-lastfm-albumart", NULL);
+      grilo_load_default_plugins (&data, registry);
     }
 
   /* Auto start the rebinder */
