@@ -743,7 +743,8 @@ save_old_content (MexPlayer *player)
 static void
 media_uri_changed_cb (GObject *object, GParamSpec *spec, MexPlayer *player)
 {
-  g_signal_emit (player, signals[OPEN_REQUEST], 0);
+  if (clutter_media_get_uri (CLUTTER_MEDIA (object)))
+    g_signal_emit (player, signals[OPEN_REQUEST], 0);
 }
 
 static void
