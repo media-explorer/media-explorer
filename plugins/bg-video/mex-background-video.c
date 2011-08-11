@@ -95,7 +95,7 @@ mex_background_video_constructed (GObject *object)
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->media), TRUE);
   clutter_container_child_set (CLUTTER_CONTAINER (object),
                                CLUTTER_ACTOR (priv->media),
-                               "fit", TRUE, NULL);
+                               "crop", TRUE, NULL);
 
   clutter_media_set_uri (priv->media, priv->video_url);
 
