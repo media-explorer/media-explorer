@@ -1999,6 +1999,7 @@ int
 main (int argc, char **argv)
 {
   gchar *settings;
+  gchar *web_settings_loc;
   MxWindow *window;
   MxApplication *app;
   MexModel *root_model;
@@ -2517,8 +2518,40 @@ main (int argc, char **argv)
     }
 
 #if HAVE_WEBREMOTE
-  /* TODO check webremote config if we should auto start or not */
-  auto_start_dbus_service (MEX_WEBREMOTE_DBUS_INTERFACE);
+  if (web_settings_loc = mex_settings_find_config_file (mex_settings_get_default (), "mex-webremote.conf"))
+    {
+      GKeyFile *web_settings;
+      GError *error = NULL;
+      gboolean autostart;
+
+      web_settings = g_key_file_new ();
+
+      g_key_file_load_from_file (web_settings,
+                                 web_settings_loc,
+                                 G_KEY_FILE_NONE, NULL);
+
+      autostart = g_key_file_get_boolean (web_settings, "settings",
+                                          "autostart", &error);
+      /* We get an error if the config key is not found so do the
+       * default action of starting the web remote
+       */
+      if (error)
+        {
+          auto_start_dbus_service (MEX_WEBREMOTE_DBUS_INTERFACE);
+          g_error_free (error);
+        }
+      else
+        {
+          if (autostart)
+            auto_start_dbus_service (MEX_WEBREMOTE_DBUS_INTERFACE);
+        }
+      g_free (web_settings_loc);
+      g_key_file_free (web_settings);
+    }
+  else
+    {
+      auto_start_dbus_service (MEX_WEBREMOTE_DBUS_INTERFACE);
+    }
 #endif
 
   application_for_signal = app;
