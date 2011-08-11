@@ -103,7 +103,7 @@ add_pictures (MexGrid *grid)
       mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, basename);
 
       tile = mex_content_box_new ();
-      mex_content_view_set_content (tile, content);
+      mex_content_view_set_content (MEX_CONTENT_VIEW (tile), content);
 
       mex_content_box_set_important (MEX_CONTENT_BOX (tile), TRUE);
       g_object_bind_property (grid, "tile-width",
