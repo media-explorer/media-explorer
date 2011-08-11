@@ -2508,6 +2508,10 @@ main (int argc, char **argv)
           MexContent *content;
 
           uri = g_filename_to_uri (opt_file[i], NULL, NULL);
+          /* It's possible a filename is not specified, such as dvd:/// */
+          if (!uri && g_str_has_prefix (opt_file[i], "dvd"))
+            uri = g_strdup (opt_file[i]);
+
           content = mex_content_from_uri (uri);
           g_free (uri);
 
