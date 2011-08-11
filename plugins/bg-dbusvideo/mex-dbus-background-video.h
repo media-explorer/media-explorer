@@ -20,8 +20,7 @@
 #define _MEX_DBUS_BACKGROUND_VIDEO_H
 
 #include <glib-object.h>
-
-#include <clutter-gst/clutter-gst.h>
+#include <clutter/clutter.h>
 
 G_BEGIN_DECLS
 
@@ -53,14 +52,14 @@ typedef struct _MexDbusBackgroundVideoPrivate MexDbusBackgroundVideoPrivate;
 
 struct _MexDbusBackgroundVideo
 {
-  ClutterGstVideoTexture parent;
+  ClutterActor parent;
 
   MexDbusBackgroundVideoPrivate *priv;
 };
 
 struct _MexDbusBackgroundVideoClass
 {
-  ClutterGstVideoTextureClass parent_class;
+  ClutterActorClass parent_class;
 };
 
 GType mex_dbus_background_video_get_type (void) G_GNUC_CONST;

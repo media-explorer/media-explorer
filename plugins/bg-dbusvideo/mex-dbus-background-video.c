@@ -26,7 +26,7 @@ static void mex_dbus_background_video_background_iface_init (MexBackgroundIface 
 
 G_DEFINE_TYPE_WITH_CODE (MexDbusBackgroundVideo,
                          mex_dbus_background_video,
-                         CLUTTER_TYPE_RECTANGLE,
+                         CLUTTER_TYPE_ACTOR,
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_BACKGROUND,
                                                 mex_dbus_background_video_background_iface_init))
 
