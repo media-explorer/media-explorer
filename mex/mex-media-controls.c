@@ -69,6 +69,7 @@ struct _MexMediaControlsPrivate
 
   guint is_queue_model : 1;
   guint is_disabled    : 1;
+  guint show_description : 1;
 
   MexModel   *model;
   MexViewModel *proxy_model;
@@ -862,6 +863,63 @@ mex_media_controls_notify_playing_cb (ClutterMedia     *media,
 }
 
 static void
+mex_media_controls_show_description (MexMediaControls *self,
+                                     gboolean          show)
+{
+  MexMediaControlsPrivate *priv = self->priv;
+  MxLabel *label;
+  ClutterActor *play_pause_button, *stop_button, *placeholder,
+               *add_to_queue_button;
+  const gchar *text;
+
+  label = (MxLabel*) clutter_script_get_object (priv->script, "progress-label");
+
+  play_pause_button =
+    (ClutterActor*) clutter_script_get_object (priv->script,
+                                               "play-pause-button");
+  stop_button =
+    (ClutterActor*) clutter_script_get_object (priv->script,
+                                               "stop-button");
+
+  add_to_queue_button =
+    (ClutterActor*) clutter_script_get_object (priv->script,
+                                               "add-to-queue-button");
+
+  /* the placeholder actor will accept focus so that the title and description
+   * become visible as the user navigates up and down */
+  placeholder =
+    (ClutterActor*) clutter_script_get_object (priv->script, "placeholder");
+
+  if (show)
+    {
+      clutter_actor_hide (priv->slider);
+      clutter_actor_hide (play_pause_button);
+      clutter_actor_hide (stop_button);
+      clutter_actor_hide (add_to_queue_button);
+      clutter_actor_show (placeholder);
+
+      if (priv->content)
+        text = mex_content_get_metadata (priv->content,
+                                         MEX_CONTENT_METADATA_SYNOPSIS);
+      else
+        text = NULL;
+
+      mx_label_set_text (label, (text) ? text : "");
+    }
+  else
+    {
+      mx_label_set_text (label, "");
+      clutter_actor_show (priv->slider);
+      clutter_actor_show (play_pause_button);
+      clutter_actor_show (stop_button);
+      clutter_actor_show (add_to_queue_button);
+      clutter_actor_hide (placeholder);
+    }
+
+  priv->show_description = show;
+}
+
+static void
 mex_media_controls_notify_progress_cb (ClutterMedia     *media,
                                        GParamSpec       *pspec,
                                        MexMediaControls *self)
@@ -872,6 +930,9 @@ mex_media_controls_notify_progress_cb (ClutterMedia     *media,
   gdouble length, progress_s;
   gfloat progress;
   gint len_h, len_m, len_s, pos_h, pos_m, pos_s;
+
+  if (priv->show_description)
+    return;
 
   progress = clutter_media_get_progress (media);
   length = clutter_media_get_duration (media);
@@ -970,6 +1031,7 @@ mex_media_controls_set_content (MexMediaControls *self,
                                 MexModel         *context)
 {
   MexMediaControlsPrivate *priv = self->priv;
+  gboolean show_description;
 
   g_return_if_fail (MEX_IS_CONTENT (content));
 
@@ -1045,6 +1107,13 @@ mex_media_controls_set_content (MexMediaControls *self,
   /* Update content on the queue button */
   mex_content_view_set_content (MEX_CONTENT_VIEW (priv->queue_button),
                                 priv->content);
+
+  /* show the description rather than the seek bar for certain content */
+  show_description = !g_strcmp0 ("x-mex/tv",
+                                 mex_content_get_metadata (priv->content,
+                                                           MEX_CONTENT_METADATA_MIMETYPE));
+
+  mex_media_controls_show_description(self, show_description);
 }
 
 void

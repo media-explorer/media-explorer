@@ -30,6 +30,11 @@ MxButton:focus MxLabel
   color: #464541;
 }
 
+MxButton#placeholder:focus
+{
+  border-image: none;
+}
+
 /* Main Background */
 #main-layout
 {

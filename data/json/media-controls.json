@@ -62,6 +62,7 @@
                   },
                   {
                     "type" : "MxButton",
+                    "id" : "stop-button",
                     "style-class" : "MediaStop",
                     "action" : "stop-action",
                     "label-visible" : false,
@@ -73,6 +74,15 @@
                     "name" : "add-to-queue-button",
                     "id" : "add-to-queue-button",
                     "min-width" : 240.0,
+                    "child::expand" : true,
+                    "child::x-align" : "end",
+                    "child::x-fill" : false
+                  },
+                  {
+                    "type" : "MxButton",
+                    "visible" : false,
+                    "id" : "placeholder",
+                    "name" : "placeholder",
                     "child::expand" : true,
                     "child::x-align" : "end",
                     "child::x-fill" : false
