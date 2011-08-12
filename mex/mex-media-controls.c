@@ -958,6 +958,12 @@ mex_media_controls_get_playing_queue (MexMediaControls *self)
   return self->priv->is_queue_model;
 }
 
+MexContent *
+mex_media_controls_get_content (MexMediaControls *self)
+{
+  return self->priv->content;
+}
+
 void
 mex_media_controls_set_content (MexMediaControls *self,
                                 MexContent       *content,

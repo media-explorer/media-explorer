@@ -77,6 +77,9 @@ ClutterMedia *mex_media_controls_get_media (MexMediaControls *controls);
 void mex_media_controls_set_content (MexMediaControls *self,
                                      MexContent       *content,
                                      MexModel         *context);
+
+MexContent *mex_media_controls_get_content (MexMediaControls *self);
+
 void mex_media_controls_focus_content (MexMediaControls *self,
                                        MexContent       *content);
 
