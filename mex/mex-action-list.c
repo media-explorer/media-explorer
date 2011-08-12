@@ -42,8 +42,6 @@ struct _MexActionListPrivate
   MexModel     *model;
 };
 
-static const ClutterColor hline_color = { 255, 255, 255, 51 };
-
 static void
 mex_action_list_get_property (GObject    *object,
                               guint       property_id,
@@ -338,7 +336,6 @@ void
 mex_action_list_refresh (MexActionList *action_list)
 {
   GList *a, *actions;
-  ClutterActor *hline;
   MexActionManager *manager;
   MexActionListPrivate *priv;
 
@@ -361,11 +358,6 @@ mex_action_list_refresh (MexActionList *action_list)
 
   if (!actions)
     return;
-
-  /* separator */
-  hline = clutter_rectangle_new_with_color (&hline_color);
-  clutter_actor_set_height (hline, 1);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->layout), hline);
 
   /* Fill in new menu contents */
   for (a = actions; a; a = a->next)
