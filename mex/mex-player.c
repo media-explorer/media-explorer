@@ -743,8 +743,25 @@ save_old_content (MexPlayer *player)
 static void
 media_uri_changed_cb (GObject *object, GParamSpec *spec, MexPlayer *player)
 {
-  if (clutter_media_get_uri (CLUTTER_MEDIA (object)))
-    g_signal_emit (player, signals[OPEN_REQUEST], 0);
+  MexPlayerPrivate *priv = player->priv;
+  gchar *uri;
+
+  if ((uri = clutter_media_get_uri (CLUTTER_MEDIA (object))))
+    {
+      MexContent *ctrls_content;
+
+      ctrls_content =
+        mex_media_controls_get_content (MEX_MEDIA_CONTROLS (priv->controls));
+
+      if (!ctrls_content)
+        {
+          mex_player_set_uri (player, uri);
+        }
+      else if (g_strcmp0 (mex_content_get_metadata (ctrls_content, MEX_CONTENT_METADATA_STREAM), uri) != 0)
+        {
+          mex_player_set_uri (player, uri);
+        }
+    }
 }
 
 static void
