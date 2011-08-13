@@ -90,6 +90,32 @@ static void mex_column_allocate_header (MexColumn              *self,
                                         ClutterAllocationFlags  flags);
 
 
+static void
+child_expand_complete_cb (ClutterAnimation *animation,
+                     ClutterActor     *child)
+{
+  /* child should now be at it's natural height */
+  clutter_actor_set_height (child, -1);
+}
+
+static void
+mex_column_expand_child (ClutterActor *child)
+{
+  gfloat new_height, old_height;
+
+  old_height = clutter_actor_get_height (child);
+
+  clutter_actor_set_height (child, -1);
+  clutter_actor_get_preferred_height (child, -1, NULL, &new_height);
+  clutter_actor_set_height (child, old_height);
+
+  clutter_actor_animate (child, CLUTTER_EASE_OUT_CUBIC, 200,
+                         "height", new_height,
+                         "signal-after::completed", child_expand_complete_cb,
+                         child,
+                         NULL);
+}
+
 /* MexScrollableContainerInterface */
 static void
 mex_column_get_allocation (MexScrollableContainer *self,
@@ -244,6 +270,10 @@ mex_column_remove (ClutterContainer *container,
     }
 
   /* Remove the old actor */
+  if (priv->expand_timeline)
+    g_signal_handlers_disconnect_by_func (priv->expand_timeline,
+                                          mex_column_expand_child,
+                                          actor);
   g_object_ref (actor);
 
   clutter_actor_unparent (actor);
@@ -1096,32 +1126,6 @@ mex_column_pick (ClutterActor *actor, const ClutterColor *color)
   cogl_clip_pop ();
 
   clutter_actor_paint (priv->header);
-}
-
-static void
-child_expand_complete_cb (ClutterAnimation *animation,
-                     ClutterActor     *child)
-{
-  /* child should now be at it's natural height */
-  clutter_actor_set_height (child, -1);
-}
-
-static void
-mex_column_expand_child (ClutterActor *child)
-{
-  gfloat new_height, old_height;
-
-  old_height = clutter_actor_get_height (child);
-
-  clutter_actor_set_height (child, -1);
-  clutter_actor_get_preferred_height (child, -1, NULL, &new_height);
-  clutter_actor_set_height (child, old_height);
-
-  clutter_actor_animate (child, CLUTTER_EASE_OUT_CUBIC, 200,
-                         "height", new_height,
-                         "signal-after::completed", child_expand_complete_cb,
-                         child,
-                         NULL);
 }
 
 static void
