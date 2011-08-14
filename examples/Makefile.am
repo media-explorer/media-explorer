@@ -1,5 +1,6 @@
 noinst_PROGRAMS = 			\
-	mex-epg-test			\
+ 	mex-column-test			\
+ 	mex-epg-test			\
 	mex-grid-test			\
 	mex-grilo-model-test		\
 	mex-info-panel-test		\
@@ -27,6 +28,7 @@ AM_LDFLAGS =							\
 	$(top_builddir)/mex/libmex-@MEX_API_VERSION@.la	\
 	$(NULL)
 
+mex_column_test_SOURCES = mex-column-test.c
 mex_epg_test_SOURCES = mex-epg-test.c
 mex_grid_test_SOURCES = mex-grid-test.c
 mex_grilo_model_test_SOURCES = mex-grilo-model-test.c
