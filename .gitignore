@@ -38,7 +38,7 @@ player/mex-media-player
 player/mex-media-player.service
 stamp-*
 stamp-h1
-
+thumbnailer/mex-thumbnailer
 .*.sw?
 .gdb_history
 
