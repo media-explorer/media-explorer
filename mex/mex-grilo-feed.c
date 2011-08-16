@@ -43,7 +43,7 @@ struct _MexGriloFeedPrivate {
 
   guint        completed : 1;
 
-  GHashTable *programs;
+  GHashTable *groups;
 
   MexGriloFeedOpenCb open_callback;
 };
@@ -128,6 +128,12 @@ mex_grilo_feed_dispose (GObject *object)
     g_object_unref (priv->root);
     priv->root = NULL;
   }
+
+  if (priv->groups)
+    {
+      g_hash_table_destroy (priv->groups);
+      priv->groups = NULL;
+    }
 
   G_OBJECT_CLASS (mex_grilo_feed_parent_class)->dispose (object);
 }
@@ -304,6 +310,9 @@ mex_grilo_feed_init (MexGriloFeed *self)
   self->priv = priv;
 
   priv->open_callback = mex_grilo_feed_open_default;
+
+  priv->groups = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+                                        g_object_unref);
 }
 
 MexFeed *
@@ -323,10 +332,65 @@ mex_grilo_feed_new (GrlMediaSource *source,
 static void
 emit_media_added (MexGriloFeed *feed, GrlMedia *media)
 {
+  MexGriloFeedPrivate *priv = feed->priv;
   MexProgram *program;
+  MexFeed *group_model;
+  MexContent *group_item;
+  const gchar *album, *artist;
 
   program = mex_grilo_program_new (feed, media);
-  mex_model_add_content (MEX_MODEL (feed), MEX_CONTENT (program));
+
+
+  /* group items with the same artist and album name */
+  artist = mex_content_get_metadata (MEX_CONTENT (program),
+                                     MEX_CONTENT_METADATA_ARTIST);
+  album = mex_content_get_metadata (MEX_CONTENT (program),
+                                    MEX_CONTENT_METADATA_ALBUM);
+  if (mex_content_get_metadata (MEX_CONTENT (program),
+                                MEX_CONTENT_METADATA_ALBUM))
+    {
+      const gchar *group_name;
+
+      group_name = g_strdup_printf ("%s - %s", artist, album);
+
+      group_model = g_hash_table_lookup (priv->groups, group_name);
+
+      if (!group_model)
+        {
+          const gchar *prop_name;
+
+          /* create the model to contain the items in the group */
+          group_model = mex_feed_new (group_name, "");
+          g_hash_table_insert (priv->groups, group_name,
+                               group_model);
+
+          /* create the item to represent the group in the main model */
+          group_item = (MexContent*) mex_program_new (group_model);
+          mex_content_set_metadata (group_item, MEX_CONTENT_METADATA_TITLE,
+                                    group_name);
+          mex_content_set_metadata (group_item, MEX_CONTENT_METADATA_MIMETYPE,
+                                    "x-mex/group");
+
+          /* thumbnail may be available later, so set up a binding */
+          prop_name = mex_content_get_property_name (group_item,
+                                                     MEX_CONTENT_METADATA_STILL);
+          g_object_bind_property (program, prop_name, group_item, prop_name,
+                                  G_BINDING_SYNC_CREATE);
+          _mex_program_complete (program);
+
+          mex_model_add_content (MEX_MODEL (feed), MEX_CONTENT (group_item));
+        }
+      else
+        g_free (group_name);
+
+      /* add the item to the group model */
+      mex_model_add_content (MEX_MODEL (group_model), MEX_CONTENT (program));
+    }
+  else
+    {
+      /* no album name, so just add to the feed */
+      mex_model_add_content (MEX_MODEL (feed), MEX_CONTENT (program));
+    }
 }
 
 static void
