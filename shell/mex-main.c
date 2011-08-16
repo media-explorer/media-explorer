@@ -1972,6 +1972,33 @@ mex_go_back_cb (MxAction *action,
 }
 
 static void
+mex_open_group_cb (MxAction *action,
+                   MexData  *data)
+{
+  MexContent *content;
+  MexModel *model;
+
+  content = mex_action_get_content (action);
+
+  model = mex_program_get_feed (MEX_PROGRAM (content));
+
+  if (!model)
+    return;
+
+  g_object_set (content, "last-position-start", FALSE, NULL);
+  mex_content_view_set_context (MEX_CONTENT_VIEW (data->player), model);
+
+  content = mex_model_get_content (model, 1);
+  mex_content_view_set_content (MEX_CONTENT_VIEW (data->player), content);
+
+  /* hide other actors */
+  mex_hide_actor (data, data->slide_show);
+
+  /* show the video player */
+  run_play_transition (data, content, data->player, TRUE);
+}
+
+static void
 cleanup_before_exit (void)
 {
 #if HAVE_REBINDER
@@ -2012,6 +2039,7 @@ static const gchar *resume_action_mimetypes[] = { "video/", "audio/", "x-mex/med
 static const gchar *folder_action_mimetypes[] = { "x-grl/box", NULL };
 static const gchar *show_action_mimetypes[] = { "image/", NULL };
 static const gchar *back_action_mimetypes[] = { "x-mex/back", NULL };
+static const gchar *group_action_mimetypes[] = { "x-mex/group", NULL };
 
 
 int
@@ -2041,6 +2069,7 @@ main (int argc, char **argv)
   MexActionInfo open_folder = { 0, };
   MexActionInfo show = { 0, };
   MexActionInfo back = { 0, };
+  MexActionInfo group = { 0, };
 
   /* FIXME: Replace this with a configuration file */
   MexModelCategoryInfo videos = { "videos", _("Videos"), "icon-panelheader-videos", 20, _("Connect an external drive or update your network settings to see Videos here.") };
@@ -2443,6 +2472,13 @@ main (int argc, char **argv)
   back.mime_types = (gchar **)back_action_mimetypes;
   back.priority = G_MAXINT;
 
+  group.action =
+    mx_action_new_full ("play-group", _("Play"),
+                        G_CALLBACK (mex_open_group_cb), &data);
+  mx_action_set_icon (group.action, "media-watch-mex");
+  group.mime_types = (gchar **)group_action_mimetypes;
+  group.priority = G_MAXINT;
+
   amanager = mex_action_manager_get_default ();
   mex_action_manager_add_action (amanager, &play_from_last);
   mex_action_manager_add_action (amanager, &play_from_begin);
@@ -2452,6 +2488,7 @@ main (int argc, char **argv)
   mex_action_manager_add_action (amanager, &back);
   mex_action_manager_add_action (amanager, &listen);
   mex_action_manager_add_action (amanager, &listen_from_begin);
+  mex_action_manager_add_action (amanager, &group);
 
   /* Add the default categories to the model manager */
   mmanager = mex_model_manager_get_default ();
