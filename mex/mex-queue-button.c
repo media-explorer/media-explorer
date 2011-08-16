@@ -131,10 +131,16 @@ _add_remove_recursive (MexModel *queue_model, MexFeed *feed, gboolean add)
   for (i=0; i < len; i++)
     {
       MexContent *content;
+      const gchar *mimetype;
 
       content = mex_model_get_content (MEX_MODEL (feed), i);
-      /* Don't accidentally add a directory to the queue */
-      if (g_str_has_prefix (mex_content_get_metadata (content,                                        MEX_CONTENT_METADATA_MIMETYPE), "x-grl/box"))
+
+      mimetype = mex_content_get_metadata (content,
+                                           MEX_CONTENT_METADATA_MIMETYPE);
+
+      /* Don't accidentally add a directory or group to the queue */
+      if (!g_strcmp0 (mimetype, "x-grl/box")
+          || !g_strcmp0 (mimetype, "x-mex/group"))
         continue;
 
       if (add)
@@ -182,6 +188,25 @@ _add_from_directory (MexQueueButton *q_button, gboolean add)
 
   const gchar *filter;
   const gchar *stream_uri;
+
+  /* check if this content is a group */
+  if (MEX_IS_PROGRAM (priv->content)
+      && !g_strcmp0 (mex_content_get_metadata (priv->content,
+                                               MEX_CONTENT_METADATA_MIMETYPE),
+                     "x-mex/group"))
+    {
+      g_object_get (priv->content, "feed", &feed, NULL);
+
+      _add_remove_recursive (priv->queue_model, feed, add);
+
+      /* _add_remove_recursive will unref feed */
+
+      mex_content_set_metadata (priv->content, MEX_CONTENT_METADATA_QUEUED,
+                                (add) ? "yes" : NULL);
+
+      return;
+    }
+
 
   if (!MEX_IS_GRILO_PROGRAM (priv->content))
     return;
@@ -276,11 +301,14 @@ _queue_button_notify_toggled_cb (MxButton       *button,
                                  MexQueueButton *q_button)
 {
   MexQueueButtonPrivate *priv = q_button->priv;
+  const gchar *mimetype;
 
   gboolean directory;
 
-  directory =
-    g_str_has_prefix (mex_content_get_metadata (priv->content,                                        MEX_CONTENT_METADATA_MIMETYPE), "x-grl/box");
+  mimetype = mex_content_get_metadata (priv->content,
+                                       MEX_CONTENT_METADATA_MIMETYPE);
+  directory = !g_strcmp0 (mimetype, "x-grl/box")
+    || !g_strcmp0 (mimetype, "x-mex/group");
 
   /* Triggers a train of actions that makes content have it's queued
    * property set which then runs the notify cb which calls

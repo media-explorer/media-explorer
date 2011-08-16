@@ -88,7 +88,8 @@ mex_queue_plugin_class_init (MexQueuePluginClass *klass)
   object_class->finalize = mex_queue_plugin_finalize;
 }
 
-static const gchar *all_data_mimetypes[] = { "audio/" , "x-grl/box", "video/", "x-mex/media", NULL };
+static const gchar *all_data_mimetypes[] = { "audio/" , "x-grl/box", "video/",
+    "x-mex/media", "x-mex/group", NULL };
 
 static void
 mex_queue_plugin_init (MexQueuePlugin *self)
