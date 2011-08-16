@@ -306,6 +306,8 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                 GRL_METADATA_KEY_DATE,
                                                 GRL_METADATA_KEY_THUMBNAIL,
                                                 GRL_METADATA_KEY_PLAY_COUNT,
+                                                GRL_METADATA_KEY_ALBUM,
+                                                GRL_METADATA_KEY_ARTIST,
                                                 NULL);
 
   priv->image_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
@@ -340,8 +342,6 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                 GRL_METADATA_KEY_LAST_POSITION,
                                                 GRL_METADATA_KEY_PLAY_COUNT,
                                                 GRL_METADATA_KEY_LAST_PLAYED,
-                                                GRL_METADATA_KEY_ARTIST,
-                                                GRL_METADATA_KEY_ALBUM,
                                                 NULL);
 
   priv->manager = mex_model_manager_get_default ();
