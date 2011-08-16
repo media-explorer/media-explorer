@@ -111,20 +111,45 @@ set_metadata_from_media (MexContent          *content,
       {
         if (mex_key == MEX_CONTENT_METADATA_TITLE)
           {
-            GRegex *regex;
+            gchar *showname = NULL, *title;
+            gint season, episode;
             gchar *replacement;
+            const gchar *mimetype;
 
-            /* strip off any file extensions */
+            mimetype = mex_content_get_metadata (content,
+                                                 MEX_CONTENT_METADATA_MIMETYPE);
 
-            regex = g_regex_new ("\\.....?$", 0, 0, NULL);
-            replacement = g_regex_replace (regex, cstring, -1, 0, "", 0, NULL);
+            if (!mimetype)
+              mimetype = "";
 
-            g_regex_unref (regex);
+            if (g_str_has_prefix (mimetype, "video/"))
+              {
+                mex_metadata_from_uri (cstring, &title, &showname, NULL,
+                                       &season, &episode);
+              }
+
+            if (showname)
+              {
+                replacement = g_strdup_printf ("%s - S%d - E%d",
+                                               showname, season, episode);
+              }
+            else
+              {
+                GRegex *regex;
+
+                /* strip off any file extensions */
+                regex = g_regex_new ("\\.....?$", 0, 0, NULL);
+                replacement = g_regex_replace (regex, cstring, -1, 0, "", 0, NULL);
+
+                g_regex_unref (regex);
+              }
 
             if (!replacement)
-              replacement = g_strdup ("");
+              replacement = g_strdup (cstring);
 
             mex_content_set_metadata (content, mex_key, replacement);
+
+            g_free (replacement);
           }
         else
           mex_content_set_metadata (content, mex_key, cstring);
