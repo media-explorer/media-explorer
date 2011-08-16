@@ -414,6 +414,7 @@ static void
 mex_scroll_view_dispose (GObject *object)
 {
   MexScrollViewPrivate *priv = MEX_SCROLL_VIEW (object)->priv;
+  MxAdjustment *adjustment;
 
   if (priv->scroll_indicator_timeout)
     {
@@ -423,12 +424,24 @@ mex_scroll_view_dispose (GObject *object)
 
   if (priv->vscroll)
     {
+      adjustment = mex_scroll_indicator_get_adjustment (MEX_SCROLL_INDICATOR (
+                                                               priv->vscroll));
+      if (adjustment)
+        g_signal_handlers_disconnect_by_func (adjustment,
+                                              mex_scroll_view_adjustment_changed,
+                                              object);
       clutter_actor_unparent (priv->vscroll);
       priv->vscroll = NULL;
     }
 
   if (priv->hscroll)
     {
+      adjustment = mex_scroll_indicator_get_adjustment (MEX_SCROLL_INDICATOR (
+                                                               priv->hscroll));
+      if (adjustment)
+        g_signal_handlers_disconnect_by_func (adjustment,
+                                              mex_scroll_view_adjustment_changed,
+                                              object);
       clutter_actor_unparent (priv->hscroll);
       priv->hscroll = NULL;
     }
