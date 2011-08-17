@@ -1,6 +1,7 @@
 #include "mex-grilo.h"
 
 #include <stdlib.h>
+#include "mex-metadata-utils.h"
 
 static GHashTable *mex_to_grl;
 

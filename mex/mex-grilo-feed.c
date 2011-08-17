@@ -349,7 +349,7 @@ emit_media_added (MexGriloFeed *feed, GrlMedia *media)
   if (mex_content_get_metadata (MEX_CONTENT (program),
                                 MEX_CONTENT_METADATA_ALBUM))
     {
-      const gchar *group_name;
+      gchar *group_name;
 
       group_name = g_strdup_printf ("%s - %s", artist, album);
 

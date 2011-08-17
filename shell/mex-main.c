@@ -1980,7 +1980,7 @@ mex_open_group_cb (MxAction *action,
 
   content = mex_action_get_content (action);
 
-  model = mex_program_get_feed (MEX_PROGRAM (content));
+  model = (MexModel*) mex_program_get_feed (MEX_PROGRAM (content));
 
   if (!model)
     return;
