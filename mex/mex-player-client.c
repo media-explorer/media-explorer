@@ -64,7 +64,6 @@ struct _MexPlayerClientPrivate
   gdouble audio_volume;
 };
 
-
 static void
 clutter_media_iface_init (ClutterMediaIface *iface)
 {
@@ -377,6 +376,15 @@ _buffer_fill_changed_cb (DBusGProxy      *proxy,
 }
 
 static void
+_eos_cb (DBusGProxy      *proxy,
+         MexPlayerClient *client)
+{
+  MexPlayerClientPrivate *priv = client->priv;
+
+  g_signal_emit_by_name (client, "eos");
+}
+
+static void
 mex_player_client_init (MexPlayerClient *self)
 {
   MexPlayerClientPrivate *priv;
@@ -423,6 +431,9 @@ mex_player_client_init (MexPlayerClient *self)
                            "BufferFillChanged",
                            G_TYPE_DOUBLE,
                            G_TYPE_INVALID);
+  dbus_g_proxy_add_signal (priv->proxy,
+                           "EOS",
+                           G_TYPE_INVALID);
 
   dbus_g_proxy_connect_signal (priv->proxy,
                                "ProgressChanged",
@@ -452,6 +463,11 @@ mex_player_client_init (MexPlayerClient *self)
   dbus_g_proxy_connect_signal (priv->proxy,
                                "AudioVolumeChanged",
                                (GCallback)_audio_volume_changed_cb,
+                               self,
+                               NULL);
+  dbus_g_proxy_connect_signal (priv->proxy,
+                               "EOS",
+                               (GCallback)_eos_cb,
                                self,
                                NULL);
 }
