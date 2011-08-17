@@ -586,12 +586,6 @@ mex_tile_class_init (MexTileClass *klass)
                                 FALSE,
                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_IMPORTANT, pspec);
-
-
-  /* create a template material for the header background from which cheap
-   * copies can be made for each instance */
-  if (!template_material)
-    template_material = cogl_material_new ();
 }
 
 static void
@@ -690,6 +684,11 @@ mex_tile_init (MexTile *self)
   MexTilePrivate *priv = self->priv = TILE_PRIVATE (self);
   const ClutterColor opaque = { 0x00, 0x00, 0x00, 0x00 };
   ClutterEffect *fade;
+
+  /* create a template material for the header background from which cheap
+   * copies can be made for each instance */
+  if (G_UNLIKELY (!template_material))
+    template_material = cogl_material_new ();
 
   priv->material = cogl_material_copy (template_material);
 
