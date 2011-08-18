@@ -37,6 +37,7 @@ MEX_LOG_DOMAIN_EXTERN(applet_manager_log_domain);
 MEX_LOG_DOMAIN_EXTERN(channel_log_domain);
 MEX_LOG_DOMAIN_EXTERN(download_queue_log_domain);
 MEX_LOG_DOMAIN_EXTERN(surface_player_log_domain);
+MEX_LOG_DOMAIN_EXTERN(player_log_domain);
 
 void _mex_log_init_core_domains (void);
 void _mex_log_free_core_domains (void);
