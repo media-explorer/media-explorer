@@ -741,12 +741,15 @@ mex_content_from_uri (const gchar *uri)
 
   is_dvd = FALSE;
 
-  mime_guess = g_content_type_guess (uri, NULL, 0, NULL);
-
-  if (g_str_has_prefix (uri, "dvd"))
+  if (g_str_has_prefix (uri, "dvd") ||
+      g_str_has_prefix (uri, "vcd"))
     {
       is_dvd = TRUE;
       mime_guess = g_strdup ("video/dvd");
+    }
+  else
+    {
+      mime_guess = g_content_type_guess (uri, NULL, 0, NULL);
     }
 
   /* This is to stop us trying to create content for things we can't display
@@ -776,20 +779,23 @@ mex_content_from_uri (const gchar *uri)
 
   g_free (mime_guess);
 
-  filename = g_filename_from_uri (uri, NULL, NULL);
-  basename = g_filename_display_basename (filename);
+  if (!is_dvd)
+    {
+      filename = g_filename_from_uri (uri, NULL, NULL);
+      basename = g_filename_display_basename (filename);
 
-  g_free (filename);
+      g_free (filename);
 
-  mex_content_set_metadata (MEX_CONTENT (program),
-                            MEX_CONTENT_METADATA_TITLE, basename);
-  if (is_dvd)
+      mex_content_set_metadata (MEX_CONTENT (program),
+                                MEX_CONTENT_METADATA_TITLE, basename);
+
+      g_free (basename);
+    }
+  else
     {
       mex_content_set_metadata (MEX_CONTENT (program),
                                 MEX_CONTENT_METADATA_TITLE, "DVD");
     }
-
-  g_free (basename);
 
   mex_content_set_metadata (MEX_CONTENT (program),
                             MEX_CONTENT_METADATA_SYNOPSIS,
