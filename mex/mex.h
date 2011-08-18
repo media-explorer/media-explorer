@@ -62,6 +62,7 @@
 #include <mex/mex-grilo-tracker-feed.h>
 #include <mex/mex-info-bar.h>
 #include <mex/mex-info-panel.h>
+#include <mex/mex-lirc.h>
 #include <mex/mex-log.h>
 #include <mex/mex-logo-provider.h>
 #include <mex/mex-main.h>

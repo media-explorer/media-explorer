@@ -2099,13 +2099,21 @@ main (int argc, char **argv)
   g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
   if (!g_option_context_parse (context, &argc, &argv, &error))
     {
-      g_print ("Failed to parse options: %s\n", error->message);
+      g_warning ("Failed to parse options: %s", error->message);
       exit (1);
     }
   g_option_context_free (context);
 
+  if (!clutter_init (&argc, &argv))
+    {
+      g_warning ("Failed to initialize clutter");
+      exit (1);
+    }
+
   /* Initialisation */
   mex_init (&argc, &argv);
+
+  mex_lirc_init ();
 
 #ifdef USE_PLAYER_CLUTTER_GST
   clutter_gst_init (&argc, &argv);
@@ -2630,6 +2638,7 @@ main (int argc, char **argv)
   g_object_unref (app);
 
   gst_deinit ();
+  mex_lirc_deinit ();
   mex_deinit ();
 #endif
 
