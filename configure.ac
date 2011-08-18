@@ -111,7 +111,7 @@ AS_CASE([$with_profile],
           mex_default_enable_networks=no
           mex_default_enable_lirc=yes
 
-          PROFILE_PLUGINS="bg-video,gnome-dvb"
+          PROFILE_PLUGINS="gnome-dvb"
         ],
 
         [intelce],
@@ -120,7 +120,7 @@ AS_CASE([$with_profile],
           mex_default_enable_networks=yes
           mex_default_enable_lirc=no
 
-          PROFILE_PLUGINS="bg-dbusvideo"
+          PROFILE_PLUGINS=""
         ],
 
         [AC_MSG_ERROR([Unknown profile $with_profile])])
@@ -157,12 +157,14 @@ AS_CASE([$with_player],
           AC_DEFINE([USE_PLAYER_CLUTTER_GST], 1, [Use "clutter-gst" for
                      playback])
           player_deps="clutter-gst-1.0 >= $CLUTTER_GST_REQ_VERSION"
+          PROFILE_PLUGINS+=" bg-video"
         ],
 
         [d-bus],
         [
           AC_DEFINE([USE_PLAYER_DBUS], 1, [Use "d-bus" for playback])
           player_deps="gstreamer-0.10"
+          PROFILE_PLUGINS+=" bg-dbusvideo"
         ],
 
         [surface],
