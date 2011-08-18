@@ -3,7 +3,10 @@ libexec_PROGRAMS = mex-media-player
 mex_media_player_CFLAGS = $(MEX_CFLAGS) \
 	$(MEX_MAINTAINER_CFLAGS)	\
 	$(MEX_DEBUG_CFLAGS) 		\
-	-I$(top_srcdir)
+	-I$(top_srcdir)			\
+	-I$(top_srcdir)/mex		\
+	-DG_LOG_DOMAIN=\"Mex-Player\"
+
 
 mex_media_player_LDADD =					\
 	$(MEX_LIBS)						\

@@ -22,8 +22,8 @@
 #include <gst/gst.h>
 #include <stdlib.h>
 
+#include <mex/mex.h>
 #include <mex/mex-media-dbus-bridge.h>
-#include <mex/mex-player-common.h>
 #include <mex/mex-surface-player.h>
 
 int
@@ -37,6 +37,7 @@ main (int    argc,
 
   g_thread_init (NULL);
   gst_init (&argc, &argv);
+  mex_init (&argc, &argv);
 
   media = mex_surface_player_new ();
   bridge = mex_media_dbus_bridge_new (CLUTTER_MEDIA (media));
