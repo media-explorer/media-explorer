@@ -17,9 +17,13 @@
  */
 
 #include "mex-surface-player.h"
+#include "mex-log.h"
 
 #include <gst/gst.h>
 #include <clutter/clutter.h>
+
+#define MEX_LOG_DOMAIN_DEFAULT  surface_player_log_domain
+MEX_LOG_DOMAIN(surface_player_log_domain);
 
 static void clutter_media_iface_init (ClutterMediaIface *iface);
 
@@ -244,6 +248,8 @@ mex_surface_player_update_duration (MexSurfacePlayer *player)
 
   new_duration = (gdouble) duration / GST_SECOND;
 
+  MEX_DEBUG ("update duration : %f", new_duration);
+
   /* while we store the new duration if it sligthly changes, the duration
    * signal is sent only if the new duration is at least one second different
    * from the old one (as the duration signal is mainly used to update the
@@ -268,6 +274,9 @@ bus_message_error_cb (GstBus           *bus,
   GError *error = NULL;
 
   gst_message_parse_error (message, &error, NULL);
+
+  MEX_DEBUG ("error : %s", error->message);
+
   g_signal_emit_by_name (player, "error", error);
   g_error_free (error);
 }
@@ -292,6 +301,9 @@ bus_message_buffering_cb (GstBus           *bus,
       priv->buffer_fill = CLAMP ((gdouble) buffer_percent / 100.0,
                                  0.0,
                                  1.0);
+
+      MEX_DEBUG ("buffering : %f", priv->buffer_fill);
+
       g_object_notify (G_OBJECT (player), "buffer-fill");
     }
 }
@@ -301,6 +313,8 @@ bus_message_eos_cb (GstBus           *bus,
                     GstMessage       *message,
                     MexSurfacePlayer *player)
 {
+  MEX_DEBUG ("end-of-stream");
+
   g_object_notify (G_OBJECT (player), "progress");
   g_signal_emit_by_name (player, "eos");
 }
@@ -330,6 +344,7 @@ bus_message_state_change_cb (GstBus                  *bus,
   MexSurfacePlayerPrivate *priv = player->priv;
   GstState old_state, new_state;
   gpointer src;
+  GEnumValue *old_state_value, *new_state_value;
 
   src = GST_MESSAGE_SRC (message);
   if (src != priv->pipeline)
@@ -337,8 +352,17 @@ bus_message_state_change_cb (GstBus                  *bus,
 
   gst_message_parse_state_changed (message, &old_state, &new_state, NULL);
 
-  if (old_state == GST_STATE_READY && 
-      new_state == GST_STATE_PAUSED) 
+  old_state_value =  g_enum_get_value (g_type_class_peek (GST_TYPE_STATE),
+                                       old_state);
+  new_state_value =  g_enum_get_value (g_type_class_peek (GST_TYPE_STATE),
+                                       new_state);
+
+  MEX_DEBUG ("state change : %s -> %s",
+             old_state_value->value_nick,
+             new_state_value->value_nick);
+
+  if (old_state == GST_STATE_READY &&
+      new_state == GST_STATE_PAUSED)
     {
       GstQuery *query;
 
@@ -407,6 +431,8 @@ mex_surface_player_init (MexSurfacePlayer *self)
 {
   MexSurfacePlayerPrivate *priv;
   GstBus *bus;
+
+  MEX_DEBUG ("init");
 
   self->priv = SURFACE_PLAYER_PRIVATE (self);
   priv = self->priv;
@@ -478,6 +504,8 @@ mex_surface_player_set_uri (MexSurfacePlayer *player,
   if (!priv->pipeline)
     return;
 
+  MEX_DEBUG ("set uri : %s -> %s", priv->uri, uri);
+
   g_free (priv->uri);
 
   if (uri)
@@ -485,7 +513,7 @@ mex_surface_player_set_uri (MexSurfacePlayer *player,
       priv->uri = g_strdup (uri);
 
       /* Ensure the tick timeout is installed.
-       * 
+       *
        * We also have it installed in PAUSED state, because
        * seeks etc may have a delayed effect on the position.
        */
@@ -495,7 +523,7 @@ mex_surface_player_set_uri (MexSurfacePlayer *player,
             g_timeout_add (TICK_TIMEOUT * 1000, tick_timeout_cb, player);
         }
     }
-  else 
+  else
     {
       priv->uri = NULL;
 
@@ -543,6 +571,8 @@ mex_surface_player_set_playing (MexSurfacePlayer *player,
   if (!priv->pipeline)
     return;
 
+  MEX_DEBUG ("set playing : %i", playing);
+
   if (priv->uri)
     {
       GstState state = GST_STATE_PAUSED;
@@ -553,8 +583,8 @@ mex_surface_player_set_playing (MexSurfacePlayer *player,
       priv->in_seek = FALSE;
 
       gst_element_set_state (priv->pipeline, state);
-    } 
-  else 
+    }
+  else
     {
       if (playing)
         g_warning ("Unable to start playing: no URI is set");
@@ -595,6 +625,8 @@ mex_surface_player_set_progress (MexSurfacePlayer *player,
 
   if (!priv->pipeline)
     return;
+
+  MEX_DEBUG ("set progress : %f", progress);
 
   priv->target_progress = progress;
 
@@ -688,6 +720,8 @@ mex_surface_player_set_audio_volume (MexSurfacePlayer *player,
 
   if (!priv->pipeline)
     return;
+
+  MEX_DEBUG ("set audio volume : %f", volume);
 
   /* the :volume property is in the [0, 10] interval */
   g_object_set (G_OBJECT (priv->pipeline), "volume", volume * 10.0, NULL);
