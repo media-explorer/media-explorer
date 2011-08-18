@@ -1988,7 +1988,7 @@ mex_open_group_cb (MxAction *action,
   g_object_set (content, "last-position-start", FALSE, NULL);
   mex_content_view_set_context (MEX_CONTENT_VIEW (data->player), model);
 
-  content = mex_model_get_content (model, 1);
+  content = mex_model_get_content (model, 0);
   mex_content_view_set_content (MEX_CONTENT_VIEW (data->player), content);
 
   /* hide other actors */
