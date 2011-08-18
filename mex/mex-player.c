@@ -49,6 +49,11 @@
 #include "mex-media-controls.h"
 #include "mex-screensaver.h"
 #include "mex-info-panel.h"
+#include "mex-log.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  player_log_domain
+MEX_LOG_DOMAIN(player_log_domain);
+
 static void mex_player_content_view_iface_init (MexContentViewIface *iface);
 static void mex_player_focusable_iface_init (MxFocusableIface *iface);
 
@@ -938,6 +943,7 @@ mex_get_stream_cb (MexProgram   *program,
     }
 #endif
 
+  MEX_DEBUG ("set uri %s", url);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), url);
   generic_content = MEX_GENERIC_CONTENT (priv->content);
   if (mex_generic_content_get_last_position_start (generic_content))
@@ -950,6 +956,7 @@ mex_player_quit (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
 
+  MEX_DEBUG ("quit");
   save_old_content (player);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), NULL);
   clutter_media_set_playing (priv->media, FALSE);
@@ -961,6 +968,7 @@ mex_player_stop (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
 
+  MEX_DEBUG ("stop");
   save_old_content (player);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), NULL);
   clutter_media_set_playing (priv->media, FALSE);
@@ -971,6 +979,7 @@ mex_player_pause (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
 
+  MEX_DEBUG ("pause");
   clutter_media_set_playing (priv->media, FALSE);
 }
 
@@ -979,6 +988,7 @@ mex_player_play (MexPlayer *player)
 {
   MexPlayerPrivate *priv = player->priv;
 
+  MEX_DEBUG ("play");
   clutter_media_set_playing (priv->media, TRUE);
 }
 
@@ -988,10 +998,10 @@ player_forward_rewind (MexPlayer *player, gboolean increment)
   MexPlayerPrivate *priv = player->priv;
 
   gdouble duration;
-  gfloat progress;
+  gfloat old_progress, new_progress;
 
   duration = clutter_media_get_duration (priv->media);
-  progress = clutter_media_get_progress (priv->media);
+  old_progress = clutter_media_get_progress (priv->media);
 
   /* If/when clutter gst supports trickmode we could implement
    *  that here instead
@@ -999,13 +1009,15 @@ player_forward_rewind (MexPlayer *player, gboolean increment)
    */
 
   if (increment)
-    progress = MIN (1.0, ((duration * progress) + 10) / duration);
+    new_progress = MIN (1.0, ((duration * old_progress) + 10) / duration);
   else
-    progress = MAX (0.0, ((duration * progress) - 10) / duration);
+    new_progress = MAX (0.0, ((duration * old_progress) - 10) / duration);
 
   mex_player_set_controls_visible (player, TRUE);
 
-  clutter_media_set_progress (priv->media, progress);
+  MEX_DEBUG ("rewind %f -> %f", old_progress, new_progress);
+
+  clutter_media_set_progress (priv->media, new_progress);
 }
 
 void
