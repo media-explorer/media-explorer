@@ -143,6 +143,22 @@ dist_mex_dbusinput_DATA =
 50mex_dbusinput_la_LIBADD  = $(_libadd)
 endif
 
+if USE_PLUGIN_OPTICALDISC
+plugins_LTLIBRARIES += 50mex-opticaldisc.la
+
+mex_opticaldiscdir = $(plugin_datadir)/opticaldisc
+dist_mex_opticaldisc_DATA =
+
+50mex_opticaldisc_la_SOURCES =			\
+	optical-disc/mex-opticaldisc-plugin.c	\
+	optical-disc/mex-opticaldisc-plugin.h	\
+	$(NULL)
+50mex_opticaldisc_la_CFLAGS  = 			\
+	-DG_LOG_DOMAIN=\"Mex-Opticaldisc\"	\
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_opticaldisc_datadir)\"
+50mex_opticaldisc_la_LIBADD  = $(_libadd)
+endif
+
 if USE_PLUGIN_BLIPTV
 plugins_LTLIBRARIES += 40mex-bliptv.la
 

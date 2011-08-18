@@ -443,7 +443,7 @@ AS_CASE([$clutter_soname],
 )
 
 # Default list of plugins to compile
-WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv"
+WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,opticaldisc"
 WITHOUT_PLUGINS="bg-backdrop"
 
 # the debug plugin is enabled in debug mode
@@ -472,6 +472,7 @@ AS_MEX_PLUGIN(bliptv)
 AS_MEX_PLUGIN(justintv)
 AS_MEX_PLUGIN(debug)
 AS_MEX_PLUGIN(gnome-dvb)
+AS_MEX_PLUGIN(opticaldisc)
 
 AC_CONFIG_FILES([
   Makefile
