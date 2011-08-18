@@ -413,6 +413,7 @@ static void
 mex_content_box_paint (ClutterActor *actor)
 {
   MexContentBoxPrivate *priv = MEX_CONTENT_BOX (actor)->priv;
+  gboolean clipped = FALSE;
 
   CLUTTER_ACTOR_CLASS (mex_content_box_parent_class)->paint (actor);
 
@@ -421,6 +422,7 @@ mex_content_box_paint (ClutterActor *actor)
       ClutterActorBox box;
       clutter_actor_get_allocation_box (actor, &box);
       cogl_clip_push_rectangle (0, 0, box.x2 - box.x1, box.y2 - box.y1);
+      clipped = TRUE;
     }
 
   clutter_actor_paint (priv->tile);
@@ -439,7 +441,7 @@ mex_content_box_paint (ClutterActor *actor)
       cogl_path_stroke ();
     }
 
-  if (G_UNLIKELY (priv->clip_to_allocation))
+  if (G_UNLIKELY (clipped))
     cogl_clip_pop ();
 }
 
