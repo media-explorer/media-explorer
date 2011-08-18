@@ -327,6 +327,7 @@ _mex_log_init_core_domains (void)
   DOMAIN_INIT (applet_manager_log_domain, "applet-manager");
   DOMAIN_INIT (channel_log_domain, "channel");
   DOMAIN_INIT (download_queue_log_domain, "download-queue");
+  DOMAIN_INIT (surface_player_log_domain, "surface-player");
 
   /* Retrieve the MEX_DEBUG environment variable, initialize core domains from
    * it if applicable and keep it for mex_log_domain_new(). Plugins are using
