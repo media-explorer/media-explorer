@@ -1,5 +1,5 @@
 /* Default Styles */
-MxLabel, MxButton, MxIcon
+MxLabel, MxButton, MxIcon, MxComboBox
 {
   font-size: 18;
   font-family: "Droid Sans";
@@ -8,7 +8,14 @@ MxLabel, MxButton, MxIcon
   color: white;
 }
 
-MxButton, MxButton:checked, MxButton:hover, MxButton:active, MxButton:disabled
+MxMenu
+{
+  border-image: none;
+  background-color: #1e1821e5;
+}
+
+MxButton, MxButton:checked, MxButton:hover, MxButton:active, MxButton:disabled,
+MxMenu > MxButton, MxMenu > MxButton:hover, MxMenu > MxButton:disabled
 {
   border-image: none;
   padding: 11 15;
@@ -19,13 +26,20 @@ MxEntry
   font-size: 18;
 }
 
-MxButton:focus
+MxComboBox:focus, MxButton:focus,
+MxMenu > MxButton:focus
 {
   border-image: url("highlight-bg.png") 0;
   color: #464541;
 }
 
-MxButton:focus MxLabel
+MxMenu > MxButton:focus
+{
+  padding: 11 15;
+}
+
+MxButton:focus MxLabel,
+MxMenu > MxButton:hover > MxLabel
 {
   color: #464541;
 }
