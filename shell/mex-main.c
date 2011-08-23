@@ -2586,7 +2586,9 @@ main (int argc, char **argv)
     }
 
 #if HAVE_WEBREMOTE
-  if (web_settings_loc = mex_settings_find_config_file (mex_settings_get_default (), "mex-webremote.conf"))
+  web_settings_loc = mex_settings_find_config_file (mex_settings_get_default (),
+                                                    "mex-webremote.conf");
+  if (web_settings_loc)
     {
       GKeyFile *web_settings;
       GError *error = NULL;
