@@ -26,6 +26,8 @@
 #include <libgen.h>
 #include <signal.h>
 
+#include <locale.h>
+
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
 #include <grilo.h>
@@ -2070,6 +2072,13 @@ main (int argc, char **argv)
   MexActionInfo show = { 0, };
   MexActionInfo back = { 0, };
   MexActionInfo group = { 0, };
+
+
+  /* initialise translations */
+  setlocale (LC_ALL, "");
+  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+  textdomain (GETTEXT_PACKAGE);
 
   /* FIXME: Replace this with a configuration file */
   MexModelCategoryInfo videos = { "videos", _("Videos"), "icon-panelheader-videos", 20, _("Connect an external drive or update your network settings to see Videos here.") };
