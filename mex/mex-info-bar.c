@@ -404,7 +404,7 @@ _create_power_dialog (MexInfoBar *self)
   dialog = mx_dialog_new ();
   mx_stylable_set_style_class (MX_STYLABLE (dialog), "MexInfoBarDialog");
 
-  dialog_label = mx_label_new_with_text ("Close Media Explorer?");
+  dialog_label = mx_label_new_with_text (_("Close Media Explorer?"));
   mx_stylable_set_style_class (MX_STYLABLE (dialog_label), "DialogHeader");
   mx_bin_set_child (MX_BIN (dialog), dialog_label);
 

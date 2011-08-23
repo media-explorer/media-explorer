@@ -598,7 +598,7 @@ mex_order_menu_cb (MxAction    *action,
   mex_menu_push (MEX_MENU (priv->menu_layout));
 
   /* add header */
-  header = mx_label_new_with_text ("Order by");
+  header = mx_label_new_with_text (_("Order by"));
   mx_stylable_set_style_class (MX_STYLABLE (header), "Header");
   mx_label_set_y_align (MX_LABEL (header), MX_ALIGN_MIDDLE);
 
