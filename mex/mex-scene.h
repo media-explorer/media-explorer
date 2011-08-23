@@ -29,10 +29,6 @@
 typedef struct _MexScene MexScene;
 typedef struct _MexSceneInterface MexSceneInterface;
 
-struct _MexScene
-{
-};
-
 struct _MexSceneInterface
 {
   GTypeInterface g_iface;
