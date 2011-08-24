@@ -1,3 +1,4 @@
 *.pot
+*.gmo
 Makefile.in.in
 POTFILES
