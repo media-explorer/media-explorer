@@ -196,51 +196,51 @@ msgstr "Écouter"
 #: ../mex/mex-info-panel.c:547 ../mex/mex-info-panel.c:577
 #: ../mex/mex-info-panel.c:625
 msgid "Date added: "
-msgstr "Ajouté le :"
+msgstr "Ajouté le : "
 
 #: ../mex/mex-info-panel.c:552
 msgid "Date taken: "
-msgstr "Prise le :"
+msgstr "Prise le : "
 
 #: ../mex/mex-info-panel.c:557
 msgid "Camera model: "
-msgstr "Modèle :"
+msgstr "Modèle : "
 
 #: ../mex/mex-info-panel.c:562
 msgid "Width: "
-msgstr "Largeur :"
+msgstr "Largeur : "
 
 #: ../mex/mex-info-panel.c:567
 msgid "Height: "
-msgstr "Hauteur :"
+msgstr "Hauteur : "
 
 #: ../mex/mex-info-panel.c:582 ../mex/mex-info-panel.c:610
 msgid "Resume from: "
-msgstr "Reprendre de :"
+msgstr "Reprendre de : "
 
 #: ../mex/mex-info-panel.c:587 ../mex/mex-info-panel.c:615
 msgid "Duration: "
-msgstr "Durée :"
+msgstr "Durée : "
 
 #: ../mex/mex-info-panel.c:592
 msgid "Description: "
-msgstr "Description :"
+msgstr "Description : "
 
 #: ../mex/mex-info-panel.c:600
 msgid "Artist: "
-msgstr "Artiste :"
+msgstr "Artiste : "
 
 #: ../mex/mex-info-panel.c:605
 msgid "Album: "
-msgstr "Album :"
+msgstr "Album : "
 
 #: ../mex/mex-info-panel.c:620
 msgid "Plays: "
-msgstr "Joue :"
+msgstr "Joue : "
 
 #: ../mex/mex-metadata-utils.c:257
 msgid "Less than a minute"
-msgstr "Moins d'une minute"
+msgstr "moins d'une minute"
 
 #: ../mex/mex-metadata-utils.c:263
 msgid "minute"
