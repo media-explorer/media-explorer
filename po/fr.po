@@ -331,7 +331,7 @@ msgstr "Suggestion de Google"
 
 #: ../plugins/tracker/mex-tracker-plugin.c:207
 msgid "Show Folders"
-msgstr "Voir les répertoires"
+msgstr "Voir les dossiers"
 
 #: ../shell/mex-main.c:202
 msgid "Dismiss"
@@ -403,7 +403,7 @@ msgstr "Voir"
 
 #: ../shell/mex-main.c:2456
 msgid "Open folder"
-msgstr "Ouvrir le répertoire"
+msgstr "Ouvrir le dossier"
 
 #: ../shell/mex-main.c:2471
 msgid "Listen from start"
