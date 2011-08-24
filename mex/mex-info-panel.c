@@ -236,6 +236,42 @@ _watch_button_pressed_cb (ClutterActor *actor, MexInfoPanel *self)
 }
 
 static void
+audio_combo_box_notify (MxComboBox   *box,
+                        GParamSpec   *pspec,
+                        MexInfoPanel *panel)
+{
+  MexInfoPanelPrivate *priv = panel->priv;
+  ClutterGstVideoTexture *video_texture;
+  GList *list;
+  gchar *title;
+  gint index_;
+
+  index_ = mx_combo_box_get_index (box);
+
+  /* index is -1 when the custom text is set */
+  if (index_ < 0)
+    return;
+
+  if (!CLUTTER_GST_IS_VIDEO_TEXTURE (priv->media))
+    return;
+
+  video_texture = CLUTTER_GST_VIDEO_TEXTURE (priv->media);
+
+
+  clutter_gst_video_texture_set_audio_stream (video_texture, index_);
+
+  list = clutter_gst_video_texture_get_audio_streams (video_texture);
+
+  /* audio track */
+  title = g_strdup_printf (_("Audio (%s)"),
+                           g_list_nth_data (list, index_));
+
+  mx_combo_box_set_active_text (MX_COMBO_BOX (priv->audio_combo_box), title);
+
+  g_free (title);
+}
+
+static void
 mex_info_panel_constructed (GObject *object)
 {
   ClutterActor *root;
@@ -296,6 +332,9 @@ mex_info_panel_constructed (GObject *object)
       clutter_actor_hide (priv->audio_combo_box);
 
       clutter_actor_add_effect (root, CLUTTER_EFFECT (mex_shadow_new ()));
+
+      g_signal_connect (priv->audio_combo_box, "notify::index",
+                        G_CALLBACK (audio_combo_box_notify), self);
     }
   else
     {
