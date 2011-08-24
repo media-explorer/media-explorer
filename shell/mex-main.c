@@ -199,6 +199,8 @@ mex_player_media_error_cb (ClutterMedia *media,
 
   if (!data->error_dialog)
     {
+      /* TRANSLATORS: This is the label on the button pressed to close a modal
+         error dialog */
       action = mx_action_new_full ("dismiss", _("Dismiss"),
                                    (GCallback)error_dialog_dismiss_action_cb,
                                    data);
