@@ -319,7 +319,7 @@ msgstr "Aucune vidéo trouvée"
 #: ../plugins/search/mex-search-plugin.c:730
 #: ../plugins/search/mex-search-plugin.c:741
 msgid "Search"
-msgstr "Chercher"
+msgstr "Recherche"
 
 #: ../plugins/search/mex-search-plugin.c:749
 msgid "Suggestions"
