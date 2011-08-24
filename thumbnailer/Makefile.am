@@ -2,6 +2,7 @@ libexec_PROGRAMS = mex-thumbnailer
 
 mex_thumbnailer_SOURCES = mex-thumbnailer-internal.c
 mex_thumbnailer_CFLAGS = 		\
+	-I$(top_srcdir)			\
 	-I$(top_srcdir)/mex		\
 	$(MEX_DEBUG_CFLAGS)		\
 	$(MEX_CFLAGS)			\
