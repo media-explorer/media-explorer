@@ -1,0 +1,418 @@
+# French translation for media explorer
+# Copyright (C) 2011 Intel Corporation
+# This file is distributed under the same license as the media explorer package.
+# Damien Lespiau <damien.lespiau@intel.com>, 2011.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-08-24 14:04+0100\n"
+"PO-Revision-Date: 2011-08-24 15:00+0100\n"
+"Last-Translator: Damien Lespiau <damien.lespiau@intel.com>\n"
+"Language-Team: None\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. TRANSLATORS: Info label in the service data input page.
+#. Placeholder is the name of the wireless network.
+#: ../applets/networks/mtn-app.c:233
+#, c-format
+msgid "<b>%s</b> requires a WPA password"
+msgstr ""
+
+#. TRANSLATORS: Info label in the service data input page.
+#. Placeholder is the name of the wireless network.
+#: ../applets/networks/mtn-app.c:238
+#, c-format
+msgid "<b>%s</b> requires a WEP password"
+msgstr ""
+
+#. TRANSLATORS: Info label in the service data input page.
+#. Placeholder is the name of the wireless network.
+#: ../applets/networks/mtn-app.c:243
+#, c-format
+msgid "<b>%s</b> requires a password"
+msgstr ""
+
+#. TRANSLATORS: Button label, clicking skips this step in the
+#. first-boot process.
+#: ../applets/networks/mtn-app.c:270
+msgid "Do later"
+msgstr ""
+
+#. TRANSLATORS: Button label. If user is on some other page,
+#. clicking will return back to first page. If user is in
+#. the first page, will return the user to previous setup
+#. app (in first boot mode), or to Settings
+#: ../applets/networks/mtn-app.c:277 ../shell/mex-main.c:2407
+msgid "Back"
+msgstr ""
+
+#. TRANSLATORS: Back-button label when connection failed.
+#. Will take user back to first page.
+#: ../applets/networks/mtn-app.c:284
+msgid "Try again..."
+msgstr ""
+
+#. TRANSLATORS: Button label, clicking will go to the next
+#. page
+#: ../applets/networks/mtn-app.c:298
+msgid "Next"
+msgstr ""
+
+#. TRANSLATORS: Button label, clicking starts the connection
+#. attempt to the network
+#: ../applets/networks/mtn-app.c:315
+msgid "Join"
+msgstr ""
+
+#. TRANSLATORS: Title at the top of the UI.
+#. This version will appear when running in "first-boot" mode,
+#. please make sure the string matches the format used in the
+#. other "first-boot" applications.
+#: ../applets/networks/mtn-app.c:396
+msgid "Step 2: Join a network"
+msgstr ""
+
+#. TRANSLATORS: Title at the top of the UI.
+#. This version will appear when started from Settings.
+#: ../applets/networks/mtn-app.c:400
+msgid "Join a network"
+msgstr ""
+
+#. TRANSLATORS: label to the left of a password entry. Max length
+#. is around 28 characters
+#: ../applets/networks/mtn-app.c:1226
+msgid "Password:"
+msgstr ""
+
+#. TRANSLATORS: label above the buttons for selecting security
+#. method ('None', 'WEP', 'WPA').
+#: ../applets/networks/mtn-app.c:1277
+msgid "Choose a security option:"
+msgstr ""
+
+#. TRANSLATORS: Button for selecting the security method
+#. for hidden network. 'None' means no security.
+#: ../applets/networks/mtn-app.c:1288
+msgid "None"
+msgstr ""
+
+#. TRANSLATORS: Button for selecting the security method
+#. for hidden network. 'WEP' probably needs no translation.
+#: ../applets/networks/mtn-app.c:1302
+msgid "WEP"
+msgstr ""
+
+#. TRANSLATORS: Button for selecting the security method
+#. for hidden network. 'WPA' probably needs no translation.
+#: ../applets/networks/mtn-app.c:1315
+msgid "WPA"
+msgstr ""
+
+#. TRANSLATORS: label to the left of a SSID entry. Max length is
+#. around 27 characters
+#: ../applets/networks/mtn-app.c:1351
+msgid "Enter network name:"
+msgstr ""
+
+#: ../applets/networks/mtn-app.c:1449
+msgid "Sorry, we can't find any networks."
+msgstr ""
+
+#. TRANSLATORS: Button on main page. Opens the input page for
+#. hidden connection details input.
+#: ../applets/networks/mtn-app.c:1466
+msgid "Join other network..."
+msgstr ""
+
+#: ../mex/mex-gio-notification-source.c:97
+#, c-format
+msgid "Device \"%s\" plugged in"
+msgstr "Périphérique \"%s\" connecté"
+
+#: ../mex/mex-gio-notification-source.c:137
+#, c-format
+msgid "Device \"%s\" removed"
+msgstr "Périphérique \"%s\" déconnecté"
+
+#. add header
+#: ../mex/mex-grid-view.c:601 ../mex/mex-grid-view.c:710
+msgid "Order by"
+msgstr "Trier par"
+
+#: ../mex/mex-grid-view.c:695
+msgid "Clear queue"
+msgstr "Vider la liste de lecture"
+
+#: ../mex/mex-grid-view.c:726
+msgid "Unsorted"
+msgstr "Non trié"
+
+#: ../mex/mex-info-bar.c:407
+msgid "Close Media Explorer?"
+msgstr "Fermer Media Explorer ?"
+
+#: ../mex/mex-info-bar.c:411
+msgid "Yes"
+msgstr "Oui"
+
+#: ../mex/mex-info-bar.c:414
+msgid "No"
+msgstr "Non"
+
+#: ../mex/mex-info-bar.c:442
+msgid "Settings"
+msgstr "Paramètres"
+
+#: ../mex/mex-info-bar.c:452 ../shell/mex-main.c:1939
+msgid "Close"
+msgstr "Fermer"
+
+#: ../mex/mex-info-bar.c:476
+msgid "Remote mapping"
+msgstr "Télécommande"
+
+#: ../mex/mex-info-bar.c:503
+msgid "Network"
+msgstr "Réseau"
+
+#: ../mex/mex-info-bar.c:520
+msgid "No settings helpers installed"
+msgstr "Aucun applet de configuration installé"
+
+#: ../mex/mex-info-panel.c:484 ../shell/mex-main.c:2434
+msgid "Watch"
+msgstr "Regarder"
+
+#: ../mex/mex-info-panel.c:491 ../shell/mex-main.c:2464
+msgid "Listen"
+msgstr "Écouter"
+
+#: ../mex/mex-info-panel.c:547 ../mex/mex-info-panel.c:577
+#: ../mex/mex-info-panel.c:625
+msgid "Date added: "
+msgstr "Ajouté le :"
+
+#: ../mex/mex-info-panel.c:552
+msgid "Date taken: "
+msgstr "Prise le :"
+
+#: ../mex/mex-info-panel.c:557
+msgid "Camera model: "
+msgstr "Modèle :"
+
+#: ../mex/mex-info-panel.c:562
+msgid "Width: "
+msgstr "Largeur :"
+
+#: ../mex/mex-info-panel.c:567
+msgid "Height: "
+msgstr "Hauteur :"
+
+#: ../mex/mex-info-panel.c:582 ../mex/mex-info-panel.c:610
+msgid "Resume from: "
+msgstr "Reprendre de :"
+
+#: ../mex/mex-info-panel.c:587 ../mex/mex-info-panel.c:615
+msgid "Duration: "
+msgstr "Durée :"
+
+#: ../mex/mex-info-panel.c:592
+msgid "Description: "
+msgstr "Description :"
+
+#: ../mex/mex-info-panel.c:600
+msgid "Artist: "
+msgstr "Artiste :"
+
+#: ../mex/mex-info-panel.c:605
+msgid "Album: "
+msgstr "Album :"
+
+#: ../mex/mex-info-panel.c:620
+msgid "Plays: "
+msgstr "Joue :"
+
+#: ../mex/mex-metadata-utils.c:257
+msgid "Less than a minute"
+msgstr "Moins d'une minute"
+
+#: ../mex/mex-metadata-utils.c:263
+msgid "minute"
+msgstr "minute"
+
+#: ../mex/mex-metadata-utils.c:264
+msgid "minutes"
+msgstr "minutes"
+
+#: ../mex/mex-network-notification-source.c:108
+msgid "Network connection established"
+msgstr "Connexion au réseau établie"
+
+#: ../mex/mex-network-notification-source.c:118
+msgid "Network connection lost"
+msgstr "Connexion au réseau perdue"
+
+#: ../mex/mex-queue-button.c:345
+msgid "Remove from queue"
+msgstr "Enlever de la liste de lecture"
+
+#: ../mex/mex-queue-button.c:356 ../plugins/queue/mex-queue-plugin.c:114
+msgid "Add to queue"
+msgstr "Ajouter à la liste de lecture"
+
+#: ../mex/mex-queue-button.c:370
+msgid "Adding to queue"
+msgstr "Ajout"
+
+#: ../mex/mex-queue-model.c:211 ../shell/mex-main.c:2088
+msgid "Queue"
+msgstr "Liste de lecture"
+
+#: ../mex/mex-utils.c:559
+msgid "Unseen"
+msgstr "Non vu"
+
+#: ../mex/mex-utils.c:562
+msgid "A to Z"
+msgstr "A à Z"
+
+#: ../mex/mex-utils.c:565
+msgid "Z to A"
+msgstr "Z à A"
+
+#: ../mex/mex-utils.c:568
+msgid "Newest"
+msgstr "Le plus récent"
+
+#: ../mex/mex-utils.c:571
+msgid "Oldest"
+msgstr "Le plus ancient"
+
+#: ../plugins/applications/mex-applications-plugin.c:185
+msgid "Applications"
+msgstr "Applications"
+
+#: ../plugins/applications/mex-applications-plugin.c:192
+msgid "Launch"
+msgstr "Lancer"
+
+#: ../plugins/gnome-dvb/mex-gnome-dvb-plugin.c:342
+msgid "TV"
+msgstr "TV"
+
+#: ../plugins/search/mex-search-plugin.c:367
+msgid "Search results"
+msgstr "Résultats de la recherche"
+
+#: ../plugins/search/mex-search-plugin.c:432
+msgid "No videos found"
+msgstr "Aucune vidéo trouvée"
+
+#. Create the history model and models list
+#: ../plugins/search/mex-search-plugin.c:723
+#: ../plugins/search/mex-search-plugin.c:730
+#: ../plugins/search/mex-search-plugin.c:741
+msgid "Search"
+msgstr "Recherche"
+
+#: ../plugins/search/mex-search-plugin.c:749
+msgid "Suggestions"
+msgstr "Suggestions"
+
+#: ../plugins/search/mex-search-plugin.c:749
+msgid "Google Suggestions"
+msgstr "Suggestion de Google"
+
+#: ../plugins/tracker/mex-tracker-plugin.c:207
+msgid "Show Folders"
+msgstr "Voir les répertoires"
+
+#: ../shell/mex-main.c:202
+msgid "Dismiss"
+msgstr "Ok"
+
+#: ../shell/mex-main.c:215
+#, c-format
+msgid "Error playing content: %s"
+msgstr "Une erreur est survenue: %s"
+
+#: ../shell/mex-main.c:1876
+msgid "Activate the column headers for more content"
+msgstr "Activez l'en-tête des colonne pour plus de contenu"
+
+#: ../shell/mex-main.c:1936
+msgid "This application requires at least 600 vertical pixels."
+msgstr "Cette application a besoin d'une résolution verticale d'au moins 600 pixels."
+
+#. FIXME: Replace this with a configuration file
+#: ../shell/mex-main.c:2084
+msgid "Videos"
+msgstr "Vidéos"
+
+#: ../shell/mex-main.c:2084
+msgid ""
+"Connect an external drive or update your network settings to see Videos here."
+msgstr "Connectez un disque dur amovible ou connectez-vous au réseau pour voir des vidéos apparaître ici."
+
+#: ../shell/mex-main.c:2085
+msgid "Live TV"
+msgstr "Télévision"
+
+#: ../shell/mex-main.c:2086
+msgid "Photos"
+msgstr "Photos"
+
+#: ../shell/mex-main.c:2086
+msgid ""
+"Connect an external drive or update your network settings to see Photos here."
+msgstr "Connectez un disque dur amovible ou connectez-vous au réseau pour voir des photos apparaître ici."
+
+#: ../shell/mex-main.c:2087
+msgid "Music"
+msgstr "Musique"
+
+#: ../shell/mex-main.c:2087
+msgid ""
+"Connect an external drive or update your network settings to see Music here."
+msgstr "Connectez un disque dur amovible ou connectez-vous au réseau pour voir des morceaux de musique apparaître ici."
+
+#: ../shell/mex-main.c:2088
+msgid ""
+"This is your custom playlist.  Select Add to queue from the info menu on any "
+"video file to add it here."
+msgstr "Ceci est votre liste de lecture. Sélectionnez \"Ajouter à la liste de lecture\" sur un morceau de musique ou une vidéo pour l'ajouter à cette liste. "
+
+#: ../shell/mex-main.c:2422
+msgid "Resume"
+msgstr "Reprendre"
+
+#: ../shell/mex-main.c:2441
+msgid "Watch from start"
+msgstr "Regarder depuis le début"
+
+#. View action (for pictures)
+#: ../shell/mex-main.c:2448 ../shell/mex-main.c:2479
+msgid "View"
+msgstr "Voir"
+
+#: ../shell/mex-main.c:2456
+msgid "Open folder"
+msgstr "Ouvrir le répertoire"
+
+#: ../shell/mex-main.c:2471
+msgid "Listen from start"
+msgstr "Écouter depuis le début"
+
+#: ../shell/mex-main.c:2487
+msgid "Go back"
+msgstr "Revenir"
+
+#: ../shell/mex-main.c:2493
+msgid "Play"
+msgstr "Jouer"
