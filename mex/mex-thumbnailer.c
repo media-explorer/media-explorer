@@ -127,6 +127,9 @@ mex_internal_thumbnail_start (ThumbnailData *data,
   gchar *argv[5], *output;
   GError *err = NULL;
 
+  if (!data->mime)
+    return;
+
   if (g_str_has_prefix (data->mime, "image/")
       || g_str_has_prefix (data->mime, "video/"))
     {
