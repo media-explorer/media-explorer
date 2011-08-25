@@ -40,6 +40,8 @@ dist_style_DATA = \
 	style/icon-fullscreen.png \
 	style/icon-home.png \
 	style/icon-info.png \
+	style/icon-mute.png \
+	style/icon-mute-highlight.png \
 	style/icon-pause-highlight.png \
 	style/icon-pause.png \
 	style/icon-play-highlight.png \
@@ -48,6 +50,8 @@ dist_style_DATA = \
 	style/icon-rotate.png \
 	style/icon-stop-highlight.png \
 	style/icon-stop.png \
+	style/icon-unmute.png \
+	style/icon-unmute-highlight.png \
 	style/item-title-bg.png \
 	style/label-bg.png \
 	style/main-bg.png \

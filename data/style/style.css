@@ -256,6 +256,26 @@ MxButton.MediaPause:focus
   -mx-content-image: url("icon-pause-highlight.png");
 }
 
+MxButton.MediaMute
+{
+  -mx-content-image: url("icon-mute.png");
+}
+
+MxButton.MediaMute:focus
+{
+  -mx-content-image: url("icon-mute-highlight.png");
+}
+
+MxButton.MediaUnmute
+{
+  -mx-content-image: url("icon-unmute.png");
+}
+
+MxButton.MediaUnmute:focus
+{
+  -mx-content-image: url("icon-unmute-highlight.png");
+}
+
 MxButton.MediaStop
 {
   -mx-content-image: url("icon-stop.png");
