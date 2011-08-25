@@ -94,6 +94,8 @@ struct _MexPlayerPrivate
 
   guint playing_from_queue : 1;
 
+  guint disable_media_controls : 1;
+
   gdouble position;
   gdouble current_position;
   guint   duration;
@@ -179,7 +181,21 @@ mex_player_set_content (MexContentView *view,
 
   if (content)
     {
-      const gchar *sposition, *sduration;
+      const gchar *sposition, *sduration, *mimetype;
+
+      mimetype = mex_content_get_metadata (content,
+                                           MEX_CONTENT_METADATA_MIMETYPE);
+
+      /* disable the media controls when playing dvd video */
+      priv->disable_media_controls = !g_strcmp0 (mimetype, "video/dvd");
+
+
+      if (priv->disable_media_controls && CLUTTER_IS_ACTOR (priv->media))
+        {
+          clutter_actor_grab_key_focus (priv->media);
+          clutter_actor_set_reactive (priv->media,
+                                      priv->disable_media_controls);
+        }
 
       if (priv->content)
         {
@@ -585,6 +601,9 @@ mex_player_set_controls_visible (MexPlayer *player,
   gfloat pos;
   ClutterStage *stage;
   MxFocusManager *fmanager;
+
+  if (priv->disable_media_controls)
+    visible = FALSE;
 
   stage = (ClutterStage*) clutter_actor_get_stage (CLUTTER_ACTOR (player));
 
