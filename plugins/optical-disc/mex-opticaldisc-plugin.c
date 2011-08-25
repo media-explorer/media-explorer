@@ -315,6 +315,7 @@ mex_optical_disc_manager_init (MexOpticalDiscManager *self)
                                             _("Eject"),
                                             (GCallback)_eject_disc,
                                             self);
+  mx_action_set_icon (eject_action->action, "media-eject-mex");
 
   eject_action->mime_types = g_strdupv ((gchar **)mex_disc_mimetypes);
   eject_action->priority = 200;

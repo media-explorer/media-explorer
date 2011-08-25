@@ -74,6 +74,7 @@ dist_style_DATA = \
 	style/style.css \
 	style/text-input-bg.png \
 	style/thumb-bg.png \
+	style/thumb-disc.png \
 	style/thumb-image.png \
 	style/thumb-music.png \
 	style/thumb-no-content.png \
@@ -122,14 +123,16 @@ dist_icon_26x26_DATA = \
 		 icons/icon-checkbox-off-highlight.png \
 		 icons/icon-checkbox-on.png \
 		 icons/icon-checkbox-on-highlight.png \
-		 icons/media-addtoqueue-mex.png \
 		 icons/media-addtoqueue-mex-highlight.png \
-		 icons/media-removefromqueue-mex.png \
+		 icons/media-addtoqueue-mex.png \
+		 icons/media-eject-mex-highlight.png \
+		 icons/media-eject-mex.png \
 		 icons/media-removefromqueue-mex-highlight.png \
-		 icons/media-watch-mex.png \
-		 icons/media-watch-mex-highlight.png \
-		 icons/media-watch-from-beginning-mex.png \
+		 icons/media-removefromqueue-mex.png \
 		 icons/media-watch-from-beginning-mex-highlight.png \
+		 icons/media-watch-from-beginning-mex.png \
+		 icons/media-watch-mex-highlight.png \
+		 icons/media-watch-mex.png \
 		 icons/x-mex-app-launch-mex.png \
 		 icons/x-mex-app-launch-mex-highlight.png \
 		 icons/stock_left-mex-highlight.png \

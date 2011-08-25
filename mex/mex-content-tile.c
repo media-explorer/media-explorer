@@ -206,6 +206,10 @@ _reset_thumbnail (MexContentTile *tile)
     {
       placeholder_filename = "thumb-tv.png";
     }
+  else if (mime && g_str_equal (mime, "video/dvd"))
+    {
+      placeholder_filename = "thumb-disc.png";
+    }
   else if (mime && (g_str_has_prefix (mime, "video/") ||
                     g_str_equal (mime, "x-mex/media")))
     {
