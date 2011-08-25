@@ -256,24 +256,29 @@ MxButton.MediaPause:focus
   -mx-content-image: url("icon-pause-highlight.png");
 }
 
-MxButton.MediaMute
+MxButton.EndCall
 {
-  -mx-content-image: url("icon-mute.png");
+  -mx-icon-name: "media-playback-stop";
 }
 
-MxButton.MediaMute:focus
+MxButton.CameraOff
 {
-  -mx-content-image: url("icon-mute-highlight.png");
+  -mx-icon-name: "media-playback-pause";
+}
+
+MxButton.CameraOn
+{
+  -mx-icon-name: "media-playback-start";
+}
+
+MxButton.MediaMute
+{
+  -mx-icon-name: "icon-mute";
 }
 
 MxButton.MediaUnmute
 {
-  -mx-content-image: url("icon-unmute.png");
-}
-
-MxButton.MediaUnmute:focus
-{
-  -mx-content-image: url("icon-unmute-highlight.png");
+  -mx-icon-name: "icon-unmute";
 }
 
 MxButton.MediaStop
