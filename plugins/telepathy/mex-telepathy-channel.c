@@ -44,10 +44,13 @@ struct _MexTelepathyChannelPrivate {
     ClutterActor *video_outgoing;
     ClutterActor *title_label;
     ClutterActor *hold_button;
+    ClutterActor *mute_button;
     ClutterActor *duration_label;
     GstElement *incoming_sink;
     GstElement *outgoing_sink;
+    GstElement *outgoing_mic;
     gboolean sending_video;
+    gboolean muted;
 
     GstElement *pipeline;
     guint buswatch;
@@ -125,6 +128,12 @@ mex_telepathy_channel_dispose(GObject *gobject)
         priv->hold_button = NULL;
     }
 
+    if (priv->mute_button)
+    {
+        g_object_unref(priv->mute_button);
+        priv->mute_button = NULL;
+    }
+
     if (priv->duration_label)
     {
         g_object_unref(priv->duration_label);
@@ -141,6 +150,11 @@ mex_telepathy_channel_dispose(GObject *gobject)
     {
         g_object_unref(priv->outgoing_sink);
         priv->outgoing_sink = NULL;
+    }
+    if (priv->outgoing_mic)
+    {
+        g_object_unref(priv->outgoing_mic);
+        priv->outgoing_mic = NULL;
     }
     if (priv->pipeline)
     {
@@ -217,6 +231,28 @@ void mex_telepathy_channel_on_hold(MxAction *action, gpointer user_data)
     }
 }
 
+void mex_telepathy_channel_on_mute(MxAction *action, gpointer user_data)
+{
+    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
+    MexTelepathyChannelPrivate *priv = self->priv;
+    GstStateChangeReturn ret;
+
+    priv->muted = !priv->muted;
+
+    if (priv->muted)
+    {
+        if (gst_element_set_state (priv->outgoing_mic, GST_STATE_PAUSED)
+                == GST_STATE_CHANGE_FAILURE)
+            g_warning ("failed to mute microphone");
+        mx_stylable_set_style_class (MX_STYLABLE(priv->mute_button), "MediaUnmute");
+    } else {
+        if (gst_element_set_state (priv->outgoing_mic, GST_STATE_PLAYING)
+                == GST_STATE_CHANGE_FAILURE)
+            g_warning("failed to unmute microphone");
+        mx_stylable_set_style_class (MX_STYLABLE(priv->mute_button), "MediaMute");
+    }
+}
+
 void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
 {
     g_debug("video page creating");
@@ -274,12 +310,19 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
     mx_button_set_action(MX_BUTTON(priv->hold_button), hold_action);
     mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "MediaPause");
 
+    MxAction *mute_action = mx_action_new_full("Mute", "Mute mic",
+                            (GCallback)mex_telepathy_channel_on_mute, self);
+    priv->mute_button = mx_button_new();
+    mx_button_set_action(MX_BUTTON(priv->mute_button), mute_action);
+    mx_stylable_set_style_class (MX_STYLABLE (priv->mute_button), "MediaMute");
+
     priv->duration_label = mx_label_new_with_text("Duration - 0:00");
     mx_label_set_x_align(MX_LABEL(priv->duration_label), MX_ALIGN_MIDDLE);
     mx_label_set_y_align(MX_LABEL(priv->duration_label), MX_ALIGN_MIDDLE);
 
     // Put the buttons in the toolbar
-    clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, priv->hold_button, priv->duration_label, NULL);
+    clutter_container_add(CLUTTER_CONTAINER(toolbar), end_button, priv->hold_button,
+                          priv->mute_button, priv->duration_label, NULL);
 
     // Align button to end so it will be centered
     mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), end_button, MX_ALIGN_END);
@@ -289,6 +332,9 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
 
     mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), priv->hold_button, FALSE);
     mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), priv->hold_button, FALSE);
+
+    mx_box_layout_child_set_x_fill( MX_BOX_LAYOUT(toolbar), priv->mute_button, FALSE);
+    mx_box_layout_child_set_y_fill( MX_BOX_LAYOUT(toolbar), priv->mute_button, FALSE);
 
     // Align label to start so it will be centered.
     mx_box_layout_child_set_x_align( MX_BOX_LAYOUT(toolbar), priv->duration_label, MX_ALIGN_START);
@@ -619,9 +665,9 @@ mex_telepathy_channel_on_content_added(TfChannel *channel,
         case FS_MEDIA_TYPE_AUDIO:
             g_debug ("Audio content added");
             element = gst_parse_bin_from_description (
-                "autoaudiosrc ! audioresample ! audioconvert ",
-
-                          TRUE, NULL);
+                "autoaudiosrc ! audioresample ! audioconvert ", TRUE, NULL);
+            priv->outgoing_mic = element;
+            priv->muted = FALSE;
             break;
         case FS_MEDIA_TYPE_VIDEO:
             g_debug ("Video content added");
