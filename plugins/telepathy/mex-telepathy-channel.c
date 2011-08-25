@@ -224,10 +224,12 @@ void mex_telepathy_channel_on_hold(MxAction *action, gpointer user_data)
 
     if (priv->sending_video) {
         // We are starting, so change the button to pause.
-        mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "MediaPause");
+        mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "CameraOff");
+        mx_button_set_label(MX_BUTTON(priv->hold_button), "Camera Off");
     } else {
         // We are stopping, so change the button to play.
-        mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "MediaPlay");
+        mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "CameraOn");
+        mx_button_set_label(MX_BUTTON(priv->hold_button), "Camera On");
     }
 }
 
@@ -245,11 +247,13 @@ void mex_telepathy_channel_on_mute(MxAction *action, gpointer user_data)
                 == GST_STATE_CHANGE_FAILURE)
             g_warning ("failed to mute microphone");
         mx_stylable_set_style_class (MX_STYLABLE(priv->mute_button), "MediaUnmute");
+        mx_button_set_label(MX_BUTTON(priv->mute_button), "Unmute");
     } else {
         if (gst_element_set_state (priv->outgoing_mic, GST_STATE_PLAYING)
                 == GST_STATE_CHANGE_FAILURE)
             g_warning("failed to unmute microphone");
         mx_stylable_set_style_class (MX_STYLABLE(priv->mute_button), "MediaMute");
+        mx_button_set_label(MX_BUTTON(priv->mute_button), "Mute");
     }
 }
 
@@ -298,19 +302,19 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
     mx_stylable_set_style_class (MX_STYLABLE (toolbar), "MexMediaControlsTitle");
     mx_box_layout_set_spacing( MX_BOX_LAYOUT(toolbar), 16);
 
-    MxAction *end_action = mx_action_new_full("End", "End Call",
+    MxAction *end_action = mx_action_new_full("End", "Hang Up",
                            (GCallback)mex_telepathy_channel_on_hangup, self);
     ClutterActor *end_button = mx_button_new();
     mx_button_set_action(MX_BUTTON(end_button), end_action);
-    mx_stylable_set_style_class (MX_STYLABLE (end_button), "MediaStop");
+    mx_stylable_set_style_class (MX_STYLABLE (end_button), "EndCall");
 
-    MxAction *hold_action = mx_action_new_full("Hold", "Hold Call",
+    MxAction *hold_action = mx_action_new_full("Hold", "Camera Off",
                             (GCallback)mex_telepathy_channel_on_hold, self);
     priv->hold_button = mx_button_new();
     mx_button_set_action(MX_BUTTON(priv->hold_button), hold_action);
-    mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "MediaPause");
+    mx_stylable_set_style_class (MX_STYLABLE (priv->hold_button), "CameraOff");
 
-    MxAction *mute_action = mx_action_new_full("Mute", "Mute mic",
+    MxAction *mute_action = mx_action_new_full("Mute", "Mute",
                             (GCallback)mex_telepathy_channel_on_mute, self);
     priv->mute_button = mx_button_new();
     mx_button_set_action(MX_BUTTON(priv->mute_button), mute_action);
