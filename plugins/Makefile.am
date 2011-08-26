@@ -9,7 +9,6 @@ AM_CPPFLAGS =					\
 	-I$(top_srcdir)				\
 	-I$(top_srcdir)/mex			\
 	$(MEX_CFLAGS)				\
-	-DPLUGIN_DATA_DIR=\"$(plugin_datadir)\"	\
 	$(NULL)
 
 AM_LDFLAGS  = -no-undefined -module -avoid-version
