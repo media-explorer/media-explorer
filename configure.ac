@@ -221,7 +221,7 @@ AS_CASE([$with_player],
         [AC_MSG_ERROR([Invalid value for --with-player])]
 )
 
-AM_CONDITIONAL(ENABLE_SURFACE_PLAYER, [test x"$with_player" = x"d-bus"])
+AM_CONDITIONAL(ENABLE_EXTERNAL_PLAYER, [test x"$with_player" = x"d-bus"])
 
 PKG_CHECK_MODULES(MEX, "$modules $player_deps")
 

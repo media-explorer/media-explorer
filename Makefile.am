@@ -8,7 +8,7 @@ if ENABLE_EXAMPLES
 SUBDIRS += examples
 endif
 
-if ENABLE_SURFACE_PLAYER
+if ENABLE_EXTERNAL_PLAYER
 SUBDIRS += player
 endif
 
