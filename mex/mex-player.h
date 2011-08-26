@@ -52,6 +52,7 @@ typedef struct _MexPlayer MexPlayer;
 typedef struct _MexPlayerPrivate MexPlayerPrivate;
 typedef struct _MexPlayerClass MexPlayerClass;
 
+typedef ClutterMedia *(*MexPlayerGetMediaPlayerCb) (void);
 
 struct _MexPlayer
 {
@@ -80,6 +81,12 @@ void mex_player_rewind (MexPlayer *player);
 void mex_player_next (MexPlayer *player);
 void mex_player_previous (MexPlayer *player);
 void mex_player_set_uri (MexPlayer *player, const gchar *uri);
+
+/**/
+
+void mex_player_set_media_player_callback (MexPlayerGetMediaPlayerCb callback);
+
+ClutterMedia *      mex_player_get_default_media_player (void);
 
 G_END_DECLS
 
