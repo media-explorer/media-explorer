@@ -192,8 +192,8 @@ mex_player_set_content (MexContentView *view,
 
       if (priv->disable_media_controls && CLUTTER_IS_ACTOR (priv->media))
         {
-          clutter_actor_grab_key_focus (priv->media);
-          clutter_actor_set_reactive (priv->media,
+          clutter_actor_grab_key_focus (CLUTTER_ACTOR (priv->media));
+          clutter_actor_set_reactive (CLUTTER_ACTOR (priv->media),
                                       priv->disable_media_controls);
         }
 
