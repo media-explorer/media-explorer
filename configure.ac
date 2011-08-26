@@ -148,7 +148,7 @@ AC_ARG_WITH([player],
 
 player_deps=""
 
-CLUTTER_GST_REQ_VERSION=1.3.12
+CLUTTER_GST_REQ_VERSION=1.3.13
 AC_SUBST(CLUTTER_GST_REQ_VERSION)
 
 AS_CASE([$with_player],
@@ -170,7 +170,7 @@ AS_CASE([$with_player],
         [surface],
         [
           AC_DEFINE([USE_PLAYER_SURFACE], 1, [Use "surface" for playback])
-          player_deps="clutter-gst-1.0 >= 1.3.12"
+          player_deps="clutter-gst-1.0 >= $CLUTTER_GST_REQ_VERSION"
         ],
 
         [AC_MSG_ERROR([Invalid value for --with-player])]
