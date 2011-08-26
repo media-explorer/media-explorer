@@ -1,6 +1,10 @@
 plugin_datadir = $(datadir)/mex/plugins
-pluginsdir = $(libdir)/mex/plugins
+
+pluginsdir = @MEX_SHELL_PLUGIN_PATH@
 plugins_LTLIBRARIES =
+
+playerpluginsdir = @MEX_PLAYER_PLUGIN_PATH@
+playerplugins_LTLIBRARIES =
 
 EXTRA_DIST =
 CLEANFILES =

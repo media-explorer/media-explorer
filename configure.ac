@@ -473,6 +473,19 @@ AS_MEX_PLUGIN(justintv)
 AS_MEX_PLUGIN(debug)
 AS_MEX_PLUGIN(gnome-dvb)
 
+# Define plugins paths
+
+MEX_SHELL_PLUGIN_PATH="${libdir}/mex/plugins"
+MEX_PLAYER_PLUGIN_PATH="${libdir}/mex-media-player/plugins"
+AC_SUBST(MEX_SHELL_PLUGIN_PATH)
+AC_SUBST(MEX_PLAYER_PLUGIN_PATH)
+AC_DEFINE_UNQUOTED([MEX_SHELL_PLUGIN_PATH],
+                   "$MEX_SHELL_PLUGIN_PATH",
+                   [Mex shell plugin directory])
+AC_DEFINE_UNQUOTED([MEX_PLAYER_PLUGIN_PATH],
+                   "$MEX_PLAYER_PLUGIN_PATH",
+                   [Mex player plugin directory])
+
 AC_CONFIG_FILES([
   Makefile
   build/Makefile
