@@ -947,7 +947,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     priv->prompt_label = NULL;
 
     priv->manager = mex_model_manager_get_default ();
-    MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "icon-panelheader-search", 10,
+    MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "contact", 10,
                                       _("None of your contacts are online at the moment"), TRUE };
     mex_model_manager_add_category(priv->manager, &contacts);
 
@@ -956,7 +956,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     mex_telepathy_plugin_add_action("startavcall",
                                     _("Video Call"),
                                     (GCallback)mex_telepathy_plugin_on_start_video_call,
-                                    "icon-panelheader-videos",
+                                    "call-video",
                                     g_strdupv ((gchar **)av_contact_mimetypes),
                                     80,
                                     self);
@@ -964,7 +964,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     mex_telepathy_plugin_add_action("startaudiocall",
                                     _("Audio Call"),
                                     (GCallback)mex_telepathy_plugin_on_start_audio_call,
-                                    "icon-panelheader-music",
+                                    "call-audio",
                                     g_strdupv ((gchar **)audio_contact_mimetypes),
                                     50,
                                     self);
@@ -972,7 +972,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin  *self)
     mex_telepathy_plugin_add_action("acceptcontact",
                                     _("Accept Contact Request"),
                                     (GCallback)mex_telepathy_plugin_on_accept_contact,
-                                    "media-addtoqueue-mex",
+                                    "contact-add",
                                     g_strdupv ((gchar **)pending_contact_mimetypes),
                                     100,
                                     self);
