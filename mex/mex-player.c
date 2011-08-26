@@ -1076,3 +1076,27 @@ mex_player_set_uri (MexPlayer *player, const gchar *uri)
 
   g_signal_emit (player, signals[OPEN_REQUEST], 0);
 }
+
+/**/
+
+static void
+_get_default_media_player (void)
+{
+  return mex_player_get_clutter_media (mex_player_get_default ());
+}
+
+static MexPlayerGetMediaPlayerCb get_media_player_cb = _get_default_media_player;
+
+void
+mex_player_set_media_player_callback (MexPlayerGetMediaPlayerCb callback)
+{
+  g_return_if_fail (callback != NULL);
+
+  get_media_player_cb = callback;
+}
+
+ClutterMedia *
+mex_player_get_default_media_player (void)
+{
+  return get_media_player_cb ();
+}
