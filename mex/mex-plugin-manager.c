@@ -16,6 +16,9 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include "mex-plugin-manager.h"
 #include "mex-marshal.h"
@@ -214,7 +217,7 @@ mex_plugin_manager_init (MexPluginManager *self)
   MexPluginManagerPrivate *priv = self->priv = PLUGIN_MANAGER_PRIVATE (self);
 
   priv->search_paths = g_new0 (gchar *, 4);
-  priv->search_paths[0] = g_strdup (PKGLIBDIR "/plugins");
+  priv->search_paths[0] = g_strdup (MEX_SHELL_PLUGIN_PATH);
   priv->search_paths[1] = g_build_filename (g_get_user_config_dir (),
                                             "mex",
                                             "plugins",
@@ -301,4 +304,3 @@ mex_plugin_manager_refresh (MexPluginManager *manager)
         }
     }
 }
-
