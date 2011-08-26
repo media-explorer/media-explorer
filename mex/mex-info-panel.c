@@ -264,7 +264,7 @@ audio_combo_box_notify (MxComboBox   *box,
 
   /* audio track */
   title = g_strdup_printf (_("Audio (%s)"),
-                           g_list_nth_data (list, index_));
+                           (char *) g_list_nth_data (list, index_));
 
   mx_combo_box_set_active_text (MX_COMBO_BOX (priv->audio_combo_box), title);
 
