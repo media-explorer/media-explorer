@@ -523,6 +523,19 @@ AS_MEX_PLUGIN(debug-buddy)
 AS_MEX_PLUGIN(gnome-dvb)
 AS_MEX_PLUGIN(opticaldisc)
 
+# Define plugins paths
+
+MEX_SHELL_PLUGIN_PATH="${libdir}/mex/plugins"
+MEX_PLAYER_PLUGIN_PATH="${libdir}/mex-media-player/plugins"
+AC_SUBST(MEX_SHELL_PLUGIN_PATH)
+AC_SUBST(MEX_PLAYER_PLUGIN_PATH)
+AC_DEFINE_UNQUOTED([MEX_SHELL_PLUGIN_PATH],
+                   "$MEX_SHELL_PLUGIN_PATH",
+                   [Mex shell plugin directory])
+AC_DEFINE_UNQUOTED([MEX_PLAYER_PLUGIN_PATH],
+                   "$MEX_PLAYER_PLUGIN_PATH",
+                   [Mex player plugin directory])
+
 # The debug plugin needs libunwind that does not provide a pkg-config file
 AS_IF([test "x$mex_use_debug_buddy_plugin" = "xyes"],
       [AC_CHECK_HEADER([libunwind.h],
