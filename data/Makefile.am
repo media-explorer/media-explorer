@@ -118,6 +118,20 @@ dist_icon_22x22_DATA = \
 
 icon_26x26dir = $(icondir)/26x26
 dist_icon_26x26_DATA = \
+		 icons/call-audio.png \
+		 icons/call-audio-highlight.png \
+		 icons/call-end.png \
+		 icons/call-end-highlight.png \
+		 icons/call-video.png \
+		 icons/call-video-highlight.png \
+		 icons/call-video-turnoff.png \
+		 icons/call-video-turnoff-highlight.png \
+		 icons/call-video-turnon.png \
+		 icons/call-video-turnon-highlight.png \
+		 icons/contact.png \
+		 icons/contact-highlight.png \
+		 icons/contact-add.png \
+		 icons/contact-add-highlight.png \
 		 icons/icon-notifications.png \
 		 icons/icon-power.png \
 		 icons/icon-power-highlight.png \
