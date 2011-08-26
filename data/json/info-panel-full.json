@@ -101,6 +101,12 @@
             "type" : "MxComboBox",
             "height" : 48,
             "child::x-fill" : true
+          },
+          {
+            "id" : "subtitle-tracks-choice",
+            "type" : "MxComboBox",
+            "height" : 48,
+            "child::x-fill" : true
           }
         ]
       }

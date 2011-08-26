@@ -170,7 +170,7 @@ AS_CASE([$with_player],
         [surface],
         [
           AC_DEFINE([USE_PLAYER_SURFACE], 1, [Use "surface" for playback])
-          player_deps="clutter-gst-1.0 >= 1.3.12"
+          player_deps="clutter-gst-1.0 >= 1.3.13"
         ],
 
         [AC_MSG_ERROR([Invalid value for --with-player])]

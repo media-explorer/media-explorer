@@ -65,6 +65,10 @@ struct _MexInfoPanelPrivate
   ClutterActor *buttons_container;
   ClutterActor *watch_button;
   ClutterActor *audio_combo_box;
+  ClutterActor *subtitle_combo_box;
+
+  gboolean audio_combo_box_changed_from_media;
+  gboolean subtitle_combo_box_changed_from_media;
 
   MxLabel *metadata_row1;
 
@@ -257,8 +261,11 @@ audio_combo_box_notify (MxComboBox   *box,
 
   video_texture = CLUTTER_GST_VIDEO_TEXTURE (priv->media);
 
-
-  clutter_gst_video_texture_set_audio_stream (video_texture, index_);
+  /* Avoid looping when the change come from the ClutterMedia */
+  if (priv->audio_combo_box_changed_from_media)
+    priv->audio_combo_box_changed_from_media = FALSE;
+  else
+    clutter_gst_video_texture_set_audio_stream (video_texture, index_);
 
   list = clutter_gst_video_texture_get_audio_streams (video_texture);
 
@@ -267,6 +274,45 @@ audio_combo_box_notify (MxComboBox   *box,
                            (char *) g_list_nth_data (list, index_));
 
   mx_combo_box_set_active_text (MX_COMBO_BOX (priv->audio_combo_box), title);
+
+  g_free (title);
+}
+
+static void
+subtitle_combo_box_notify (MxComboBox   *box,
+                           GParamSpec   *pspec,
+                           MexInfoPanel *panel)
+{
+  MexInfoPanelPrivate *priv = panel->priv;
+  ClutterGstVideoTexture *video_texture;
+  GList *list;
+  gchar *title;
+  gint index_;
+
+  index_ = mx_combo_box_get_index (box);
+
+  /* index is -1 when the custom text is set */
+  if (index_ < 0)
+    return;
+
+  if (!CLUTTER_GST_IS_VIDEO_TEXTURE (priv->media))
+    return;
+
+  video_texture = CLUTTER_GST_VIDEO_TEXTURE (priv->media);
+
+  /* Avoid looping when the change come from the ClutterMedia */
+  if (priv->subtitle_combo_box_changed_from_media)
+    priv->subtitle_combo_box_changed_from_media = FALSE;
+  else
+    clutter_gst_video_texture_set_subtitle_track (video_texture, index_ - 1);
+
+  list = clutter_gst_video_texture_get_subtitle_tracks (video_texture);
+
+  /* audio track */
+  title = g_strdup_printf (_("Subtitles (%s)"),
+                           (char *) g_list_nth_data (list, index_ - 1));
+
+  mx_combo_box_set_active_text (MX_COMBO_BOX (priv->subtitle_combo_box), title);
 
   g_free (title);
 }
@@ -326,15 +372,22 @@ mex_info_panel_constructed (GObject *object)
 
   if (priv->mode == MEX_INFO_PANEL_MODE_FULL)
     {
-      /* hide the combo box for the audio streams by default. It's handled
-       * by listening to some ClutterMedia signals */
+      /* hide the combo boxes for the audio streams and subtitles tracks
+       * by default. Their visibility is handled by listening to some
+       * ClutterMedia/ClutterGstVideoTexture signals */
       priv->audio_combo_box = GET_ACTOR ("audio-streams-choice");
       clutter_actor_hide (priv->audio_combo_box);
+
+      priv->subtitle_combo_box = GET_ACTOR ("subtitle-tracks-choice");
+      clutter_actor_hide (priv->subtitle_combo_box);
 
       clutter_actor_add_effect (root, CLUTTER_EFFECT (mex_shadow_new ()));
 
       g_signal_connect (priv->audio_combo_box, "notify::index",
                         G_CALLBACK (audio_combo_box_notify), self);
+
+      g_signal_connect (priv->subtitle_combo_box, "notify::index",
+                        G_CALLBACK (subtitle_combo_box_notify), self);
     }
   else
     {
@@ -732,8 +785,57 @@ on_media_audio_stream_changed (ClutterMedia *media,
   MexInfoPanelPrivate *priv = panel->priv;
   gint index_;
 
+  priv->audio_combo_box_changed_from_media = TRUE;
+
   index_ = clutter_gst_video_texture_get_audio_stream (video_texture);
   mx_combo_box_set_index (MX_COMBO_BOX (priv->audio_combo_box), index_);
+}
+
+static void
+on_media_subtitle_tracks_changed (ClutterMedia *media,
+                                  GParamSpec   *pspsec,
+                                  MexInfoPanel *panel)
+{
+  ClutterGstVideoTexture *video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
+  MexInfoPanelPrivate *priv = panel->priv;
+  GList *tracks, *l;
+
+  tracks = clutter_gst_video_texture_get_subtitle_tracks (video_texture);
+
+  mx_combo_box_remove_all (MX_COMBO_BOX (priv->subtitle_combo_box));
+
+  /* Add a "None" option to disable subtitles */
+
+  /* TRANSLATORS: In this context, None is used to disable subtitles in the
+   * list of choices for subtitles */
+  mx_combo_box_append_text (MX_COMBO_BOX (priv->subtitle_combo_box),
+                            _("None"));
+
+  for (l = tracks; l; l = g_list_next (l))
+    {
+      const gchar *description = l->data;
+
+      mx_combo_box_append_text (MX_COMBO_BOX (priv->subtitle_combo_box),
+                                description);
+    }
+  clutter_actor_show (priv->subtitle_combo_box);
+}
+
+static void
+on_media_subtitle_track_changed (ClutterMedia *media,
+                                 GParamSpec   *pspsec,
+                                 MexInfoPanel *panel)
+{
+  ClutterGstVideoTexture *video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
+  MexInfoPanelPrivate *priv = panel->priv;
+  gint index_;
+
+  priv->subtitle_combo_box_changed_from_media = TRUE;
+
+  index_ = clutter_gst_video_texture_get_subtitle_track (video_texture);
+
+  /* +1 here as we add "None" in the combo box to be able to disable subs */
+  mx_combo_box_set_index (MX_COMBO_BOX (priv->subtitle_combo_box), index_ + 1);
 }
 
 void
@@ -754,13 +856,25 @@ mex_info_panel_set_media (MexInfoPanel *panel,
       g_signal_handlers_disconnect_by_func (priv->media,
                                             on_media_audio_streams_changed,
                                             panel);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            on_media_subtitle_tracks_changed,
+                                            panel);
     }
 
   priv->media = media;
-  g_signal_connect (priv->media, "notify::audio-streams",
-                    G_CALLBACK (on_media_audio_streams_changed), panel);
-  g_signal_connect (priv->media, "notify::audio-stream",
-                    G_CALLBACK (on_media_audio_stream_changed), panel);
+
+  if (media)
+    {
+      g_signal_connect (priv->media, "notify::audio-streams",
+                        G_CALLBACK (on_media_audio_streams_changed), panel);
+      g_signal_connect (priv->media, "notify::audio-stream",
+                        G_CALLBACK (on_media_audio_stream_changed), panel);
+
+      g_signal_connect (priv->media, "notify::subtitle-tracks",
+                        G_CALLBACK (on_media_subtitle_tracks_changed), panel);
+      g_signal_connect (priv->media, "notify::audio-stream",
+                        G_CALLBACK (on_media_subtitle_track_changed), panel);
+    }
 }
 
 #else /* !USE_PLAYER_CLUTTER_GST */
