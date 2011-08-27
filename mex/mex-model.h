@@ -45,9 +45,9 @@ struct _MexModelIface
   GTypeInterface g_iface;
 
   /* virtual functions */
-  GController *   (*get_controller)   (MexModel *list);
-  MexContent *    (*get_content)      (MexModel *list,
-                                       guint     index);
+  GController *   (*get_controller)   (MexModel *model);
+  MexContent *    (*get_content)      (MexModel *model,
+                                       guint     index_);
   void (*add_content) (MexModel   *model,
                        MexContent *content);
   void (*remove_content) (MexModel   *model,
@@ -64,8 +64,8 @@ struct _MexModelIface
 
 GType         mex_model_get_type         (void) G_GNUC_CONST;
 
-GController * mex_model_get_controller   (MexModel *list);
-MexContent *  mex_model_get_content      (MexModel *list,
+GController * mex_model_get_controller   (MexModel *model);
+MexContent *  mex_model_get_content      (MexModel *model,
                                           guint     index_);
 void mex_model_add_content (MexModel   *model,
                             MexContent *content);

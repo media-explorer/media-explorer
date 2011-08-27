@@ -123,9 +123,9 @@ mex_model_get_controller (MexModel *model)
 /**
  * mex_model_get_content:
  * @model: a #MexModel
- * @index: a position
+ * @index_: a position
  *
- * Retrieves the #MexContent object at position @index for this @model.
+ * Retrieves the #MexContent object at position @index_ for this @model.
  *
  * Return value: A #GController. Call g_object_unref() on the controller once
  * finished with it.
@@ -134,7 +134,7 @@ mex_model_get_controller (MexModel *model)
  */
 MexContent *
 mex_model_get_content (MexModel *model,
-                       guint     index)
+                       guint     index_)
 {
   MexModelIface *iface;
 
@@ -143,7 +143,7 @@ mex_model_get_content (MexModel *model,
   iface = MEX_MODEL_GET_IFACE (model);
 
   if (G_LIKELY (iface->get_content))
-    return iface->get_content (model, index);
+    return iface->get_content (model, index_);
 
   g_warning ("MexModel of type '%s' does not implement get_content()",
              g_type_name (G_OBJECT_TYPE (model)));
