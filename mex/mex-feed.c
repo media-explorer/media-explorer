@@ -545,7 +545,7 @@ get_programs_for_term (MexFeed   *feed,
  * @feed: A #MexFeed
  * @search: A string array
  * @mode: The #MexFeedSearchMode
- * @results_feed: A #MexFeed to store the results of the search.
+ * @results_model: A #MexFeed to store the results of the search.
  *
  * Searches @feed for the terms found in @search and puts the results
  * into @results_feed;
