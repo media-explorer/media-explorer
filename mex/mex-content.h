@@ -122,16 +122,16 @@ struct _MexContentIface
 
 GType         mex_content_get_type                (void) G_GNUC_CONST;
 
-GParamSpec *  mex_content_get_property            (MexContent         *list,
+GParamSpec *  mex_content_get_property            (MexContent         *content,
                                                    MexContentMetadata  key);
-const gchar * mex_content_get_metadata            (MexContent         *list,
+const gchar * mex_content_get_metadata            (MexContent         *content,
                                                    MexContentMetadata  key);
-gchar *       mex_content_get_metadata_fallback   (MexContent        *list,
+gchar *       mex_content_get_metadata_fallback   (MexContent        *content,
                                                    MexContentMetadata key);
-void          mex_content_set_metadata            (MexContent         *list,
+void          mex_content_set_metadata            (MexContent         *content,
                                                    MexContentMetadata  key,
                                                    const gchar        *value);
-void          mex_content_save_metadata           (MexContent         *list);
+void          mex_content_save_metadata           (MexContent         *content);
 
 void          mex_content_foreach_metadata        (MexContent           *content,
                                                    MexContentMetadataCb  callback,
