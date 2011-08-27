@@ -83,7 +83,7 @@ MexContent *mex_media_controls_get_content (MexMediaControls *self);
 void mex_media_controls_focus_content (MexMediaControls *self,
                                        MexContent       *content);
 
-MexContent *mex_media_controls_get_enqueued (MexMediaControls *self,
+MexContent *mex_media_controls_get_enqueued (MexMediaControls *controls,
                                              MexContent *current_content);
 
 gboolean mex_media_controls_get_playing_queue (MexMediaControls *self);
