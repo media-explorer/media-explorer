@@ -87,7 +87,7 @@ void mex_menu_add_action          (MexMenu           *menu,
                                    MexMenuActionType  type);
 
 void mex_menu_action_set_detail   (MexMenu     *menu,
-                                   const gchar *action_name,
+                                   const gchar *action,
                                    const gchar *detail);
 
 const gchar *mex_menu_action_get_detail (MexMenu     *menu,
