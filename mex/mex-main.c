@@ -217,6 +217,13 @@ mex_init_with_args (int            *argc,
 static MxWindow *mex_main_window = NULL;
 static ClutterActor *mex_stage = NULL;
 
+/**
+ * mex_get_stage:
+ *
+ * Returns: (transfer none): the main #MxWindow
+ *
+ * Since: 0.2
+ */
 ClutterActor *
 mex_get_stage (void)
 {
@@ -246,6 +253,13 @@ mex_set_main_window (MxWindow *window)
     }
 }
 
+/**
+ * mex_get_main_window:
+ *
+ * Returns: (transfer none): the main #MxWindow
+ *
+ * Since: 0.2
+ */
 MxWindow *
 mex_get_main_window (void)
 {

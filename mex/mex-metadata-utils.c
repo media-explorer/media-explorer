@@ -326,19 +326,19 @@ mex_metadata_humanise_time (const gchar *time_str)
 }
 
 /**
- * mex_metadata_info_new:
+ * mex_metadata_info_new: (skip)
  * @key: Metadata key
  * @key_string: A field label for the metadata value
  * @priority: How important this metadata is. 0 = High
  *
  * Container to pass through mex_metadata_get_metadata
  *
- * Return value: a new MexMetadataInfo.
+ * Returns: a new #MexMetadataInfo
  */
 MexMetadataInfo *
-mex_metadata_info_new (MexContentMetadata key,
-                      const  gchar *key_string,
-                      gint priority)
+mex_metadata_info_new (MexContentMetadata  key,
+                       const gchar        *key_string,
+                       gint                priority)
 {
   MexMetadataInfo *info;
 

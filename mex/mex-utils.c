@@ -320,6 +320,12 @@ mex_action_set_content (MxAction *action, MexContent *content)
   g_object_set_qdata (G_OBJECT (action), mex_action_content_quark, content);
 }
 
+/**
+ * mex_action_get_content:
+ * @action: A #MxAction
+ *
+ * Returns: (transfer none): The #MexContent linked to that action
+ */
 MexContent *
 mex_action_get_content (MxAction *action)
 {
@@ -339,6 +345,12 @@ mex_action_set_context (MxAction *action, MexModel *model)
   g_object_set_qdata (G_OBJECT (action), mex_action_model_quark, model);
 }
 
+/**
+ * mex_action_get_context:
+ * @action: A #MxAction
+ *
+ * Returns: (transfer none): The #MexModel linked to that action
+ */
 MexModel *
 mex_action_get_context (MxAction *action)
 {
@@ -728,7 +740,7 @@ mex_actor_has_focus (MxFocusManager *manager,
  * Creates a new MexContent from any given uri and tries to guess
  * at some metadata.
  *
- * Return value: A new MexContent
+ * Returns: (transfer full): A new MexContent
  */
 MexContent *
 mex_content_from_uri (const gchar *uri)
