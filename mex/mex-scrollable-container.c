@@ -42,7 +42,7 @@ mex_scrollable_container_default_init (MexScrollableContainerInterface *klass)
 
 /**
  * mex_scrollable_container_get_allocation:
- * @container: a #MexScrollableContainer
+ * @self: a #MexScrollableContainer
  * @box: (out): A #ClutterActorBox
  *
  * Retrieves an child's prospective allocation. This should be the allocation
