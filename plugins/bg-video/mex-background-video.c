@@ -142,10 +142,7 @@ mex_background_video_set_active (MexBackground *self,
 {
   MexBackgroundVideoPrivate *priv = MEX_BACKGROUND_VIDEO (self)->priv;
 
-  if (active)
-    clutter_media_set_playing (CLUTTER_MEDIA (priv->media), TRUE);
-  else
-    clutter_media_set_playing (CLUTTER_MEDIA (priv->media), FALSE);
+  clutter_media_set_playing (CLUTTER_MEDIA (priv->media), active);
 }
 
 static void
