@@ -1,5 +1,5 @@
 /* Default Styles */
-MxLabel, MxButton, MxIcon, MxComboBox
+MxLabel, MxButton, MxIcon, MxComboBox, MxComboBox:disabled
 {
   font-size: 18;
   font-family: "Droid Sans";
