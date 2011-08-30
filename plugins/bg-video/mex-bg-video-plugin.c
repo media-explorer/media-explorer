@@ -64,12 +64,14 @@ static void
 mex_bg_video_plugin_init (MexBgVideoPlugin *self)
 {
   MexBgVideoPluginPrivate *priv;
+  MexBackground *background;
 
   self->priv = priv = GET_PRIVATE (self);
 
   priv->manager = mex_background_manager_get_default ();
 
-  priv->background = (MexBackground *) mex_background_video_new ();
+  background = (MexBackground *) mex_background_video_new ();
+  priv->background = g_object_ref_sink (background);
 
   mex_background_manager_register (mex_background_manager_get_default (),
                                    priv->background);
