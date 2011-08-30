@@ -250,14 +250,6 @@ keys_grab_complete_cb (GObject      *proxy,
       g_warning ("media player keys not available: %s", error->message);
       g_clear_error (&error);
     }
-  else
-    {
-      g_signal_connect_object (priv->proxy,
-                               "g-signal",
-                               G_CALLBACK (mm_keys_pressed),
-                               self, 0);
-
-    }
 }
 
 void
@@ -299,6 +291,11 @@ mex_mmkeys_grab_keys (MexMMkeys *self)
           g_clear_error (&error);
           return;
         }
+
+      g_signal_connect_object (priv->proxy,
+                               "g-signal",
+                               G_CALLBACK (mm_keys_pressed),
+                               self, 0);
     }
 
   g_dbus_proxy_call (priv->proxy,
