@@ -102,12 +102,17 @@ static void
 mex_column_expand_child (ClutterActor *child)
 {
   ClutterActorClass *actor_class;
-  gfloat new_height;
+  gfloat new_height, old_height;
 
   /* get the preferred directly from the class, to avoid getting any fixed
    * value */
   actor_class = CLUTTER_ACTOR_GET_CLASS (child);
   actor_class->get_preferred_height (child, -1, NULL, &new_height);
+
+  old_height = clutter_actor_get_height (child);
+
+  if (old_height == new_height)
+    return;
 
   clutter_actor_animate (child, CLUTTER_EASE_OUT_CUBIC, 200,
                          "height", new_height,
@@ -1132,12 +1137,17 @@ static void
 mex_column_shrink_child (ClutterActor *child)
 {
   ClutterActorClass *actor_class;
-  gfloat new_height;
+  gfloat new_height, old_height;
 
   /* get the preferred directly from the class, to avoid getting any fixed
    * value */
   actor_class = CLUTTER_ACTOR_GET_CLASS (child);
   actor_class->get_preferred_height (child, -1, &new_height, NULL);
+
+  old_height = clutter_actor_get_height (child);
+
+  if (old_height == new_height)
+    return;
 
   /* prevent the completed signal being called if the child was expanding */
   clutter_actor_detach_animation (child);
