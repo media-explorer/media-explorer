@@ -21,7 +21,7 @@
 #include "mex-resizing-hbox-child.h"
 #include "mex-utils.h"
 #include "mex-scene.h"
-#include "mex-column.h"
+#include "mex-column-view.h"
 #include "mex-scroll-view.h"
 #include <math.h>
 
@@ -135,7 +135,7 @@ mex_resizing_hbox_open (MexScene              *actor,
 
   /* fade in the children of the column */
   if (MEX_IS_SCROLL_VIEW (priv->current_focus)
-      && MEX_IS_COLUMN (mx_bin_get_child (MX_BIN (priv->current_focus))))
+      && MEX_IS_COLUMN_VIEW (mx_bin_get_child (MX_BIN (priv->current_focus))))
     {
       ClutterActor *container;
       GList *actors, *children;
@@ -1139,7 +1139,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
 
       /* fade in/out the children of the column */
       if (MEX_IS_SCROLL_VIEW (priv->current_focus)
-          && MEX_IS_COLUMN (mx_bin_get_child (MX_BIN (priv->current_focus))))
+          && MEX_IS_COLUMN_VIEW (mx_bin_get_child (MX_BIN (priv->current_focus))))
         {
           ClutterActor *container;
           GList *l, *children;

@@ -18,6 +18,7 @@
 
 
 #include "mex-column.h"
+#include "mex-column-view.h"
 #include "mex-content-box.h"
 #include "mex-scroll-view.h"
 #include "mex-tile.h"
@@ -27,32 +28,19 @@
 enum
 {
   PROP_0,
-  PROP_LABEL,
-  PROP_ICON_NAME,
-  PROP_PLACEHOLDER_ACTOR,
   PROP_HADJUST,
   PROP_VADJUST,
-  PROP_COLLAPSE_ON_FOCUS
-};
-
-enum
-{
-  ACTIVATED,
-  PLAY_REQUESTED,
-  LAST_SIGNAL,
+  PROP_COLLAPSE_ON_FOCUS,
+  PROP_OPENED
 };
 
 struct _MexColumnPrivate
 {
+  guint         has_focus_changed : 1;
   guint         has_focus : 1;
   guint         collapse : 1;
 
-  ClutterActor *header;
-  ClutterActor *button;
-  ClutterActor *icon;
-  ClutterActor *label;
   ClutterActor *current_focus;
-  ClutterActor *placeholder_actor;
 
   ClutterTimeline *expand_timeline;
 
@@ -82,13 +70,6 @@ G_DEFINE_TYPE_WITH_CODE (MexColumn, mex_column, MX_TYPE_WIDGET,
                                                 mx_stylable_iface_init)
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_SCROLLABLE_CONTAINER,
                                                 mex_scrollable_iface_init))
-
-static guint32 signals[LAST_SIGNAL] = { 0, };
-
-static void mex_column_allocate_header (MexColumn              *self,
-                                        const ClutterActorBox  *box,
-                                        ClutterAllocationFlags  flags);
-
 
 static void
 child_expand_complete_cb (ClutterAnimation *animation,
@@ -132,14 +113,13 @@ mex_column_get_allocation (MexScrollableContainer *self,
   gfloat child_height;
   gint i;
 
-  box->y1 = clutter_actor_get_height (priv->header);
+  box->y1 = 0;
 
   if (!priv->children)
     return;
 
   child_height = clutter_actor_get_height (priv->children->data);
   i = g_list_index (priv->children, child);
-
 
   if (i >= 0)
     box->y1 += child_height * i;
@@ -160,8 +140,8 @@ mex_scrollable_iface_init (MexScrollableContainerInterface *iface)
 
 static void
 content_box_open_notify (MexContentBox *box,
-                         GParamSpec     *pspec,
-                         MexColumn      *column)
+                         GParamSpec    *pspec,
+                         MexColumn     *column)
 {
   MexColumnPrivate *priv = MEX_COLUMN (column)->priv;
   GList *l;
@@ -175,8 +155,6 @@ content_box_open_notify (MexContentBox *box,
             clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
                                    "opacity", 56, NULL);
         }
-      clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
-                             "opacity", 56, NULL);
 
       shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (box),
                                                              "shadow");
@@ -201,13 +179,12 @@ content_box_open_notify (MexContentBox *box,
           clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
                                  "opacity", 255, NULL);
         }
-      clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
-                             "opacity", 255, NULL);
-
       shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (box),
                                                              "shadow");
       clutter_actor_meta_set_enabled (shadow, FALSE);
     }
+
+  g_object_notify (G_OBJECT (column), "opened");
 }
 
 /* ClutterContainerIface */
@@ -295,8 +272,8 @@ mex_column_remove (ClutterContainer *container,
         clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
                                "opacity", 255, NULL);
 
-      clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200,
-                             "opacity", 255, NULL);
+      /* clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200, */
+      /*                        "opacity", 255, NULL); */
     }
 
   g_signal_emit_by_name (self, "actor-removed", actor);
@@ -379,7 +356,6 @@ mex_column_adjustment_changed_cb (MexColumn *self)
   MexColumnPrivate *priv = self->priv;
 
   priv->adjustment_value = mx_adjustment_get_value (priv->adjustment);
-  mex_column_allocate_header (self, NULL, CLUTTER_ALLOCATION_NONE);
   clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
 }
 
@@ -399,6 +375,7 @@ mex_column_set_adjustments (MxScrollable *scrollable,
                                             mex_column_adjustment_changed_cb,
                                             scrollable);
       g_object_unref (priv->adjustment);
+      priv->adjustment_value = 0;
     }
 
   priv->adjustment = vadjust;
@@ -409,6 +386,7 @@ mex_column_set_adjustments (MxScrollable *scrollable,
       g_signal_connect_swapped (priv->adjustment, "notify::value",
                                 G_CALLBACK (mex_column_adjustment_changed_cb),
                                 scrollable);
+      priv->adjustment_value = mx_adjustment_get_value (priv->adjustment);
     }
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (scrollable));
@@ -459,25 +437,6 @@ mex_column_move_focus (MxFocusable      *focusable,
 
   focusable = NULL;
 
-  if ((ClutterActor *)from == priv->header)
-    {
-      if (((direction == MX_FOCUS_DIRECTION_NEXT) ||
-           (direction == MX_FOCUS_DIRECTION_DOWN)) &&
-          priv->n_items)
-        {
-          hint = (direction == MX_FOCUS_DIRECTION_NEXT) ?
-            MX_FOCUS_HINT_FIRST : MX_FOCUS_HINT_FROM_ABOVE;
-          if ((focusable = mx_focusable_accept_focus (
-                 MX_FOCUSABLE (priv->children->data), hint)))
-            {
-              priv->current_focus = priv->children->data;
-              return focusable;
-            }
-        }
-      else
-        return NULL;
-    }
-
   link_ = g_list_find (priv->children, from);
   if (!link_)
     return NULL;
@@ -489,16 +448,9 @@ mex_column_move_focus (MxFocusable      *focusable,
       hint = (direction == MX_FOCUS_DIRECTION_PREVIOUS) ?
         MX_FOCUS_HINT_LAST : MX_FOCUS_HINT_FROM_BELOW;
       link_ = g_list_previous (link_);
-
-      if (!link_)
-        {
-          if ((focusable = mx_focusable_accept_focus (
-                 MX_FOCUSABLE (priv->header), hint)))
-            priv->current_focus = priv->header;
-        }
-      else if ((focusable = mx_focusable_accept_focus (
-                  MX_FOCUSABLE (link_->data), hint)))
-        priv->current_focus = link_->data;
+      if (link_)
+        focusable = mx_focusable_accept_focus (
+                       MX_FOCUSABLE (link_->data), hint);
       break;
 
     case MX_FOCUS_DIRECTION_NEXT:
@@ -507,9 +459,9 @@ mex_column_move_focus (MxFocusable      *focusable,
         MX_FOCUS_HINT_FIRST : MX_FOCUS_HINT_FROM_ABOVE;
       link_ = g_list_next (link_);
 
-      if (link_ && (focusable = mx_focusable_accept_focus (
-                     MX_FOCUSABLE (link_->data), hint)))
-        priv->current_focus = link_->data;
+      if (link_)
+        focusable = mx_focusable_accept_focus (
+                       MX_FOCUSABLE (link_->data), hint);
       break;
 
     case MX_FOCUS_DIRECTION_OUT:
@@ -552,24 +504,18 @@ mex_column_accept_focus (MxFocusable *focusable,
 
     case MX_FOCUS_HINT_FIRST:
     case MX_FOCUS_HINT_FROM_ABOVE:
-      if ((focusable = mx_focusable_accept_focus (MX_FOCUSABLE (priv->header),
-                                                  hint)))
-        priv->current_focus = priv->header;
-      else if (priv->n_items &&
-               (focusable = mx_focusable_accept_focus (
-                  MX_FOCUSABLE (priv->children->data), hint)))
-        priv->current_focus = priv->children->data;
+      if (priv->n_items)
+        focusable = mx_focusable_accept_focus (
+                       MX_FOCUSABLE (priv->children->data), hint);
       break;
 
     case MX_FOCUS_HINT_LAST:
     case MX_FOCUS_HINT_FROM_BELOW:
       link_ = g_list_last (priv->children);
-      if (link_ && (focusable = mx_focusable_accept_focus (
-                     MX_FOCUSABLE (link_->data), hint)))
-        {
-          priv->current_focus = link_->data;
-          break;
-        }
+      if (link_)
+        focusable = mx_focusable_accept_focus (
+                       MX_FOCUSABLE (link_->data), hint);
+      break;
     }
 
   return focusable;
@@ -616,18 +562,6 @@ mex_column_set_property (GObject      *object,
 
   switch (prop_id)
     {
-    case PROP_LABEL:
-      mex_column_set_label (self, g_value_get_string (value));
-      break;
-
-    case PROP_PLACEHOLDER_ACTOR:
-      mex_column_set_placeholder_actor (self, g_value_get_object (value));
-      break;
-
-    case PROP_ICON_NAME:
-      mex_column_set_icon_name (self, g_value_get_string (value));
-      break;
-
     case PROP_HADJUST:
       mex_column_set_adjustments (MX_SCROLLABLE (self), NULL,
                                   g_value_get_object (value));
@@ -660,18 +594,6 @@ mex_column_get_property (GObject    *object,
 
   switch (prop_id)
     {
-    case PROP_LABEL:
-      g_value_set_string (value, mex_column_get_label (self));
-      break;
-
-    case PROP_PLACEHOLDER_ACTOR:
-      g_value_set_object (value, mex_column_get_placeholder_actor (self));
-      break;
-
-    case PROP_ICON_NAME:
-      g_value_set_string (value, mex_column_get_icon_name (self));
-      break;
-
     case PROP_HADJUST:
       mex_column_get_adjustments (MX_SCROLLABLE (self), &adjustment, NULL);
       g_value_set_object (value, adjustment);
@@ -685,6 +607,9 @@ mex_column_get_property (GObject    *object,
     case PROP_COLLAPSE_ON_FOCUS:
       g_value_set_boolean (value, mex_column_get_collapse_on_focus (self));
       break;
+
+    case PROP_OPENED:
+      g_value_set_boolean (value, mex_column_get_opened (self));
 
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -713,23 +638,10 @@ mex_column_dispose (GObject *object)
       priv->adjustment = NULL;
     }
 
-  if (priv->header)
-    {
-      /* The header includes the label and icon */
-      clutter_actor_destroy (priv->header);
-      priv->header = NULL;
-    }
-
   if (priv->expand_timeline)
     {
       g_object_unref (priv->expand_timeline);
       priv->expand_timeline = NULL;
-    }
-
-  if (priv->placeholder_actor)
-    {
-      clutter_actor_unparent (priv->placeholder_actor);
-      priv->placeholder_actor = NULL;
     }
 
   while (priv->children)
@@ -746,46 +658,14 @@ mex_column_get_preferred_width (ClutterActor *actor,
 {
   GList *c;
   MxPadding padding;
-  gfloat min_width, nat_width;
-  gfloat min_header, nat_header;
-  gfloat min_placeholder, nat_placeholder;
+  gfloat min_width = 0, nat_width = 0;
 
   MexColumn *self = MEX_COLUMN (actor);
   MexColumnPrivate *priv = self->priv;
 
-  clutter_actor_get_preferred_width (priv->header,
-                                     -1,
-                                     &min_header,
-                                     &nat_header);
+  for_height = -1;
 
-  if (priv->adjustment)
-    for_height = -1;
-  else if (for_height >= 0)
-    {
-      gfloat height;
-      clutter_actor_get_preferred_height (priv->header, -1, NULL, &height);
-      for_height = MAX (0, for_height - height);
-    }
-
-  if (priv->n_items < 1)
-    {
-      if (priv->placeholder_actor)
-        {
-          clutter_actor_get_preferred_width (priv->placeholder_actor,
-                                             for_height,
-                                             &min_placeholder,
-                                             &nat_placeholder);
-
-          min_width = MAX (min_header, min_placeholder);
-          nat_width = MAX (min_header, nat_placeholder);
-        }
-      else
-        {
-          min_width = min_header;
-          nat_width = nat_header;
-        }
-    }
-  else
+  if (priv->n_items > 0)
     {
       min_width = nat_width = 0;
       for_height /= (gfloat)priv->n_items;
@@ -804,11 +684,6 @@ mex_column_get_preferred_width (ClutterActor *actor,
           if (child_nat_width > nat_width)
             nat_width = child_nat_width;
         }
-
-      if (min_header > min_width)
-        min_width = min_header;
-      if (min_header > nat_width)
-        nat_width = min_header;
     }
 
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
@@ -826,7 +701,7 @@ mex_column_get_preferred_height (ClutterActor *actor,
                                  gfloat       *nat_height_p)
 {
   GList *c;
-  gfloat min_height, nat_height;
+  gfloat min_height = 0, nat_height = 0;
   MxPadding padding;
 
   MexColumn *self = MEX_COLUMN (actor);
@@ -837,25 +712,7 @@ mex_column_get_preferred_height (ClutterActor *actor,
   if (for_width >= 0)
     for_width = MAX (0, for_width - padding.left - padding.right);
 
-  clutter_actor_get_preferred_height (priv->header,
-                                      for_width,
-                                      NULL,
-                                      &min_height);
-  nat_height = min_height;
-
-  if (priv->n_items < 1)
-    {
-      gfloat min_placeholder, nat_placeholder;
-
-      clutter_actor_get_preferred_height (priv->placeholder_actor,
-                                          for_width,
-                                          &min_placeholder,
-                                          &nat_placeholder);
-
-      min_height += min_placeholder;
-      nat_height += nat_placeholder;
-    }
-  else
+  if (priv->n_items > 0)
     {
       gfloat child_min_height, child_nat_height;
 
@@ -882,50 +739,10 @@ mex_column_get_preferred_height (ClutterActor *actor,
 }
 
 static void
-mex_column_allocate_header (MexColumn              *self,
-                            const ClutterActorBox  *box,
-                            ClutterAllocationFlags  flags)
-{
-  gdouble value;
-  MxPadding padding;
-  gfloat header_pref_height;
-  ClutterActorBox box_data, child_box;
-
-  MexColumnPrivate *priv = self->priv;
-
-  if (!box)
-    {
-      clutter_actor_get_allocation_box (CLUTTER_ACTOR (self), &box_data);
-      box = &box_data;
-    }
-
-  if (priv->adjustment)
-    value = priv->adjustment_value;
-  else
-    value = 0.0;
-
-  mx_widget_get_padding (MX_WIDGET (self), &padding);
-
-  child_box.x1 = padding.left;
-  child_box.x2 = box->x2 - box->x1 - padding.right;
-  child_box.y1 = padding.top + value;
-
-  clutter_actor_get_preferred_height (priv->header,
-                                      child_box.x2 - child_box.x1,
-                                      NULL,
-                                      &header_pref_height);
-
-  child_box.y2 = child_box.y1 + header_pref_height;
-
-  clutter_actor_allocate (priv->header, &child_box, flags);
-}
-
-static void
 mex_column_allocate (ClutterActor          *actor,
                      const ClutterActorBox *box,
                      ClutterAllocationFlags flags)
 {
-  gfloat header_pref_height, pref_h, pref_w;
   ClutterActorBox child_box;
   MxPadding padding;
   GList *c;
@@ -937,30 +754,9 @@ mex_column_allocate (ClutterActor          *actor,
 
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
 
-  /* Allocate header */
-  mex_column_allocate_header (column, box, flags);
-
-  /* Allocate placeholder actor */
-  clutter_actor_get_preferred_height (priv->header,
-                                      -1,
-                                      NULL,
-                                      &header_pref_height);
-  child_box.y1 = padding.top + header_pref_height;
-
   child_box.x1 = padding.left;
   child_box.x2 = box->x2 - box->x1 - padding.right;
-
-  if ((priv->n_items < 1) && priv->placeholder_actor)
-    {
-      /* keep the aspect ratio of the placeholder actor */
-      clutter_actor_get_preferred_size (priv->placeholder_actor, NULL, NULL,
-                                        &pref_w, &pref_h);
-      pref_h = pref_h * ((child_box.x2 - child_box.x1) / pref_w);
-      child_box.y2 = child_box.y1 + pref_h;
-
-      clutter_actor_allocate (priv->placeholder_actor, &child_box, flags);
-    }
-
+  child_box.y1 = padding.top;
   child_box.y2 = box->y2 - box->y1 - padding.bottom;
 
   if (priv->n_items)
@@ -975,7 +771,7 @@ mex_column_allocate (ClutterActor          *actor,
            */
           clutter_actor_get_preferred_height (actor, box->x2 - box->x1,
                                               NULL, &pref_height);
-          pref_height -= padding.top + padding.bottom + header_pref_height;
+          pref_height -= padding.top + padding.bottom;
 
           avail_height = child_box.y2 - child_box.y1;
 
@@ -1051,7 +847,6 @@ static void
 mex_column_paint (ClutterActor *actor)
 {
   GList *c;
-  gdouble value;
   MxPadding padding;
   ClutterActorBox box;
 
@@ -1062,37 +857,26 @@ mex_column_paint (ClutterActor *actor)
 
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   clutter_actor_get_allocation_box (actor, &box);
-  if (priv->adjustment)
-    value = priv->adjustment_value;
-  else
-    value = 0;
 
   cogl_clip_push_rectangle (padding.left,
-                            clutter_actor_get_height (priv->header) +
-                              padding.top + value,
+                            padding.top + priv->adjustment_value,
                             box.x2 - box.x1 - padding.right,
-                            box.y2 - box.y1 - padding.bottom + value);
+                            box.y2 - box.y1 - padding.bottom +
+                            priv->adjustment_value);
 
-  if (priv->n_items < 1 && priv->placeholder_actor)
-    clutter_actor_paint (priv->placeholder_actor);
-  else
+  for (c = priv->children; c; c = c->next)
     {
-      for (c = priv->children; c; c = c->next)
-        {
-          /* skip the current focus and paint it last*/
-          if (priv->current_focus != c->data)
-            clutter_actor_paint (c->data);
-        }
-
-      /* paint the current focused actor last to ensure any shadow is drawn
-       * on top of other items */
-      if (priv->current_focus)
-        clutter_actor_paint (priv->current_focus);
+      /* skip the current focus and paint it last*/
+      if (priv->current_focus != c->data)
+        clutter_actor_paint (c->data);
     }
 
-  cogl_clip_pop ();
+  /* paint the current focused actor last to ensure any shadow is drawn
+   * on top of other items */
+  if (priv->current_focus)
+    clutter_actor_paint (priv->current_focus);
 
-  clutter_actor_paint (priv->header);
+  cogl_clip_pop ();
 }
 
 static void
@@ -1120,8 +904,7 @@ mex_column_pick (ClutterActor *actor, const ClutterColor *color)
     value = 0;
 
   cogl_clip_push_rectangle (padding.left,
-                            clutter_actor_get_height (priv->header) +
-                              padding.top + value,
+                            padding.top + value,
                             box.x2 - box.x1 - padding.right,
                             box.y2 - box.y1 - padding.bottom + value);
 
@@ -1129,8 +912,6 @@ mex_column_pick (ClutterActor *actor, const ClutterColor *color)
     clutter_actor_paint (c->data);
 
   cogl_clip_pop ();
-
-  clutter_actor_paint (priv->header);
 }
 
 static void
@@ -1164,7 +945,7 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
   GList *c;
   guint offset, increment;
   ClutterActor *focused, *focused_cell;
-  gboolean cell_has_focus, has_focus, open, set_tile_important;
+  gboolean cell_has_focus, open, set_tile_important;
 
   MexColumnPrivate *priv = self->priv;
 
@@ -1172,50 +953,30 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
 
   /* Check if we have focus, and what child is focused */
   focused_cell = NULL;
-  set_tile_important = FALSE;
-  cell_has_focus = has_focus = FALSE;
+  set_tile_important = priv->has_focus;
+  cell_has_focus = FALSE;
 
   if (focused)
     {
-      gboolean contains_column = FALSE;
       ClutterActor *parent = clutter_actor_get_parent (focused);
       while (parent)
         {
           if (parent == (ClutterActor *)self)
             {
-              has_focus = TRUE;
+              focused_cell = focused;
+              cell_has_focus = TRUE;
 
-              if (!priv->has_focus)
-                {
-                  set_tile_important = TRUE;
-                  priv->has_focus = TRUE;
-                }
-
-              if (focused != priv->header)
-                {
-                  cell_has_focus = TRUE;
-                  focused_cell = focused;
-                }
-
+              /* Check whether focus has really moved */
+              if ((priv->current_focus == focused_cell) &&
+                  !priv->has_focus_changed)
+                return;
+              priv->current_focus = focused_cell;
               break;
-            }
-          else if (MEX_IS_COLUMN (parent))
-            {
-              contains_column = TRUE;
             }
 
           focused = parent;
           parent = clutter_actor_get_parent (focused);
         }
-
-      if (!contains_column)
-        has_focus = TRUE;
-    }
-
-  if (!has_focus && priv->has_focus)
-    {
-      priv->has_focus = FALSE;
-      set_tile_important = TRUE;
     }
 
   /* Scroll the adjustment to the top */
@@ -1234,12 +995,13 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
         g_object_unref (priv->expand_timeline);
       priv->expand_timeline =
         clutter_timeline_new (priv->n_items * increment);
-      clutter_timeline_set_delay (priv->expand_timeline, 350);
+      if (priv->has_focus_changed)
+        clutter_timeline_set_delay (priv->expand_timeline, 350);
     }
 
   /* Loop through children and set the content box important/unimportant
    * as necessary */
-  open = has_focus && !cell_has_focus;
+  open = priv->has_focus && (focused_cell == NULL);
   for (c = priv->children; c; c = c->next)
     {
       gchar signal_name[32+16];
@@ -1282,7 +1044,9 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
           offset += increment;
         }
       else
-        mex_column_expand_child (child);
+        {
+          mex_column_expand_child (child);
+        }
       mex_content_box_set_important (MEX_CONTENT_BOX (child), priv->has_focus);
     }
 
@@ -1371,41 +1135,18 @@ mex_column_class_init (MexColumnClass *klass)
   o_class->set_property = mex_column_set_property;
   o_class->get_property = mex_column_get_property;
 
-  a_class->get_preferred_width = mex_column_get_preferred_width;
+  a_class->get_preferred_width  = mex_column_get_preferred_width;
   a_class->get_preferred_height = mex_column_get_preferred_height;
-  a_class->allocate = mex_column_allocate;
-  a_class->apply_transform = mex_column_apply_transform;
-  a_class->paint = mex_column_paint;
-  a_class->pick = mex_column_pick;
-  a_class->map = mex_column_map;
-  a_class->unmap = mex_column_unmap;
+  a_class->allocate             = mex_column_allocate;
+  a_class->apply_transform      = mex_column_apply_transform;
+  a_class->paint                = mex_column_paint;
+  a_class->pick                 = mex_column_pick;
+  a_class->map                  = mex_column_map;
+  a_class->unmap                = mex_column_unmap;
   a_class->button_release_event = mex_column_button_release_event;
-  a_class->get_paint_volume = mex_column_get_paint_volume;
+  a_class->get_paint_volume     = mex_column_get_paint_volume;
 
   g_type_class_add_private (klass, sizeof (MexColumnPrivate));
-
-  pspec = g_param_spec_string ("label",
-                               "Label",
-                               "Text used as the title for this column.",
-                               "",
-                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
-                               G_PARAM_CONSTRUCT);
-  g_object_class_install_property (o_class, PROP_LABEL, pspec);
-
-  pspec = g_param_spec_object ("placeholder-actor",
-                               "Placeholder Actor",
-                               "Actor used when this column is empty.",
-                               CLUTTER_TYPE_ACTOR,
-                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (o_class, PROP_PLACEHOLDER_ACTOR, pspec);
-
-  pspec = g_param_spec_string ("icon-name",
-                               "Icon Name",
-                               "Icon name used by the icon for this column.",
-                               NULL,
-                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
-                               G_PARAM_CONSTRUCT);
-  g_object_class_install_property (o_class, PROP_ICON_NAME, pspec);
 
   pspec = g_param_spec_boolean ("collapse-on-focus",
                                 "Collapse On Focus",
@@ -1414,6 +1155,13 @@ mex_column_class_init (MexColumnClass *klass)
                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (o_class, PROP_COLLAPSE_ON_FOCUS, pspec);
 
+  pspec = g_param_spec_boolean ("opened",
+                                "Opened",
+                                "Whether the column has at least one open item.",
+                                TRUE,
+                                G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (o_class, PROP_OPENED, pspec);
+
   /* MxScrollable properties */
   g_object_class_override_property (o_class,
                                     PROP_HADJUST,
@@ -1421,83 +1169,12 @@ mex_column_class_init (MexColumnClass *klass)
   g_object_class_override_property (o_class,
                                     PROP_VADJUST,
                                     "vertical-adjustment");
-
-  signals[ACTIVATED] = g_signal_new ("activated",
-                                     G_TYPE_FROM_CLASS (klass),
-                                     G_SIGNAL_RUN_LAST,
-                                     G_STRUCT_OFFSET (MexColumnClass,
-                                                      activated),
-                                     NULL, NULL,
-                                     g_cclosure_marshal_VOID__VOID,
-                                     G_TYPE_NONE, 0);
-}
-
-static void
-mex_column_header_clicked_cb (MxButton *button, MexColumn *self)
-{
-  g_signal_emit (self, signals[ACTIVATED], 0);
 }
 
 static void
 mex_column_init (MexColumn *self)
 {
-  ClutterActor *box;
   MexColumnPrivate *priv = self->priv = GET_PRIVATE (self);
-
-  /* Begin private children */
-  clutter_actor_push_internal (CLUTTER_ACTOR (self));
-
-  /* Create the header */
-  priv->header = mx_box_layout_new ();
-  mx_box_layout_set_orientation ((MxBoxLayout *) priv->header,
-                                 MX_ORIENTATION_HORIZONTAL);
-
-  clutter_actor_push_internal (CLUTTER_ACTOR (self));
-  clutter_actor_set_parent (priv->header, CLUTTER_ACTOR (self));
-  clutter_actor_pop_internal (CLUTTER_ACTOR (self));
-
-  priv->button = mx_button_new ();
-  mx_stylable_set_style_class (MX_STYLABLE (priv->button), "Header");
-  priv->icon = mx_icon_new ();
-  priv->label = mx_label_new ();
-  g_object_set (priv->label, "clip-to-allocation", TRUE, "fade-out", TRUE,
-                NULL);
-
-  box = mx_box_layout_new ();
-  mx_box_layout_set_spacing (MX_BOX_LAYOUT (box), 8);
-  clutter_container_add (CLUTTER_CONTAINER (box),
-                         priv->icon,
-                         priv->label,
-                         NULL);
-  clutter_container_child_set (CLUTTER_CONTAINER (box),
-                               priv->icon,
-                               "expand", FALSE,
-                               "y-align", MX_ALIGN_MIDDLE,
-                               "y-fill", FALSE,
-                               NULL);
-  clutter_container_child_set (CLUTTER_CONTAINER (box),
-                               priv->label,
-                               "expand", TRUE,
-                               "x-fill", TRUE,
-                               "x-align", MX_ALIGN_START,
-                               "y-fill", FALSE,
-                               NULL);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->button), box);
-
-  mx_bin_set_fill (MX_BIN (priv->button), TRUE, FALSE);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->header), priv->button);
-  clutter_container_child_set (CLUTTER_CONTAINER (priv->header), priv->button,
-                               "expand", TRUE,
-                               "x-fill", TRUE,
-                               "x-align", MX_ALIGN_START,
-                               "y-fill", TRUE,
-                               NULL);
-
-  g_signal_connect (priv->button, "clicked",
-                    G_CALLBACK (mex_column_header_clicked_cb), self);
-
-  /* End of private children */
-  clutter_actor_pop_internal (CLUTTER_ACTOR (self));
 
   /* Set the column as reactive and enable collapsing */
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
@@ -1506,80 +1183,21 @@ mex_column_init (MexColumn *self)
 
 
 ClutterActor *
-mex_column_new (const char *label,
-                const char *icon_name)
+mex_column_new (void)
 {
-  return g_object_new (MEX_TYPE_COLUMN,
-                       "label", label,
-                       "icon-name", icon_name,
-                       NULL);
+  return g_object_new (MEX_TYPE_COLUMN, NULL);
 }
 
-const gchar *
-mex_column_get_label (MexColumn *column)
+gboolean
+mex_column_is_empty (MexColumn *column)
 {
-  g_return_val_if_fail (MEX_IS_COLUMN (column), NULL);
-  return mx_label_get_text (MX_LABEL (column->priv->label));
-}
-
-void
-mex_column_set_label (MexColumn *column, const gchar *label)
-{
-  g_return_if_fail (MEX_IS_COLUMN (column));
-  mx_label_set_text (MX_LABEL (column->priv->label), label ? label : "");
-}
-
-ClutterActor*
-mex_column_get_placeholder_actor (MexColumn *column)
-{
-  g_return_val_if_fail (MEX_IS_COLUMN (column), NULL);
-
-  return column->priv->placeholder_actor;
-}
-
-void
-mex_column_set_placeholder_actor (MexColumn    *column,
-                                  ClutterActor *actor)
-{
-  MexColumnPrivate *priv = column->priv;
-
-  g_return_if_fail (MEX_IS_COLUMN (column));
-  g_return_if_fail (actor == NULL || CLUTTER_IS_ACTOR (actor));
-
-  /* placeholder label */
-  if (priv->placeholder_actor)
-    clutter_actor_unparent (priv->placeholder_actor);
-
-  priv->placeholder_actor = actor;
-
-  if (actor)
-    {
-      clutter_actor_push_internal (CLUTTER_ACTOR (column));
-      clutter_actor_set_parent (priv->placeholder_actor, CLUTTER_ACTOR (column));
-      clutter_actor_pop_internal (CLUTTER_ACTOR (column));
-    }
-
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (column));
-}
-
-
-const gchar *
-mex_column_get_icon_name (MexColumn *column)
-{
-  g_return_val_if_fail (MEX_IS_COLUMN (column), NULL);
-  return mx_icon_get_icon_name (MX_ICON (column->priv->icon));
-}
-
-void
-mex_column_set_icon_name (MexColumn *column, const gchar *name)
-{
-  g_return_if_fail (MEX_IS_COLUMN (column));
-  mx_icon_set_icon_name (MX_ICON (column->priv->icon), name);
+  g_return_val_if_fail (MEX_IS_COLUMN (column), TRUE);
+  return (column->priv->children == NULL);
 }
 
 void
 mex_column_set_collapse_on_focus (MexColumn *column,
-                                 gboolean   collapse)
+                                  gboolean   collapse)
 {
   MexColumnPrivate *priv;
 
@@ -1607,4 +1225,38 @@ mex_column_get_collapse_on_focus (MexColumn *column)
 {
   g_return_val_if_fail (MEX_IS_COLUMN (column), FALSE);
   return column->priv->collapse;
+}
+
+void
+mex_column_set_has_focus (MexColumn *column, gboolean focus)
+{
+  MexColumnPrivate *priv;
+
+  g_return_if_fail (MEX_IS_COLUMN (column));
+
+  priv = column->priv;
+
+  if (priv->has_focus != focus)
+    {
+      ClutterActor *stage;
+
+      priv->has_focus = focus;
+
+      if ((stage = clutter_actor_get_stage (CLUTTER_ACTOR (column))))
+        {
+          MxFocusManager *manager =
+            mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
+          priv->has_focus_changed = TRUE;
+          mex_column_notify_focused_cb (manager, NULL, column);
+          priv->has_focus_changed = FALSE;
+        }
+    }
+}
+
+gboolean
+mex_column_get_opened (MexColumn *column)
+{
+  g_return_val_if_fail (MEX_IS_COLUMN (column), FALSE);
+
+  return column->priv->open_boxes != 0;
 }

@@ -38,6 +38,7 @@
 #include <mex/mex-channel-provider.h>
 #include <mex/mex-clock-bin.h>
 #include <mex/mex-column.h>
+#include <mex/mex-column-view.h>
 #include <mex/mex-content.h>
 #include <mex/mex-content-box.h>
 #include <mex/mex-content-button.h>

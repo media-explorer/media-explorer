@@ -507,6 +507,7 @@ mex_content_box_get_preferred_height (ClutterActor *actor,
 
   clutter_actor_get_preferred_height (priv->tile, for_width, min_height,
                                       pref_height);
+
   if (!priv->extras_visible)
     return;
 

@@ -21,13 +21,13 @@
 #include "mex-aggregate-model.h"
 #include "mex-view-model.h"
 #include "mex-column.h"
+#include "mex-column-view.h"
 #include "mex-content-box.h"
 #include "mex-content-proxy.h"
 #include "mex-content-view.h"
 #include "mex-grid-view.h"
 #include "mex-marshal.h"
 #include "mex-resizing-hbox.h"
-#include "mex-scroll-view.h"
 #include "mex-tile.h"
 
 #include "mex-scene.h"
@@ -87,6 +87,7 @@ static guint signals[LAST_SIGNAL] = { 0, };
 static GQuark mex_explorer_model_quark = 0;
 static GQuark mex_explorer_proxy_quark = 0;
 static GQuark mex_explorer_container_quark = 0;
+static GQuark mex_explorer_explorer_quark = 0;
 
 static void
 mex_explorer_model_added_cb (MexAggregateModel *aggregate,
@@ -389,6 +390,8 @@ mex_explorer_class_init (MexExplorerClass *klass)
   mex_explorer_proxy_quark = g_quark_from_static_string ("mex-explorer-proxy");
   mex_explorer_container_quark =
     g_quark_from_static_string ("mex-explorer-container");
+  mex_explorer_explorer_quark =
+    g_quark_from_static_string ("mex-explorer-explorer");
 }
 
 static void
@@ -501,18 +504,25 @@ mex_explorer_unset_container_cb (gpointer  model,
 }
 
 static void
-mex_explorer_show_maybe_focus (ClutterActor *column,
-                               ClutterActor *box,
-                               MexExplorer  *self)
+mex_explorer_show_maybe_focus (GController          *controller,
+                               GControllerAction     action,
+                               GControllerReference *ref,
+                               MexModel             *model)
 {
-  MexExplorerPrivate *priv = self->priv;
+  MexExplorer *explorer =
+    MEX_EXPLORER (g_object_get_qdata (G_OBJECT (model),
+                                      mex_explorer_explorer_quark));
+  MexExplorerPrivate *priv = explorer->priv;
+  ClutterActor *column_view =
+    CLUTTER_ACTOR (g_object_get_qdata (G_OBJECT (model),
+                                       mex_explorer_container_quark));
 
   /* Show the scroll-view the column is in */
-  clutter_actor_show (clutter_actor_get_parent (column));
+  clutter_actor_show (column_view);
 
   if (priv->has_temporary_focus)
     {
-      ClutterActor *stage = clutter_actor_get_stage (CLUTTER_ACTOR (self));
+      ClutterActor *stage = clutter_actor_get_stage (CLUTTER_ACTOR (explorer));
 
       /* An actor has been added and we had temporary focus - try to
        * re-focus ourselves.
@@ -522,7 +532,8 @@ mex_explorer_show_maybe_focus (ClutterActor *column,
           MxFocusManager *manager =
             mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
           mx_focus_manager_move_focus (manager, MX_FOCUS_DIRECTION_OUT);
-          mx_focus_manager_push_focus_with_hint (manager, MX_FOCUSABLE (self),
+          mx_focus_manager_push_focus_with_hint (manager,
+                                                 MX_FOCUSABLE (explorer),
                                                  MX_FOCUS_HINT_PRIOR);
         }
     }
@@ -567,9 +578,10 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   MexProxy *proxy;
   gchar *placeholder_text;
   ClutterContainer *container;
-  ClutterActor *column, *label, *scroll;
+  ClutterActor *column_view, *label;
   gboolean display_item_count;
   gchar *title;
+  MexColumn *column;
 
   MexExplorerPrivate *priv = explorer->priv;
 
@@ -581,29 +593,35 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   container = g_object_get_qdata (G_OBJECT (aggregate),
                                   mex_explorer_container_quark);
 
-  /* Create a scroll-view for the column */
-  scroll = mex_scroll_view_new ();
-  mx_kinetic_scroll_view_set_scroll_policy (MX_KINETIC_SCROLL_VIEW (scroll),
-                                            MX_SCROLL_POLICY_VERTICAL);
-  mex_scroll_view_set_indicators_hidden (MEX_SCROLL_VIEW (scroll), TRUE);
-
   /* Create a new column for this model */
-  column = mex_column_new (NULL, NULL);
+  column_view = mex_column_view_new (NULL, NULL);
+  column = mex_column_view_get_column (MEX_COLUMN_VIEW (column_view));
   if (priv->touch_mode)
-    mex_column_set_collapse_on_focus (MEX_COLUMN (column), FALSE);
+    mex_column_set_collapse_on_focus (column, FALSE);
 
   g_object_get (model, "display-item-count", &display_item_count,
                 "title", &title, NULL);
 
-  mx_stylable_set_style_class (MX_STYLABLE (column), title);
+  /* Cross reference column_view <-> model */
+  g_object_set_qdata (G_OBJECT (column_view),
+                      mex_explorer_model_quark,
+                      model);
+  g_object_set_qdata (G_OBJECT (model),
+                      mex_explorer_container_quark,
+                      column_view);
+  g_object_set_qdata (G_OBJECT (model),
+                      mex_explorer_explorer_quark,
+                      explorer);
+
+  mx_stylable_set_style_class (MX_STYLABLE (column_view), title);
   g_free (title);
 
   if (!display_item_count)
-    g_object_bind_property (model, "title", column, "label",
+    g_object_bind_property (model, "title", column_view, "label",
                             G_BINDING_SYNC_CREATE);
   else
     g_object_bind_property_full (model, "title",
-                                 column, "label",
+                                 column_view, "label",
                                  G_BINDING_SYNC_CREATE,
                                  (GBindingTransformFunc)transform_title_cb,
                                  NULL,
@@ -614,7 +632,7 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
                     G_CALLBACK (model_length_changed_cb), column);
 
   g_object_bind_property (model, "icon-name",
-                          column, "icon-name",
+                          column_view, "icon-name",
                           G_BINDING_SYNC_CREATE);
 
   /* placeholder actor for when there are no items */
@@ -626,7 +644,7 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
                           label, "text",
                           G_BINDING_SYNC_CREATE);
   clutter_text_set_line_wrap (CLUTTER_TEXT (mx_label_get_clutter_text (MX_LABEL (label))), TRUE);
-  mex_column_set_placeholder_actor (MEX_COLUMN (column), label);
+  mex_column_view_set_placeholder_actor (MEX_COLUMN_VIEW (column_view), label);
 
   /* If there's no place-holder text, start hidden and show when there's an
    * actor added.
@@ -639,13 +657,17 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
    */
   if (!placeholder_text || !(*placeholder_text))
     {
-      clutter_actor_hide (scroll);
-      g_signal_connect (column, "actor-added",
-                        G_CALLBACK (mex_explorer_show_maybe_focus), explorer);
+      GController *controller = mex_model_get_controller (model);
+      clutter_actor_hide (column_view);
+
+      g_signal_connect (controller, "changed",
+                        G_CALLBACK (mex_explorer_show_maybe_focus),
+                        model);
     }
 
   /* Create the proxy to create objects for the column */
-  proxy = mex_content_proxy_new (view_model, CLUTTER_CONTAINER (column),
+  proxy = mex_content_proxy_new (view_model,
+                                 CLUTTER_CONTAINER (column),
                                  MEX_TYPE_CONTENT_BOX);
   mex_content_proxy_set_stage (MEX_CONTENT_PROXY (proxy),
                                (ClutterStage *)clutter_actor_get_stage (
@@ -655,28 +677,20 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
    * the container/the explorer/the model and so that we can forward
    * the appropriate signals.
    */
-  g_object_weak_ref (G_OBJECT (column),
+  g_object_weak_ref (G_OBJECT (column_view),
                      (GWeakNotify)g_object_unref,
                      proxy);
   g_signal_connect (proxy, "object-created",
                     G_CALLBACK (mex_explorer_column_object_created_cb),
                     column);
 
-  g_object_set_qdata (G_OBJECT (column),
-                      mex_explorer_model_quark,
-                      model);
-  g_signal_connect (column, "activated",
+  g_signal_connect (column_view, "activated",
                     G_CALLBACK (mex_explorer_column_activated_cb),
                     explorer);
 
-  g_object_set_qdata (G_OBJECT (model),
-                      mex_explorer_container_quark,
-                      column);
+  clutter_container_add_actor (container, column_view);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (scroll), column);
-  clutter_container_add_actor (container, scroll);
-
-  g_object_weak_ref (G_OBJECT (column), mex_explorer_unset_container_cb, model);
+  g_object_weak_ref (G_OBJECT (column_view), mex_explorer_unset_container_cb, model);
 
   /* Start the proxy */
   mex_view_model_start (MEX_VIEW_MODEL (view_model));
@@ -689,25 +703,26 @@ mex_explorer_model_removed_cb (MexAggregateModel *aggregate,
                                MexModel          *model,
                                MexExplorer       *explorer)
 {
-  ClutterActor *column = g_object_get_qdata (G_OBJECT (model),
-                                             mex_explorer_container_quark);
-  ClutterActor *scroll = clutter_actor_get_parent (column);
-  ClutterActor *parent = clutter_actor_get_parent (scroll);
+  ClutterActor *column_view = g_object_get_qdata (G_OBJECT (model),
+                                                  mex_explorer_container_quark);
+  ClutterActor *parent = clutter_actor_get_parent (column_view);
+  GController *controller = mex_model_get_controller (model);;
+
+  /* Disconnect controller */
+  g_signal_handlers_disconnect_by_func (controller,
+                                        G_CALLBACK (mex_explorer_show_maybe_focus),
+                                        explorer);
 
   /* Remove the weak reference - it's possible (and likely) the model will
    * disappear before we get to the callback.
    */
-  g_object_weak_unref (G_OBJECT (column),
+  g_object_weak_unref (G_OBJECT (column_view),
                        mex_explorer_unset_container_cb, model);
   g_object_set_qdata (G_OBJECT (model), mex_explorer_container_quark, NULL);
+  g_object_set_qdata (G_OBJECT (model), mex_explorer_explorer_quark, NULL);
 
   /* Remove the column representing this model */
-
-  /* It's housed in a scroll-view, so we remove that from the container
-   * and we should be the last thing referencing that, so that destroys the
-   * column.
-   */
-  clutter_container_remove_actor (CLUTTER_CONTAINER (parent), scroll);
+  clutter_container_remove_actor (CLUTTER_CONTAINER (parent), column_view);
 }
 
 static void
@@ -1257,8 +1272,9 @@ mex_explorer_focus_content (MexExplorer       *explorer,
           ClutterContainer *sub_container;
 
           /* assert that the assumption about the actor hierarchy is correct */
-          g_assert (MEX_IS_SCROLL_VIEW (c->data));
-          sub_container = CLUTTER_CONTAINER (mx_bin_get_child (c->data));
+          g_assert (MEX_IS_COLUMN_VIEW (c->data));
+          sub_container =
+            CLUTTER_CONTAINER (mex_column_view_get_column (c->data));
           g_assert (MEX_IS_COLUMN (sub_container));
 
           sub_children = clutter_container_get_children (sub_container);
@@ -1338,8 +1354,9 @@ mex_explorer_set_touch_mode_recursive (GList    *children,
 
   for (l = children; l; l = l->next)
     {
-      if (MEX_IS_COLUMN (l->data))
-        mex_column_set_collapse_on_focus (l->data, !on);
+      if (MEX_IS_COLUMN_VIEW (l->data))
+        mex_column_set_collapse_on_focus (
+                  mex_column_view_get_column (MEX_COLUMN_VIEW (l->data)), !on);
       else if (CLUTTER_IS_CONTAINER (l->data))
         {
           GList *sub_children = clutter_container_get_children (l->data);

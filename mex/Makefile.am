@@ -63,6 +63,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-channel-provider.h		\
 	$(top_srcdir)/mex/mex-clock-bin.h			\
 	$(top_srcdir)/mex/mex-column.h				\
+	$(top_srcdir)/mex/mex-column-view.h			\
 	$(top_srcdir)/mex/mex-content-box.h			\
 	$(top_srcdir)/mex/mex-content-button.h			\
 	$(top_srcdir)/mex/mex-content-proxy.h			\
@@ -164,6 +165,7 @@ mex_sources =					\
 	mex-channel-provider.c			\
 	mex-clock-bin.c				\
 	mex-column.c				\
+	mex-column-view.c			\
 	mex-content-box.c			\
 	mex-content-button.c			\
 	mex-content-proxy.c			\

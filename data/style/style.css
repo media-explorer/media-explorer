@@ -229,7 +229,7 @@ MxDialog MexTile.Important:focus
 }
 
 /* Placeholder Tile */
-MexColumn > .placeholder-label
+MexColumnView > .placeholder-label
 {
   padding: 12;
   border-image: url('thumb-no-content.png') 0;

@@ -121,7 +121,7 @@ main (int argc, char **argv)
 {
   const ClutterColor dark_gray = { 0x40, 0x40, 0x40, 0xff };
 
-  ClutterActor *stage, *scroll, *column;
+  ClutterActor *stage, *column;
   MxApplication *app;
   MxWindow *window;
 
@@ -133,16 +133,13 @@ main (int argc, char **argv)
   stage = (ClutterActor *)mx_window_get_clutter_stage (window);
   clutter_stage_set_color (CLUTTER_STAGE (stage), &dark_gray);
 
-  column = mex_column_new ("Pictures", "picture");
+  column = mex_column_view_new ("Pictures", "picture");
 
-  add_pictures (column);
+  add_pictures (CLUTTER_ACTOR (mex_column_view_get_column (MEX_COLUMN_VIEW (column))));
 
   g_message ("Packed %d actors into column", tiles);
 
-  scroll = mex_scroll_view_new ();
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (scroll), column);
-  mx_window_set_child (window, scroll);
+  mx_window_set_child (window, column);
 
   mx_window_set_has_toolbar (window, FALSE);
   clutter_actor_show (stage);

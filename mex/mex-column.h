@@ -66,21 +66,17 @@ struct _MexColumnClass
 };
 
 GType mex_column_get_type (void) G_GNUC_CONST;
-ClutterActor *mex_column_new (const char *label,
-                              const char *icon_name);
+ClutterActor *mex_column_new (void);
 
-const gchar * mex_column_get_label (MexColumn *column);
-void          mex_column_set_label (MexColumn *column, const gchar *label);
-
-const gchar * mex_column_get_icon_name (MexColumn *column);
-void          mex_column_set_icon_name (MexColumn *column, const gchar *name);
-
-ClutterActor* mex_column_get_placeholder_actor (MexColumn *column);
-void          mex_column_set_placeholder_actor (MexColumn *column, ClutterActor *label);
+gboolean mex_column_is_empty (MexColumn *column);
 
 void     mex_column_set_collapse_on_focus (MexColumn *column,
                                            gboolean   collapse);
 gboolean mex_column_get_collapse_on_focus (MexColumn *column);
+
+void     mex_column_set_has_focus (MexColumn *column, gboolean focus);
+
+gboolean mex_column_get_opened (MexColumn *column);
 
 G_END_DECLS
 
