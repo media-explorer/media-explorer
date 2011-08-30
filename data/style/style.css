@@ -211,6 +211,11 @@ MexTile.Important:focus > MxIcon.Info
   -mx-icon-name: "icon-info-highlight";
 }
 
+MexColumn.Search MexTile.Important:focus > MxIcon.Info
+{
+  -mx-icon-name: none;
+}
+
 MexTile.Important
 {
   x-mex-header-background: url("item-title-bg.png") 0;
