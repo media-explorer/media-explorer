@@ -391,6 +391,7 @@ mex_grid_view_timeline_complete_cb (ClutterTimeline *timeline,
   else if (priv->state == STATE_OPENING)
     {
       priv->state = STATE_OPEN;
+      clutter_actor_show (priv->grid);
       mex_proxy_set_model (priv->proxy, priv->model);
     }
 
