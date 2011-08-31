@@ -549,6 +549,14 @@ mex_grilo_open_folder_cb (MxAction *action,
     }
 
   /* register the new model with the model manager */
+
+  /* FIXME: The model might not have had an alt model/no alt model string
+   * but because this sets up the alt model as the parent folder model the
+   * button will be displayed. This just stops the button being blank for now.
+   */
+  if (!model_info->alt_model_string)
+    model_info->alt_model_string = g_strdup (_("Show Folders"));
+
   model_info->alt_model = MEX_MODEL (feed);
   mex_model_manager_add_model (manager, model_info);
   mex_model_info_free (model_info);
