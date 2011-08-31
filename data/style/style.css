@@ -258,17 +258,17 @@ MxButton.MediaPause:focus
 
 MxButton.EndCall
 {
-  -mx-icon-name: "media-playback-stop";
+  -mx-icon-name: "call-end";
 }
 
 MxButton.CameraOff
 {
-  -mx-icon-name: "media-playback-pause";
+  -mx-icon-name: "call-video-turnoff";
 }
 
 MxButton.CameraOn
 {
-  -mx-icon-name: "media-playback-start";
+  -mx-icon-name: "call-video-turnon";
 }
 
 MxButton.MediaMute
