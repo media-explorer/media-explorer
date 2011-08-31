@@ -12,6 +12,7 @@ mex/mex-queue-model.c
 mex/mex-utils.c
 plugins/applications/mex-applications-plugin.c
 plugins/gnome-dvb/mex-gnome-dvb-plugin.c
+plugins/optical-disc/mex-opticaldisc-plugin.c
 plugins/queue/mex-queue-plugin.c
 plugins/search/mex-search-plugin.c
 plugins/tracker/mex-tracker-plugin.c
