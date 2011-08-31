@@ -1052,6 +1052,8 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
 
   if (priv->expand_timeline && set_tile_important && (offset >= increment))
     clutter_timeline_start (priv->expand_timeline);
+
+  priv->has_focus_changed = FALSE;
 }
 
 static void
@@ -1228,7 +1230,7 @@ mex_column_get_collapse_on_focus (MexColumn *column)
 }
 
 void
-mex_column_set_has_focus (MexColumn *column, gboolean focus)
+mex_column_set_focus (MexColumn *column, gboolean focus)
 {
   MexColumnPrivate *priv;
 
@@ -1238,18 +1240,8 @@ mex_column_set_has_focus (MexColumn *column, gboolean focus)
 
   if (priv->has_focus != focus)
     {
-      ClutterActor *stage;
-
       priv->has_focus = focus;
-
-      if ((stage = clutter_actor_get_stage (CLUTTER_ACTOR (column))))
-        {
-          MxFocusManager *manager =
-            mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
-          priv->has_focus_changed = TRUE;
-          mex_column_notify_focused_cb (manager, NULL, column);
-          priv->has_focus_changed = FALSE;
-        }
+      priv->has_focus_changed = TRUE;
     }
 }
 

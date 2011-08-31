@@ -606,11 +606,12 @@ mex_resizing_hbox_move_focus (MxFocusable      *focusable,
 static MxFocusable *
 mex_resizing_hbox_accept_focus (MxFocusable *focusable, MxFocusHint hint)
 {
-  GList *c;
-  gboolean reverse;
-
   MexResizingHBox *self = MEX_RESIZING_HBOX (focusable);
   MexResizingHBoxPrivate *priv = self->priv;
+
+  GList *c;
+  gboolean reverse;
+  ClutterActor *child = priv->current_focus;
 
   if (hint == MX_FOCUS_HINT_FROM_LEFT)
     hint = MX_FOCUS_HINT_FIRST;
@@ -635,7 +636,7 @@ mex_resizing_hbox_accept_focus (MxFocusable *focusable, MxFocusHint hint)
       for (c = reverse ? g_list_last (priv->children) : priv->children;
            c; c = reverse ? c->prev : c->next)
         {
-          ClutterActor *child = c->data;
+          child = c->data;
 
           if (!MX_IS_FOCUSABLE (child) ||
               !CLUTTER_ACTOR_IS_VISIBLE (child))
@@ -644,6 +645,16 @@ mex_resizing_hbox_accept_focus (MxFocusable *focusable, MxFocusHint hint)
           focusable = mx_focusable_accept_focus (MX_FOCUSABLE (child), hint);
           break;
         }
+    }
+
+  if (child != priv->current_focus)
+    {
+      if (MEX_IS_COLUMN_VIEW (priv->current_focus))
+        mex_column_view_set_focus (MEX_COLUMN_VIEW (priv->current_focus),
+                                   FALSE);
+      if (MEX_IS_COLUMN_VIEW (child))
+        mex_column_view_set_focus (MEX_COLUMN_VIEW (child),
+                                   TRUE);
     }
 
   return focusable;
@@ -1534,6 +1545,13 @@ mex_resizing_hbox_notify_focused_cb (MxFocusManager  *manager,
                                        CLUTTER_EASE_OUT_QUAD, 250,
                                        "opacity", INACTIVE_OPACITY,
                                        NULL);
+
+              if (MEX_IS_COLUMN_VIEW (priv->current_focus))
+                mex_column_view_set_focus (MEX_COLUMN_VIEW (priv->current_focus),
+                                           FALSE);
+              if (MEX_IS_COLUMN_VIEW (focused))
+                mex_column_view_set_focus (MEX_COLUMN_VIEW (focused),
+                                           TRUE);
 
               priv->current_focus = focused;
               priv->has_focus = TRUE;

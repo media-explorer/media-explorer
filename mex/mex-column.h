@@ -74,7 +74,7 @@ void     mex_column_set_collapse_on_focus (MexColumn *column,
                                            gboolean   collapse);
 gboolean mex_column_get_collapse_on_focus (MexColumn *column);
 
-void     mex_column_set_has_focus (MexColumn *column, gboolean focus);
+void     mex_column_set_focus (MexColumn *column, gboolean focus);
 
 gboolean mex_column_get_opened (MexColumn *column);
 

@@ -85,6 +85,8 @@ ClutterActor* mex_column_view_get_placeholder_actor (MexColumnView *column);
 void          mex_column_view_set_placeholder_actor (MexColumnView *column,
                                                      ClutterActor  *label);
 
+void          mex_column_view_set_focus (MexColumnView *column, gboolean focus);
+
 G_END_DECLS
 
 #endif /* _MEX_COLUMN_VIEW_H */

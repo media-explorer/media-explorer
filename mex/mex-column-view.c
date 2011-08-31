@@ -110,9 +110,6 @@ mex_column_view_move_focus (MxFocusable      *focusable,
       break;
     }
 
-  if (!focusable)
-    priv->has_focus = FALSE;
-
   return focusable;
 }
 
@@ -161,9 +158,6 @@ mex_column_view_accept_focus (MxFocusable *focusable,
         priv->current_focus = priv->header;
       break;
     }
-
-  if (focusable)
-    priv->has_focus = TRUE;
 
   return focusable;
 }
@@ -490,64 +484,6 @@ mex_column_view_pick (ClutterActor *actor, const ClutterColor *color)
 }
 
 static void
-mex_column_view_notify_focused_cb (MxFocusManager *manager,
-                                   GParamSpec     *pspec,
-                                   MexColumnView  *self)
-{
-  MexColumnViewPrivate *priv = self->priv;
-  ClutterActor *focused;
-
-  focused = (ClutterActor *) mx_focus_manager_get_focused (manager);
-
-  /* Check if we have focus */
-  if (focused)
-    {
-      ClutterActor *parent = clutter_actor_get_parent (focused);
-      while (parent)
-        {
-          if (parent == (ClutterActor *)self)
-            {
-              mex_column_set_has_focus (MEX_COLUMN (priv->column), TRUE);
-              return;
-            }
-
-          focused = parent;
-          parent = clutter_actor_get_parent (focused);
-        }
-    }
-
-  mex_column_set_has_focus (MEX_COLUMN (priv->column), FALSE);
-}
-
-static void
-mex_column_view_map (ClutterActor *actor)
-{
-  MxFocusManager *manager;
-  MexColumnView *self = MEX_COLUMN_VIEW (actor);
-
-  CLUTTER_ACTOR_CLASS (mex_column_view_parent_class)->map (actor);
-
-  manager = mx_focus_manager_get_for_stage ((ClutterStage *)
-                                            clutter_actor_get_stage (actor));
-  g_signal_connect (manager, "notify::focused",
-                    G_CALLBACK (mex_column_view_notify_focused_cb), actor);
-  mex_column_view_notify_focused_cb (manager, NULL, self);
-}
-
-static void
-mex_column_view_unmap (ClutterActor *actor)
-{
-  MxFocusManager *manager =
-    mx_focus_manager_get_for_stage ((ClutterStage *)
-      clutter_actor_get_stage (actor));
-  g_signal_handlers_disconnect_by_func (manager,
-                                        mex_column_view_notify_focused_cb,
-                                        actor);
-
-  CLUTTER_ACTOR_CLASS (mex_column_view_parent_class)->unmap (actor);
-}
-
-static void
 mex_column_view_class_init (MexColumnViewClass *klass)
 {
   GParamSpec *pspec;
@@ -564,8 +500,6 @@ mex_column_view_class_init (MexColumnViewClass *klass)
   a_class->allocate             = mex_column_view_allocate;
   a_class->paint                = mex_column_view_paint;
   a_class->pick                 = mex_column_view_pick;
-  a_class->map                  = mex_column_view_map;
-  a_class->unmap                = mex_column_view_unmap;
 
   g_type_class_add_private (klass, sizeof (MexColumnViewPrivate));
 
@@ -784,4 +718,17 @@ mex_column_view_set_icon_name (MexColumnView *column, const gchar *name)
 {
   g_return_if_fail (MEX_IS_COLUMN_VIEW (column));
   mx_icon_set_icon_name (MX_ICON (column->priv->icon), name);
+}
+
+void
+mex_column_view_set_focus (MexColumnView *column, gboolean focus)
+{
+  MexColumnViewPrivate *priv;
+
+  g_return_if_fail (MEX_IS_COLUMN_VIEW (column));
+
+  priv = column->priv;
+  priv->has_focus = focus;
+
+  mex_column_set_focus (MEX_COLUMN (priv->column), focus);
 }
