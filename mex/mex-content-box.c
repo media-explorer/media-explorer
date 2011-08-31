@@ -333,7 +333,6 @@ mex_content_box_toggle_open (MexContentBox *box)
 
   next_is_open = !priv->is_open;
 
-  priv->extras_visible = TRUE;
   if (next_is_open)
     {
       /* opening */
@@ -345,6 +344,7 @@ mex_content_box_toggle_open (MexContentBox *box)
       mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list),
                                     priv->content);
 
+      priv->extras_visible = TRUE;
       if (close_notified)
         g_object_notify_by_pspec (G_OBJECT (box), properties[PROP_OPEN]);
 
@@ -359,6 +359,7 @@ mex_content_box_toggle_open (MexContentBox *box)
                                       CLUTTER_TIMELINE_BACKWARD);
 
       priv->is_closing = FALSE;
+      priv->extras_visible = TRUE;
     }
 
   if (!clutter_timeline_is_playing (priv->timeline))
