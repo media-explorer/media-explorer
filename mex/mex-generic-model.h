@@ -36,10 +36,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),                    \
                             MEX_TYPE_GENERIC_MODEL,     \
                             MexGenericModelClass))
-#define IS_MEX_GENERIC_MODEL(obj)                       \
+#define MEX_IS_GENERIC_MODEL(obj)                       \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),                   \
                                MEX_TYPE_GENERIC_MODEL))
-#define IS_MEX_GENERIC_MODEL_CLASS(klass)               \
+#define MEX_IS_GENERIC_MODEL_CLASS(klass)               \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),                    \
                             MEX_TYPE_GENERIC_MODEL))
 #define MEX_GENERIC_MODEL_GET_CLASS(obj)                \
