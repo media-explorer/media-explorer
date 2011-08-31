@@ -1,3 +1,22 @@
+Mex 0.1.6                                                            2011-08-31
+===============================================================================
+
+  • List of changes since Mex 0.1.4
+
+    » Addition of a optical-disc plugin
+
+    » Audio track and subtitle selection
+
+    » Background manager to support background plugins
+
+    » The usual bulk of small adjustments in the ui and content framework,
+      various fixes (leaks/performance) and maintenance work.
+
+Contributors to this release:
+
+  Thomas Wood, Lionel Landwerlin, Damien Lespiau, Michael Wood
+
+===============================================================================
 Mex 0.1.4                                                            2011-07-29
 ===============================================================================
 
