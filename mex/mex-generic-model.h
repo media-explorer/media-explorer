@@ -68,6 +68,10 @@ GType mex_generic_model_get_type (void) G_GNUC_CONST;
 MexModel *mex_generic_model_new (const gchar *title,
                                  const gchar *icon_name);
 
+const gchar *mex_generic_model_get_title (MexGenericModel *model);
+
+const gchar *mex_generic_model_get_icon_name (MexGenericModel *model);
+
 G_END_DECLS
 
 #endif /* __MEX_GENERIC_MODEL_H__ */

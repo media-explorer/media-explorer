@@ -518,3 +518,18 @@ mex_generic_model_new (const gchar *title,
                        NULL);
 }
 
+const gchar *
+mex_generic_model_get_title (MexGenericModel *model)
+{
+  g_return_val_if_fail (MEX_IS_GENERIC_MODEL (model), NULL);
+
+  return model->priv->title;
+}
+
+const gchar *
+mex_generic_model_get_icon_name (MexGenericModel *model)
+{
+  g_return_val_if_fail (MEX_IS_GENERIC_MODEL (model), NULL);
+
+  return model->priv->icon_name;
+}
