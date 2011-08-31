@@ -799,10 +799,19 @@ on_media_subtitle_tracks_changed (ClutterMedia *media,
   ClutterGstVideoTexture *video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
   MexInfoPanelPrivate *priv = panel->priv;
   GList *tracks, *l;
+  gint n_tracks;
 
   tracks = clutter_gst_video_texture_get_subtitle_tracks (video_texture);
 
   mx_combo_box_remove_all (MX_COMBO_BOX (priv->subtitle_combo_box));
+
+  /* no need to display the subtitle combo box if there's no subtitles */
+  n_tracks = g_list_length (tracks);
+  if (n_tracks == 0)
+    {
+      clutter_actor_hide (priv->subtitle_combo_box);
+      return;
+    }
 
   /* Add a "None" option to disable subtitles */
 
