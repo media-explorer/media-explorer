@@ -33,9 +33,9 @@
 
 G_DEFINE_TYPE(MexTelepathyChannel, mex_telepathy_channel, G_TYPE_OBJECT)
 
-#define TELEPATHY_CHANNEL_PRIVATE(o)                                          \
+#define TELEPATHY_CHANNEL_PRIVATE(o)                            \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o),                            \
-                                MEX_TYPE_TELEPATHY_CHANNEL,         \
+                                MEX_TYPE_TELEPATHY_CHANNEL,     \
                                 MexTelepathyChannelPrivate))
 
 struct _MexTelepathyChannelPrivate {
@@ -212,6 +212,9 @@ mex_telepathy_channel_dispose(GObject *gobject)
 static void
 mex_telepathy_channel_finalize (GObject *gobject)
 {
+    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(gobject);
+    MexTelepathyChannelPrivate *priv = self->priv;
+    g_source_remove(priv->buswatch);
     G_OBJECT_CLASS (mex_telepathy_channel_parent_class)->finalize (gobject);
 }
 

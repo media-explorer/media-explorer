@@ -36,7 +36,7 @@ G_DEFINE_TYPE_WITH_CODE (MexContact,
                                                 mex_content_iface_init))
 
 #define CONTACT_PRIVATE(o)                          \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o),                    \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o),                \
                                 MEX_TYPE_CONTACT,   \
                                 MexContactPrivate))
 
@@ -95,10 +95,8 @@ mex_contact_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_CONTACT:
-      if (value != NULL) {
-        mex_contact_set_tp_contact (MEX_CONTACT (object),
+      mex_contact_set_tp_contact (MEX_CONTACT (object),
                                     TP_CONTACT(g_value_get_pointer (value)));
-      }
       break;
 
     default:
@@ -164,7 +162,8 @@ mex_contact_class_init (MexContactClass *klass)
   g_object_class_install_property (object_class, PROP_CONTACT, pspec);
 }
 
-gboolean mex_contact_should_add_mimetype_to_model(gchar *mimetype)
+gboolean
+mex_contact_should_add_mimetype_to_model(gchar *mimetype)
 {
   if (!tp_strdiff(mimetype, "x-mex-av-contact")) {
     return TRUE;
@@ -179,7 +178,8 @@ gboolean mex_contact_should_add_mimetype_to_model(gchar *mimetype)
   return FALSE;
 }
 
-gboolean mex_contact_should_add_to_model(MexContact* self)
+gboolean
+mex_contact_should_add_to_model(MexContact* self)
 {
   return mex_contact_should_add_mimetype_to_model(self->priv->mimetype);
 }
