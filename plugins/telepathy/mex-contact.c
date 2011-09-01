@@ -377,10 +377,6 @@ void
 mex_contact_set_tp_contact (MexContact *self,
                             TpContact *contact)
 {
-  if (contact == NULL) {
-    return;
-  }
-
   MexContactPrivate *priv;
 
   g_return_if_fail (MEX_IS_CONTACT (self));
@@ -391,12 +387,16 @@ mex_contact_set_tp_contact (MexContact *self,
     g_object_unref (priv->contact);
   }
 
-  g_object_ref(contact);
-  priv->contact = contact;
-
   if (priv->avatar_path) {
     g_free(priv->avatar_path);
   }
+
+  if (contact == NULL) {
+    return;
+  }
+
+  g_object_ref(contact);
+  priv->contact = contact;
 
   GFile *file = tp_contact_get_avatar_file (priv->contact);
   if (file) {
