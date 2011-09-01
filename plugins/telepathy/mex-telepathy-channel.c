@@ -48,6 +48,7 @@ struct _MexTelepathyChannelPrivate {
     ClutterActor *camera_button;
     MxAction *mute_action;
     ClutterActor *mute_button;
+    ClutterActor *end_button;
     GstElement *incoming_sink;
     GstElement *outgoing_sink;
     GstElement *outgoing_mic;
@@ -154,6 +155,12 @@ mex_telepathy_channel_dispose(GObject *gobject)
         priv->mute_button = NULL;
     }
 
+    if (priv->end_button)
+    {
+        g_object_unref(priv->end_button);
+        priv->end_button = NULL;
+    }
+
     if (priv->incoming_sink)
     {
         g_object_unref(priv->incoming_sink);
@@ -212,6 +219,24 @@ static void
 mex_telepathy_channel_finalize (GObject *gobject)
 {
     G_OBJECT_CLASS (mex_telepathy_channel_parent_class)->finalize (gobject);
+}
+
+static void mex_telepathy_channel_on_video_shown(ClutterActor *actor,
+                            gpointer user_data)
+{
+    MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
+    MexTelepathyChannelPrivate *priv = self->priv;
+
+    ClutterStage *stage;
+    MxFocusManager *fmanager;
+
+    stage = (ClutterStage*) clutter_actor_get_stage (CLUTTER_ACTOR (actor));
+
+    if (stage)
+    {
+        fmanager = mx_focus_manager_get_for_stage (stage);
+        mx_focus_manager_push_focus (fmanager, MX_FOCUSABLE (priv->end_button));
+    }
 }
 
 static void mex_telepathy_channel_on_video_closed(ClutterActor *actor,
@@ -310,18 +335,18 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
     // Create the toolbar with a fixed height
     ClutterActor *toolbar = mx_box_layout_new();
     clutter_actor_set_height(toolbar, 48);
-
     mx_stylable_set_style_class (MX_STYLABLE (toolbar), "MexMediaControlsTitle");
     mx_box_layout_set_spacing( MX_BOX_LAYOUT(toolbar), 16);
 
+    // Create the user label
     priv->title_label = mx_label_new();
     mx_label_set_y_align(MX_LABEL(priv->title_label), MX_ALIGN_MIDDLE);
     mx_label_set_x_align(MX_LABEL(priv->title_label), MX_ALIGN_MIDDLE);
 
     MxAction *end_action = mx_action_new_full("End", "Hang Up",
                            (GCallback)mex_telepathy_channel_on_hangup, self);
-    ClutterActor *end_button = mex_action_button_new(end_action);
-    mx_stylable_set_style_class (MX_STYLABLE (end_button), "EndCall");
+    priv->end_button = mex_action_button_new(end_action);
+    mx_stylable_set_style_class (MX_STYLABLE (priv->end_button), "EndCall");
 
     priv->camera_action = mx_action_new_full("Camera", "Camera Off",
                             (GCallback)mex_telepathy_channel_on_camera, self);
@@ -338,11 +363,11 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
                           priv->title_label,
                           priv->camera_button,
                           priv->mute_button,
-                          end_button,
+                          priv->end_button,
                           NULL);
 
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), priv->title_label, TRUE);
-    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), end_button, TRUE);
+    mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), priv->end_button, TRUE);
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), priv->camera_button, TRUE);
     mx_box_layout_child_set_expand( MX_BOX_LAYOUT(toolbar), priv->mute_button, TRUE);
 
@@ -372,6 +397,12 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
     g_signal_connect(priv->video_call_page,
                      "hide",
                      G_CALLBACK(mex_telepathy_channel_on_video_closed),
+                     self);
+
+    // Connect to show signals.
+    g_signal_connect(priv->video_call_page,
+                     "show",
+                     G_CALLBACK(mex_telepathy_channel_on_video_shown),
                      self);
 }
 
