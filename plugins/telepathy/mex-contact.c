@@ -453,8 +453,6 @@ content_get_metadata (MexContent         *content,
       return tp_contact_get_alias (priv->contact);
     case MEX_CONTENT_METADATA_SYNOPSIS:
       return tp_contact_get_presence_message (priv->contact);
-//     case MEX_CONTENT_METADATA_ID:
-//       return tp_contact_get_handle (priv->contact);
     case MEX_CONTENT_METADATA_STILL:
       return priv->avatar_path;
     case MEX_CONTENT_METADATA_MIMETYPE:
