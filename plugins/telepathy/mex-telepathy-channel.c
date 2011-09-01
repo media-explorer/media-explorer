@@ -311,7 +311,7 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
     clutter_actor_set_height(priv->video_outgoing, 200);
 
     const gchar *dir = mex_get_data_dir ();
-    const gchar *tmp = g_build_filename (dir, "style", "thumb-no-content.png", NULL);
+    gchar *tmp = g_build_filename (dir, "style", "thumb-no-content.png", NULL);
     priv->static_outgoing = clutter_texture_new_from_file(tmp, NULL);
 
     clutter_texture_set_keep_aspect_ratio(CLUTTER_TEXTURE(priv->static_outgoing), TRUE);
@@ -398,6 +398,8 @@ void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
                      "show",
                      G_CALLBACK(mex_telepathy_channel_on_video_shown),
                      self);
+
+    g_free (tmp);
 }
 
 static gboolean

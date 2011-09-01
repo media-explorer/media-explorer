@@ -424,6 +424,8 @@ mex_contact_set_tp_contact (MexContact *self,
                     self);
 
   g_object_notify (G_OBJECT (self), "contact");
+
+  g_object_unref (file);
 }
 
 static GParamSpec *
