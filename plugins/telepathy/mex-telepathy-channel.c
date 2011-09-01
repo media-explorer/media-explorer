@@ -61,7 +61,6 @@ struct _MexTelepathyChannelPrivate {
     TpChannel *channel;
     TfChannel *tf_channel;
     GList *notifiers;
-    GTimer *timer;
 
     GstElement *video_input;
     GstElement *video_capsfilter;
@@ -94,13 +93,8 @@ mex_telepathy_channel_dispose(GObject *gobject)
     MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(gobject);
     MexTelepathyChannelPrivate *priv = self->priv;
 
-    if (priv->timer)
-    {
-        g_timer_stop(priv->timer);
-        g_object_unref(priv->timer);
-        priv->timer = NULL;
-    }
-
+    // FIXME: once we depend on glib 2.28 we should use g_clear_object
+    // to make this method much smaller and easier to read.
     if (priv->video_call_page)
     {
         g_object_unref(priv->video_call_page);
@@ -849,7 +843,6 @@ mex_telepathy_channel_on_proxy_invalidated(TpProxy *proxy,
 
     g_object_unref (priv->channel);
 
-    g_timer_stop(self->priv->timer);
     g_signal_emit(self,
                   mex_telepathy_channel_signals[HIDE_ACTOR],
                   0,
@@ -1038,7 +1031,6 @@ mex_telepathy_channel_init (MexTelepathyChannel  *self)
     self->priv->connection = NULL;
     self->priv->channel = NULL;
     self->priv->tf_channel = NULL;
-    self->priv->timer = g_timer_new();
     mex_telepathy_channel_create_video_page(self);
 }
 
