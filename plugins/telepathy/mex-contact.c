@@ -20,6 +20,8 @@
 
 #include "mex-contact.h"
 
+#include "mex-log.h"
+
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-glib/interfaces.h>
@@ -337,7 +339,7 @@ mex_contact_on_presence_changed (TpContact *contact,
   MexContact *self = MEX_CONTACT (user_data);
 
   if (!tp_contact_has_feature(contact, TP_CONTACT_FEATURE_CAPABILITIES)) {
-    g_debug("Feature capabilities is not ready yet");
+    MEX_DEBUG ("Feature capabilities is not ready yet");
     static TpContactFeature contact_features[] = {
       TP_CONTACT_FEATURE_ALIAS,
       TP_CONTACT_FEATURE_AVATAR_DATA,
@@ -369,7 +371,7 @@ mex_contact_on_capabilities_changed (TpContact *contact,
                                      GParamSpec *spec,
                                      MexContact *self)
 {
-    g_debug("Capabilities changed");
+    MEX_DEBUG ("Capabilities changed");
     mex_contact_compute_mimetype(self);
 }
 

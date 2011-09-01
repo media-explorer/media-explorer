@@ -282,13 +282,13 @@ void mex_telepathy_channel_on_mute(MxAction *action, gpointer user_data)
     {
         if (gst_element_set_state (priv->outgoing_mic, GST_STATE_PAUSED)
                 == GST_STATE_CHANGE_FAILURE)
-            g_warning ("failed to mute microphone");
+            MEX_WARNING ("failed to mute microphone");
         mx_stylable_set_style_class (MX_STYLABLE(priv->mute_button), "MediaUnmute");
         mx_action_set_display_name( priv->mute_action, "Unmute");
     } else {
         if (gst_element_set_state (priv->outgoing_mic, GST_STATE_PLAYING)
                 == GST_STATE_CHANGE_FAILURE)
-            g_warning("failed to unmute microphone");
+            MEX_WARNING("failed to unmute microphone");
         mx_stylable_set_style_class (MX_STYLABLE(priv->mute_button), "MediaMute");
         mx_action_set_display_name( priv->mute_action, "Mute");
     }
@@ -296,7 +296,7 @@ void mex_telepathy_channel_on_mute(MxAction *action, gpointer user_data)
 
 void mex_telepathy_channel_create_video_page(MexTelepathyChannel *self)
 {
-    g_debug("video page creating");
+    MEX_DEBUG ("video page creating");
     MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL(self)->priv;
 
     // VideoCall widget init.
@@ -444,7 +444,7 @@ mex_telepathy_channel_on_src_pad_added(TfContent *content,
     GstElement *element;
     GstStateChangeReturn ret;
 
-    g_debug ("New src pad: %s", cstr);
+    MEX_DEBUG ("New src pad: %s", cstr);
     g_object_get (content, "media-type", &mtype, NULL);
 
     switch (mtype)
@@ -458,7 +458,7 @@ mex_telepathy_channel_on_src_pad_added(TfContent *content,
             element = self->priv->incoming_sink;
             break;
         default:
-            g_warning ("Unknown media type");
+            MEX_WARNING ("Unknown media type");
             return;
     }
 
@@ -468,14 +468,14 @@ mex_telepathy_channel_on_src_pad_added(TfContent *content,
     if (ret == GST_STATE_CHANGE_FAILURE)
     {
         tp_channel_close_async (TP_CHANNEL (priv->channel), NULL, NULL);
-        g_warning ("Failed to start sink pipeline !?");
+        MEX_WARNING ("Failed to start sink pipeline !?");
         return;
     }
 
     if (GST_PAD_LINK_FAILED (gst_pad_link (pad, sinkpad)))
     {
         tp_channel_close_async (TP_CHANNEL (priv->channel), NULL, NULL);
-        g_warning ("Couldn't link sink pipeline !?");
+        MEX_WARNING ("Couldn't link sink pipeline !?");
         return;
     }
 
@@ -619,14 +619,14 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self, TfContent *
 
     GstElement *tee = gst_element_factory_make("tee", NULL);
     if (!tee) {
-        g_warning("Couldn't create tee element !?");
+        MEX_WARNING("Couldn't create tee element !?");
         return NULL;
     }
     GstPad *teesink = gst_element_get_pad(tee, "sink");
     gst_bin_add (GST_BIN(result), tee);
     if (GST_PAD_LINK_FAILED (gst_pad_link (pad, teesink)))
     {
-        g_warning ("Couldn't link source pipeline to tee !?");
+        MEX_WARNING ("Couldn't link source pipeline to tee !?");
         return NULL;
     }
     pad = gst_element_get_request_pad (tee, "src%d");
@@ -672,7 +672,7 @@ mex_telepathy_channel_on_content_added(TfChannel *channel,
     GstElement *element;
     GstStateChangeReturn ret;
 
-    g_debug ("Content added");
+    MEX_DEBUG ("Content added");
 
     g_object_get (content,
                   "sink-pad", &sinkpad,
@@ -682,18 +682,18 @@ mex_telepathy_channel_on_content_added(TfChannel *channel,
     switch (mtype)
     {
         case FS_MEDIA_TYPE_AUDIO:
-            g_debug ("Audio content added");
+            MEX_DEBUG ("Audio content added");
             element = gst_parse_bin_from_description (
                 "autoaudiosrc ! audioresample ! audioconvert ", TRUE, NULL);
             priv->outgoing_mic = element;
             priv->muted = FALSE;
             break;
         case FS_MEDIA_TYPE_VIDEO:
-            g_debug ("Video content added");
+            MEX_DEBUG ("Video content added");
             element = mex_telepathy_channel_setup_video_source (self, content);
             break;
         default:
-            g_warning ("Unknown media type");
+            MEX_WARNING ("Unknown media type");
             g_object_unref (sinkpad);
             return;
     }
@@ -707,7 +707,7 @@ mex_telepathy_channel_on_content_added(TfChannel *channel,
     if (GST_PAD_LINK_FAILED (gst_pad_link (srcpad, sinkpad)))
     {
         tp_channel_close_async (TP_CHANNEL (priv->channel), NULL, NULL);
-        g_warning ("Couldn't link source pipeline !?");
+        MEX_WARNING ("Couldn't link source pipeline !?");
         return;
     }
 
@@ -715,7 +715,7 @@ mex_telepathy_channel_on_content_added(TfChannel *channel,
     if (ret == GST_STATE_CHANGE_FAILURE)
     {
         tp_channel_close_async (TP_CHANNEL (priv->channel), NULL, NULL);
-        g_warning ("source pipeline failed to start!?");
+        MEX_WARNING ("source pipeline failed to start!?");
         return;
     }
 
@@ -733,14 +733,14 @@ mex_telepathy_channel_conference_added(TfChannel *channel,
 
     GKeyFile *keyfile;
 
-    g_debug ("Conference added");
+    MEX_INFO ("Conference added");
 
     /* Add notifier to set the various element properties as needed */
     keyfile = fs_utils_get_default_element_properties (conference);
     if (keyfile != NULL)
     {
         FsElementAddedNotifier *notifier;
-        g_debug ("Loaded default codecs for %s", GST_ELEMENT_NAME (conference));
+        MEX_INFO ("Loaded default codecs for %s", GST_ELEMENT_NAME (conference));
 
         notifier = fs_element_added_notifier_new ();
         fs_element_added_notifier_set_properties_from_keyfile (notifier, keyfile);
@@ -782,7 +782,7 @@ mex_telepathy_channel_new_tf_channel(GObject *source,
     MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
     MexTelepathyChannelPrivate *priv = self->priv;
 
-    g_debug ("New TfChannel");
+    MEX_DEBUG ("New TfChannel");
 
     priv->tf_channel = TF_CHANNEL (g_async_initable_new_finish (
                                    G_ASYNC_INITABLE (source), result, NULL));
@@ -790,11 +790,11 @@ mex_telepathy_channel_new_tf_channel(GObject *source,
 
     if (priv->tf_channel == NULL)
     {
-        g_warning ("Failed to create channel");
+        MEX_WARNING ("Failed to create channel");
         return;
     }
 
-    g_debug ("Adding timeout");
+    MEX_DEBUG ("Adding timeout");
     g_timeout_add_seconds (5, mex_telepathy_channel_dump_pipeline, self);
 
     g_signal_connect (priv->tf_channel, "fs-conference-added",
@@ -829,7 +829,7 @@ mex_telepathy_channel_on_proxy_invalidated(TpProxy *proxy,
     MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL(user_data);
     MexTelepathyChannelPrivate *priv = self->priv;
 
-    g_debug ("Channel closed");
+    MEX_INFO ("Channel closed");
     if (priv->pipeline != NULL)
     {
         gst_element_set_state (priv->pipeline, GST_STATE_NULL);
@@ -883,7 +883,7 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
     GstElement *pipeline;
     GstStateChangeReturn ret;
 
-    g_debug ("New channel");
+    MEX_INFO ("New channel");
 
     TpHandle contactHandle = tp_channel_get_handle(priv->channel, NULL);
     TpContactFeature features[] = {TP_CONTACT_FEATURE_ALIAS};
@@ -900,7 +900,7 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
     {
         tp_channel_close_async (TP_CHANNEL (priv->channel), NULL, NULL);
         g_object_unref (pipeline);
-        g_warning ("Failed to start an empty pipeline !?");
+        MEX_WARNING ("Failed to start an empty pipeline !?");
         return;
     }
 

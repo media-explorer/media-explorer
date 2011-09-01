@@ -20,6 +20,8 @@
 
 #include "tpy-client-factory.h"
 
+#include "mex-log.h"
+
 #include <telepathy-glib/interfaces.h>
 #include <telepathy-glib/util.h>
 #include <telepathy-yell/call-channel.h>
@@ -78,7 +80,7 @@ create_channel_impl (TpSimpleClientFactory *self,
 
   chan_type = tp_asv_get_string (properties, TP_PROP_CHANNEL_CHANNEL_TYPE);
 
-  g_debug("Creating new channel from tpy_automatic_client_factory %s.", chan_type);
+  MEX_INFO ("Creating new channel from tpy_automatic_client_factory %s.", chan_type);
   if (!tp_strdiff (chan_type, TPY_IFACE_CHANNEL_TYPE_CALL))
     {
       return (TpChannel *) tpy_call_channel_new_with_factory(self, conn, object_path, properties, error);
