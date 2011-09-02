@@ -70,6 +70,7 @@ GType               mex_player_get_type           (void) G_GNUC_CONST;
 MexPlayer *         mex_player_get_default        (void);
 ClutterMedia *      mex_player_get_clutter_media  (MexPlayer *player);
 
+void mex_player_open (MexPlayer *player);
 void mex_player_quit (MexPlayer *player);
 void mex_player_stop (MexPlayer *player);
 void mex_player_play (MexPlayer *player);

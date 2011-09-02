@@ -1098,3 +1098,9 @@ mex_player_set_uri (MexPlayer *player, const gchar *uri)
 
   g_signal_emit (player, signals[OPEN_REQUEST], 0);
 }
+
+void
+mex_player_open (MexPlayer *player)
+{
+  g_signal_emit (player, signals[OPEN_REQUEST], 0);
+}
