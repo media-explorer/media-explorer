@@ -318,9 +318,9 @@ AM_CONDITIONAL([ENABLE_INTERNAL_THUMBNAILER],
 # enable strict compiler flags
 AC_ARG_ENABLE([maintainer-flags],
               [AC_HELP_STRING([--enable-maintainer-flags=@<:@no/yes@:>@],
-                              [Use strict compiler flags @<:@default=maintainer_flags_default@:>@])],
+                              [Use strict compiler flags @<:@default=yes@:>@])],
               [],
-              [enable_maintainer_flags=no])
+              [enable_maintainer_flags=yes])
 
 AS_IF([test "x$enable_maintainer_flags" = "xyes"],
       [
