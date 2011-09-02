@@ -32,3 +32,7 @@ test_epg_LDADD    = $(progs_ldadd)
 
 test_config_SOURCES = test-config.c
 test_config_LDADD   = $(progs_ldadd)
+
+TEST_PROGS        += test-keys
+test_keys_SOURCES  = test-keys.c
+test_keys_LDADD    = $(progs_ldadd)
