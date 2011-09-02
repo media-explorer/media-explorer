@@ -96,7 +96,7 @@ mex_contact_set_property (GObject      *object,
     {
     case PROP_CONTACT:
       mex_contact_set_tp_contact (MEX_CONTACT (object),
-                                  TP_CONTACT(g_value_get_pointer (value)));
+                                  TP_CONTACT (g_value_get_object (value)));
       break;
 
     default:
@@ -157,10 +157,11 @@ mex_contact_class_init (MexContactClass *klass)
                  G_TYPE_BOOLEAN);
 
   // Properties
-  pspec = g_param_spec_pointer ("contact",
-                                "Contact",
-                                "Contact object",
-                                G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+  pspec = g_param_spec_object ("contact",
+                               "Contact",
+                               "Contact object",
+                               TP_TYPE_CONTACT,
+                               G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_CONTACT, pspec);
 }
 

@@ -1058,14 +1058,12 @@ mex_telepathy_channel_set_property (GObject      *object,
   switch (property_id)
     {
     case PROP_CHANNEL:
-      if (value != NULL)
-        priv->channel = TP_CHANNEL (g_value_get_pointer (value));
+      priv->channel = TP_CHANNEL (g_value_get_object (value));
       mex_telepathy_channel_initialize_channel(self);
       break;
 
     case PROP_CONNECTION:
-      if (value != NULL)
-        priv->connection = TP_CONNECTION (g_value_get_pointer (value));
+      priv->connection = TP_CONNECTION (g_value_get_object (value));
       break;
 
     default:
@@ -1111,16 +1109,18 @@ mex_telepathy_channel_class_init (MexTelepathyChannelClass *klass)
 
   // Properties
   GParamSpec *pspec;
-  pspec = g_param_spec_pointer ("channel",
-                                "Channel",
-                                "Telepathy Channel Object",
-                                G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+  pspec = g_param_spec_object ("channel",
+                               "Channel",
+                               "Telepathy Channel Object",
+                               TP_TYPE_CHANNEL,
+                               G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_CHANNEL, pspec);
 
-  pspec = g_param_spec_pointer ("connection",
-                                "Connection",
-                                "Telepathy Connection Object",
-                                G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
+  pspec = g_param_spec_object ("connection",
+                               "Connection",
+                               "Telepathy Connection Object",
+                               TP_TYPE_CONNECTION,
+                               G_PARAM_CONSTRUCT | G_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_CONNECTION, pspec);
 }
 
