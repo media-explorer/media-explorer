@@ -40,6 +40,8 @@ dist_style_DATA = \
 	style/icon-fullscreen.png \
 	style/icon-home.png \
 	style/icon-info.png \
+	style/icon-mute.png \
+	style/icon-mute-highlight.png \
 	style/icon-pause-highlight.png \
 	style/icon-pause.png \
 	style/icon-play-highlight.png \
@@ -48,6 +50,8 @@ dist_style_DATA = \
 	style/icon-rotate.png \
 	style/icon-stop-highlight.png \
 	style/icon-stop.png \
+	style/icon-unmute.png \
+	style/icon-unmute-highlight.png \
 	style/item-title-bg.png \
 	style/label-bg.png \
 	style/main-bg.png \
@@ -114,6 +118,20 @@ dist_icon_22x22_DATA = \
 
 icon_26x26dir = $(icondir)/26x26
 dist_icon_26x26_DATA = \
+		 icons/call-audio.png \
+		 icons/call-audio-highlight.png \
+		 icons/call-end.png \
+		 icons/call-end-highlight.png \
+		 icons/call-video.png \
+		 icons/call-video-highlight.png \
+		 icons/call-video-turnoff.png \
+		 icons/call-video-turnoff-highlight.png \
+		 icons/call-video-turnon.png \
+		 icons/call-video-turnon-highlight.png \
+		 icons/contact.png \
+		 icons/contact-highlight.png \
+		 icons/contact-add.png \
+		 icons/contact-add-highlight.png \
 		 icons/icon-notifications.png \
 		 icons/icon-power.png \
 		 icons/icon-power-highlight.png \
@@ -139,6 +157,8 @@ dist_icon_26x26_DATA = \
 		 icons/stock_left-mex.png \
 		 icons/stock_right-mex-highlight.png \
 		 icons/stock_right-mex.png \
+		 icons/icon-mute.png \
+		 icons/icon-unmute.png \
 		 icons/icon-panelheader-apps.png \
 		 icons/icon-panelheader-apps-highlight.png \
 		 icons/icon-panelheader-computer-highlight.png \

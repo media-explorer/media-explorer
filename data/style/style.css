@@ -256,6 +256,31 @@ MxButton.MediaPause:focus
   -mx-content-image: url("icon-pause-highlight.png");
 }
 
+MxButton.EndCall
+{
+  -mx-icon-name: "call-end";
+}
+
+MxButton.CameraOff
+{
+  -mx-icon-name: "call-video-turnoff";
+}
+
+MxButton.CameraOn
+{
+  -mx-icon-name: "call-video-turnon";
+}
+
+MxButton.MediaMute
+{
+  -mx-icon-name: "icon-mute";
+}
+
+MxButton.MediaUnmute
+{
+  -mx-icon-name: "icon-unmute";
+}
+
 MxButton.MediaStop
 {
   -mx-content-image: url("icon-stop.png");
