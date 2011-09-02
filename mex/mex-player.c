@@ -925,6 +925,10 @@ mex_get_stream_cb (MexProgram   *program,
       return;
     }
 
+  /* ensure that this callback is for the current content */
+  if (priv->content != (MexContent*) program)
+    return;
+
 #ifdef USE_PLAYER_CLUTTER_GST
   /* We seek at the precise time when the file is local, but we
    * seek to key frame when streaming */
