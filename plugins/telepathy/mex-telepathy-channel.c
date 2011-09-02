@@ -306,7 +306,7 @@ mex_telepathy_channel_on_mute (MxAction *action,
         MEX_WARNING ("failed to mute microphone");
       mx_stylable_set_style_class (MX_STYLABLE(
                                      priv->mute_button), "MediaUnmute");
-      mx_action_set_display_name (priv->mute_action, "Unmute");
+      mx_action_set_display_name (priv->mute_action, "Mic On");
     }
   else
     {
@@ -315,7 +315,7 @@ mex_telepathy_channel_on_mute (MxAction *action,
         MEX_WARNING ("failed to unmute microphone");
 
       mx_stylable_set_style_class (MX_STYLABLE(priv->mute_button), "MediaMute");
-      mx_action_set_display_name (priv->mute_action, "Mute");
+      mx_action_set_display_name (priv->mute_action, "Mic Off");
     }
 }
 
@@ -391,7 +391,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   mx_stylable_set_style_class (MX_STYLABLE (priv->camera_button), "CameraOff");
 
   priv->mute_action = mx_action_new_full("Mute",
-                                         "Mute",
+                                         "Mic Off",
                                          G_CALLBACK (
                                            mex_telepathy_channel_on_mute),
                                          self);

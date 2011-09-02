@@ -273,12 +273,12 @@ MxButton.CameraOn
 
 MxButton.MediaMute
 {
-  -mx-icon-name: "icon-mute";
+  -mx-icon-name: "call-mic-mute";
 }
 
 MxButton.MediaUnmute
 {
-  -mx-icon-name: "icon-unmute";
+  -mx-icon-name: "call-mic-on";
 }
 
 MxButton.MediaStop

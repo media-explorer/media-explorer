@@ -122,6 +122,10 @@ dist_icon_26x26_DATA = \
 		 icons/call-audio-highlight.png \
 		 icons/call-end.png \
 		 icons/call-end-highlight.png \
+		 icons/call-mic-mute.png \
+		 icons/call-mic-mute-highlight.png \
+		 icons/call-mic-on.png \
+		 icons/call-mic-on-highlight.png \
 		 icons/call-video.png \
 		 icons/call-video-highlight.png \
 		 icons/call-video-turnoff.png \
@@ -157,8 +161,6 @@ dist_icon_26x26_DATA = \
 		 icons/stock_left-mex.png \
 		 icons/stock_right-mex-highlight.png \
 		 icons/stock_right-mex.png \
-		 icons/icon-mute.png \
-		 icons/icon-unmute.png \
 		 icons/icon-panelheader-apps.png \
 		 icons/icon-panelheader-apps-highlight.png \
 		 icons/icon-panelheader-computer-highlight.png \
