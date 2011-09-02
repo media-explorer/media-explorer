@@ -20,7 +20,6 @@
 #include "mex-content-tile.h"
 
 #include "mex-download-queue.h"
-#include "mex-aspect-frame.h"
 #include "mex-program.h"
 
 #include "mex-utils.h"

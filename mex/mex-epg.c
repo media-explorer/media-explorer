@@ -26,7 +26,6 @@
 
 #include "mex-epg.h"
 
-#include "mex-aspect-frame.h"
 #include "mex-channel-manager.h"
 #include "mex-column.h"
 #include "mex-content-box.h"

@@ -28,7 +28,6 @@
 #include "mex-private.h"
 #include "mex-utils.h"
 #include "mex-queue-button.h"
-#include "mex-aspect-frame.h"
 #include "mex-info-panel.h"
 #include "mex-content-tile.h"
 
