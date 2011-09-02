@@ -2257,8 +2257,12 @@ main (int argc, char **argv)
 
   data.info_bar = mex_info_bar_get_default ();
 
-  g_signal_connect_swapped (data.info_bar, "close-request",
-                            G_CALLBACK (mx_application_quit), app);
+  if (getenv ("MEX_DISABLE_QUIT") == NULL)
+    g_signal_connect_swapped (data.info_bar, "close-request",
+                              G_CALLBACK (mx_application_quit), app);
+  else
+    g_signal_connect_swapped (data.info_bar, "close-request",
+                              G_CALLBACK (mex_go_back), &data);
 
   /* Create bindings pool */
   data.bindings = clutter_binding_pool_new ("Media Explorer");
