@@ -1,3 +1,9 @@
+icon32dir = $(datadir)/icons/hicolor/32x32/apps
+dist_icon32_DATA = 32x32/mex.png
+
+icon48dir = $(datadir)/icons/hicolor/128x128/apps
+dist_icon48_DATA = 48x48/mex.png
+
 icon128dir = $(datadir)/icons/hicolor/128x128/apps
 dist_icon128_DATA = 128x128/mex.png
 
