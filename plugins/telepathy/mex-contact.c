@@ -17,7 +17,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
 #include "mex-contact.h"
 
 #include "mex-log.h"
@@ -40,7 +39,8 @@ G_DEFINE_TYPE_WITH_CODE (MexContact,
                                 MEX_TYPE_CONTACT,   \
                                 MexContactPrivate))
 
-enum {
+enum
+{
   SHOULD_ADD_TO_MODEL_CHANGED,
   LAST_SIGNAL
 };
@@ -96,7 +96,7 @@ mex_contact_set_property (GObject      *object,
     {
     case PROP_CONTACT:
       mex_contact_set_tp_contact (MEX_CONTACT (object),
-                                    TP_CONTACT(g_value_get_pointer (value)));
+                                  TP_CONTACT(g_value_get_pointer (value)));
       break;
 
     default:
@@ -116,14 +116,16 @@ mex_contact_finalize (GObject *object)
   MexContact *contact = MEX_CONTACT (object);
   MexContactPrivate *priv = contact->priv;
 
-  if (priv->contact) {
-    g_object_unref (priv->contact);
-    priv->contact = NULL;
-  }
-  if (priv->avatar_path) {
-    g_free(priv->avatar_path);
-    priv->avatar_path = NULL;
-  }
+  if (priv->contact)
+    {
+      g_object_unref (priv->contact);
+      priv->contact = NULL;
+    }
+  if (priv->avatar_path)
+    {
+      g_free(priv->avatar_path);
+      priv->avatar_path = NULL;
+    }
 
   G_OBJECT_CLASS (mex_contact_parent_class)->finalize (object);
 }
@@ -165,27 +167,30 @@ mex_contact_class_init (MexContactClass *klass)
 gboolean
 mex_contact_should_add_mimetype_to_model(gchar *mimetype)
 {
-  if (!tp_strdiff(mimetype, "x-mex-av-contact")) {
-    return TRUE;
-  }
-  if (!tp_strdiff(mimetype, "x-mex-audio-contact")) {
-    return TRUE;
-  }
-  if (!tp_strdiff(mimetype, "x-mex-pending-contact")) {
-    return TRUE;
-  }
+  if (!tp_strdiff(mimetype, "x-mex-av-contact"))
+    {
+      return TRUE;
+    }
+  if (!tp_strdiff(mimetype, "x-mex-audio-contact"))
+    {
+      return TRUE;
+    }
+  if (!tp_strdiff(mimetype, "x-mex-pending-contact"))
+    {
+      return TRUE;
+    }
 
   return FALSE;
 }
 
 gboolean
-mex_contact_should_add_to_model(MexContact* self)
+mex_contact_should_add_to_model(MexContact *self)
 {
   return mex_contact_should_add_mimetype_to_model(self->priv->mimetype);
 }
 
 gboolean
-mex_contact_validate_presence(TpContact* contact)
+mex_contact_validate_presence(TpContact *contact)
 {
   TpConnectionPresenceType presence = tp_contact_get_presence_type(contact);
 
@@ -193,17 +198,19 @@ mex_contact_validate_presence(TpContact* contact)
       presence == TP_CONNECTION_PRESENCE_TYPE_AWAY ||
       presence == TP_CONNECTION_PRESENCE_TYPE_EXTENDED_AWAY ||
       presence == TP_CONNECTION_PRESENCE_TYPE_HIDDEN ||
-      presence == TP_CONNECTION_PRESENCE_TYPE_BUSY) {
-    return TRUE;
-  } else {
-    return FALSE;
-  }
+      presence == TP_CONNECTION_PRESENCE_TYPE_BUSY)
+    {
+      return TRUE;
+    }
+  else
+    {
+      return FALSE;
+    }
 }
 
-
 /*
- * Accessors
- */
+  * Accessors
+  */
 
 static void
 mex_contact_init (MexContact *self)
@@ -220,7 +227,7 @@ mex_contact_new (void)
 }
 
 TpContact *
-mex_contact_get_tp_contact (MexContact* self)
+mex_contact_get_tp_contact (MexContact *self)
 {
   g_return_val_if_fail (MEX_IS_CONTACT (self), NULL);
 
@@ -233,75 +240,99 @@ mex_contact_compute_mimetype (MexContact *self)
   MexContactPrivate *priv = self->priv;
   gchar *new_mimetype;
 
-  if (tp_contact_get_publish_state(priv->contact) == TP_SUBSCRIPTION_STATE_ASK) {
-    new_mimetype = "x-mex-pending-contact";
-  } else if (!mex_contact_validate_presence(priv->contact)) {
-    new_mimetype = "x-mex-offline-contact";
-  } else if (tp_contact_has_feature (priv->contact, TP_CONTACT_FEATURE_CAPABILITIES)) {
-    // Capabilities
-    guint i;
-
-    TpCapabilities *capabilities;
-    capabilities = tp_contact_get_capabilities(priv->contact);
-    GPtrArray *classes;
-    classes = tp_capabilities_get_channel_classes(capabilities);
-
-    new_mimetype = "x-mex-contact";
-
-    for (i = 0; i < classes->len; i++) {
-      GValueArray *arr = g_ptr_array_index (classes, i);
-      GHashTable *fixed;
-      GStrv allowed;
-      const gchar *chan_type;
-      TpHandleType handle_type;
-      gboolean valid;
-
-      tp_value_array_unpack(arr, 2, &fixed, &allowed);
-
-      if (g_hash_table_size (fixed) != 2)
-        continue;
-
-      chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-      handle_type = tp_asv_get_uint32 (fixed,
-          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE, &valid);
-
-      if (!valid) {
-        continue;
-      }
-
-      if (!tp_strdiff (chan_type, TPY_IFACE_CHANNEL_TYPE_CALL)) {
-        guint n;
-        gboolean hasAudio = FALSE;
-        gboolean hasVideo = FALSE;
-        for (n = 0; allowed != NULL && allowed[n] != NULL; ++n) {
-          if (!tp_strdiff(TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO, allowed[n])) {
-            hasAudio = TRUE;
-          } else if (!tp_strdiff(TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO, allowed[n])) {
-            hasVideo = TRUE;
-          }
-        }
-
-        if (hasVideo) {
-          new_mimetype = "x-mex-av-contact";
-        } else if (hasAudio) {
-          new_mimetype = "x-mex-audio-contact";
-        }
-      }
+  if (tp_contact_get_publish_state(priv->contact) == TP_SUBSCRIPTION_STATE_ASK)
+    {
+      new_mimetype = "x-mex-pending-contact";
     }
-  } else {
-    new_mimetype = "x-mex-contact";
-  }
+  else if (!mex_contact_validate_presence(priv->contact))
+    {
+      new_mimetype = "x-mex-offline-contact";
+    }
+  else if (tp_contact_has_feature (priv->contact,
+                                   TP_CONTACT_FEATURE_CAPABILITIES))
+    {
+      // Capabilities
+      guint i;
+
+      TpCapabilities *capabilities;
+      capabilities = tp_contact_get_capabilities(priv->contact);
+      GPtrArray *classes;
+      classes = tp_capabilities_get_channel_classes(capabilities);
+
+      new_mimetype = "x-mex-contact";
+
+      for (i = 0; i < classes->len; i++)
+        {
+          GValueArray *arr = g_ptr_array_index (classes, i);
+          GHashTable *fixed;
+          GStrv allowed;
+          const gchar *chan_type;
+          TpHandleType handle_type;
+          gboolean valid;
+
+          tp_value_array_unpack(arr, 2, &fixed, &allowed);
+
+          if (g_hash_table_size (fixed) != 2)
+            continue;
+
+          chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
+          handle_type = tp_asv_get_uint32 (fixed,
+                                           TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+                                           &valid);
+
+          if (!valid)
+            {
+              continue;
+            }
+
+          if (!tp_strdiff (chan_type, TPY_IFACE_CHANNEL_TYPE_CALL))
+            {
+              guint n;
+              gboolean hasAudio = FALSE;
+              gboolean hasVideo = FALSE;
+              for (n = 0; allowed != NULL && allowed[n] != NULL; ++n)
+                {
+                  if (!tp_strdiff(TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+                                  allowed[n]))
+                    {
+                      hasAudio = TRUE;
+                    }
+                  else if (!tp_strdiff(TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+                                       allowed[n]))
+                    {
+                      hasVideo = TRUE;
+                    }
+                }
+
+              if (hasVideo)
+                {
+                  new_mimetype = "x-mex-av-contact";
+                }
+              else if (hasAudio)
+                {
+                  new_mimetype = "x-mex-audio-contact";
+                }
+            }
+        }
+    }
+  else
+    {
+      new_mimetype = "x-mex-contact";
+    }
 
   if (mex_contact_should_add_to_model(self) !=
-      mex_contact_should_add_mimetype_to_model(new_mimetype)) {
-    priv->mimetype = new_mimetype;
-    g_signal_emit(self,
-                  mex_contact_signals[SHOULD_ADD_TO_MODEL_CHANGED],
-                  0,
-                  mex_contact_should_add_mimetype_to_model(new_mimetype));
-  } else {
-    priv->mimetype = new_mimetype;
-  }
+      mex_contact_should_add_mimetype_to_model(new_mimetype))
+    {
+      priv->mimetype = new_mimetype;
+      g_signal_emit(self,
+                    mex_contact_signals[SHOULD_ADD_TO_MODEL_CHANGED],
+                    0,
+                    mex_contact_should_add_mimetype_to_model(new_mimetype));
+    }
+  else
+    {
+      priv->mimetype = new_mimetype;
+    }
 }
 
 static void
@@ -317,12 +348,12 @@ mex_contact_on_subscription_states_changed (TpContact *contact,
 }
 
 void
-mex_contact_on_contact_upgraded (TpConnection *connection,
-                                 guint n_contacts,
-                                 TpContact * const *contacts,
-                                 const GError *error,
-                                 gpointer user_data,
-                                 GObject *weak_object)
+mex_contact_on_contact_upgraded (TpConnection     *connection,
+                                 guint             n_contacts,
+                                 TpContact *const *contacts,
+                                 const GError     *error,
+                                 gpointer          user_data,
+                                 GObject          *weak_object)
 {
   MexContact *self = MEX_CONTACT (user_data);
 
@@ -338,46 +369,51 @@ mex_contact_on_presence_changed (TpContact *contact,
 {
   MexContact *self = MEX_CONTACT (user_data);
 
-  if (!tp_contact_has_feature(contact, TP_CONTACT_FEATURE_CAPABILITIES)) {
-    MEX_DEBUG ("Feature capabilities is not ready yet");
-    static TpContactFeature contact_features[] = {
-      TP_CONTACT_FEATURE_ALIAS,
-      TP_CONTACT_FEATURE_AVATAR_DATA,
-      TP_CONTACT_FEATURE_AVATAR_TOKEN,
-      TP_CONTACT_FEATURE_PRESENCE,
-      TP_CONTACT_FEATURE_CAPABILITIES
-    };
+  if (!tp_contact_has_feature(contact, TP_CONTACT_FEATURE_CAPABILITIES))
+    {
+      MEX_DEBUG ("Feature capabilities is not ready yet");
+      static TpContactFeature contact_features[] =
+      {
+        TP_CONTACT_FEATURE_ALIAS,
+        TP_CONTACT_FEATURE_AVATAR_DATA,
+        TP_CONTACT_FEATURE_AVATAR_TOKEN,
+        TP_CONTACT_FEATURE_PRESENCE,
+        TP_CONTACT_FEATURE_CAPABILITIES
+      };
 
-    TpContact *contacts[] = {
-      contact
-    };
+      TpContact *contacts[] =
+      {
+        contact
+      };
 
-    tp_connection_upgrade_contacts (tp_contact_get_connection (contact),
-                                    G_N_ELEMENTS (contacts),
-                                    contacts,
-                                    G_N_ELEMENTS (contact_features),
-                                    contact_features,
-                                    mex_contact_on_contact_upgraded,
-                                    self,
-                                    NULL,
-                                    NULL);
-  } else {
-    mex_contact_compute_mimetype(self);
-  }
+      tp_connection_upgrade_contacts (tp_contact_get_connection (contact),
+                                      G_N_ELEMENTS (contacts),
+                                      contacts,
+                                      G_N_ELEMENTS (contact_features),
+                                      contact_features,
+                                      mex_contact_on_contact_upgraded,
+                                      self,
+                                      NULL,
+                                      NULL);
+    }
+  else
+    {
+      mex_contact_compute_mimetype(self);
+    }
 }
 
 static void
-mex_contact_on_capabilities_changed (TpContact *contact,
+mex_contact_on_capabilities_changed (TpContact  *contact,
                                      GParamSpec *spec,
                                      MexContact *self)
 {
-    MEX_DEBUG ("Capabilities changed");
-    mex_contact_compute_mimetype(self);
+  MEX_DEBUG ("Capabilities changed");
+  mex_contact_compute_mimetype(self);
 }
 
 void
 mex_contact_set_tp_contact (MexContact *self,
-                            TpContact *contact)
+                            TpContact  *contact)
 {
   MexContactPrivate *priv;
 
@@ -385,34 +421,41 @@ mex_contact_set_tp_contact (MexContact *self,
 
   priv = self->priv;
 
-  if (priv->contact) {
-    g_object_unref (priv->contact);
-  }
+  if (priv->contact)
+    {
+      g_object_unref (priv->contact);
+    }
 
-  if (priv->avatar_path) {
-    g_free(priv->avatar_path);
-  }
+  if (priv->avatar_path)
+    {
+      g_free(priv->avatar_path);
+    }
 
-  if (contact == NULL) {
-    return;
-  }
+  if (contact == NULL)
+    {
+      return;
+    }
 
   g_object_ref(contact);
   priv->contact = contact;
 
   GFile *file = tp_contact_get_avatar_file (priv->contact);
-  if (file) {
-    priv->avatar_path = g_file_get_uri (file);
-  } else {
-    priv->avatar_path = NULL;
-  }
+  if (file)
+    {
+      priv->avatar_path = g_file_get_uri (file);
+    }
+  else
+    {
+      priv->avatar_path = NULL;
+    }
 
-  if (tp_contact_get_publish_state(contact) == TP_SUBSCRIPTION_STATE_ASK) {
-    g_signal_connect(contact,
-                     "subscription-states-changed",
-                     G_CALLBACK(mex_contact_on_subscription_states_changed),
-                     self);
-  }
+  if (tp_contact_get_publish_state(contact) == TP_SUBSCRIPTION_STATE_ASK)
+    {
+      g_signal_connect(contact,
+                       "subscription-states-changed",
+                       G_CALLBACK(mex_contact_on_subscription_states_changed),
+                       self);
+    }
   mex_contact_compute_mimetype(self);
 
   g_signal_connect(contact,
@@ -445,12 +488,13 @@ content_get_metadata (MexContent         *content,
   MexContact *contact = MEX_CONTACT (content);
   MexContactPrivate *priv = contact->priv;
 
-  if (priv->contact == NULL) {
-    return NULL;
-  }
+  if (priv->contact == NULL)
+    {
+      return NULL;
+    }
 
   switch (key)
-  {
+    {
     case MEX_CONTENT_METADATA_TITLE:
       return tp_contact_get_alias (priv->contact);
     case MEX_CONTENT_METADATA_SYNOPSIS:
@@ -461,7 +505,7 @@ content_get_metadata (MexContent         *content,
       return priv->mimetype;
     default:
       return NULL;
-  }
+    }
 
   return NULL;
 }
