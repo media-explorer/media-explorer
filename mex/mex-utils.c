@@ -317,7 +317,9 @@ mex_action_set_content (MxAction *action, MexContent *content)
     mex_action_content_quark =
       g_quark_from_static_string ("mex-action-content-quark");
 
-  g_object_set_qdata (G_OBJECT (action), mex_action_content_quark, content);
+  g_object_set_qdata_full (G_OBJECT (action), mex_action_content_quark,
+                           g_object_ref (content),
+                           (GDestroyNotify) g_object_unref);
 }
 
 /**
@@ -342,7 +344,9 @@ mex_action_set_context (MxAction *action, MexModel *model)
     mex_action_model_quark =
       g_quark_from_static_string ("mex-action-model-quark");
 
-  g_object_set_qdata (G_OBJECT (action), mex_action_model_quark, model);
+  g_object_set_qdata_full (G_OBJECT (action), mex_action_model_quark,
+                           g_object_ref (model),
+                           (GDestroyNotify) g_object_unref);
 }
 
 /**
