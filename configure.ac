@@ -447,7 +447,8 @@ WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,opticaldisc"
 WITHOUT_PLUGINS="bg-backdrop"
 
 # the debug plugin is enabled in debug mode
-AS_IF([test "x$enable_debug" = "xyes"], [WITH_PLUGINS="$WITH_PLUGINS,debug"])
+AS_IF([test "x$enable_debug" = "xyes"],
+      [WITH_PLUGINS="$WITH_PLUGINS,debug-buddy"])
 
 # profile specific plugins
 AS_IF([test -n "$PROFILE_PLUGINS"],
@@ -471,12 +472,12 @@ AS_MEX_PLUGIN(dbusinput)
 AS_MEX_PLUGIN(bliptv)
 AS_MEX_PLUGIN(justintv)
 AS_MEX_PLUGIN(telepathy, [telepathy-glib >= 0.15.5 gstreamer-0.10 telepathy-farstream telepathy-yell farsight2-0.10])
-AS_MEX_PLUGIN(debug)
+AS_MEX_PLUGIN(debug-buddy)
 AS_MEX_PLUGIN(gnome-dvb)
 AS_MEX_PLUGIN(opticaldisc)
 
 # The debug plugin needs libunwind that does not provide a pkg-config file
-AS_IF([test "x$mex_use_debug_plugin" = "xyes"],
+AS_IF([test "x$mex_use_debug_buddy_plugin" = "xyes"],
       [AC_CHECK_HEADER([libunwind.h],
                        [],
                        [AC_MSG_ERROR([The debug plugin needs libunwind])])])

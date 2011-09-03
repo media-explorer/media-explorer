@@ -205,7 +205,7 @@ dist_mex_justintv_DATA =
 40mex_justintv_la_LIBADD = $(_libadd)
 endif
 
-if USE_PLUGIN_DEBUG
+if USE_PLUGIN_DEBUG_BUDDY
 plugins_LTLIBRARIES += 100mex-debug.la
 
 mex_debugdir = $(plugin_datadir)/debug
