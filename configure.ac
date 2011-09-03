@@ -95,7 +95,8 @@ clutter_soname=`$PKG_CONFIG --variable soname_infix clutter-1.0`
 AS_CASE([$clutter_soname],
         [cex100], [default_profile=intelce],
         [glx|eglx], [default_profile=gnome],
-        [AC_MSG_ERROR([Unknown clutter winsys $clutter_soname, please add it and optionlly create a new profile])])
+        [win32], [default_profile=windows],
+        [AC_MSG_ERROR([Unknown clutter winsys $clutter_soname, please add it and optionally create a new profile])])
 
 AC_ARG_WITH([profile],
             [AC_HELP_STRING([--with-profile=@<:@gnome/intelce@:>@].
@@ -118,6 +119,15 @@ AS_CASE([$with_profile],
         [
           mex_default_with_player=d-bus
           mex_default_enable_networks=yes
+          mex_default_enable_lirc=no
+
+          PROFILE_PLUGINS=""
+        ],
+
+        [windows],
+        [
+          mex_default_with_player=clutter-gst
+          mex_default_enable_networks=no
           mex_default_enable_lirc=no
 
           PROFILE_PLUGINS=""
