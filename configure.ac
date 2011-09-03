@@ -217,7 +217,7 @@ GOBJECT_INTROSPECTION_CHECK([0.9.5])
 
 # enable debug level
 m4_define([debug_default],
-          [m4_if(m4_eval(mex_minor % 2), [1], [yes], [minimum])])
+          [m4_if(m4_eval(mex_micro % 2), [1], [yes], [minimum])])
 
 AC_ARG_ENABLE([debug],
               [AC_HELP_STRING([--enable-debug=@<:@no/minimum/yes@:>@],
