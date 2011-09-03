@@ -217,7 +217,7 @@ dist_mex_debug_DATA =
 100mex_debug_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Debug\"	\
 	-DMEX_DATA_PLUGIN_DIR=\"$(mex_debug_datadir)\"
-100mex_debug_la_LIBADD = $(_libadd)
+100mex_debug_la_LIBADD = $(_libadd) -lunwind
 
 debugdir = $(pkglibdir)/debug
 debug_LTLIBRARIES = mex-gobject-list.la

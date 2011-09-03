@@ -22,6 +22,9 @@
 
 #include <dlfcn.h>
 
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
+
 #include <glib/gi18n-lib.h>
 #include <gmodule.h>
 
@@ -56,6 +59,7 @@ struct _MexDebugPluginPrivate
   GList *snapshot;
 
   GList *bindings;
+
 };
 
 static gboolean
@@ -267,6 +271,51 @@ do_diff (GObject             *instance,
 }
 
 /*
+ * Log handler
+ */
+
+static GLogFunc old_log_handler;
+
+static void
+print_trace (void)
+{
+  unw_context_t uc;
+  unw_cursor_t cursor;
+  guint stack_num = 0;
+
+  unw_getcontext (&uc);
+  unw_init_local (&cursor, &uc);
+
+  while (unw_step (&cursor) > 0 && stack_num < 32)
+    {
+      gchar name[256];
+      unw_word_t off;
+
+      if (unw_get_proc_name (&cursor, name, 255, &off) < 0)
+        strcpy (name, "<no name>");
+
+      g_print ("#%d  [%s+0x%x]\n", stack_num++, name, (unsigned int)off);
+    }
+}
+
+static void
+mex_debug_log_handler (const gchar    *log_domain,
+                       GLogLevelFlags  log_level,
+                       const gchar    *message,
+                       gpointer        user_data)
+{
+  gboolean print_bt = (log_level & (G_LOG_LEVEL_WARNING |
+                                    G_LOG_LEVEL_CRITICAL |
+                                    G_LOG_LEVEL_ERROR));
+
+  /* start by calling the previously installed log handler */
+  old_log_handler (log_domain, log_level, message, NULL);
+
+  g_print ("print_bg %d", print_bt);
+  if (print_bt)
+   print_trace();
+}
+/*
  * MexToolProvider implementation
  */
 
@@ -359,6 +408,9 @@ mex_debug_plugin_init (MexDebugPlugin *self)
       append_binding (self, "debug-diff", CLUTTER_KEY_d,
                       G_CALLBACK (do_diff));
     }
+
+  /* Install our custom log handler to print bactraces on warnings and errors */
+  old_log_handler = g_log_set_default_handler (mex_debug_log_handler, NULL);
 }
 
 G_MODULE_EXPORT const GType

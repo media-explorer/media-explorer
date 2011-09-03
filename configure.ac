@@ -475,6 +475,12 @@ AS_MEX_PLUGIN(debug)
 AS_MEX_PLUGIN(gnome-dvb)
 AS_MEX_PLUGIN(opticaldisc)
 
+# The debug plugin needs libunwind that does not provide a pkg-config file
+AS_IF([test "x$mex_use_debug_plugin" = "xyes"],
+      [AC_CHECK_HEADER([libunwind.h],
+                       [],
+                       [AC_MSG_ERROR([The debug plugin needs libunwind])])])
+
 AC_CONFIG_FILES([
   Makefile
   build/Makefile
