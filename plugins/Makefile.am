@@ -206,18 +206,18 @@ dist_mex_justintv_DATA =
 endif
 
 if USE_PLUGIN_DEBUG_BUDDY
-plugins_LTLIBRARIES += 100mex-debug.la
+plugins_LTLIBRARIES += 00mex-debug.la
 
 mex_debugdir = $(plugin_datadir)/debug
 dist_mex_debug_DATA =
 
-100mex_debug_la_SOURCES = 		\
+00mex_debug_la_SOURCES = 		\
 	debug/mex-debug-plugin.c 	\
 	debug/mex-debug-plugin.h
-100mex_debug_la_CFLAGS  = 		\
+00mex_debug_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Debug\"	\
 	-DMEX_DATA_PLUGIN_DIR=\"$(mex_debug_datadir)\"
-100mex_debug_la_LIBADD = $(_libadd) -lunwind
+00mex_debug_la_LIBADD = $(_libadd) -lunwind
 
 debugdir = $(pkglibdir)/debug
 debug_LTLIBRARIES = mex-gobject-list.la
