@@ -7,7 +7,7 @@ AC_DEFUN([AS_MEX_ARG_WITH_PLUGINS],
 [
   AC_ARG_WITH(plugins,
     AC_HELP_STRING([--with-plugins],
-      [comma-separated list of dependencyless plug-ins to compile]),
+      [comma-separated list of plug-ins to compile]),
     [WITH_PLUGINS=$withval])
 
   MEX_PLUGINS_ALL=""
@@ -35,21 +35,21 @@ AC_DEFUN([AS_MEX_PLUGIN],
   define([PNAME_DEF],translit(PLUGIN_[$1], -a-z, _A-Z))
 
   AC_ARG_ENABLE([$1],
-    AC_HELP_STRING([--disable-[$1]], [disable dependency-less $1 plugin]),
+    AC_HELP_STRING([--disable-[$1]], [disable $1 plugin]),
     [
       case "${enableval}" in
-        yes) [mex_use_]pname_def=yes ;;
-        no) [mex_use_]pname_def=no ;;
+        yes) [mex_use_]pname_def[_plugin]=yes ;;
+        no) [mex_use_]pname_def[_plugin]=no ;;
         *) AC_MSG_ERROR([bad value ${enableval} for --enable-$1]) ;;
        esac
     ])
 
-  if test x$[mex_use_]pname_def = xyes; then
-    AC_MSG_NOTICE(enabling dependency-less plugin $1)
+  if test x$[mex_use_]pname_def[_plugin] = xyes; then
+    AC_MSG_NOTICE(enabling plugin $1)
     WITH_PLUGINS="$WITH_PLUGINS [$1]"
   fi
-  if test x$[mex_use_]pname_def = xno; then
-    AC_MSG_NOTICE(disabling dependency-less plugin $1)
+  if test x$[mex_use_]pname_def[_plugin] = xno; then
+    AC_MSG_NOTICE(disabling plugin $1)
     WITHOUT_PLUGINS="$WITHOUT_PLUGINS [$1]"
   fi
   undefine([pname_def])
