@@ -27,7 +27,7 @@ dist_mex_library_DATA =
 	$(NULL)
 20mex_library_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Library\" 	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_library_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_librarydir)\"
 20mex_library_la_LIBADD  = $(_libadd)
 endif
 
@@ -43,7 +43,7 @@ dist_mex_recommended_DATA =
 	$(NULL)
 40mex_recommended_la_CFLAGS  = 			\
 	-DG_LOG_DOMAIN=\"Mex-Recommended\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_recommended_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_recommendeddir)\"
 40mex_recommended_la_LIBADD  = $(_libadd)
 endif
 
@@ -59,7 +59,7 @@ dist_mex_search_DATA =
 	$(NULL)
 00mex_search_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Search\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_search_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_searchdir)\"
 00mex_search_la_LIBADD  = $(_libadd)
 endif
 
@@ -75,7 +75,7 @@ dist_mex_queue_DATA =
 	$(NULL)
 40mex_queue_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Queue\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_queue_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_queuedir)\"
 40mex_queue_la_LIBADD  = $(_libadd)
 endif
 
@@ -91,7 +91,7 @@ dist_mex_applications_DATA =
 	$(NULL)
 50mex_applications_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Applications\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_applications_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_applicationsdir)\"
 50mex_applications_la_LIBADD  = $(_libadd)
 endif
 
@@ -107,7 +107,7 @@ dist_mex_upnp_DATA =
 	$(NULL)
 20mex_upnp_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-UPnP\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_upnp_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_upnpdir)\"
 20mex_upnp_la_LIBADD  =  $(_libadd)
 endif
 
@@ -123,7 +123,7 @@ dist_mex_tracker_DATA =
 	$(NULL)
 20mex_tracker_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Tracker\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_tracker_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_trackerdir)\"
 20mex_tracker_la_LIBADD  = $(_libadd)
 endif
 
@@ -139,7 +139,7 @@ dist_mex_dbusinput_DATA =
 	$(NULL)
 50mex_dbusinput_la_CFLAGS  = 			\
 	-DG_LOG_DOMAIN=\"Mex-Dbusinput\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_dbusinput_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_dbusinputdir)\"
 50mex_dbusinput_la_LIBADD  = $(_libadd)
 endif
 
@@ -155,7 +155,7 @@ dist_mex_opticaldisc_DATA =
 	$(NULL)
 50mex_opticaldisc_la_CFLAGS  = 			\
 	-DG_LOG_DOMAIN=\"Mex-Opticaldisc\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_opticaldisc_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_opticaldiscdir)\"
 50mex_opticaldisc_la_LIBADD  = $(_libadd)
 endif
 
@@ -170,7 +170,7 @@ dist_mex_bliptv_DATA =
 	bliptv/mex-bliptv-plugin.h
 40mex_bliptv_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Bliptv\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_bliptv_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_bliptvdir)\"
 40mex_bliptv_la_LIBADD = $(_libadd)
 endif
 
@@ -201,7 +201,7 @@ dist_mex_justintv_DATA =
 	justintv/mex-justintv-plugin.h
 40mex_justintv_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Justintv\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_justintv_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_justintvdir)\"
 40mex_justintv_la_LIBADD = $(_libadd)
 endif
 
@@ -216,7 +216,7 @@ dist_mex_debug_DATA =
 	debug/mex-debug-plugin.h
 00mex_debug_la_CFLAGS  = 		\
 	-DG_LOG_DOMAIN=\"Mex-Debug\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_debug_datadir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_debugdir)\"
 00mex_debug_la_LIBADD = $(_libadd) -lunwind
 
 debugdir = $(pkglibdir)/debug
