@@ -110,10 +110,11 @@ static void mex_hide_actor (MexData *data, ClutterActor *actor);
 static void mex_push_busy (MexData *data);
 static void mex_pop_busy (MexData *data);
 
-static gboolean opt_fullscreen = FALSE;
-static gboolean opt_version    = FALSE;
-static gboolean opt_ignore_res = FALSE;
-static gboolean opt_touch      = FALSE;
+static gboolean opt_fullscreen   = FALSE;
+static gboolean opt_version      = FALSE;
+static gboolean opt_show_version = FALSE;
+static gboolean opt_ignore_res   = FALSE;
+static gboolean opt_touch        = FALSE;
 static gchar **opt_file = NULL;
 
 static void
@@ -2034,7 +2035,9 @@ static GOptionEntry entries[] =
 {
   { "full-screen", 'f', 0, G_OPTION_ARG_NONE, &opt_fullscreen,
     "Start full screen", NULL },
-  { "show-version", 0, 0, G_OPTION_ARG_NONE, &opt_version,
+  { "version", 'v', 0, G_OPTION_ARG_NONE, &opt_version,
+    "Dispay the version and exit", NULL },
+  { "show-version", 0, 0, G_OPTION_ARG_NONE, &opt_show_version,
     "Dispay the version", NULL },
   { "ignore-resolution", 'r', 0, G_OPTION_ARG_NONE, &opt_ignore_res,
     "Don't warn if the screen size isn't sufficient", NULL },
@@ -2122,6 +2125,12 @@ main (int argc, char **argv)
       exit (1);
     }
   g_option_context_free (context);
+
+  if (opt_version)
+    {
+      g_print ("Media Explorer version %s\n", MEX_VERSION_GIT);
+      exit (EXIT_SUCCESS);
+    }
 
   if (!clutter_init (&argc, &argv))
     {
@@ -2366,7 +2375,7 @@ main (int argc, char **argv)
   clutter_container_add_actor (CLUTTER_CONTAINER (data.stack), data.slide_show);
   clutter_actor_hide (data.slide_show);
 
-  if (opt_version == TRUE)
+  if (opt_show_version == TRUE)
     {
       /* Pack the version in the stack and align it to the bottom left */
       data.version = mx_label_new_with_text ("v" MEX_VERSION_GIT);
