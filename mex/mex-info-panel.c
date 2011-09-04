@@ -31,7 +31,7 @@
 
 #include <glib/gi18n-lib.h>
 
-#if USE_PLAYER_CLUTTER_GST
+#ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
 #endif
 
@@ -746,7 +746,7 @@ mex_info_panel_new (MexInfoPanelMode mode)
   return g_object_new (MEX_TYPE_INFO_PANEL, "mode", mode, NULL);
 }
 
-#if USE_PLAYER_CLUTTER_GST
+#ifdef USE_PLAYER_CLUTTER_GST
 static void
 on_media_audio_streams_changed (ClutterMedia *media,
                                 GParamSpec   *pspsec,
