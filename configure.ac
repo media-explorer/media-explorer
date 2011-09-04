@@ -79,10 +79,12 @@ AC_HEADER_STDC
 GLIB_REQ_VERSION=2.26
 MX_REQ_VERSION=1.3.1
 GRILO_REQ_VERSION=0.1.16
+CLUTTER_GST_REQ_VERSION=1.3.14
 
 AC_SUBST(GLIB_REQ_VERSION)
 AC_SUBST(MX_REQ_VERSION)
 AC_SUBST(GRILO_REQ_VERSION)
+AC_SUBST(CLUTTER_GST_REQ_VERSION)
 
 # you can specify a --with-profile=$profile as a configuration option to hopefully
 # get sane defaults.
@@ -153,12 +155,13 @@ AS_CASE([$with_profile],
 
         [AC_MSG_ERROR([Unknown profile $with_profile])])
 
-modules="glib-2.0 >= $GLIB_REQ_VERSION    \
-         gio-2.0                          \
-         gdk-pixbuf-2.0                   \
-         libsoup-2.4                      \
-         mx-1.0 >= $MX_REQ_VERSION        \
-         grilo-0.1 >= $GRILO_REQ_VERSION"
+modules="glib-2.0 >= $GLIB_REQ_VERSION                  \
+         gio-2.0                                        \
+         gdk-pixbuf-2.0                                 \
+         libsoup-2.4                                    \
+         mx-1.0 >= $MX_REQ_VERSION                      \
+         grilo-0.1 >= $GRILO_REQ_VERSION
+         clutter-gst-1.0 >= $CLUTTER_GST_REQ_VERSION"
 
 PKG_CHECK_EXISTS([gio-unix-2.0],
                  [
@@ -193,29 +196,24 @@ AC_ARG_WITH([player],
 
 player_deps=""
 
-CLUTTER_GST_REQ_VERSION=1.3.14
-AC_SUBST(CLUTTER_GST_REQ_VERSION)
 
 AS_CASE([$with_player],
         [clutter-gst],
         [
           AC_DEFINE([USE_PLAYER_CLUTTER_GST], 1, [Use "clutter-gst" for
                      playback])
-          player_deps="clutter-gst-1.0 >= $CLUTTER_GST_REQ_VERSION"
           PROFILE_PLUGINS+=" bg-video"
         ],
 
         [d-bus],
         [
           AC_DEFINE([USE_PLAYER_DBUS], 1, [Use "d-bus" for playback])
-          player_deps="gstreamer-0.10"
           PROFILE_PLUGINS+=" bg-dbusvideo"
         ],
 
         [surface],
         [
           AC_DEFINE([USE_PLAYER_SURFACE], 1, [Use "surface" for playback])
-          player_deps="clutter-gst-1.0 >= $CLUTTER_GST_REQ_VERSION"
         ],
 
         [AC_MSG_ERROR([Invalid value for --with-player])]
@@ -223,7 +221,7 @@ AS_CASE([$with_player],
 
 AM_CONDITIONAL(ENABLE_EXTERNAL_PLAYER, [test x"$with_player" = x"d-bus"])
 
-PKG_CHECK_MODULES(MEX, "$modules $player_deps")
+PKG_CHECK_MODULES(MEX, "$modules")
 
 PKG_CHECK_MODULES(GCONTROLLER, [gobject-2.0 >= 2.20])
 
