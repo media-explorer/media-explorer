@@ -31,9 +31,8 @@
 
 #include <glib/gi18n-lib.h>
 
-#ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
-#endif
+#include <clutter-gst/clutter-gst-player.h>
 
 static void mex_content_view_iface_init (MexContentViewIface *iface);
 
@@ -246,7 +245,7 @@ audio_combo_box_notify (MxComboBox   *box,
 {
 #if USE_PLAYER_CLUTTER_GST
   MexInfoPanelPrivate *priv = panel->priv;
-  ClutterGstVideoTexture *video_texture;
+  ClutterGstPlayer *player;
   GList *list;
   gchar *title;
   gint index_;
@@ -257,18 +256,18 @@ audio_combo_box_notify (MxComboBox   *box,
   if (index_ < 0)
     return;
 
-  if (!CLUTTER_GST_IS_VIDEO_TEXTURE (priv->media))
+  if (!CLUTTER_GST_IS_PLAYER (priv->media))
     return;
 
-  video_texture = CLUTTER_GST_VIDEO_TEXTURE (priv->media);
+  player = CLUTTER_GST_PLAYER (priv->media);
 
   /* Avoid looping when the change come from the ClutterMedia */
   if (priv->audio_combo_box_changed_from_media)
     priv->audio_combo_box_changed_from_media = FALSE;
   else
-    clutter_gst_video_texture_set_audio_stream (video_texture, index_);
+    clutter_gst_player_set_audio_stream (player, index_);
 
-  list = clutter_gst_video_texture_get_audio_streams (video_texture);
+  list = clutter_gst_player_get_audio_streams (player);
 
   /* audio track */
   title = g_strdup_printf (_("Audio (%s)"),
@@ -287,7 +286,7 @@ subtitle_combo_box_notify (MxComboBox   *box,
 {
 #if USE_PLAYER_CLUTTER_GST
   MexInfoPanelPrivate *priv = panel->priv;
-  ClutterGstVideoTexture *video_texture;
+  ClutterGstPlayer *player;
   GList *list;
   gchar *title;
   gint index_;
@@ -298,18 +297,18 @@ subtitle_combo_box_notify (MxComboBox   *box,
   if (index_ < 0)
     return;
 
-  if (!CLUTTER_GST_IS_VIDEO_TEXTURE (priv->media))
+  if (!CLUTTER_GST_IS_PLAYER (priv->media))
     return;
 
-  video_texture = CLUTTER_GST_VIDEO_TEXTURE (priv->media);
+  player = CLUTTER_GST_PLAYER (priv->media);
 
   /* Avoid looping when the change come from the ClutterMedia */
   if (priv->subtitle_combo_box_changed_from_media)
     priv->subtitle_combo_box_changed_from_media = FALSE;
   else
-    clutter_gst_video_texture_set_subtitle_track (video_texture, index_ - 1);
+    clutter_gst_player_set_subtitle_track (player, index_ - 1);
 
-  list = clutter_gst_video_texture_get_subtitle_tracks (video_texture);
+  list = clutter_gst_player_get_subtitle_tracks (player);
 
   /* audio track */
   title = g_strdup_printf (_("Subtitles (%s)"),
@@ -746,18 +745,17 @@ mex_info_panel_new (MexInfoPanelMode mode)
   return g_object_new (MEX_TYPE_INFO_PANEL, "mode", mode, NULL);
 }
 
-#ifdef USE_PLAYER_CLUTTER_GST
 static void
 on_media_audio_streams_changed (ClutterMedia *media,
                                 GParamSpec   *pspsec,
                                 MexInfoPanel *panel)
 {
-  ClutterGstVideoTexture *video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
+  ClutterGstPlayer *player = CLUTTER_GST_PLAYER (media);
   MexInfoPanelPrivate *priv = panel->priv;
   GList *streams, *l;
   gint n_streams;
 
-  streams = clutter_gst_video_texture_get_audio_streams (video_texture);
+  streams = clutter_gst_player_get_audio_streams (player);
   n_streams = g_list_length (streams);
 
   /* no need to display the audio stream combox box if there's no more than 1
@@ -785,13 +783,13 @@ on_media_audio_stream_changed (ClutterMedia *media,
                                 GParamSpec   *pspsec,
                                 MexInfoPanel *panel)
 {
-  ClutterGstVideoTexture *video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
+  ClutterGstPlayer *player = CLUTTER_GST_PLAYER (media);
   MexInfoPanelPrivate *priv = panel->priv;
   gint index_;
 
   priv->audio_combo_box_changed_from_media = TRUE;
 
-  index_ = clutter_gst_video_texture_get_audio_stream (video_texture);
+  index_ = clutter_gst_player_get_audio_stream (player);
   mx_combo_box_set_index (MX_COMBO_BOX (priv->audio_combo_box), index_);
 }
 
@@ -800,12 +798,12 @@ on_media_subtitle_tracks_changed (ClutterMedia *media,
                                   GParamSpec   *pspsec,
                                   MexInfoPanel *panel)
 {
-  ClutterGstVideoTexture *video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
+  ClutterGstPlayer *player = CLUTTER_GST_PLAYER (media);
   MexInfoPanelPrivate *priv = panel->priv;
   GList *tracks, *l;
   gint n_tracks;
 
-  tracks = clutter_gst_video_texture_get_subtitle_tracks (video_texture);
+  tracks = clutter_gst_player_get_subtitle_tracks (player);
 
   mx_combo_box_remove_all (MX_COMBO_BOX (priv->subtitle_combo_box));
 
@@ -839,13 +837,13 @@ on_media_subtitle_track_changed (ClutterMedia *media,
                                  GParamSpec   *pspsec,
                                  MexInfoPanel *panel)
 {
-  ClutterGstVideoTexture *video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
+  ClutterGstPlayer *player = CLUTTER_GST_PLAYER (media);
   MexInfoPanelPrivate *priv = panel->priv;
   gint index_;
 
   priv->subtitle_combo_box_changed_from_media = TRUE;
 
-  index_ = clutter_gst_video_texture_get_subtitle_track (video_texture);
+  index_ = clutter_gst_player_get_subtitle_track (player);
 
   /* +1 here as we add "None" in the combo box to be able to disable subs */
   mx_combo_box_set_index (MX_COMBO_BOX (priv->subtitle_combo_box), index_ + 1);
@@ -889,15 +887,3 @@ mex_info_panel_set_media (MexInfoPanel *panel,
                         G_CALLBACK (on_media_subtitle_track_changed), panel);
     }
 }
-
-#else /* !USE_PLAYER_CLUTTER_GST */
-
-void
-mex_info_panel_set_media (MexInfoPanel *panel,
-                          ClutterMedia *media)
-{
-  g_return_if_fail (MEX_IS_INFO_PANEL (panel));
-  g_return_if_fail (CLUTTER_IS_MEDIA (media));
-}
-
-#endif
