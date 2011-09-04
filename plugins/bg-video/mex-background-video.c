@@ -119,11 +119,19 @@ static void
 mex_background_video_init (MexBackgroundVideo *self)
 {
   MexBackgroundVideoPrivate *priv;
+  GFile *video;
+  gchar *path;
 
   self->priv = priv = BACKGROUND_VIDEO_PRIVATE (self);
 
-  priv->video_url = g_strconcat ("file://", mex_get_data_dir (),
-                                 "/style/background-loop.mkv", NULL);
+  path = g_build_filename (mex_get_data_dir (),
+                           "style",
+                           "background-loop.mkv",
+                           NULL);
+  video = g_file_new_for_path (path);
+  g_free (path);
+  priv->video_url = g_file_get_uri (video);
+  g_object_unref (video);
 
   priv->media = CLUTTER_MEDIA (clutter_gst_video_texture_new ());
   clutter_media_set_uri (priv->media, priv->video_url);
