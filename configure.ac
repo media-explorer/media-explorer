@@ -141,7 +141,6 @@ modules="glib-2.0 >= $GLIB_REQ_VERSION    \
          gdk-pixbuf-2.0                   \
          libsoup-2.4                      \
          mx-1.0 >= $MX_REQ_VERSION        \
-         rest-0.7                         \
          dbus-glib-1                      \
          grilo-0.1 >= $GRILO_REQ_VERSION"
 
@@ -437,7 +436,7 @@ AM_CONDITIONAL(ENABLE_DISPLAYCONF, test "x$enable_displayconf" = "xyes")
 # Shell
 #
 
-PKG_CHECK_MODULES(SHELL, [gio-unix-2.0 mx-1.0 clutter-1.0 glib-2.0 rest-0.7 dbus-glib-1])
+PKG_CHECK_MODULES(SHELL, [gio-unix-2.0 mx-1.0 clutter-1.0 glib-2.0 dbus-glib-1])
 
 AS_CASE([$clutter_soname],
 
@@ -473,7 +472,7 @@ AS_MEX_PLUGIN(bg-dbusvideo)
 AS_MEX_PLUGIN(bg-backdrop)
 AS_MEX_PLUGIN(library)
 AS_MEX_PLUGIN(recommended)
-AS_MEX_PLUGIN(search)
+AS_MEX_PLUGIN(search, [rest-0.7])
 AS_MEX_PLUGIN(queue)
 AS_MEX_PLUGIN(applications)
 AS_MEX_PLUGIN(upnp)

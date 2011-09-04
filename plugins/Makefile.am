@@ -58,9 +58,12 @@ dist_mex_search_DATA =
 	search/mex-search-plugin.h	\
 	$(NULL)
 00mex_search_la_CFLAGS  = 		\
+	$(PLUGIN_SEARCH_CFLAGS)		\
 	-DG_LOG_DOMAIN=\"Mex-Search\"	\
 	-DMEX_DATA_PLUGIN_DIR=\"$(mex_searchdir)\"
-00mex_search_la_LIBADD  = $(_libadd)
+00mex_search_la_LIBADD  = 		\
+	$(_libadd)			\
+	$(PLUGIN_SEARCH_LIBS)
 endif
 
 if USE_PLUGIN_QUEUE
