@@ -137,12 +137,21 @@ AS_CASE([$with_profile],
 
 modules="glib-2.0 >= $GLIB_REQ_VERSION    \
          gio-2.0                          \
-         gio-unix-2.0                     \
          gdk-pixbuf-2.0                   \
          libsoup-2.4                      \
          mx-1.0 >= $MX_REQ_VERSION        \
          dbus-glib-1                      \
          grilo-0.1 >= $GRILO_REQ_VERSION"
+
+PKG_CHECK_EXISTS([gio-unix-2.0],
+                 [
+                   have_gio_unix=yes
+                   AC_DEFINE([HAVE_GIO_UNIX], [1],
+                             ["Defined if gio-unix-2.0 is available"])
+                   modules="$modules gio-unix-2.0"
+                 ],
+                 [have_gio_unix=no])
+AM_CONDITIONAL(HAVE_GIO_UNIX, [test x"$have_gio_unix" = x"yes"])
 
 PKG_CHECK_EXISTS(libsoup-gnome-2.4,
                  [modules="$modules libsoup-gnome-2.4"
@@ -436,7 +445,7 @@ AM_CONDITIONAL(ENABLE_DISPLAYCONF, test "x$enable_displayconf" = "xyes")
 # Shell
 #
 
-PKG_CHECK_MODULES(SHELL, [gio-unix-2.0 mx-1.0 clutter-1.0 glib-2.0 dbus-glib-1])
+PKG_CHECK_MODULES(SHELL, [mx-1.0 clutter-1.0 glib-2.0 dbus-glib-1])
 
 AS_CASE([$clutter_soname],
 

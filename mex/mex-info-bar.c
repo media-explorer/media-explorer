@@ -25,7 +25,10 @@
 #include "mex-generic-notification-source.h"
 
 #include <glib/gi18n-lib.h>
+
+#ifdef HAVE_GIO_UNIX
 #include <gio/gdesktopappinfo.h>
+#endif
 
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 
@@ -337,6 +340,14 @@ mex_info_bar_close_dialog (MexInfoBar *self)
 }
 
 static gboolean
+_close_request_cb (gpointer unused, MexInfoBar *self)
+{
+  g_signal_emit (self, signals[CLOSE], 0);
+  return TRUE;
+}
+
+#ifdef HAVE_GIO_UNIX
+static gboolean
 _app_launcher_cb (ClutterActor *actor, gpointer command)
 {
   GError *error=NULL;
@@ -347,13 +358,6 @@ _app_launcher_cb (ClutterActor *actor, gpointer command)
       g_clear_error (&error);
     }
 
-  return TRUE;
-}
-
-static gboolean
-_close_request_cb (gpointer unused, MexInfoBar *self)
-{
-  g_signal_emit (self, signals[CLOSE], 0);
   return TRUE;
 }
 
@@ -392,6 +396,13 @@ _action_new_from_desktop_file (const gchar *desktop_file_id)
     }
   return NULL;
 }
+#else
+static MxAction *
+_action_new_from_desktop_file (const gchar *desktop_file_id)
+{
+  return NULL;
+}
+#endif
 
 static gboolean
 _create_power_dialog (MexInfoBar *self)

@@ -35,7 +35,6 @@
 #ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
 #endif
-#include <gio/gdesktopappinfo.h>
 
 #include <glib/gi18n.h>
 
