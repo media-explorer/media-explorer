@@ -140,7 +140,6 @@ modules="glib-2.0 >= $GLIB_REQ_VERSION    \
          gdk-pixbuf-2.0                   \
          libsoup-2.4                      \
          mx-1.0 >= $MX_REQ_VERSION        \
-         dbus-glib-1                      \
          grilo-0.1 >= $GRILO_REQ_VERSION"
 
 PKG_CHECK_EXISTS([gio-unix-2.0],
@@ -152,6 +151,16 @@ PKG_CHECK_EXISTS([gio-unix-2.0],
                  ],
                  [have_gio_unix=no])
 AM_CONDITIONAL(HAVE_GIO_UNIX, [test x"$have_gio_unix" = x"yes"])
+
+PKG_CHECK_EXISTS([dbus-glib-1],
+                 [
+                   have_dbus_glib=yes
+                   AC_DEFINE([HAVE_DBUS_GLIB], [1],
+                             ["Defined if dbus-glib is available"])
+                   modules="$modules dbus-glib-1"
+                 ],
+                 [have_dbus_glib=no])
+AM_CONDITIONAL(HAVE_DBUS_GLIB, [test x"$have_dbus_glib" = x"yes"])
 
 PKG_CHECK_EXISTS(libsoup-gnome-2.4,
                  [modules="$modules libsoup-gnome-2.4"
@@ -448,7 +457,7 @@ AM_CONDITIONAL(ENABLE_DISPLAYCONF, test "x$enable_displayconf" = "xyes")
 # Shell
 #
 
-PKG_CHECK_MODULES(SHELL, [mx-1.0 clutter-1.0 glib-2.0 dbus-glib-1])
+PKG_CHECK_MODULES(SHELL, [mx-1.0 clutter-1.0 glib-2.0])
 
 AS_CASE([$clutter_soname],
 

@@ -24,7 +24,6 @@
 #include "mex-utils.h"
 #include <mx/mx.h>
 #include <string.h>
-#include <dbus/dbus-glib.h>
 
 #include <mex/mex-content-view.h>
 #include <mex/mex-program.h>

@@ -28,8 +28,11 @@
 
 #include <locale.h>
 
+#ifdef HAVE_DBUS_GLIB
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
+#endif
+
 #include <grilo.h>
 #include <mex/mex.h>
 #ifdef USE_PLAYER_CLUTTER_GST
@@ -1665,6 +1668,7 @@ mex_push_busy (MexData *data)
     }
 }
 
+#ifdef HAVE_DBUS_GLIB
 static void
 start_service_reply (DBusGProxy *proxy,
                      guint       success,
@@ -1734,6 +1738,7 @@ request_dbus_name (const gchar *name)
 
   return request_status == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER;
 }
+#endif
 
 static void
 close_welcome_cb (MxButton *button,
@@ -1789,7 +1794,7 @@ welcome_run (MexData *data)
                     "clicked", G_CALLBACK (close_welcome_cb), data);
 }
 
-#if HAVE_REBINDER
+#if defined (HAVE_DBUS_GLIB) && defined (HAVE_REBINDER)
 static void
 rebinder_quit (void)
 {
@@ -1823,7 +1828,7 @@ rebinder_quit (void)
 }
 #endif
 
-#if HAVE_WEBREMOTE
+#if defined (HAVE_DBUS_GLIB) && defined (HAVE_WEBREMOTE)
 static void
 webremote_quit (void)
 {
@@ -2224,7 +2229,7 @@ main (int argc, char **argv)
     }
 
   /* Auto start the rebinder */
-#if HAVE_REBINDER
+#if defined (HAVE_DBUS_GLIB) && defined (HAVE_REBINDER)
   auto_start_dbus_service (MEX_REBINDER_DBUS_INTERFACE);
 #endif /* HAVE_REBINDER */
 
@@ -2607,7 +2612,7 @@ main (int argc, char **argv)
       mex_player_content_set_externally_cb (&data);
     }
 
-#if HAVE_WEBREMOTE
+#if defined (HAVE_DBUS_GLIB) && defined (HAVE_WEBREMOTE)
   web_settings_loc = mex_settings_find_config_file (mex_settings_get_default (),
                                                     "mex-webremote.conf");
   if (web_settings_loc)

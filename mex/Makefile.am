@@ -3,9 +3,7 @@ SUBDIRS = glib-controller
 -include $(INTROSPECTION_MAKEFILE)
 
 lib_LTLIBRARIES = libmex-@MEX_API_VERSION@.la
-noinst_LTLIBRARIES = \
-		  libmex-player-ginterfaces.la \
-		  libmex-player-client.la
+noinst_LTLIBRARIES = libmex-player-ginterfaces.la
 
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES =
@@ -24,7 +22,9 @@ glib_enum_c = mex-enum-types.c
 glib_enum_headers = $(filter-out gbinding.h, $(mex_headers))
 include $(top_srcdir)/build/Makefile.am.enums
 
+if HAVE_DBUS_GLIB
 DBUS_SPECS = mex-media-player.xml
+endif
 
 %-ginterface.h %-ginterface.c: %.xml Makefile.am
 	$(AM_V_GEN)python $(top_srcdir)/tools/glib-ginterface-gen.py --include='"mex-marshal.h"' --filename=$(basename $@) $< Mex_
@@ -43,11 +43,6 @@ libmex_player_ginterfaces_la_CFLAGS = $(MEX_CFLAGS)
 BUILT_SOURCES += $(GINTERFACE_SOURCES) $(DBUS_SPECS:.xml=-bindings.h) $(MARSHAL_SOURCES)
 
 EXTRA_DIST += $(DBUS_SPECS:.xml=-bindings.h)
-
-libmex_player_client_la_SOURCES = mex-player-client.h mex-player-client.c \
-				  mex-player-common.h
-libmex_player_client_la_CFLAGS = $(MEX_CFLAGS)
-libmex_player_client_la_LIBADD = $(MEX_LIBS)
 
 mex_headers =							\
 	$(top_srcdir)/mex/mex.h					\
@@ -102,7 +97,6 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-logo-provider.h			\
 	$(top_srcdir)/mex/mex-main.h				\
 	$(top_srcdir)/mex/mex-media-controls.h			\
-	$(top_srcdir)/mex/mex-media-dbus-bridge.h		\
 	$(top_srcdir)/mex/mex-menu.h				\
 	$(top_srcdir)/mex/mex-metadata-utils.h			\
 	$(top_srcdir)/mex/mex-mmkeys.h				\
@@ -203,7 +197,6 @@ mex_sources =					\
 	mex-logo-provider.c			\
 	mex-main.c				\
 	mex-media-controls.c			\
-	mex-media-dbus-bridge.c			\
 	mex-menu.c				\
 	mex-metadata-utils.c			\
 	mex-mmkeys.c				\
@@ -241,6 +234,17 @@ mex_sources =					\
 	mex-view-model.c			\
 	mex-volume-control.c			\
 	$(NULL)
+
+if HAVE_DBUS_GLIB
+mex_headers +=						\
+	$(top_srcdir)/mex/mex-media-dbus-bridge.h	\
+	$(top_srcdir)/mex/mex-player-client.h		\
+	$(NULL)
+mex_sources +=				\
+	mex-media-dbus-bridge.c		\
+	mex-player-client.c		\
+	$(NULL)
+endif
 
 mex_built_sources =			\
 	mex-enum-types.c		\
@@ -287,7 +291,6 @@ libmex_@MEX_API_VERSION@_la_CFLAGS =	\
 libmex_@MEX_API_VERSION@_la_LIBADD =					\
 	$(top_builddir)/mex/glib-controller/libglib-controller-1.0.la	\
 	libmex-player-ginterfaces.la					\
-	libmex-player-client.la						\
 	$(MEX_LIBS)							\
 	$(TRACKER_LIBS)							\
 	$(NM_LIBS)							\

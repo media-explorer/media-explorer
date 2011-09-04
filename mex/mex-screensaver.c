@@ -16,7 +16,14 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#ifdef HAVE_DBUS_GLIB
 #include <dbus/dbus-glib.h>
+#endif
+
 #include "mex-screensaver.h"
 
 G_DEFINE_TYPE (MexScreensaver, mex_screensaver, G_TYPE_OBJECT)
@@ -60,6 +67,7 @@ mex_screensaver_new (void)
   return g_object_new (MEX_TYPE_SCREENSAVER, NULL);
 }
 
+#ifdef HAVE_DBUS_GLIB
 static DBusGProxy *
 connect_gnome_screensaverd (MexScreensaver *self)
 {
@@ -243,3 +251,16 @@ mex_screensaver_uninhibit (MexScreensaver *self)
       g_object_unref (proxy);
     }
 }
+#else
+void
+mex_screensaver_uninhibit (MexScreensaver *self)
+{
+
+}
+
+void
+mex_screensaver_inhibit (MexScreensaver *self)
+{
+
+}
+#endif

@@ -21,8 +21,11 @@
 #endif
 
 #include <gio/gio.h>
-#include <dbus/dbus-glib.h>
 #include <clutter/clutter.h>
+
+#if defined (HAVE_DBUS_GLIB) && defined (WITH_THUMBNAILER_TUMBLER)
+#include <dbus/dbus-glib.h>
+#endif
 
 #include "mex-thumbnailer.h"
 #include "mex-marshal.h"
