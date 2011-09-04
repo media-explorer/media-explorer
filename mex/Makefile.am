@@ -293,6 +293,8 @@ libmex_@MEX_API_VERSION@_la_LIBADD =					\
 	$(NM_LIBS)							\
 	$(NULL)
 
+libmex_@MEX_API_VERSION@_la_LDFLAGS = -no-undefined
+
 #
 # Introspection
 #
