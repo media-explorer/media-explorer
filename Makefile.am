@@ -18,7 +18,7 @@ endif
 
 SUBDIRS += data doc po
 
-ACLOCAL_AMFLAGS = -I build
+ACLOCAL_AMFLAGS = -I build ${ACLOCAL_FLAGS}
 
 DISTCLEANFILES = aclocal.m4 config.h.in gtk-doc.make
 DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --disable-introspection
