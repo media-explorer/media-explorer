@@ -28,6 +28,8 @@
 #include <telepathy-yell/interfaces.h>
 
 #define DEBUG_FLAG TPY_DEBUG_CLIENT
+#define MEX_LOG_DOMAIN_DEFAULT  telepathy_tpy_factory_log_domain
+MEX_LOG_DOMAIN_STATIC(telepathy_tpy_factory_log_domain);
 
 G_DEFINE_TYPE (TpyAutomaticClientFactory, tpy_automatic_client_factory,
                TP_TYPE_SIMPLE_CLIENT_FACTORY)
@@ -109,6 +111,9 @@ tpy_automatic_client_factory_class_init (TpyAutomaticClientFactoryClass *cls)
   TpSimpleClientFactoryClass *simple_class = (TpSimpleClientFactoryClass *)cls;
 
   simple_class->create_channel = create_channel_impl;
+
+  /* log domain */
+  MEX_LOG_DOMAIN_INIT (telepathy_tpy_factory_log_domain, "telepathy-tpy-factory");
 }
 
 TpyAutomaticClientFactory *

@@ -27,6 +27,9 @@
 
 #include <telepathy-yell/interfaces.h>
 
+#define MEX_LOG_DOMAIN_DEFAULT  telepathy_contact_log_domain
+MEX_LOG_DOMAIN_STATIC(telepathy_contact_log_domain);
+
 static void mex_content_iface_init (MexContentIface *iface);
 G_DEFINE_TYPE_WITH_CODE (MexContact,
                          mex_contact,
@@ -142,6 +145,9 @@ mex_contact_class_init (MexContactClass *klass)
   object_class->set_property = mex_contact_set_property;
   object_class->dispose = mex_contact_dispose;
   object_class->finalize = mex_contact_finalize;
+
+  /* log domain */
+  MEX_LOG_DOMAIN_INIT (telepathy_contact_log_domain, "telepathy-contact");
 
   // Signals
   mex_contact_signals[SHOULD_ADD_TO_MODEL_CHANGED] =

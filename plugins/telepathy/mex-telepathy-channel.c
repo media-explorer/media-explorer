@@ -31,6 +31,9 @@
 
 #include <mex/mex.h>
 
+#define MEX_LOG_DOMAIN_DEFAULT  telepathy_channel_log_domain
+MEX_LOG_DOMAIN_STATIC(telepathy_channel_log_domain);
+
 G_DEFINE_TYPE (MexTelepathyChannel, mex_telepathy_channel, G_TYPE_OBJECT)
 
 #define TELEPATHY_CHANNEL_PRIVATE(o)                            \
@@ -1082,6 +1085,9 @@ mex_telepathy_channel_class_init (MexTelepathyChannelClass *klass)
   object_class->finalize = mex_telepathy_channel_finalize;
 
   g_type_class_add_private (klass, sizeof (MexTelepathyChannelPrivate));
+
+  /* log domain */
+  MEX_LOG_DOMAIN_INIT (telepathy_channel_log_domain, "telepathy-channel");
 
   // Signals
   mex_telepathy_channel_signals[SHOW_ACTOR] =
