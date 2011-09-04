@@ -28,6 +28,7 @@
 #endif
 
 #include "mex-thumbnailer.h"
+#include "mex-os.h"
 #include "mex-marshal.h"
 
 #ifdef WITH_THUMBNAILER_TUMBLER
@@ -164,7 +165,7 @@ mex_internal_thumbnail (const gchar          *uri,
   if (!thumbnail_thread_pool)
     thumbnail_thread_pool = g_thread_pool_new ((GFunc)mex_internal_thumbnail_start,
                                                NULL,
-                                               sysconf (_SC_NPROCESSORS_ONLN),
+                                               mex_os_get_n_cores (),
                                                FALSE, &err);
 
   if (err)

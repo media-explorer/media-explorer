@@ -93,13 +93,31 @@ AC_SUBST(GRILO_REQ_VERSION)
 clutter_soname=`$PKG_CONFIG --variable soname_infix clutter-1.0`
 
 AS_CASE([$clutter_soname],
-        [cex100], [default_profile=intelce],
-        [glx|eglx], [default_profile=gnome],
-        [win32], [default_profile=windows],
+
+        [cex100],
+        [
+          mex_os=linux
+          default_profile=intelce
+        ],
+
+        [glx|eglx],
+        [
+          mex_os=linux
+          default_profile=gnome
+        ],
+
+        [win32],
+        [
+          mex_os=windows
+          default_profile=windows
+        ],
+
         [AC_MSG_ERROR([Unknown clutter winsys $clutter_soname, please add it and optionally create a new profile])])
 
+AC_SUBST(MEX_OS, [$mex_os])
+
 AC_ARG_WITH([profile],
-            [AC_HELP_STRING([--with-profile=@<:@gnome/intelce@:>@].
+            [AC_HELP_STRING([--with-profile=@<:@gnome/intelce/windows@:>@],
                             [Specify the configuration profile @<:@default=auto@:>@])],
             [],
             [with_profile=$default_profile])

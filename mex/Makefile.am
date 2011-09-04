@@ -107,6 +107,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-notification-area.h		\
 	$(top_srcdir)/mex/mex-notification-source.h		\
 	$(top_srcdir)/mex/mex-online.h				\
+	$(top_srcdir)/mex/mex-os.h				\
 	$(top_srcdir)/mex/mex-player.h				\
 	$(top_srcdir)/mex/mex-player-common.h			\
 	$(top_srcdir)/mex/mex-plugin-manager.h			\
@@ -207,6 +208,7 @@ mex_sources =					\
 	mex-notification-area.c			\
 	mex-notification-source.c		\
 	mex-online.c				\
+	mex-os-@MEX_OS@.c			\
 	mex-player.c				\
 	mex-plugin-manager.c			\
 	mex-private.c				\
