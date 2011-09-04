@@ -16,7 +16,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
 #include "mex-plugin-manager.h"
 #include "mex-marshal.h"
 #include <gmodule.h>
@@ -49,6 +48,48 @@ struct _MexPluginManagerPrivate
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
+
+/* Build the list of paths to search for plugins */
+#ifdef G_OS_WIN32
+
+#define PLUGIN_EXTENSION ".dll"
+
+static gchar **
+build_plugin_search_paths (void)
+{
+  gchar **search_paths;
+  gchar *mex_directory;
+
+  mex_directory = g_win32_get_package_installation_directory_of_module (NULL);
+  search_paths = g_new0 (gchar *, 3);
+  search_paths[0] = g_build_filename (mex_directory,
+                                      "lib", "mex", "plugins",
+                                      NULL);
+  g_free (mex_directory);
+  search_paths[1] = g_strdup (getenv ("MEX_PLUGIN_PATH"));
+
+  return search_paths;
+}
+#else
+
+#define PLUGIN_EXTENSION ".so"
+
+static gchar **
+build_plugin_search_paths (void)
+{
+  gchar **search_paths;
+
+  search_paths = g_new0 (gchar *, 3);
+  search_paths[0] = g_strdup (PKGLIBDIR "/plugins");
+  search_paths[1] = g_strdup (getenv ("MEX_PLUGIN_PATH"));
+
+  return search_paths;
+}
+#endif
+
+/*
+ * GObject implementation
+ */
 
 static void
 mex_plugin_manager_get_property (GObject    *object,
@@ -213,9 +254,7 @@ mex_plugin_manager_init (MexPluginManager *self)
 {
   MexPluginManagerPrivate *priv = self->priv = PLUGIN_MANAGER_PRIVATE (self);
 
-  priv->search_paths = g_new0 (gchar *, 3);
-  priv->search_paths[0] = g_strdup (PKGLIBDIR "/plugins");
-  priv->search_paths[1] = g_strdup (getenv ("MEX_PLUGIN_PATH"));
+  priv->search_paths = build_plugin_search_paths ();
 
   priv->plugins = g_hash_table_new_full (g_str_hash,
                                          g_str_equal,
@@ -272,8 +311,7 @@ mex_plugin_manager_refresh (MexPluginManager *manager)
         {
           gchar *full_file;
 
-          if (!g_str_has_suffix (file, ".so") &&
-              !g_str_has_suffix (file, ".la"))
+          if (!g_str_has_suffix (file, PLUGIN_EXTENSION))
             continue;
 
           full_file = g_build_filename (priv->search_paths[i], file, NULL);
