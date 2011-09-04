@@ -213,14 +213,9 @@ mex_plugin_manager_init (MexPluginManager *self)
 {
   MexPluginManagerPrivate *priv = self->priv = PLUGIN_MANAGER_PRIVATE (self);
 
-  priv->search_paths = g_new0 (gchar *, 4);
+  priv->search_paths = g_new0 (gchar *, 3);
   priv->search_paths[0] = g_strdup (PKGLIBDIR "/plugins");
-  priv->search_paths[1] = g_build_filename (g_get_user_config_dir (),
-                                            "mex",
-                                            "plugins",
-                                            NULL);
-  priv->search_paths[2] = g_strdup (getenv ("MEX_PLUGIN_PATH"));
-
+  priv->search_paths[1] = g_strdup (getenv ("MEX_PLUGIN_PATH"));
 
   priv->plugins = g_hash_table_new_full (g_str_hash,
                                          g_str_equal,
