@@ -78,6 +78,8 @@ dist_style_DATA = \
 	style/style.css \
 	style/text-input-bg.png \
 	style/thumb-bg.png \
+        style/thumb-call-avatar.png \
+        style/thumb-call-pip-off.png \
 	style/thumb-disc.png \
 	style/thumb-image.png \
 	style/thumb-music.png \

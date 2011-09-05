@@ -1,7 +1,7 @@
 /*
  * Mex - a media explorer
  *
- * Copyright © 2011 Collabora Ltd.
+ * Copyright  2011 Collabora Ltd.
  *   @author Jeremy Whiting <jeremy.whiting@collabora.com>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -342,7 +342,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   clutter_actor_set_height (priv->video_outgoing, 200);
 
   const gchar *dir = mex_get_data_dir ();
-  gchar *tmp = g_build_filename (dir, "style", "thumb-no-content.png", NULL);
+  gchar *tmp = g_build_filename (dir, "style", "thumb-call-pip-off.png", NULL);
   priv->static_outgoing = clutter_texture_new_from_file (tmp, NULL);
 
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (
@@ -370,7 +370,6 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   clutter_actor_set_height (toolbar, 48);
   mx_stylable_set_style_class (MX_STYLABLE (toolbar),
                                "MexMediaControlsTitle");
-  mx_box_layout_set_spacing (MX_BOX_LAYOUT (toolbar), 16);
 
   // Create the user label
   priv->title_label = mx_label_new ();

@@ -1,7 +1,7 @@
 /*
  * Mex - a media explorer
  *
- * Copyright © 2011 Collabora Ltd.
+ * Copyright  2011 Collabora Ltd.
  *   @author Dario Freddi <dario.freddi@collabora.com>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -447,6 +447,13 @@ mex_contact_set_tp_contact (MexContact *self,
   priv->contact = contact;
 
   GFile *file = tp_contact_get_avatar_file (priv->contact);
+  if (!file)
+    {
+      const gchar *dir = mex_get_data_dir ();
+      const gchar *tmp = g_build_filename (dir, "style", "thumb-call-avatar.png", NULL);
+      file = g_file_new_for_path(tmp);
+    }
+    
   if (file)
     {
       priv->avatar_path = g_file_get_uri (file);
