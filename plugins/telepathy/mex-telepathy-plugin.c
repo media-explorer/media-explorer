@@ -49,7 +49,7 @@
 #endif
 
 #define MEX_LOG_DOMAIN_DEFAULT  telepathy_log_domain
-MEX_LOG_DOMAIN_STATIC(telepathy_log_domain);
+MEX_LOG_DOMAIN_STATIC (telepathy_log_domain);
 
 static const gchar *audio_contact_mimetypes[] =
 { "x-mex-audio-contact", "x-mex-av-contact", NULL };
@@ -95,14 +95,12 @@ struct _MexTelepathyPluginPrivate
   ClutterActor               *prompt_label;
   TpyAutomaticClientFactory  *factory;
 
-
-  gboolean building_contact_list;
-
+  gboolean          building_contact_list;
 #ifdef HAVE_ZEITGEIST
-  ZeitgeistLog *zeitgeist_log;
+  ZeitgeistLog     *zeitgeist_log;
   ZeitgeistMonitor *zeitgeist_monitor;
 #endif
-  GHashTable *contact_events;
+  GHashTable       *contact_events;
 };
 
 G_GNUC_UNUSED static void
@@ -203,43 +201,45 @@ mex_telepathy_plugin_class_init (MexTelepathyPluginClass *klass)
  *       is a GCompareDataFunc for the time being.
  */
 gint
-mex_telepathy_plugin_sort_call_number (/*MexContent *a,
-                                       MexContent *b,*/
-                                       gconstpointer a,
-                                       gconstpointer b,
-                                       gpointer    user_data)
+mex_telepathy_plugin_sort_call_number (/*MexContent  *a,
+                                       MexContent    *b,*/
+                                       gconstpointer  a,
+                                       gconstpointer  b,
+                                       gpointer       user_data)
 {
-    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
-    MexTelepathyPluginPrivate *priv = self->priv;
+  MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+  MexTelepathyPluginPrivate *priv = self->priv;
 
-    guint number_a, number_b;
+  guint number_a, number_b;
 
-    g_debug("Sort function called");
+  MEX_DEBUG ("Sort function called");
 
-    TpContact *contact_a = mex_contact_get_tp_contact (MEX_CONTACT (a));
-    TpContact *contact_b = mex_contact_get_tp_contact (MEX_CONTACT (b));
+  TpContact *contact_a = mex_contact_get_tp_contact (MEX_CONTACT (a));
+  TpContact *contact_b = mex_contact_get_tp_contact (MEX_CONTACT (b));
 
-    gpointer value_a = g_hash_table_lookup (priv->contact_events, tp_contact_get_identifier (contact_a));
-    gpointer value_b = g_hash_table_lookup (priv->contact_events, tp_contact_get_identifier (contact_b));
+  gpointer val_a = g_hash_table_lookup (priv->contact_events, 
+					tp_contact_get_identifier (contact_a));
+  gpointer val_b = g_hash_table_lookup (priv->contact_events, 
+					tp_contact_get_identifier (contact_b));
 
-    if (value_a == NULL) {
-        g_debug("No values for %s", tp_contact_get_identifier (contact_a));
-        number_a = 0;
-    } else {
-        number_a = GPOINTER_TO_UINT (value_a);
-    }
+  if (val_a == NULL) {
+      MEX_INFO ("No values for %s", tp_contact_get_identifier (contact_a));
+      number_a = 0;
+  } else {
+      number_a = GPOINTER_TO_UINT (val_a);
+  }
 
-    if (value_b == NULL) {
-        g_debug("No values for %s", tp_contact_get_identifier (contact_b));
-        number_b = 0;
-    } else {
-        number_b = GPOINTER_TO_UINT (value_b);
-    }
+  if (val_b == NULL) {
+      MEX_INFO ("No values for %s", tp_contact_get_identifier (contact_b));
+      number_b = 0;
+  } else {
+      number_b = GPOINTER_TO_UINT (val_b);
+  }
 
-    g_debug ("%s %i, %s %i", tp_contact_get_identifier (contact_a), number_a,
-                             tp_contact_get_identifier (contact_b), number_b);
+  MEX_DEBUG ("%s %i, %s %i", tp_contact_get_identifier (contact_a), number_a,
+	                     tp_contact_get_identifier (contact_b), number_b);
 
-    return number_b - number_a;
+  return number_b - number_a;
 }
 
 static gint
@@ -294,8 +294,7 @@ mex_telepathy_plugin_on_authorize_publication (GObject      *source_object,
   if (tp_contact_get_subscribe_state (contact) == TP_SUBSCRIPTION_STATE_NO)
     {
       tp_contact_request_subscription_async (contact,
-                                             _(
-                                               "Please allow me to see your presence"),
+                                             _("Please allow me to see your presence"),
                                              mex_telepathy_plugin_on_request_subscription,
                                              self);
     }
@@ -320,7 +319,7 @@ mex_telepathy_plugin_on_accept_contact (MxAction *action,
 static void
 mex_telepathy_plugin_on_channel_ensured (GObject           *source,
                                          GAsyncResult      *result,
-                                         gpointer user_data G_GNUC_UNUSED)
+                                         gpointer           user_data G_GNUC_UNUSED)
 {
   gboolean success;
   GError *error = NULL;
@@ -446,20 +445,17 @@ mex_telepathy_plugin_trigger_notification_for_contact (MexTelepathyPlugin *self,
       if (tp_contact_get_subscribe_state (contact) == TP_SUBSCRIPTION_STATE_ASK)
         {
           mex_info_bar_new_notification (priv->info_bar,
-                                         g_strdup_printf (_(
-                                                            "The contact %s has added you to his contact list. Go to "
+                                         g_strdup_printf (_("The contact %s has added you to his contact list. Go to "
                                                             "\"Contacts\" to accept his request and start interacting "
                                                             "with him."),
-                                                          tp_contact_get_alias (
-                                                            contact)),
+                                                          tp_contact_get_alias (contact)),
                                          20);
         }
       else
         {
           mex_info_bar_new_notification (priv->info_bar,
                                          g_strdup_printf (_("%s is now Online"),
-                                                          tp_contact_get_alias (
-                                                            contact)),
+                                                          tp_contact_get_alias (contact)),
                                          5);
         }
     }
@@ -467,8 +463,7 @@ mex_telepathy_plugin_trigger_notification_for_contact (MexTelepathyPlugin *self,
     {
       mex_info_bar_new_notification (priv->info_bar,
                                      g_strdup_printf (_("%s has gone Offline"),
-                                                      tp_contact_get_alias (
-                                                        contact)),
+                                                      tp_contact_get_alias (contact)),
                                      5);
     }
 }
@@ -478,30 +473,30 @@ mex_telepathy_plugin_trigger_notification_for_contact (MexTelepathyPlugin *self,
  */
 static void
 mex_telepathy_plugin_add_to_model (MexTelepathyPlugin *self,
-                                   MexContact *contact)
+                                   MexContact         *contact)
 {
-    MexTelepathyPluginPrivate *priv = self->priv;
+  MexTelepathyPluginPrivate *priv = self->priv;
 
 #ifdef HAVE_ZEITGEIST
-    priv->model_contacts = g_list_insert_sorted_with_data (priv->model_contacts,
-                                                           contact,
-                                                           mex_telepathy_plugin_sort_call_number,
-                                                           self);
+  priv->model_contacts = g_list_insert_sorted_with_data (priv->model_contacts,
+                                                         contact,
+                                                         mex_telepathy_plugin_sort_call_number,
+                                                         self);
 
-    // Now, refill the model
+  /* Now, refill the model */
+  mex_model_clear (priv->model);
 
-    mex_model_clear (priv->model);
+  GList *it = g_list_first (priv->model_contacts);
 
-    GList *it = g_list_first (priv->model_contacts);
+  while (it != NULL) 
+    {
+      mex_model_add_content (priv->model, MEX_CONTENT (it->data));
 
-    while (it != NULL) {
-        mex_model_add_content (priv->model, MEX_CONTENT (it->data));
-
-        it = g_list_next (it);
+      it = g_list_next (it);
     }
 #else
-    // Simply add to the model
-    mex_model_add_content (priv->model, MEX_CONTENT (contact));
+  // Simply add to the model
+  mex_model_add_content (priv->model, MEX_CONTENT (contact));
 #endif
 }
 
@@ -805,9 +800,9 @@ mex_telepathy_plugin_add_action (gchar              *action_id,
 }
 
 static void
-mex_telepathy_plugin_on_show_call (MexTelepathyChannel         *channel G_GNUC_UNUSED,
-                                   ClutterActor                *page,
-                                   gpointer                     user_data)
+mex_telepathy_plugin_on_show_call (MexTelepathyChannel *channel G_GNUC_UNUSED,
+                                   ClutterActor        *page,
+                                   gpointer             user_data)
 {
   MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
 
@@ -816,9 +811,9 @@ mex_telepathy_plugin_on_show_call (MexTelepathyChannel         *channel G_GNUC_U
 }
 
 static void
-mex_telepathy_plugin_on_hide_call (MexTelepathyChannel         *channel G_GNUC_UNUSED,
-                                   ClutterActor                *page,
-                                   gpointer                     user_data)
+mex_telepathy_plugin_on_hide_call (MexTelepathyChannel *channel G_GNUC_UNUSED,
+                                   ClutterActor        *page,
+                                   gpointer             user_data)
 {
   MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
 
@@ -862,9 +857,9 @@ mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler         *handler G_GNU
 }
 
 static void
-mex_telepathy_plugin_on_handle_with (GObject           *source,
-                                     GAsyncResult      *result,
-                                     gpointer           user_data G_GNUC_UNUSED)
+mex_telepathy_plugin_on_handle_with (GObject      *source,
+                                     GAsyncResult *result,
+                                     gpointer      user_data G_GNUC_UNUSED)
 {
   TpChannelDispatchOperation *cdo = TP_CHANNEL_DISPATCH_OPERATION (source);
   GError *error = NULL;
@@ -932,7 +927,7 @@ mex_telepathy_plugin_on_incoming_call_accept (MxAction *action G_GNUC_UNUSED,
 }
 
 static void
-mex_telepathy_plugin_on_incoming_call_deny (MxAction *action G_GNUC_UNUSED,
+mex_telepathy_plugin_on_incoming_call_deny (MxAction        *action G_GNUC_UNUSED,
                                             gpointer         user_data)
 {
   MEX_DEBUG ("deny chosen");
@@ -1156,37 +1151,45 @@ mex_telepathy_plugin_create_handler (MexTelepathyPlugin *self)
 }
 
 #ifdef HAVE_ZEITGEIST
-
 static void
 mex_telepathy_plugin_parse_zeitgeist_event (MexTelepathyPlugin *self,
-                                            ZeitgeistEvent *event)
+                                            ZeitgeistEvent     *event)
 {
-    MexTelepathyPluginPrivate *priv = self->priv;
+  MexTelepathyPluginPrivate *priv = self->priv;
 
-    ZeitgeistSubject *subject = zeitgeist_event_get_subject (event, 0);
-    gchar *subject_uri = g_strdup (zeitgeist_subject_get_uri(subject));
+  ZeitgeistSubject *subject = zeitgeist_event_get_subject (event, 0);
+  gchar *subject_uri = g_strdup (zeitgeist_subject_get_uri(subject));
 
-    gchar **subject_split = g_strsplit(subject_uri, "/", 0);
-    gchar *subject_name;
+  gchar **subject_split = g_strsplit (subject_uri, "/", 0);
+  gchar  *subject_name;
 
-    guint n;
-    for (n = 0; subject_split != NULL && subject_split[n] != NULL; ++n) {
-        if (subject_split[n+1] == NULL) {
-            subject_name = g_strdup (subject_split[n]);
+  guint n;
+  for (n = 0; subject_split != NULL && subject_split[n] != NULL; ++n) 
+    {
+      if (subject_split[n+1] == NULL) 
+        {
+          subject_name = g_strdup (subject_split[n]);
         }
     }
 
-    g_strfreev (subject_split);
-    g_free (subject_uri);
+  g_strfreev (subject_split);
+  g_free (subject_uri);
 
-    gpointer value = g_hash_table_lookup (priv->contact_events, subject_name);
+  gpointer value = g_hash_table_lookup (priv->contact_events, subject_name);
 
-    if (value == NULL) {
-        g_hash_table_insert(priv->contact_events, subject_name, GUINT_TO_POINTER (1));
-    } else {
-        guint number = GPOINTER_TO_UINT (value);
-        ++number;
-        g_hash_table_replace(priv->contact_events, subject_name, GUINT_TO_POINTER (number));
+  if (value == NULL) 
+    {
+      g_hash_table_insert (priv->contact_events, 
+                           subject_name, 
+                           GUINT_TO_POINTER (1));
+    } 
+  else 
+    {
+      guint number = GPOINTER_TO_UINT (value);
+      ++number;
+      g_hash_table_replace (priv->contact_events, 
+                            subject_name, 
+                            GUINT_TO_POINTER (number));
     }
 }
 
@@ -1194,8 +1197,10 @@ static void
 mex_telepathy_plugin_parse_zeitgeist_result_set (MexTelepathyPlugin *self,
                                                  ZeitgeistResultSet *events)
 {
-    while (zeitgeist_result_set_has_next(events)) {
-        mex_telepathy_plugin_parse_zeitgeist_event (self, zeitgeist_result_set_next (events));
+  while (zeitgeist_result_set_has_next (events)) 
+    {
+      mex_telepathy_plugin_parse_zeitgeist_event (self, 
+                                                  zeitgeist_result_set_next (events));
     }
 }
 
@@ -1204,24 +1209,24 @@ mex_telepathy_plugin_on_zeitgeist_events_found (GObject      *source_object G_GN
                                                 GAsyncResult *res,
                                                 gpointer      user_data)
 {
-    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
-    MexTelepathyPluginPrivate *priv = self->priv;
+  MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+  MexTelepathyPluginPrivate *priv = self->priv;
 
-    ZeitgeistResultSet *results;
-    GError *error = NULL;
+  ZeitgeistResultSet *results;
+  GError *error = NULL;
 
-    results = zeitgeist_log_find_events_finish(priv->zeitgeist_log,
-                                               res,
-                                               &error);
+  results = zeitgeist_log_find_events_finish (priv->zeitgeist_log,
+                                              res,
+                                              &error);
 
-    if (error != NULL) {
-        g_warning ("Failed to fetch zeitgeist events: %s", error->message);
+  if (error != NULL) {
+      MEX_WARNING ("Failed to fetch zeitgeist events: %s", error->message);
 
-        g_error_free (error);
-        return;
-    }
+      g_error_free (error);
+      return;
+  }
 
-    mex_telepathy_plugin_parse_zeitgeist_result_set (self, results);
+  mex_telepathy_plugin_parse_zeitgeist_result_set (self, results);
 }
 
 static void
@@ -1230,54 +1235,53 @@ mex_telepathy_plugin_on_zeitgeist_events_inserted (ZeitgeistMonitor   *monitor G
                                                    ZeitgeistResultSet *events,
                                                    gpointer            user_data)
 {
-    MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN(user_data);
+  MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
 
-    mex_telepathy_plugin_parse_zeitgeist_result_set (self, events);
+  mex_telepathy_plugin_parse_zeitgeist_result_set (self, events);
 }
 
 static void
 mex_telepathy_plugin_setup_zeitgeist (MexTelepathyPlugin *self)
 {
-    MexTelepathyPluginPrivate *priv = self->priv;
+  MexTelepathyPluginPrivate *priv = self->priv;
 
-    priv->zeitgeist_log = zeitgeist_log_new ();
-    priv->contact_events = g_hash_table_new (g_str_hash, g_str_equal);
+  priv->zeitgeist_log = zeitgeist_log_new ();
+  priv->contact_events = g_hash_table_new (g_str_hash, g_str_equal);
 
-    // Create the event template
-    GPtrArray *event_template = g_ptr_array_new ();
+  // Create the event template
+  GPtrArray *event_template = g_ptr_array_new ();
 
-    ZeitgeistEvent *event = zeitgeist_event_new ();
-    ZeitgeistSubject *subject = zeitgeist_subject_new ();
-    zeitgeist_subject_set_uri (subject, "telepathy://*");
-    zeitgeist_event_add_subject(event, subject);
-    g_ptr_array_add(event_template, event);
+  ZeitgeistEvent *event = zeitgeist_event_new ();
+  ZeitgeistSubject *subject = zeitgeist_subject_new ();
+  zeitgeist_subject_set_uri (subject, "telepathy://*");
+  zeitgeist_event_add_subject (event, subject);
+  g_ptr_array_add (event_template, event);
 
-    // Install a monitor
-    priv->zeitgeist_monitor = zeitgeist_monitor_new (zeitgeist_time_range_new_from_now(),
-                                                     event_template);
+  // Install a monitor
+  priv->zeitgeist_monitor = zeitgeist_monitor_new (zeitgeist_time_range_new_from_now (),
+                                                   event_template);
 
-    // Set a time range, last 14 days
-    time_t end = time(NULL) * 1000;
-    time_t start = end - (14*86400*1000);
+  // Set a time range, last 14 days
+  time_t end = time (NULL) * 1000;
+  time_t start = end - (14 * 86400 * 1000);
 
-    // Start fetching previous events
-    zeitgeist_log_find_events(priv->zeitgeist_log,
-                              zeitgeist_time_range_new(start, end),
-                              event_template,
-                              ZEITGEIST_STORAGE_STATE_ANY,
-                              100,
-                              ZEITGEIST_RESULT_TYPE_MOST_RECENT_EVENTS,
-                              NULL,
-                              mex_telepathy_plugin_on_zeitgeist_events_found,
-                              self);
+  // Start fetching previous events
+  zeitgeist_log_find_events(priv->zeitgeist_log,
+                            zeitgeist_time_range_new (start, end),
+                            event_template,
+                            ZEITGEIST_STORAGE_STATE_ANY,
+                            100,
+                            ZEITGEIST_RESULT_TYPE_MOST_RECENT_EVENTS,
+                            NULL,
+                            mex_telepathy_plugin_on_zeitgeist_events_found,
+                            self);
 
-    // Connect to the monitor
-    g_signal_connect (priv->zeitgeist_monitor,
-                      "events-inserted",
-                      G_CALLBACK(mex_telepathy_plugin_on_zeitgeist_events_inserted),
-                      self);
+  // Connect to the monitor
+  g_signal_connect (priv->zeitgeist_monitor,
+                    "events-inserted",
+                    G_CALLBACK (mex_telepathy_plugin_on_zeitgeist_events_inserted),
+                    self);
 }
-
 #endif
 
 static void
@@ -1303,9 +1307,9 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "contact", 10,
                                     _("None of your contacts are online at the moment"),
                                     TRUE };
-  mex_model_manager_add_category(priv->manager, &contacts);
+  mex_model_manager_add_category (priv->manager, &contacts);
 
-  priv->model = mex_generic_model_new("Contacts", "Feed");
+  priv->model = mex_generic_model_new ("Contacts", "Feed");
   /* Install the sort function */
   /* HACK: At the moment, model sorting does not work for category models. For that reason,
    *       we need to implement sorting on our own. As soon as the problem is fixed, rely
