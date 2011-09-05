@@ -57,7 +57,11 @@ AC_DEFUN([AS_MEX_PLUGIN],
     if test "x$2" != x ; then
       PKG_CHECK_MODULES(PNAME_DEF, [$2])
     fi
-    [mex_use_]pname_def[_plugin]=yes
+    dnl If we haven't set it yet, it's time to export the variable that
+    dnl can be use to tell if we want to build this plugin
+    if test -z "$[mex_use_]pname_def[_plugin]"; then
+      [mex_use_]pname_def[_plugin]=yes
+    fi
     MEX_PLUGINS_SELECTED="$MEX_PLUGINS_SELECTED [$1]"
   fi
   if echo " [$WITHOUT_PLUGINS] " | tr , ' ' | grep -i " [$1] " > /dev/null; then
