@@ -66,7 +66,7 @@ mex_content_view_set_content (MexContentView *view,
   MexContentViewIface *iface;
 
   g_return_if_fail (MEX_IS_CONTENT_VIEW (view));
-  g_return_if_fail (MEX_IS_CONTENT (content));
+  g_return_if_fail (MEX_IS_CONTENT (content) || content == NULL);
 
   iface = MEX_CONTENT_VIEW_GET_IFACE (view);
 
@@ -112,7 +112,7 @@ mex_content_view_set_context (MexContentView *view,
   MexContentViewIface *iface;
 
   g_return_if_fail (MEX_IS_CONTENT_VIEW (view));
-  g_return_if_fail (MEX_IS_MODEL (context));
+  g_return_if_fail (MEX_IS_MODEL (context) || context == NULL);
 
   iface = MEX_CONTENT_VIEW_GET_IFACE (view);
 
