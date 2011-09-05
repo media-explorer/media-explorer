@@ -52,18 +52,20 @@ AC_DEFUN([AS_MEX_PLUGIN],
     AC_MSG_NOTICE(disabling plugin $1)
     WITHOUT_PLUGINS="$WITHOUT_PLUGINS [$1]"
   fi
-  undefine([pname_def])
 
   if [[ -z "$WITH_PLUGINS" ]] || echo " [$WITH_PLUGINS] " | tr , ' ' | grep -i " [$1] " > /dev/null; then
     if test "x$2" != x ; then
       PKG_CHECK_MODULES(PNAME_DEF, [$2])
     fi
+    [mex_use_]pname_def[_plugin]=yes
     MEX_PLUGINS_SELECTED="$MEX_PLUGINS_SELECTED [$1]"
   fi
   if echo " [$WITHOUT_PLUGINS] " | tr , ' ' | grep -i " [$1] " > /dev/null; then
     MEX_PLUGINS_SELECTED=`echo " $MEX_PLUGINS_SELECTED " | $SED -e 's/ [$1] / /'`
   fi
   AM_CONDITIONAL([USE_]PNAME_DEF, echo " $MEX_PLUGINS_SELECTED " | grep -i " [$1] " > /dev/null)
+
+  undefine([pname_def])
   undefine([PNAME_DEF])
 ])
 
