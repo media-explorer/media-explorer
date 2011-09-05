@@ -150,29 +150,35 @@ http_post (SoupServer   *server,
     {
       gchar *search_term;
       gchar *sparql_request;
-      gchar *result;
-
-      search_term = g_strdup (post_request + strlen ("trackersearch="));
+      gchar *result = NULL;
 
       if (self->opt_debug)
         g_debug ("Got Search request: %s", search_term);
 
-      sparql_request =
-        g_strdup_printf ("SELECT ?title ?url {"
-                         "?urn a nfo:Media ."
-                         "?urn tracker:available true ."
-                         "?urn fts:match '*%s*'."
-                         "?urn nie:title ?title ."
-                         "?urn nie:url ?url }",
-                         search_term);
+      /* If we were able to connect to tracker backend use it */
+      if (self->tracker_interface)
+        {
+          search_term = g_strdup (post_request + strlen ("trackersearch="));
 
-      g_free (search_term);
+          sparql_request =
+            g_strdup_printf ("SELECT ?title ?url {"
+                             "?urn a nfo:Media ."
+                             "?urn tracker:available true ."
+                             "?urn fts:match '*%s*'."
+                             "?urn nie:title ?title ."
+                             "?urn nie:url ?url }",
+                             search_term);
 
-      result = tracker_interface_query (self->tracker_interface,
-                                        sparql_request);
+          g_free (search_term);
 
-      /* we shouldn't ever get a null result as we normally return empty json
-       * but for safety here is an empty string that can be freed by soup.
+          result = tracker_interface_query (self->tracker_interface,
+                                            sparql_request);
+
+          g_free (sparql_request);
+        }
+
+      /* We either failed to query or something went wrong with the json
+       * generation so return a empty json set (will be freed by libsoup).
        */
       if (!result)
         result = g_strdup ("{}");
@@ -182,7 +188,6 @@ http_post (SoupServer   *server,
       if (self->opt_debug)
         g_debug ("Search result\n%s", result);
 
-      g_free (sparql_request);
       send_response (server, msg, path, self, CUSTOM);
       return;
     }

@@ -41,13 +41,17 @@ tracker_interface_query (TrackerInterface *tracker_interface,
   JsonBuilder *json_builder;
   JsonGenerator *json_generator;
 
+  /* Safety, we may have failed to create the tracker backend */
+  if (!tracker_interface)
+    return NULL;
+
   cursor = tracker_sparql_connection_query (tracker_interface->connection,
                                             query,
                                             NULL,
                                             &error);
   if (!cursor)
     {
-      g_debug ("something went really wrong :'(");
+      g_warning ("something went really wrong :'(");
       return g_strdup ("{}");
     }
 
