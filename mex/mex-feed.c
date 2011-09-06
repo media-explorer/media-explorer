@@ -243,8 +243,13 @@ mex_feed_refresh (MexFeed *feed)
 static void
 mex_feed_rearm_timeout (MexFeed *feed)
 {
+  MexFeedClass *klass = MEX_FEED_GET_CLASS (feed);
   MexFeedPrivate *priv = feed->priv;
   guint randomized_delay = 0;
+
+  /* Don't set the timeout if we can't refresh anyway */
+  if (!klass->refresh)
+    return;
 
   if (priv->timeout)
     g_source_remove (priv->timeout);
