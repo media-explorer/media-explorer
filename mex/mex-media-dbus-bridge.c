@@ -158,7 +158,10 @@ mex_media_dbus_bridge_set_uri (MexMediaPlayerIface   *player_iface,
   MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
   MexMediaDBUSBridgePrivate *priv = bridge->priv;
 
-  clutter_media_set_uri (priv->media, uri);
+  if (uri && uri[0] != '\0')
+    clutter_media_set_uri (priv->media, uri);
+  else
+    clutter_media_set_uri (priv->media, NULL);
 
   mex_media_player_iface_return_from_set_uri (context);
 }
