@@ -107,6 +107,7 @@ mex_dbus_background_video_constructed (GObject *object)
 
   /* Don't start playing until we're activated */
   clutter_media_set_playing (CLUTTER_MEDIA (object), FALSE);
+  clutter_actor_set_opacity (CLUTTER_ACTOR (object), 0);
 }
 
 static void
