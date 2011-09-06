@@ -16,6 +16,9 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include "mex-media-controls.h"
 #include "mex-view-model.h"
@@ -1211,9 +1214,11 @@ mex_media_controls_set_disabled (MexMediaControls *self,
       g_signal_handlers_disconnect_by_func (priv->media,
                                             mex_media_controls_notify_progress_cb,
                                             self);
+#ifndef USE_PLAYER_DBUS
       g_signal_handlers_disconnect_by_func (priv->media,
                                             mex_media_controls_notify_download_cb,
                                             self);
+#endif /* !USE_PLAYER_DBUS */
     }
   else
     {
@@ -1226,9 +1231,11 @@ mex_media_controls_set_disabled (MexMediaControls *self,
       g_signal_connect (priv->media, "notify::progress",
                         G_CALLBACK (mex_media_controls_notify_progress_cb),
                         self);
+#ifndef USE_PLAYER_DBUS
       g_signal_connect (priv->media, "download-buffering",
                         G_CALLBACK (mex_media_controls_notify_download_cb),
                         self);
+#endif /* !USE_PLAYER_DBUS */
 
       mex_media_controls_notify_can_seek_cb (priv->media, NULL, self);
       mex_media_controls_notify_playing_cb (priv->media, NULL, self);
