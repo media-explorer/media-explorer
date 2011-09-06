@@ -321,7 +321,7 @@ _mex_log_init_core_domains (void)
 {
   const gchar *log_env;
 
-  DOMAIN_INIT (MEX_LOG_DOMAIN_DEFAULT, "");
+  DOMAIN_INIT (MEX_LOG_DOMAIN_DEFAULT, "core");
   DOMAIN_INIT (log_log_domain, "log");
   DOMAIN_INIT (epg_log_domain, "epg");
   DOMAIN_INIT (applet_manager_log_domain, "applet-manager");
