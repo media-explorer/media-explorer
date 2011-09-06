@@ -182,7 +182,11 @@ _mex_lirc_init (const gchar *name)
   lirc_fd = lirc_init ((char *)name, 1);
 
   if (lirc_fd == -1)
-    g_warning (G_STRLOC ": LIRC initialisation failed");
+    {
+      /* This usually means that the LIRC daemon is not running, nothing
+       * really fatal */
+      MEX_INFO ("Could not initialize LIRC");
+    }
   else
     {
       struct lirc_config *config = NULL;
