@@ -66,8 +66,6 @@ GType mex_generic_content_get_type (void) G_GNUC_CONST;
 
 gboolean mex_generic_content_get_last_position_start (MexGenericContent *self);
 
-gboolean mex_generic_content_get_save_last_position (MexGenericContent *self);
-
 G_END_DECLS
 
 #endif /* __MEX_GENERIC_CONTENT_H__ */

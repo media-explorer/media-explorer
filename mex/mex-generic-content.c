@@ -22,8 +22,7 @@
 
 enum {
   PROP_0 = MEX_CONTENT_METADATA_LAST_ID,
-  PROP_LAST_POSITION_START,
-  PROP_SAVE_LAST_POSITION,
+  PROP_LAST_POSITION_START
 };
 
 enum {
@@ -36,7 +35,6 @@ struct _MexGenericContentPrivate {
   GHashTable *metadata;
 
   gboolean last_position_start;
-  gboolean save_last_position;
 };
 
 #define GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), MEX_TYPE_GENERIC_CONTENT, MexGenericContentPrivate))
@@ -199,10 +197,6 @@ mex_generic_content_set_property (GObject      *object,
     priv->last_position_start = g_value_get_boolean (value);
     break;
 
-  case PROP_SAVE_LAST_POSITION:
-    priv->save_last_position = g_value_get_boolean (value);
-    break;
-
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
   }
@@ -227,10 +221,6 @@ mex_generic_content_get_property (GObject    *object,
   switch (prop_id) {
   case PROP_LAST_POSITION_START:
     g_value_set_boolean (value, priv->last_position_start);
-    break;
-
-  case PROP_SAVE_LAST_POSITION:
-    g_value_set_boolean (value, priv->save_last_position);
     break;
 
   default:
@@ -271,10 +261,6 @@ mex_generic_content_class_init (MexGenericContentClass *klass)
   g_object_class_override_property (o_class,
                                     PROP_LAST_POSITION_START,
                                     "last-position-start");
-
-  g_object_class_override_property (o_class,
-                                    PROP_SAVE_LAST_POSITION,
-                                    "save-last-position");
 }
 
 static void
@@ -287,7 +273,6 @@ mex_generic_content_init (MexGenericContent *self)
   priv->metadata = g_hash_table_new_full (NULL, NULL, NULL, g_free);
 
   priv->last_position_start = TRUE;
-  priv->save_last_position = TRUE;
 }
 
 gboolean
@@ -298,14 +283,4 @@ mex_generic_content_get_last_position_start (MexGenericContent *self)
   g_return_val_if_fail (IS_MEX_GENERIC_CONTENT (self), FALSE);
 
   return priv->last_position_start;
-}
-
-gboolean
-mex_generic_content_get_save_last_position (MexGenericContent *self)
-{
-  MexGenericContentPrivate *priv = self->priv;
-
-  g_return_val_if_fail (IS_MEX_GENERIC_CONTENT (self), FALSE);
-
-  return priv->save_last_position;
 }

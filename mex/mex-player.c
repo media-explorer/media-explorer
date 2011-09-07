@@ -743,17 +743,18 @@ save_old_content (MexPlayer *player)
   if (!priv->content)
     return;
 
-  if (priv->duration &&
-      mex_generic_content_get_save_last_position (MEX_GENERIC_CONTENT (priv->content))) {
-    priv->position = priv->current_position;
-    position = (guint) (priv->position * priv->duration);
-    if (position > 0)
-      {
-        snprintf (str, sizeof (str), "%u", position);
-        mex_content_set_metadata (priv->content,
-                                  MEX_CONTENT_METADATA_LAST_POSITION,
-                                  str);
-      }
+  if (priv->duration)
+    {
+      priv->position = priv->current_position;
+      position = (guint) (priv->position * priv->duration);
+
+      if (position > 0)
+        {
+          snprintf (str, sizeof (str), "%u", position);
+          mex_content_set_metadata (priv->content,
+                                    MEX_CONTENT_METADATA_LAST_POSITION,
+                                    str);
+        }
   }
 
   mex_content_set_last_used_metadatas (priv->content);

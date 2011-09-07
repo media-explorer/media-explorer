@@ -55,13 +55,6 @@ mex_content_base_init (gpointer g_iface)
                                   G_PARAM_READWRITE);
     g_object_interface_install_property (g_iface, param);
 
-    param = g_param_spec_boolean ("save-last-position",
-                                  "Save last position",
-                                  "Save the last position played in this media",
-                                  TRUE,
-                                  G_PARAM_READWRITE);
-    g_object_interface_install_property (g_iface, param);
-
     is_initialized = TRUE;
   }
 }
