@@ -134,6 +134,8 @@ mex_dbus_background_video_init (MexDbusBackgroundVideo *self)
 
   priv->media = (ClutterMedia *) mex_player_client_new ();
 
+  priv->name = "dbusvideo";
+
   g_signal_connect (priv->media, "eos", G_CALLBACK (eos_cb), self);
 }
 
@@ -162,10 +164,19 @@ mex_dbus_background_video_set_active (MexBackground *self,
     }
 }
 
+static const gchar *
+mex_dbus_background_video_get_name (MexBackground *self)
+{
+  MexDbusBackgroundVideoPrivate *priv = MEX_DBUS_BACKGROUND_VIDEO (self)->priv;
+
+  return priv->name;
+}
+
 static void
 mex_dbus_background_video_background_iface_init (MexBackgroundIface *iface)
 {
   iface->set_active = mex_dbus_background_video_set_active;
+  iface->get_name = mex_dbus_background_video_get_name;
 }
 
 static void
