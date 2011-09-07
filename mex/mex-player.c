@@ -206,12 +206,10 @@ mex_player_set_content (MexContentView *view,
       sduration = mex_content_get_metadata (content,
                                             MEX_CONTENT_METADATA_DURATION);
 
-
-      if (sduration &&
-          !mex_media_controls_get_playing_queue (MEX_MEDIA_CONTROLS (priv->controls)))
+      if (sduration)
         priv->duration = atoi (sduration);
       else
-        priv->duration = 0;
+        priv->duration = 0.0;
 
       if (MEX_IS_PROGRAM (content))
         {
@@ -885,6 +883,7 @@ mex_get_stream_cb (MexProgram   *program,
   MexPlayer *player = user_data;
   MexPlayerPrivate *priv = player->priv;
   MexGenericContent  *generic_content;
+  MexMediaControls *controls;
   gdouble resume_position = 0.0;
 #ifdef USE_PLAYER_CLUTTER_GST
   ClutterGstVideoTexture *video_texture;
@@ -941,9 +940,13 @@ mex_get_stream_cb (MexProgram   *program,
   MEX_DEBUG ("set uri %s", url);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), url);
 
-  /* Resume from the saved position */
+  /* Resume from the saved position. We do not resume if:
+   *   - the last-position-start property on the content is FALSE,
+   *   - we are playing an item from the queue */
   generic_content = MEX_GENERIC_CONTENT (priv->content);
-  if (mex_generic_content_get_last_position_start (generic_content))
+  controls = MEX_MEDIA_CONTROLS (priv->controls);
+  if (mex_generic_content_get_last_position_start (generic_content) &&
+      !mex_media_controls_get_playing_queue (controls))
     {
       const gchar *sposition;
       gint position;
