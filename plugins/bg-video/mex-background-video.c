@@ -41,6 +41,7 @@ G_DEFINE_TYPE_WITH_CODE (MexBackgroundVideo,
 struct _MexBackgroundVideoPrivate
 {
   gchar        *video_url;
+  const gchar  *name;
   ClutterMedia *media;
 };
 
@@ -124,6 +125,8 @@ mex_background_video_init (MexBackgroundVideo *self)
 
   self->priv = priv = BACKGROUND_VIDEO_PRIVATE (self);
 
+  priv->name = "video";
+
   path = g_build_filename (mex_get_data_dir (),
                            "style",
                            "background-loop.mkv",
@@ -153,10 +156,19 @@ mex_background_video_set_active (MexBackground *self,
   clutter_media_set_playing (CLUTTER_MEDIA (priv->media), active);
 }
 
+static const gchar*
+mex_background_video_get_name (MexBackground *self)
+{
+  MexBackgroundVideoPrivate *priv = MEX_BACKGROUND_VIDEO (self)->priv;
+
+  return priv->name;
+}
+
 static void
 mex_background_video_background_iface_init (MexBackgroundIface *iface)
 {
   iface->set_active = mex_background_video_set_active;
+  iface->get_name = mex_background_video_get_name;
 }
 
 static void

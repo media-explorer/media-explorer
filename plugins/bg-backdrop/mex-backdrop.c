@@ -42,6 +42,7 @@ struct _MexBackdropPrivate
 {
   BackdropItem items[N_ITEMS];
   ClutterTimeline *timeline;
+  const gchar *name;
 };
 
 static void time_step (ClutterTimeline *timeline,
@@ -254,6 +255,8 @@ mex_backdrop_init (MexBackdrop *self)
 
   self->priv = priv = MEX_BACKDROP_GET_PRIVATE (self);
 
+  priv->name = "backdrop";
+
   priv->timeline = clutter_timeline_new (100000000);
   clutter_timeline_set_loop (priv->timeline, TRUE);
   clutter_timeline_start (priv->timeline);
@@ -278,8 +281,17 @@ mex_backdrop_set_active (MexBackground *self,
     clutter_timeline_pause (priv->timeline);
 }
 
+static const gchar*
+mex_backdrop_get_name (MexBackground *self)
+{
+  MexBackdropPrivate *priv = MEX_BACKDROP (self)->priv;
+
+  return priv->name;
+}
+
 static void
 mex_backdrop_background_iface_init (MexBackgroundIface *iface)
 {
   iface->set_active = mex_backdrop_set_active;
+  iface->get_name = mex_backdrop_get_name;
 }
