@@ -165,6 +165,10 @@ set_metadata_from_media (MexContent          *content,
         mex_content_set_metadata (content, mex_key, string);
         g_free (string);
       }
+    else
+      {
+        mex_content_set_metadata (content, mex_key, NULL);
+      }
     break;
 
   case G_TYPE_FLOAT:
