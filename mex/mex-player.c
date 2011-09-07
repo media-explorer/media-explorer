@@ -177,9 +177,18 @@ mex_player_set_content (MexContentView *view,
       priv->related_tile = NULL;
     }
 
+  if (priv->content)
+    {
+      save_old_content (MEX_PLAYER (view));
+      g_object_unref (priv->content);
+      priv->content = NULL;
+    }
+
   if (content)
     {
       const gchar *sposition, *sduration, *mimetype;
+
+      priv->content = g_object_ref_sink (content);
 
       mimetype = mex_content_get_metadata (content,
                                            MEX_CONTENT_METADATA_MIMETYPE);
@@ -194,15 +203,6 @@ mex_player_set_content (MexContentView *view,
           clutter_actor_set_reactive (CLUTTER_ACTOR (priv->media),
                                       priv->disable_media_controls);
         }
-
-      if (priv->content)
-        {
-          save_old_content (MEX_PLAYER (view));
-          g_object_unref (priv->content);
-          priv->content = NULL;
-        }
-
-      priv->content = g_object_ref_sink (content);
 
       sposition = mex_content_get_metadata (content,
                                             MEX_CONTENT_METADATA_LAST_POSITION);
@@ -253,15 +253,6 @@ mex_player_set_content (MexContentView *view,
         }
 
       mex_player_set_controls_visible (MEX_PLAYER (view), TRUE);
-    }
-  else
-    {
-      if (priv->content)
-        {
-          save_old_content (MEX_PLAYER (view));
-          g_object_unref (priv->content);
-          priv->content = NULL;
-        }
     }
 }
 
