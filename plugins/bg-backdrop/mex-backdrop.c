@@ -56,6 +56,7 @@ static void time_step (ClutterTimeline *timeline,
   int i;
   int cx, cy;
   int item_size;
+  GError *error = NULL;
   gint delta = clutter_timeline_get_delta (timeline);
   clutter_actor_get_size (self, &w, &h);
   cx = w/2;
@@ -75,7 +76,14 @@ static void time_step (ClutterTimeline *timeline,
             {
               CoglMaterial *material;
               CoglColor     color;
-              item->actor = clutter_texture_new_from_file (MEX_DATA_PLUGIN_DIR "/sprite.png", NULL);
+              item->actor = clutter_texture_new_from_file (MEX_DATA_PLUGIN_DIR "/sprite.png", &error);
+
+              if (error)
+                {
+                  g_warning ("Error loading texture: %s", error->message);
+                  g_clear_error (&error);
+                }
+
               clutter_actor_set_size (item->actor, item_size, item_size);
               clutter_actor_set_parent (item->actor, self);
               clutter_actor_set_anchor_point_from_gravity (item->actor, CLUTTER_GRAVITY_CENTER);
@@ -143,6 +151,9 @@ static void time_step (ClutterTimeline *timeline,
       clutter_actor_set_opacity (item->actor, item->opacity * 255);
       clutter_actor_set_scale (item->actor, item->scale, item->scale);
     }
+
+  if (error)
+    g_error_free (error);
 }
 
 static void
