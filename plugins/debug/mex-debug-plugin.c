@@ -407,7 +407,6 @@ mex_debug_log_handler (const gchar    *log_domain,
   /* start by calling the previously installed log handler */
   old_log_handler (log_domain, log_level, message, NULL);
 
-  g_print ("print_bg %d", print_bt);
   if (print_bt)
    print_trace();
 }
