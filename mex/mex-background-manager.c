@@ -35,8 +35,6 @@ struct _MexBackgroundManagerPrivate
   GList *backgrounds;
 
   MexBackground *current;
-
-  gboolean active;
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -119,8 +117,6 @@ mex_background_manager_get_default (void)
   return manager;
 }
 
-/**/
-
 static void
 background_finalize_cb (MexBackgroundManager *manager,
                         MexBackground        *background)
@@ -142,16 +138,18 @@ background_finalize_cb (MexBackgroundManager *manager,
 
       priv->current = new;
       g_signal_emit (manager, signals[BACKGROUND_CHANGED], 0, priv->current);
-
-      if (priv->current)
-        mex_background_set_active (priv->current, priv->active);
     }
 
   priv->backgrounds = g_list_delete_link (priv->backgrounds, l);
 }
 
-/**/
-
+/**
+ * mex_background_manager_register:
+ * @manager: A #MexBackgroundManager
+ * @background: A #MexBackground
+ *
+ * Register a background with the background manager
+ */
 void
 mex_background_manager_register (MexBackgroundManager *manager,
                                  MexBackground        *background)
@@ -178,14 +176,21 @@ mex_background_manager_register (MexBackgroundManager *manager,
                      (GWeakNotify) background_finalize_cb,
                      manager);
 
+  /* Default: use the first background and as the current one */
   if (!priv->current)
     {
       priv->current = background;
       g_signal_emit (manager, signals[BACKGROUND_CHANGED], 0, priv->current);
-      mex_background_set_active (priv->current, priv->active);
     }
 }
 
+/**
+ * mex_background_manager_unregister:
+ * @manager: A #MexBackgroundManager
+ * @background: A #MexBackground
+ *
+ * Un-registers a background with the background manager
+ */
 void
 mex_background_manager_unregister (MexBackgroundManager *manager,
                                    MexBackground        *background)
@@ -200,30 +205,101 @@ mex_background_manager_unregister (MexBackgroundManager *manager,
   background_finalize_cb (manager, background);
 }
 
+/**
+ * mex_background_manager_get_backgrounds:
+ * @manager: A #MexBackgroundManager
+ *
+ * Returns: A #GList of all the known #MexBackgound s registered
+ * with the background manager.
+ */
+GList *
+mex_background_manager_get_backgrounds (MexBackgroundManager *manager)
+{
+  MexBackgroundManagerPrivate *priv;
+  priv = manager->priv;
+
+  return priv->backgrounds;
+}
+
+static gint
+_find_background_by_name (gconstpointer a, gconstpointer b)
+{
+  const MexBackground *background = a;
+  const gchar *name = b;
+
+  return g_strcmp0 (mex_background_get_name ((MexBackground *)background),
+                    name);
+}
+
+/**
+ * mex_background_manager_get_background:
+ * @manager: A #MexBackgroundManager
+ * @name: The name of the background
+ *
+ * Utility to look up the specified background @name and return it
+ * if the it is registered with the background manager.
+ *
+ * Returns: A #MexBackground or NULL if not found
+ */
+MexBackground *
+mex_background_manager_get_background (MexBackgroundManager *manager,
+                                       const gchar *name)
+{
+  MexBackgroundManagerPrivate *priv;
+  GList *result = NULL;
+
+  priv = manager->priv;
+
+  result = g_list_find_custom (priv->backgrounds,
+                               name,
+                               (GCompareFunc)_find_background_by_name);
+  if (result)
+    return result->data;
+
+  return NULL;
+}
+
+/**
+ * mex_background_manager_get_active:
+ * @manager: A #MexBackgroundManager
+ *
+ * Get the current MexBackground which is being used
+ *
+ * Returns: #MexBackground
+ */
+MexBackground *
+mex_background_manager_get_active (MexBackgroundManager *manager)
+{
+  MexBackgroundManagerPrivate *priv;
+
+  priv = manager->priv;
+
+  return priv->current;
+}
+
+/**
+ * mex_background_manager_set_active:
+ * @manager: A #MexBackgroundManager
+ * @background: A #MexBackground
+ *
+ * Set the background to be used
+ */
 void
 mex_background_manager_set_active (MexBackgroundManager *manager,
-                                   gboolean              active)
+                                   MexBackground *background)
 {
   MexBackgroundManagerPrivate *priv;
 
   g_return_if_fail (MEX_BACKGROUND_MANAGER (manager));
-
   priv = manager->priv;
 
-  if (priv->active == active)
-    return;
+  /* Make sure we're requesting a background that is registered with us */
+  if (!g_list_find (priv->backgrounds, background))
+    {
+      g_warning ("Trying to activate an unknown background");
+      return;
+    }
 
-  if (!priv->current)
-    return;
-
-  priv->active = active;
-  mex_background_set_active (priv->current, priv->active);
-}
-
-gboolean
-mex_background_manager_get_active (MexBackgroundManager *manager)
-{
-  g_return_val_if_fail (MEX_BACKGROUND_MANAGER (manager), FALSE);
-
-  return manager->priv->active;
+  priv->current = background;
+  g_signal_emit (manager, signals[BACKGROUND_CHANGED], 0, priv->current);
 }
