@@ -98,8 +98,6 @@ mex_background_video_constructed (GObject *object)
                                CLUTTER_ACTOR (priv->media),
                                "crop", TRUE, NULL);
 
-  clutter_media_set_uri (priv->media, priv->video_url);
-
   g_signal_connect (priv->media, "eos", G_CALLBACK (eos_cb), object);
 }
 
@@ -138,6 +136,8 @@ mex_background_video_init (MexBackgroundVideo *self)
 
   priv->media = CLUTTER_MEDIA (clutter_gst_video_texture_new ());
   clutter_media_set_uri (priv->media, priv->video_url);
+  /* Don't start playing until we're active */
+  clutter_media_set_playing (priv->media, FALSE);
 }
 
 
