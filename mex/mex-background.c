@@ -58,7 +58,9 @@ mex_background_get_type (void)
  * @background: a #MexBackground
  * @active: TRUE to activate the background, FALSE otherwise.
  *
- * Set background activity.
+ * Sets the #MexBackground to @active.
+ * For example if the background has an animation or a video the
+ * implementation would toggle the active state of this.
  */
 void
 mex_background_set_active (MexBackground *background, gboolean active)
@@ -76,4 +78,25 @@ mex_background_set_active (MexBackground *background, gboolean active)
 
   g_warning ("MexBackground of type '%s' does not implement set_active()",
              g_type_name (G_OBJECT_TYPE (background)));
+}
+
+/**
+ * mex_background_get_name:
+ * @background: a #MexBackground
+ *
+ * Returns: The name of the background
+ */
+const gchar*
+mex_background_get_name (MexBackground *background)
+{
+  MexBackgroundIface *iface;
+
+  iface = MEX_BACKGROUND_GET_IFACE (background);
+
+  if (G_LIKELY (iface->get_name))
+    return iface->get_name (background);
+
+  g_warning ("MexBackground of type '%s' does not implement get_name()",
+             g_type_name (G_OBJECT_TYPE (background)));
+  return NULL;
 }
