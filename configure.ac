@@ -443,7 +443,7 @@ AS_CASE([$clutter_soname],
 )
 
 # Default list of plugins to compile
-WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,opticaldisc,bg-backdrop"
+WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,opticaldisc,bg-backdrop,bg-image"
 
 # the debug plugin is enabled in debug mode
 AS_IF([test "x$enable_debug" = "xyes"],
@@ -460,6 +460,7 @@ AS_MEX_ARG_WITH_PLUGINS
 AS_MEX_PLUGIN(bg-video)
 AS_MEX_PLUGIN(bg-dbusvideo)
 AS_MEX_PLUGIN(bg-backdrop)
+AS_MEX_PLUGIN(bg-image)
 AS_MEX_PLUGIN(library)
 AS_MEX_PLUGIN(recommended)
 AS_MEX_PLUGIN(search)

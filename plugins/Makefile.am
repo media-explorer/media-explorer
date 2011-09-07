@@ -271,6 +271,24 @@ dist_mex_bg_video_DATA =
 00mex_bg_video_la_LIBADD = $(_libadd)
 endif
 
+if USE_PLUGIN_BG_IMAGE
+plugins_LTLIBRARIES += 00mex-bg-image.la
+
+mex_bg_imagedir = $(plugin_datadir)/bg-image
+dist_mex_bg_image_DATA =
+
+00mex_bg_image_la_SOURCES = 		\
+	bg-image/mex-bg-image-plugin.c	\
+	bg-image/mex-bg-image-plugin.h	\
+	bg-image/mex-background-image.c	\
+	bg-image/mex-background-image.h
+00mex_bg_image_la_CFLAGS = 				\
+	-DG_LOG_DOMAIN=\"Mex-Background-Image\"		\
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_bg_imagedir)\"
+00mex_bg_image_la_LIBADD = $(_libadd)
+endif
+
+
 if USE_PLUGIN_BG_DBUSVIDEO
 plugins_LTLIBRARIES += 01mex-bg-dbusvideo.la
 
