@@ -47,6 +47,7 @@ struct _MexTelepathyChannelPrivate
   ClutterActor *video_incoming;
   ClutterActor *video_outgoing;
   ClutterActor *static_outgoing;
+  MxImage      *avatar_image;
   ClutterActor *title_label;
   MxAction     *camera_action;
   ClutterActor *camera_button;
@@ -344,9 +345,11 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   const gchar *dir = mex_get_data_dir ();
   gchar *tmp = g_build_filename (dir, "style", "thumb-call-pip-off.png", NULL);
   priv->static_outgoing = clutter_texture_new_from_file (tmp, NULL);
+  g_free (tmp);
 
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (
-                                           priv->static_outgoing), TRUE);
+                                         priv->static_outgoing),
+                                         TRUE);
   clutter_actor_set_height (priv->static_outgoing, 200);
   clutter_actor_hide (priv->static_outgoing);
 
@@ -372,9 +375,32 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                                "MexMediaControlsTitle");
 
   // Create the user label
+  priv->avatar_image = mx_image_new ();
+  tmp = g_build_filename (dir, "style", "thumb-call-avatar-small.png", NULL);
+  mx_image_set_from_file (MX_IMAGE (priv->avatar_image),
+                          tmp,
+                          NULL);
+  g_free (tmp);
+  
   priv->title_label = mx_label_new ();
   mx_label_set_y_align (MX_LABEL (priv->title_label), MX_ALIGN_MIDDLE);
   mx_label_set_x_align (MX_LABEL (priv->title_label), MX_ALIGN_MIDDLE);
+
+  priv->camera_action = mx_action_new_full ("Camera",
+                                            "Camera Off",
+                                            G_CALLBACK (
+                                              mex_telepathy_channel_on_camera),
+                                            self);
+  priv->camera_button = mex_action_button_new (priv->camera_action);
+  mx_stylable_set_style_class (MX_STYLABLE (priv->camera_button), "CameraOff");
+
+  priv->mute_action = mx_action_new_full ("Mute",
+                                          "Mic Off",
+                                          G_CALLBACK (
+                                            mex_telepathy_channel_on_mute),
+                                          self);
+  priv->mute_button = mex_action_button_new (priv->mute_action);
+  mx_stylable_set_style_class (MX_STYLABLE (priv->mute_button), "MediaMute");
 
   MxAction *end_action = mx_action_new_full ("End",
                                              "Hang Up",
@@ -384,24 +410,9 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   priv->end_button = mex_action_button_new (end_action);
   mx_stylable_set_style_class (MX_STYLABLE (priv->end_button), "EndCall");
 
-  priv->camera_action = mx_action_new_full("Camera",
-                                           "Camera Off",
-                                           G_CALLBACK (
-                                             mex_telepathy_channel_on_camera),
-                                           self);
-  priv->camera_button = mex_action_button_new (priv->camera_action);
-  mx_stylable_set_style_class (MX_STYLABLE (priv->camera_button), "CameraOff");
-
-  priv->mute_action = mx_action_new_full("Mute",
-                                         "Mic Off",
-                                         G_CALLBACK (
-                                           mex_telepathy_channel_on_mute),
-                                         self);
-  priv->mute_button = mex_action_button_new (priv->mute_action);
-  mx_stylable_set_style_class (MX_STYLABLE (priv->mute_button), "MediaMute");
-
   // Put the buttons in the toolbar
   clutter_container_add (CLUTTER_CONTAINER (toolbar),
+                         priv->avatar_image,
                          priv->title_label,
                          priv->camera_button,
                          priv->mute_button,
