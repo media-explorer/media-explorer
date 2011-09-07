@@ -263,12 +263,12 @@ MxButton.EndCall
 
 MxButton.CameraOff
 {
-  -mx-icon-name: "call-video-turnoff";
+  -mx-icon-name: "call-video-off";
 }
 
 MxButton.CameraOn
 {
-  -mx-icon-name: "call-video-turnon";
+  -mx-icon-name: "call-video";
 }
 
 MxButton.MediaMute

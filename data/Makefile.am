@@ -130,10 +130,8 @@ dist_icon_26x26_DATA = \
 		 icons/call-mic-on-highlight.png \
 		 icons/call-video.png \
 		 icons/call-video-highlight.png \
-		 icons/call-video-turnoff.png \
-		 icons/call-video-turnoff-highlight.png \
-		 icons/call-video-turnon.png \
-		 icons/call-video-turnon-highlight.png \
+		 icons/call-video-off.png \
+		 icons/call-video-off-highlight.png \
 		 icons/contact.png \
 		 icons/contact-highlight.png \
 		 icons/contact-add.png \
