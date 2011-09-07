@@ -2123,6 +2123,7 @@ main (int argc, char **argv)
   context = g_option_context_new ("- The Media Explorer UI");
 
   g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
+  g_option_context_add_group (context, grl_init_get_option_group ());
   if (!g_option_context_parse (context, &argc, &argv, &error))
     {
       g_warning ("Failed to parse options: %s", error->message);
