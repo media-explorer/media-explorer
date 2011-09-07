@@ -90,7 +90,6 @@ _get_grl_key_from_mex (MexContentMetadata mex_key)
 /*                                                    GSIZE_TO_POINTER (grl_key)); */
 /* } */
 
-/* Returns whether to free the value parameter or not. */
 static void
 set_metadata_from_media (MexContent          *content,
                          GrlMedia            *media,
