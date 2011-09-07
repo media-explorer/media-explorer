@@ -270,7 +270,6 @@ mex_backdrop_init (MexBackdrop *self)
 
   priv->timeline = clutter_timeline_new (100000000);
   clutter_timeline_set_loop (priv->timeline, TRUE);
-  clutter_timeline_start (priv->timeline);
 
   g_signal_connect (priv->timeline, "new-frame", G_CALLBACK (time_step), self);
 }
