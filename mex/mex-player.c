@@ -94,7 +94,6 @@ struct _MexPlayerPrivate
 
   guint disable_media_controls : 1;
 
-  gdouble position;
   gdouble current_position;
   guint   duration;
 
@@ -186,7 +185,7 @@ mex_player_set_content (MexContentView *view,
 
   if (content)
     {
-      const gchar *sposition, *sduration, *mimetype;
+      const gchar *sduration, *mimetype;
 
       priv->content = g_object_ref_sink (content);
 
@@ -204,8 +203,6 @@ mex_player_set_content (MexContentView *view,
                                       priv->disable_media_controls);
         }
 
-      sposition = mex_content_get_metadata (content,
-                                            MEX_CONTENT_METADATA_LAST_POSITION);
       sduration = mex_content_get_metadata (content,
                                             MEX_CONTENT_METADATA_DURATION);
 
@@ -215,19 +212,6 @@ mex_player_set_content (MexContentView *view,
         priv->duration = atoi (sduration);
       else
         priv->duration = 0;
-
-      if (priv->duration > 0)
-        {
-          if (sposition)
-            {
-              int position = atoi (sposition);
-              priv->position = (gdouble) position / (gdouble) priv->duration;
-            }
-          else
-            {
-              priv->position = 0.0;
-            }
-        }
 
       if (MEX_IS_PROGRAM (content))
         {
@@ -678,8 +662,6 @@ media_eos_cb (ClutterMedia *media,
   MexPlayerPrivate *priv = player->priv;
   MexContent *enqueued_content;
 
-  priv->position = 0.0;
-
   /* Check to see if we have enqueued content and if so play it next */
   enqueued_content =
     mex_media_controls_get_enqueued (MEX_MEDIA_CONTROLS (priv->controls),
@@ -698,7 +680,7 @@ media_eos_cb (ClutterMedia *media,
     {
       mex_screensaver_uninhibit (priv->screensaver);
 
-      clutter_media_set_progress (media, priv->position);
+      clutter_media_set_progress (media, 0.0);
       clutter_media_set_playing (media, FALSE);
 
       priv->current_position = 0.0;
@@ -736,8 +718,7 @@ save_old_content (MexPlayer *player)
 
   if (priv->duration)
     {
-      priv->position = priv->current_position;
-      position = (guint) (priv->position * priv->duration);
+      position = (guint) (priv->current_position * priv->duration);
 
       if (position > 0)
         {
@@ -904,6 +885,7 @@ mex_get_stream_cb (MexProgram   *program,
   MexPlayer *player = user_data;
   MexPlayerPrivate *priv = player->priv;
   MexGenericContent  *generic_content;
+  gdouble resume_position = 0.0;
 #ifdef USE_PLAYER_CLUTTER_GST
   ClutterGstVideoTexture *video_texture;
 #endif
@@ -958,9 +940,30 @@ mex_get_stream_cb (MexProgram   *program,
 
   MEX_DEBUG ("set uri %s", url);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), url);
+
+  /* Resume from the saved position */
   generic_content = MEX_GENERIC_CONTENT (priv->content);
   if (mex_generic_content_get_last_position_start (generic_content))
-    clutter_media_set_progress (CLUTTER_MEDIA (priv->media), priv->position);
+    {
+      const gchar *sposition;
+      gint position;
+
+      if (priv->duration > 0)
+        {
+          sposition =
+            mex_content_get_metadata (priv->content,
+                                      MEX_CONTENT_METADATA_LAST_POSITION);
+
+          if (sposition)
+            {
+              position = atoi (sposition);
+              resume_position = (gdouble) position / priv->duration;
+            }
+        }
+
+      clutter_media_set_progress (CLUTTER_MEDIA (priv->media), resume_position);
+    }
+
   clutter_media_set_playing (CLUTTER_MEDIA (priv->media), TRUE);
 }
 
