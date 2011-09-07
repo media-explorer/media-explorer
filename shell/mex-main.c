@@ -125,28 +125,24 @@ mex_header_activated_cb (MexExplorer *explorer,
 static void
 mex_activate_background (MexData *data, gboolean active)
 {
-  MexBackgroundManager *manager = mex_background_manager_get_default ();
+  MexBackgroundManager *manager;
 
-  if (active == mex_background_manager_get_active (manager))
-    return;
-
-  mex_background_manager_set_active (manager, active);
-
+  /* check to see if we actually have a background in place */
   if (!data->background)
-    return;
+    {
+      manager = mex_background_manager_get_default ();
+      /* return if we have no backgrounds available */
+      if (!(data->background = mex_background_manager_get_active (manager)))
+        return;
+    }
+
+  /* Starts or stops the background from actually "playing" */
+  mex_background_set_active (data->background, active);
 
   if (!active)
-    {
-      clutter_container_remove_actor (CLUTTER_CONTAINER (data->stack),
-                                      CLUTTER_ACTOR (data->background));
-    }
+    clutter_actor_hide (CLUTTER_ACTOR (data->background));
   else
-    {
-      clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
-                                   CLUTTER_ACTOR (data->background));
-      clutter_actor_lower_bottom (CLUTTER_ACTOR (data->background));
-      clutter_actor_show (CLUTTER_ACTOR (data->background));
-    }
+    clutter_actor_show (CLUTTER_ACTOR (data->background));
 }
 
 static void
@@ -154,21 +150,37 @@ mex_background_changed_cb (MexBackgroundManager *manager,
                            MexBackground        *new_background,
                            MexData              *data)
 {
-  if (data->background)
-    clutter_actor_unparent (CLUTTER_ACTOR (data->background));
+  /* We want to maintain the previous hidden/shown state of the
+   * background so store it in bg_was_visible.
+   */
+  gboolean bg_was_visible;
+
+   if (data->background)
+    {
+      bg_was_visible =
+        CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (data->background));
+
+      clutter_container_remove_actor (CLUTTER_CONTAINER (data->stack),
+                                      CLUTTER_ACTOR (data->background));
+      clutter_actor_hide (CLUTTER_ACTOR (data->background));
+
+      /* Stop the old background */
+      mex_background_set_active (data->background, FALSE);
+    }
 
   data->background = new_background;
 
-  if (data->background)
-    {
-      if (mex_background_manager_get_active (manager))
-        {
-          clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
-                                       CLUTTER_ACTOR (data->background));
-          clutter_actor_lower_bottom (CLUTTER_ACTOR (data->background));
-          clutter_actor_show (CLUTTER_ACTOR (data->background));
-        }
-    }
+  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
+                               CLUTTER_ACTOR (data->background));
+  clutter_actor_lower_bottom (CLUTTER_ACTOR (data->background));
+
+
+  mex_background_set_active (data->background, bg_was_visible);
+
+  if (bg_was_visible)
+      clutter_actor_show (CLUTTER_ACTOR (data->background));
+  else
+      clutter_actor_hide (CLUTTER_ACTOR (data->background));
 }
 
 static void

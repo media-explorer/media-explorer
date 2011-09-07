@@ -73,8 +73,17 @@ void mex_background_manager_unregister (MexBackgroundManager *manager,
                                         MexBackground        *background);
 
 void mex_background_manager_set_active (MexBackgroundManager *manager,
-                                        gboolean              active);
-gboolean mex_background_manager_get_active (MexBackgroundManager *manager);
+                                        MexBackground        *background);
+
+MexBackground *
+mex_background_manager_get_active (MexBackgroundManager *manager);
+
+GList *
+mex_background_manager_get_backgrounds (MexBackgroundManager *manager);
+
+MexBackground *
+mex_background_manager_get_background (MexBackgroundManager *manager,
+                                       const gchar *name);
 
 G_END_DECLS
 
