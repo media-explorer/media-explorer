@@ -105,6 +105,8 @@ mex_dbus_background_video_constructed (GObject *object)
     G_OBJECT_CLASS (mex_dbus_background_video_parent_class)->constructed (object);
 
   clutter_media_set_uri (CLUTTER_MEDIA (object), priv->video_url);
+  /* Don't start playing until we're activated */
+  clutter_media_set_playing (CLUTTER_MEDIA (object), FALSE);
 
   g_signal_connect (object, "eos", G_CALLBACK (eos_cb), object);
 }
