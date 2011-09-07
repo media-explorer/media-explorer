@@ -50,12 +50,14 @@ struct _MexBackgroundIface
 {
   GTypeInterface g_iface;
 
-  void     (*set_active) (MexBackground *background, gboolean active);
+  void        (*set_active) (MexBackground *background, gboolean active);
+  const gchar* (*get_name) (MexBackground *background);
 };
 
 GType mex_background_get_type (void) G_GNUC_CONST;
 
 void mex_background_set_active (MexBackground *background, gboolean active);
+const gchar *mex_background_get_name (MexBackground *background);
 
 G_END_DECLS
 
