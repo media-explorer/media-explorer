@@ -56,6 +56,7 @@ dist_style_DATA = \
 	style/panel-header-grid-bg.png \
 	style/panel-highlight.png \
 	style/panel-shadow.png \
+        style/pip-border.png \
 	style/queue-spinner-highlight.png \
 	style/queue-spinner.png \
 	style/remote-back-error.png \

@@ -291,6 +291,11 @@ MxButton.MediaStop:focus
   -mx-content-image: url("icon-stop-highlight.png");
 }
 
+MxStack.PreviewStack
+{
+  border-image: url('pip-border.png') 3;
+}
+
 /* Slide Show Buttons */
 MxButton#fit-to-screen-button
 {

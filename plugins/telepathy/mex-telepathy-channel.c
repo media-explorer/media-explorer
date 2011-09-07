@@ -330,17 +330,27 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
 
   // VideoCall widget init.
-  priv->video_call_page = mx_frame_new ();
-  clutter_actor_set_name (priv->video_call_page, "videocall-page");
+  priv->video_call_page = mx_stack_new();
+  ClutterActor * frame = mx_frame_new ();
+  clutter_actor_set_name (frame, "videocall-page");
   ClutterActor *videocontainer = mx_stack_new ();
 
-  // Create the incoming and outgoing video textures.
+  // Create the preview video widget.
+  ClutterGroup *previewGroup = clutter_group_new();
+  MxStack *previewStack = mx_stack_new();
+  mx_stylable_set_style_class (MX_STYLABLE(previewStack),
+                               "PreviewStack");
+  clutter_container_add (CLUTTER_CONTAINER(previewGroup),
+                         CLUTTER_ACTOR(previewStack),
+                         NULL);
+  clutter_actor_set_height (previewStack, 153);
+  clutter_actor_set_position (previewStack, 930, 58);
   priv->video_outgoing = clutter_texture_new ();
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (
                                            priv->video_outgoing), TRUE);
+  clutter_actor_set_height (priv->video_outgoing, 150);
   priv->outgoing_sink =
     clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->video_outgoing));
-  clutter_actor_set_height (priv->video_outgoing, 200);
 
   const gchar *dir = mex_get_data_dir ();
   gchar *tmp = g_build_filename (dir, "style", "thumb-call-pip-off.png", NULL);
@@ -348,10 +358,20 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   g_free (tmp);
 
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (
-                                         priv->static_outgoing),
+                                           priv->static_outgoing),
                                          TRUE);
-  clutter_actor_set_height (priv->static_outgoing, 200);
+  clutter_actor_set_height (priv->static_outgoing, 150);
   clutter_actor_hide (priv->static_outgoing);
+  clutter_container_add (CLUTTER_CONTAINER (previewStack),
+                         priv->video_outgoing,
+                         priv->static_outgoing,
+                         NULL);
+  mx_stack_child_set_fit (MX_STACK (previewStack),
+                          priv->video_outgoing,
+                          TRUE);
+  mx_stack_child_set_fit (MX_STACK (previewStack),
+                          priv->static_outgoing,
+                          TRUE);
 
   priv->video_incoming = clutter_texture_new ();
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (
@@ -360,19 +380,18 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
     clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->video_incoming));
 
   // Add the incoming video to the stack.
-  clutter_container_add (CLUTTER_CONTAINER (
-                           videocontainer),
+  clutter_container_add (CLUTTER_CONTAINER (videocontainer),
                          priv->video_incoming,
                          NULL);
-  mx_stack_child_set_fit (MX_STACK (videocontainer),
-                          priv->video_incoming,
-                          TRUE);
+  //mx_stack_child_set_fit (MX_STACK (videocontainer),
+  //                        priv->video_incoming,
+  //                        TRUE);
 
   // Create the toolbar with a fixed height
   ClutterActor *toolbar = mx_box_layout_new ();
   clutter_actor_set_height (toolbar, 48);
   mx_stylable_set_style_class (MX_STYLABLE (toolbar),
-                               "MexMediaControlsTitle");
+                               "MexCallControlsTitle");
 
   // Create the user label
   priv->avatar_image = mx_image_new ();
@@ -432,54 +451,22 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                                   priv->mute_button,
                                   TRUE);
 
-  ClutterActor *bottom_box = mx_box_layout_new ();
-  mx_box_layout_set_orientation (MX_BOX_LAYOUT (bottom_box),
-                                 MX_ORIENTATION_VERTICAL);
-  clutter_container_add (CLUTTER_CONTAINER (bottom_box),
-                         priv->static_outgoing,
-                         priv->video_outgoing,
+  clutter_container_add (CLUTTER_CONTAINER (videocontainer),
                          toolbar,
                          NULL);
-
-  // Put the outgoing video in the bottom right corner.
-  mx_box_layout_child_set_x_align (MX_BOX_LAYOUT (bottom_box),
-                                   priv->video_outgoing,
-                                   MX_ALIGN_END);
-  mx_box_layout_child_set_y_align (MX_BOX_LAYOUT (bottom_box),
-                                   priv->video_outgoing,
-                                   MX_ALIGN_END);
-  mx_box_layout_child_set_x_fill (MX_BOX_LAYOUT (bottom_box),
-                                  priv->video_outgoing,
-                                  FALSE);
-  mx_box_layout_child_set_y_fill (MX_BOX_LAYOUT (bottom_box),
-                                  priv->video_outgoing,
-                                  FALSE);
-
-  mx_box_layout_child_set_x_align (MX_BOX_LAYOUT (bottom_box),
-                                   priv->static_outgoing,
-                                   MX_ALIGN_END);
-  mx_box_layout_child_set_y_align (MX_BOX_LAYOUT (bottom_box),
-                                   priv->static_outgoing,
-                                   MX_ALIGN_END);
-  mx_box_layout_child_set_x_fill (MX_BOX_LAYOUT (bottom_box),
-                                  priv->static_outgoing,
-                                  FALSE);
-  mx_box_layout_child_set_y_fill (MX_BOX_LAYOUT (bottom_box),
-                                  priv->static_outgoing,
-                                  FALSE);
-
-  clutter_container_add (CLUTTER_CONTAINER (videocontainer),
-                         bottom_box,
-                         NULL);
   mx_stack_child_set_y_fill (MX_STACK (videocontainer),
-                             bottom_box,
+                             toolbar,
                              FALSE);
   mx_stack_child_set_y_align (MX_STACK (videocontainer),
-                              bottom_box,
+                              toolbar,
                               MX_ALIGN_END);
 
-  clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
+  clutter_container_add (CLUTTER_CONTAINER (frame),
                          videocontainer,
+                         NULL);
+  clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
+                         frame,
+                         previewGroup,
                          NULL);
 
   // Connect to hide signals.
