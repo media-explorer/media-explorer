@@ -493,8 +493,6 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                     "show",
                     G_CALLBACK (mex_telepathy_channel_on_video_shown),
                     self);
-
-  g_free (tmp);
 }
 
 static gboolean
