@@ -92,8 +92,6 @@ struct _MexPlayerPrivate
 
   guint at_eos : 1;
 
-  guint playing_from_queue : 1;
-
   guint disable_media_controls : 1;
 
   gdouble position;
@@ -703,12 +701,10 @@ media_eos_cb (ClutterMedia *media,
 
   if (enqueued_content)
     {
-      priv->playing_from_queue = TRUE;
       mex_player_set_content (MEX_CONTENT_VIEW (player), enqueued_content);
     }
   else
     {
-      priv->playing_from_queue = TRUE;
       mex_screensaver_uninhibit (priv->screensaver);
 
       clutter_media_set_progress (media, priv->position);
