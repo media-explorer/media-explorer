@@ -455,6 +455,18 @@ MxBoxLayout.MexCallControlsTitle
   border-image: url('item-title-bg.png') 1 0 0;
 }
 
+/* Call ui */
+MxFrame.PreviewPadding
+{
+  padding: 58 130 0 0;
+}
+
+MxStack.PreviewStack
+{
+  padding: 3;
+  border-image: url('pip-border.png') 3;
+}
+
 /* Info Panels */
 MexInfoPanel
 {

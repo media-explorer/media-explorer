@@ -273,6 +273,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
 
   ClutterActor *toolbar;
   ClutterActor *toolbar_area;
+  ClutterActor *video_preview_padding;
   ClutterActor *video_preview_area;
   ClutterActor *static_outgoing;
   ClutterActor *video_incoming;
@@ -319,16 +320,20 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                          priv->video_outgoing,
                          NULL);
 
-  mx_stack_child_set_fit (MX_STACK (video_preview_area), static_outgoing, TRUE);
-  mx_stack_child_set_fit (MX_STACK (video_preview_area), priv->video_outgoing,
-                          TRUE);
+  mx_stylable_set_style_class (MX_STYLABLE (video_preview_area),
+                               "PreviewStack");
 
   clutter_actor_set_height (video_preview_area, 150.0);
+  
+  video_preview_padding = mx_frame_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (video_preview_padding),
+                               "PreviewPadding");
+  clutter_container_add (MX_FRAME (video_preview_padding),
+                         video_preview_area,
+                         NULL);
 
   /* Top container */
   priv->video_call_page = mx_stack_new ();
-
-  // Create the toolbar with a fixed height
 
   // Create the user label
   priv->avatar_image = mx_image_new ();
@@ -418,25 +423,25 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
 
   clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
                          video_incoming,
-                         video_preview_area,
+                         video_preview_padding,
                          toolbar_area,
                          NULL);
 
   /* Arrange the preview video area on the page */
   mx_stack_child_set_x_align (MX_STACK (priv->video_call_page),
-                              video_preview_area,
+                              video_preview_padding,
                               MX_ALIGN_END);
 
   mx_stack_child_set_y_align (MX_STACK (priv->video_call_page),
-                              video_preview_area,
+                              video_preview_padding,
                               MX_ALIGN_START);
 
   mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
-                             video_preview_area,
+                             video_preview_padding,
                              FALSE);
 
   mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
-                             video_preview_area,
+                             video_preview_padding,
                              FALSE);
 
   /* Arrange the toolbar area on the page */
