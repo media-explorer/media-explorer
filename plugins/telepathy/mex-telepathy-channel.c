@@ -44,16 +44,13 @@ G_DEFINE_TYPE (MexTelepathyChannel, mex_telepathy_channel, G_TYPE_OBJECT)
 struct _MexTelepathyChannelPrivate
 {
   ClutterActor *video_call_page;
-  ClutterActor *video_incoming;
-  ClutterActor *video_outgoing;
-  ClutterActor *static_outgoing;
   MxImage      *avatar_image;
-  ClutterActor *title_label;
-  MxAction     *camera_action;
   ClutterActor *camera_button;
-  MxAction     *mute_action;
   ClutterActor *mute_button;
   ClutterActor *end_button;
+  ClutterActor *title_label;
+  ClutterActor *video_outgoing;
+
   GstElement   *incoming_sink;
   GstElement   *outgoing_sink;
   GstElement   *outgoing_mic;
@@ -99,66 +96,11 @@ mex_telepathy_channel_dispose (GObject *gobject)
   MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (gobject);
   MexTelepathyChannelPrivate *priv = self->priv;
 
-  // FIXME: once we depend on glib 2.28 we should use g_clear_object
-  // to make this method much smaller and easier to read.
   if (priv->video_call_page)
     {
-      g_object_unref (priv->video_call_page);
+      /* This will also destroy all children of this container */
+      clutter_actor_destroy (priv->video_call_page);
       priv->video_call_page = NULL;
-    }
-
-  if (priv->video_incoming)
-    {
-      g_object_unref (priv->video_incoming);
-      priv->video_incoming = NULL;
-    }
-
-  if (priv->video_outgoing)
-    {
-      g_object_unref (priv->video_outgoing);
-      priv->video_outgoing = NULL;
-    }
-
-  if (priv->static_outgoing)
-    {
-      g_object_unref (priv->static_outgoing);
-      priv->static_outgoing = NULL;
-    }
-
-  if (priv->title_label)
-    {
-      g_object_unref (priv->title_label);
-      priv->title_label = NULL;
-    }
-
-  if (priv->camera_action)
-    {
-      g_object_unref (priv->camera_action);
-      priv->camera_action = NULL;
-    }
-
-  if (priv->camera_button)
-    {
-      g_object_unref (priv->camera_button);
-      priv->camera_button = NULL;
-    }
-
-  if (priv->mute_action)
-    {
-      g_object_unref (priv->mute_action);
-      priv->mute_action = NULL;
-    }
-
-  if (priv->mute_button)
-    {
-      g_object_unref (priv->mute_button);
-      priv->mute_button = NULL;
-    }
-
-  if (priv->end_button)
-    {
-      g_object_unref (priv->end_button);
-      priv->end_button = NULL;
     }
 
   if (priv->incoming_sink)
@@ -253,7 +195,7 @@ mex_telepathy_channel_on_video_closed (ClutterActor *actor,
   tp_channel_close_async (self->priv->channel, NULL, NULL);
 }
 
-void
+static void
 mex_telepathy_channel_on_hangup (MxAction *action,
                                  gpointer  user_data)
 {
@@ -262,9 +204,9 @@ mex_telepathy_channel_on_hangup (MxAction *action,
   tp_channel_close_async (self->priv->channel, NULL, NULL);
 }
 
-void
-mex_telepathy_channel_on_camera (MxAction *action,
-                                 gpointer  user_data)
+static void
+mex_telepathy_channel_toggle_camera (MxAction *action,
+                                     gpointer  user_data)
 {
   MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
   MexTelepathyChannelPrivate *priv = self->priv;
@@ -276,26 +218,24 @@ mex_telepathy_channel_on_camera (MxAction *action,
   if (priv->sending_video)
     {
       clutter_actor_show (priv->video_outgoing);
-      clutter_actor_hide (priv->static_outgoing);
       // We are starting, so change the button to pause.
       mx_stylable_set_style_class (MX_STYLABLE (
                                      priv->camera_button), "CameraOff");
-      mx_action_set_display_name (priv->camera_action, "Camera Off");
+      mx_action_set_display_name (action, "Camera Off");
     }
   else
     {
-      clutter_actor_show (priv->static_outgoing);
       clutter_actor_hide (priv->video_outgoing);
       // We are stopping, so change the button to play.
       mx_stylable_set_style_class (MX_STYLABLE (
                                      priv->camera_button), "CameraOn");
-      mx_action_set_display_name (priv->camera_action, "Camera On");
+      mx_action_set_display_name (action, "Camera On");
     }
 }
 
 void
-mex_telepathy_channel_on_mute (MxAction *action,
-                               gpointer  user_data)
+mex_telepathy_channel_toggle_mute (MxAction *action,
+                                   gpointer  user_data)
 {
   MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
   MexTelepathyChannelPrivate *priv = self->priv;
@@ -310,7 +250,7 @@ mex_telepathy_channel_on_mute (MxAction *action,
         MEX_WARNING ("failed to mute microphone");
       mx_stylable_set_style_class (MX_STYLABLE(
                                      priv->mute_button), "MediaUnmute");
-      mx_action_set_display_name (priv->mute_action, "Mic On");
+      mx_action_set_display_name (action, "Mic On");
     }
   else
     {
@@ -319,7 +259,7 @@ mex_telepathy_channel_on_mute (MxAction *action,
         MEX_WARNING ("failed to unmute microphone");
 
       mx_stylable_set_style_class (MX_STYLABLE(priv->mute_button), "MediaMute");
-      mx_action_set_display_name (priv->mute_action, "Mic Off");
+      mx_action_set_display_name (action, "Mic Off");
     }
 }
 
@@ -329,145 +269,192 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   MEX_DEBUG ("creating video page");
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
 
-  // VideoCall widget init.
-  priv->video_call_page = mx_stack_new();
-  ClutterActor * frame = mx_frame_new ();
-  clutter_actor_set_name (frame, "videocall-page");
-  ClutterActor *videocontainer = mx_stack_new ();
+  gchar *static_image_path;
 
-  // Create the preview video widget.
-  ClutterGroup *previewGroup = clutter_group_new();
-  MxStack *previewStack = mx_stack_new();
-  mx_stylable_set_style_class (MX_STYLABLE(previewStack),
-                               "PreviewStack");
-  clutter_container_add (CLUTTER_CONTAINER(previewGroup),
-                         CLUTTER_ACTOR(previewStack),
-                         NULL);
-  clutter_actor_set_height (previewStack, 153);
-  clutter_actor_set_position (previewStack, 930, 58);
+  ClutterActor *toolbar;
+  ClutterActor *toolbar_area;
+  ClutterActor *video_preview_area;
+  ClutterActor *static_outgoing;
+  ClutterActor *video_incoming;
+
+  MxAction *end_action;
+  MxAction *camera_action;
+  MxAction *mute_action;
+
+  GError *error = NULL;
+
   priv->video_outgoing = clutter_texture_new ();
-  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (
-                                           priv->video_outgoing), TRUE);
-  clutter_actor_set_height (priv->video_outgoing, 150);
+  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->video_outgoing),
+                                         TRUE);
+
   priv->outgoing_sink =
     clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->video_outgoing));
 
-  const gchar *dir = mex_get_data_dir ();
-  gchar *tmp = g_build_filename (dir, "style", "thumb-call-pip-off.png", NULL);
-  priv->static_outgoing = clutter_texture_new_from_file (tmp, NULL);
-  g_free (tmp);
+  static_image_path = g_build_filename (mex_get_data_dir (),
+                                        "style",
+                                        "thumb-call-pip-off.png",
+                                        NULL);
 
-  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (
-                                           priv->static_outgoing),
+  static_outgoing = clutter_texture_new_from_file (static_image_path,
+                                                   &error);
+  if (error)
+    {
+      g_warning ("Error loading texture %s", error->message);
+      g_clear_error (&error);
+    }
+
+  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE
+                                         (static_outgoing), TRUE);
+
+  video_incoming = clutter_texture_new ();
+  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (video_incoming),
                                          TRUE);
-  clutter_actor_set_height (priv->static_outgoing, 150);
-  clutter_actor_hide (priv->static_outgoing);
-  clutter_container_add (CLUTTER_CONTAINER (previewStack),
-                         priv->video_outgoing,
-                         priv->static_outgoing,
-                         NULL);
-  mx_stack_child_set_fit (MX_STACK (previewStack),
-                          priv->video_outgoing,
-                          TRUE);
-  mx_stack_child_set_fit (MX_STACK (previewStack),
-                          priv->static_outgoing,
-                          TRUE);
-
-  priv->video_incoming = clutter_texture_new ();
-  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (
-                                           priv->video_incoming), TRUE);
   priv->incoming_sink =
-    clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->video_incoming));
+    clutter_gst_video_sink_new (CLUTTER_TEXTURE (video_incoming));
 
-  // Add the incoming video to the stack.
-  clutter_container_add (CLUTTER_CONTAINER (videocontainer),
-                         priv->video_incoming,
+  video_preview_area = mx_stack_new ();
+
+  clutter_container_add (CLUTTER_CONTAINER (video_preview_area),
+                         static_outgoing,
+                         priv->video_outgoing,
                          NULL);
-  //mx_stack_child_set_fit (MX_STACK (videocontainer),
-  //                        priv->video_incoming,
-  //                        TRUE);
+
+  mx_stack_child_set_fit (MX_STACK (video_preview_area), static_outgoing, TRUE);
+  mx_stack_child_set_fit (MX_STACK (video_preview_area), priv->video_outgoing,
+                          TRUE);
+
+  clutter_actor_set_height (video_preview_area, 150.0);
+
+  /* Top container */
+  priv->video_call_page = mx_stack_new ();
 
   // Create the toolbar with a fixed height
-  ClutterActor *toolbar = mx_box_layout_new ();
-  clutter_actor_set_height (toolbar, 48);
-  mx_stylable_set_style_class (MX_STYLABLE (toolbar),
-                               "MexCallControlsTitle");
 
   // Create the user label
   priv->avatar_image = mx_image_new ();
-  tmp = g_build_filename (dir, "style", "thumb-call-avatar-small.png", NULL);
+  static_image_path = g_build_filename (mex_get_data_dir (),
+                                        "style",
+                                        "thumb-call-avatar-small.png",
+                                        NULL);
   mx_image_set_from_file (MX_IMAGE (priv->avatar_image),
-                          tmp,
+                          static_image_path,
                           NULL);
-  g_free (tmp);
+  g_free (static_image_path);
   
   priv->title_label = mx_label_new ();
   mx_label_set_y_align (MX_LABEL (priv->title_label), MX_ALIGN_MIDDLE);
   mx_label_set_x_align (MX_LABEL (priv->title_label), MX_ALIGN_MIDDLE);
 
-  priv->camera_action = mx_action_new_full ("Camera",
-                                            "Camera Off",
-                                            G_CALLBACK (
-                                              mex_telepathy_channel_on_camera),
-                                            self);
-  priv->camera_button = mex_action_button_new (priv->camera_action);
-  mx_stylable_set_style_class (MX_STYLABLE (priv->camera_button), "CameraOff");
 
-  priv->mute_action = mx_action_new_full ("Mute",
-                                          "Mic Off",
-                                          G_CALLBACK (
-                                            mex_telepathy_channel_on_mute),
-                                          self);
-  priv->mute_button = mex_action_button_new (priv->mute_action);
-  mx_stylable_set_style_class (MX_STYLABLE (priv->mute_button), "MediaMute");
+  end_action =
+    mx_action_new_full ("End",
+                        "Hang Up",
+                        G_CALLBACK (mex_telepathy_channel_on_hangup),
+                        self);
 
-  MxAction *end_action = mx_action_new_full ("End",
-                                             "Hang Up",
-                                             G_CALLBACK (
-                                               mex_telepathy_channel_on_hangup),
-                                             self);
   priv->end_button = mex_action_button_new (end_action);
   mx_stylable_set_style_class (MX_STYLABLE (priv->end_button), "EndCall");
 
+  camera_action =
+    mx_action_new_full("Camera",
+                       "Camera Off",
+                       G_CALLBACK (mex_telepathy_channel_toggle_camera),
+                       self);
+
+  priv->camera_button = mex_action_button_new (camera_action);
+  mx_stylable_set_style_class (MX_STYLABLE (priv->camera_button), "CameraOff");
+
+  mute_action =
+    mx_action_new_full("Mute",
+                       "Mic Off",
+                       G_CALLBACK (mex_telepathy_channel_toggle_mute),
+                       self);
+
+  priv->mute_button = mex_action_button_new (mute_action);
+  mx_stylable_set_style_class (MX_STYLABLE (priv->mute_button), "MediaMute");
+
+
+  toolbar = mx_box_layout_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (toolbar),
+                               "MexCallControlsTitle");
   // Put the buttons in the toolbar
-  clutter_container_add (CLUTTER_CONTAINER (toolbar),
-                         priv->avatar_image,
-                         priv->title_label,
-                         priv->camera_button,
-                         priv->mute_button,
-                         priv->end_button,
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                           priv->avatar_image,
+                                           0,
+                                           "expand",
+                                           TRUE,
+                                           NULL);
+
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                           priv->title_label,
+                                           1,
+                                           "expand",
+                                           TRUE,
+                                           NULL);
+
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                           priv->camera_button,
+                                           2,
+                                           "expand",
+                                           TRUE,
+                                           NULL);
+
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                           priv->mute_button,
+                                           3,
+                                           "expand",
+                                           TRUE,
+                                           NULL);
+
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                           priv->end_button,
+                                           4,
+                                           "expand",
+                                           TRUE,
+                                           NULL);
+
+  toolbar_area = mx_frame_new ();
+  mx_bin_set_child (MX_BIN (toolbar_area), toolbar);
+
+  clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
+                         video_incoming,
+                         video_preview_area,
+                         toolbar_area,
                          NULL);
 
-  mx_box_layout_child_set_expand (MX_BOX_LAYOUT (toolbar),
-                                  priv->title_label,
-                                  TRUE);
-  mx_box_layout_child_set_expand (MX_BOX_LAYOUT(toolbar),
-                                  priv->end_button,
-                                  TRUE);
-  mx_box_layout_child_set_expand (MX_BOX_LAYOUT(toolbar),
-                                  priv->camera_button,
-                                  TRUE);
-  mx_box_layout_child_set_expand (MX_BOX_LAYOUT(toolbar),
-                                  priv->mute_button,
-                                  TRUE);
-
-  clutter_container_add (CLUTTER_CONTAINER (videocontainer),
-                         toolbar,
-                         NULL);
-  mx_stack_child_set_y_fill (MX_STACK (videocontainer),
-                             toolbar,
-                             FALSE);
-  mx_stack_child_set_y_align (MX_STACK (videocontainer),
-                              toolbar,
+  /* Arrange the preview video area on the page */
+  mx_stack_child_set_x_align (MX_STACK (priv->video_call_page),
+                              video_preview_area,
                               MX_ALIGN_END);
 
-  clutter_container_add (CLUTTER_CONTAINER (frame),
-                         videocontainer,
-                         NULL);
-  clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
-                         frame,
-                         previewGroup,
-                         NULL);
+  mx_stack_child_set_y_align (MX_STACK (priv->video_call_page),
+                              video_preview_area,
+                              MX_ALIGN_START);
+
+  mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
+                             video_preview_area,
+                             FALSE);
+
+  mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
+                             video_preview_area,
+                             FALSE);
+
+  /* Arrange the toolbar area on the page */
+  mx_stack_child_set_x_align (MX_STACK (priv->video_call_page),
+                              toolbar_area,
+                              MX_ALIGN_MIDDLE);
+
+  mx_stack_child_set_y_align (MX_STACK (priv->video_call_page),
+                              toolbar_area,
+                              MX_ALIGN_END);
+
+  mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
+                             toolbar_area,
+                             TRUE);
+
+  mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
+                             toolbar_area,
+                             FALSE);
 
   // Connect to hide signals.
   g_signal_connect (priv->video_call_page,
@@ -960,8 +947,7 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
 
       // Connect to alias change signal.
       // Add the alias to the label.
-      mx_label_set_text( MX_LABEL (
-                           self->priv->title_label),
+      mx_label_set_text (MX_LABEL (self->priv->title_label),
                          tp_contact_get_alias (current));
     }
 }
@@ -1128,11 +1114,11 @@ mex_telepathy_channel_class_init (MexTelepathyChannelClass *klass)
 static void
 mex_telepathy_channel_init (MexTelepathyChannel *self)
 {
-  self->priv = TELEPATHY_CHANNEL_PRIVATE(self);
+  self->priv = TELEPATHY_CHANNEL_PRIVATE (self);
   self->priv->connection = NULL;
   self->priv->channel = NULL;
   self->priv->tf_channel = NULL;
-  mex_telepathy_channel_create_video_page(self);
+  mex_telepathy_channel_create_video_page (self);
 }
 
 MexTelepathyChannel *
