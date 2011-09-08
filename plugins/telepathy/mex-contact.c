@@ -297,6 +297,23 @@ mex_contact_compute_mimetype (MexContact *self)
               guint n;
               gboolean hasAudio = FALSE;
               gboolean hasVideo = FALSE;
+
+              /* Query fixed properties */
+              if (tp_asv_get_boolean (fixed,
+                                      TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+                                      NULL))
+                {
+                  hasAudio = TRUE;
+                }
+
+              if (tp_asv_get_boolean (fixed,
+                                      TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+                                      NULL))
+                {
+                  hasVideo = TRUE;
+                }
+
+              /* Query allowed properties */
               for (n = 0; allowed != NULL && allowed[n] != NULL; ++n)
                 {
                   if (!tp_strdiff(TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
