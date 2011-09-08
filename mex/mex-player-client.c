@@ -132,7 +132,6 @@ _set_uri_call_cb (DBusGProxy *proxy,
                   gpointer    userdata)
 {
   MexPlayerClient        *client = (MexPlayerClient *) userdata;
-  MexPlayerClientPrivate *priv   = client->priv;
 
   if (error) {
     g_warning (G_STRLOC ": Error making SetUri call: %s",
@@ -379,8 +378,6 @@ static void
 _eos_cb (DBusGProxy      *proxy,
          MexPlayerClient *client)
 {
-  MexPlayerClientPrivate *priv = client->priv;
-
   g_signal_emit_by_name (client, "eos");
 }
 
