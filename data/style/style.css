@@ -448,7 +448,8 @@ MxBoxLayout.MexMediaTimeline
 }
 
 MxBoxLayout.MexMediaControlsTitle,
-MxBoxLayout.MexSlideShowControlsTitle
+MxBoxLayout.MexSlideShowControlsTitle,
+MxBoxLayout.MexCallControlsTitle
 {
   -mx-spacing: 16;
   border-image: url('item-title-bg.png') 1 0 0;
