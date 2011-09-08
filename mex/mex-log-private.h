@@ -29,8 +29,6 @@
 
 G_BEGIN_DECLS
 
-#ifdef MEX_ENABLE_DEBUG
-
 MEX_LOG_DOMAIN_EXTERN(log_log_domain);
 MEX_LOG_DOMAIN_EXTERN(epg_log_domain);
 MEX_LOG_DOMAIN_EXTERN(applet_manager_log_domain);
@@ -41,8 +39,6 @@ MEX_LOG_DOMAIN_EXTERN(player_log_domain);
 
 void _mex_log_init_core_domains (void);
 void _mex_log_free_core_domains (void);
-
-#endif
 
 G_END_DECLS
 

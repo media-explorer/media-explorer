@@ -42,8 +42,6 @@ struct _MexLogDomain {
   char *name;
 };
 
-#ifdef MEX_ENABLE_DEBUG
-
 static gchar **mex_log_env;          /* 'domain:level' array from MEX_LOG */
 
 static MexLogLevel mex_default_log_level = MEX_LOG_LEVEL_WARNING;
@@ -428,39 +426,3 @@ mex_log_enabled (MexLogDomain *domain,
 
   return level <= domain->log_level;
 }
-
-#else /* MEX_ENABLE_DEBUG */
-
-MexLogDomain *
-mex_log_domain_new (const gchar *name)
-{
-  return NULL;
-}
-
-void
-mex_log_domain_free (MexLogDomain *domain)
-{
-}
-
-void
-mex_log (MexLogDomain *domain,
-         MexLogLevel   level,
-         const gchar  *strloc,
-         const gchar  *format,
-         ...)
-{
-}
-
-void
-mex_log_configure (const gchar *config)
-{
-}
-
-gboolean
-mex_log_enabled (MexLogDomain *domain,
-                 MexLogLevel   level)
-{
-  return FALSE;
-}
-
-#endif
