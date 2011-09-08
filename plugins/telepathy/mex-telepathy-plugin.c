@@ -284,6 +284,8 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
                                             gboolean            audio,
                                             gboolean            video)
 {
+  MexTelepathyPluginPrivate *priv = self->priv;
+
   TpAccountChannelRequest *req;
   GHashTable *request;
 
@@ -317,7 +319,7 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
 
   tp_account_channel_request_ensure_channel_async (
     req,
-    NULL,
+    tp_base_client_get_bus_name (priv->client),
     NULL,
     mex_telepathy_plugin_on_channel_ensured,
     self);
