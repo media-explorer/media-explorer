@@ -469,15 +469,12 @@ mex_contact_set_tp_contact (MexContact *self,
       const gchar *dir = mex_get_data_dir ();
       const gchar *tmp = g_build_filename (dir, "style", "thumb-call-avatar.png", NULL);
       file = g_file_new_for_path(tmp);
-    }
-    
-  if (file)
-    {
       priv->avatar_path = g_file_get_uri (file);
+      g_object_unref (file);
     }
   else
     {
-      priv->avatar_path = NULL;
+      priv->avatar_path = g_file_get_uri (file);
     }
 
   if (tp_contact_get_publish_state(contact) == TP_SUBSCRIPTION_STATE_ASK)
@@ -500,8 +497,6 @@ mex_contact_set_tp_contact (MexContact *self,
                     self);
 
   g_object_notify (G_OBJECT (self), "contact");
-
-  g_object_unref (file);
 }
 
 static GParamSpec *
