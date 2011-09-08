@@ -1062,6 +1062,9 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   MexModelInfo *info;
   MexTelepathyPluginPrivate *priv;
 
+  tf_init ();
+  tpy_cli_init ();
+
   priv = self->priv = TELEPATHY_PLUGIN_PRIVATE (self);
   priv->actions = NULL;
   priv->contacts = NULL;
@@ -1151,7 +1154,6 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
                           mex_telepathy_plugin_on_account_manager_ready,
                           self);
 
-  tf_init ();
 
   mex_telepathy_plugin_create_approver (self);
   mex_telepathy_plugin_create_handler (self);
