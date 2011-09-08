@@ -276,6 +276,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   ClutterActor *video_preview_padding;
   ClutterActor *video_preview_area;
   ClutterActor *static_outgoing;
+  ClutterActor *video_incoming_area;
   ClutterActor *video_incoming;
 
   MxAction *end_action;
@@ -283,6 +284,12 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   MxAction *mute_action;
 
   GError *error = NULL;
+
+  MexShadow *shadow = mex_shadow_new ();
+  mex_shadow_set_radius_x (shadow, 15);
+  mex_shadow_set_radius_y (shadow, 15);
+  ClutterColor shadow_color = {0, 0, 0, 64};
+  mex_shadow_set_color (shadow, &shadow_color);
 
   priv->video_outgoing = clutter_texture_new ();
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->video_outgoing),
@@ -307,9 +314,24 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE
                                          (static_outgoing), TRUE);
 
+  video_incoming_area = mx_frame_new();
   video_incoming = clutter_texture_new ();
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (video_incoming),
                                          TRUE);
+
+  clutter_container_add (CLUTTER_CONTAINER (video_incoming_area),
+                         video_incoming,
+                         NULL);
+  mx_bin_set_fill (MX_BIN (video_incoming_area),
+                   TRUE,
+                   TRUE);
+  clutter_actor_set_width (video_incoming, 768.0);
+  clutter_actor_set_height (video_incoming, 576.0);
+  mx_stylable_set_style_class (MX_STYLABLE (video_incoming_area),
+                               "CallWindow");
+  clutter_actor_add_effect (video_incoming_area, 
+                            CLUTTER_EFFECT (shadow));
+
   priv->incoming_sink =
     clutter_gst_video_sink_new (CLUTTER_TEXTURE (video_incoming));
 
@@ -324,6 +346,8 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                                "PreviewStack");
 
   clutter_actor_set_height (video_preview_area, 150.0);
+  clutter_actor_add_effect (video_preview_area, 
+                            CLUTTER_EFFECT (shadow));
   
   video_preview_padding = mx_frame_new ();
   mx_stylable_set_style_class (MX_STYLABLE (video_preview_padding),
@@ -422,7 +446,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   mx_bin_set_child (MX_BIN (toolbar_area), toolbar);
 
   clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
-                         video_incoming,
+                         video_incoming_area,
                          video_preview_padding,
                          toolbar_area,
                          NULL);
@@ -444,6 +468,14 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                              video_preview_padding,
                              FALSE);
 
+  mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
+                             video_incoming_area,
+                             FALSE);
+  
+  mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
+                             video_incoming_area,
+                             FALSE);
+  
   /* Arrange the toolbar area on the page */
   mx_stack_child_set_x_align (MX_STACK (priv->video_call_page),
                               toolbar_area,

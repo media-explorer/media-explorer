@@ -19,6 +19,7 @@ styledir = $(pkgdatadir)/style
 dist_style_DATA = \
 	style/button-bg-highlight.png \
 	style/button-bg.png \
+        style/call-window-border.png \
 	style/controls-bg.png \
 	style/details-actions-separator.png \
 	style/details-bg.png \

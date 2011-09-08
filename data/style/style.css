@@ -467,6 +467,12 @@ MxStack.PreviewStack
   border-image: url('pip-border.png') 3;
 }
 
+MxFrame.CallWindow
+{
+  padding: 3;
+  border-image: url('call-window-border.png') 3;
+}
+
 /* Info Panels */
 MexInfoPanel
 {
