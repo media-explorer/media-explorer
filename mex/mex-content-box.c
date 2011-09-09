@@ -374,9 +374,9 @@ mex_content_box_key_press_event_cb (ClutterActor    *actor,
                                     ClutterKeyEvent *event,
                                     gpointer         user_data)
 {
-
   MexActionManager *manager = mex_action_manager_get_default ();
   MexContentBoxPrivate *priv = MEX_CONTENT_BOX (actor)->priv;
+
 
   if (MEX_KEY_OK (event->keyval))
     {
@@ -384,7 +384,6 @@ mex_content_box_key_press_event_cb (ClutterActor    *actor,
 
       actions = mex_action_manager_get_actions_for_content (manager,
                                                             priv->content);
-
       /* find the first action and "activate" it */
       if (actions)
         {
@@ -403,6 +402,12 @@ mex_content_box_key_press_event_cb (ClutterActor    *actor,
   else if (MEX_KEY_INFO (event->keyval))
     {
       mex_content_box_toggle_open (MEX_CONTENT_BOX (actor));
+    }
+  else if (MEX_KEY_BACK (event->keyval))
+    {
+      /* close content box */
+      if (priv->is_open)
+        mex_content_box_toggle_open (MEX_CONTENT_BOX (actor));
     }
 
   return FALSE;

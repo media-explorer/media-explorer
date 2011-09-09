@@ -1103,12 +1103,6 @@ mex_captured_event_cb (ClutterActor *actor,
       return TRUE;
     }
 
-  if (MEX_KEY_BACK (key_event->keyval))
-    {
-      /* move back */
-      mex_go_back (data);
-      return TRUE;
-    }
 
   /* Check for keys that should always work first */
   switch (key_event->keyval)
@@ -1201,8 +1195,14 @@ mex_event_cb (ClutterActor *actor,
     case CLUTTER_KEY_f:
       mex_toggle_fullscreen ();
       return TRUE;
+
     }
 
+  if (MEX_KEY_BACK (key_event->keyval))
+    {
+      mex_go_back (data);
+      return TRUE;
+    }
   return FALSE;
 }
 
