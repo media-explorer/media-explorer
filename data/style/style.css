@@ -479,6 +479,12 @@ MxFrame.ToolbarArea
   border-image: url('controls-bg.png') 0;
 }
 
+MxFrame.CallingFrame
+{
+  padding: 18;
+  background-color: #00000033;
+}
+
 /* Info Panels */
 MexInfoPanel
 {

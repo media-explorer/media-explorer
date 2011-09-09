@@ -50,6 +50,9 @@ struct _MexTelepathyChannelPrivate
   ClutterActor *end_button;
   ClutterActor *title_label;
   ClutterActor *video_outgoing;
+  ClutterActor *video_incoming_area;
+  ClutterActor *calling_frame;
+  ClutterActor *calling_label;
 
   GstElement   *incoming_sink;
   GstElement   *outgoing_sink;
@@ -276,12 +279,13 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   ClutterActor *video_preview_padding;
   ClutterActor *video_preview_area;
   ClutterActor *static_outgoing;
-  ClutterActor *video_incoming_area;
   ClutterActor *video_incoming;
 
   MxAction *end_action;
   MxAction *camera_action;
   MxAction *mute_action;
+  MxBoxLayout *calling_box;
+  MxSpinner *spinner;
 
   GError *error = NULL;
 
@@ -317,22 +321,58 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE
                                          (static_outgoing), TRUE);
 
-  video_incoming_area = mx_frame_new();
+  priv->calling_label = mx_label_new();
+  mx_label_set_y_align (MX_LABEL (priv->calling_label), MX_ALIGN_MIDDLE);
+  mx_label_set_x_align (MX_LABEL (priv->calling_label), MX_ALIGN_MIDDLE);
+  
+  spinner = mx_spinner_new();
+  
+  calling_box = mx_box_layout_new ();
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
+                                           priv->calling_label,
+                                           0,
+                                           "expand",
+                                           TRUE,
+                                           "x-align",
+                                           MX_ALIGN_START,
+                                           "x-fill",
+                                           FALSE,
+                                           NULL);
+
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
+                                           spinner,
+                                           1,
+                                           "expand",
+                                           TRUE,
+                                           "x-align",
+                                           MX_ALIGN_END,
+                                           "x-fill",
+                                           FALSE,
+                                           NULL);
+
+  priv->calling_frame = mx_frame_new ();
+  clutter_actor_set_width (CLUTTER_ACTOR (priv->calling_frame), 475);
+  mx_stylable_set_style_class (MX_STYLABLE (priv->calling_frame),
+                               "CallingFrame");
+  mx_bin_set_child (MX_BIN (priv->calling_frame), calling_box);
+  mx_bin_set_fill (MX_BIN (priv->calling_frame), TRUE, TRUE);
+
+  priv->video_incoming_area = mx_frame_new();
   video_incoming = clutter_texture_new ();
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (video_incoming),
                                          TRUE);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (video_incoming_area),
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->video_incoming_area),
                                video_incoming);
 
-  mx_bin_set_fill (MX_BIN (video_incoming_area),
+  mx_bin_set_fill (MX_BIN (priv->video_incoming_area),
                    TRUE,
                    TRUE);
   clutter_actor_set_width (video_incoming, 768.0);
   clutter_actor_set_height (video_incoming, 576.0);
-  mx_stylable_set_style_class (MX_STYLABLE (video_incoming_area),
+  mx_stylable_set_style_class (MX_STYLABLE (priv->video_incoming_area),
                                "CallWindow");
-  clutter_actor_add_effect (video_incoming_area, 
+  clutter_actor_add_effect (priv->video_incoming_area, 
                             CLUTTER_EFFECT (shadow));
 
   priv->incoming_sink =
@@ -462,10 +502,12 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                                "ToolbarArea");
 
   clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
-                         video_incoming_area,
+                         priv->video_incoming_area,
+                         priv->calling_frame,
                          video_preview_padding,
                          toolbar_area,
                          NULL);
+  clutter_actor_hide (CLUTTER_ACTOR (priv->video_incoming_area) );
 
   /* Arrange the preview video area on the page */
   mx_stack_child_set_x_align (MX_STACK (priv->video_call_page),
@@ -485,11 +527,19 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                              FALSE);
 
   mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
-                             video_incoming_area,
+                             priv->video_incoming_area,
                              FALSE);
 
   mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
-                             video_incoming_area,
+                             priv->video_incoming_area,
+                             FALSE);
+  
+  mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
+                             priv->calling_frame,
+                             FALSE);
+
+  mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
+                             priv->calling_frame,
                              FALSE);
 
   /* Arrange the toolbar area on the page */
@@ -579,6 +629,8 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
       break;
     case FS_MEDIA_TYPE_VIDEO:
       element = self->priv->incoming_sink;
+      clutter_actor_show (CLUTTER_ACTOR (priv->video_incoming_area) );
+      clutter_actor_hide (CLUTTER_ACTOR (priv->calling_frame) );
       break;
     default:
       MEX_WARNING ("Unknown media type");
@@ -1003,9 +1055,14 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
 
       // Connect to alias change signal.
       // Add the alias to the label.
+      gchar *alias = tp_contact_get_alias (current);
       mx_label_set_text (MX_LABEL (self->priv->title_label),
-                         tp_contact_get_alias (current));
+                         alias);
       
+      gchar *text = g_strdup_printf("Calling %s", alias);
+      mx_label_set_text (MX_LABEL (self->priv->calling_label), text);
+      g_free (text);
+
       GFile *file = tp_contact_get_avatar_file (current);
       if (file)
         {
