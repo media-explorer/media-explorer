@@ -20,6 +20,7 @@
 #include "mex-contact.h"
 
 #include "mex-log.h"
+#include "mex-utils.h"
 
 #include <telepathy-glib/dbus.h>
 #include <telepathy-glib/util.h>
