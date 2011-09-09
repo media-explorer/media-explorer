@@ -458,6 +458,8 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
 
   toolbar_area = mx_frame_new ();
   mx_bin_set_child (MX_BIN (toolbar_area), toolbar);
+  mx_stylable_set_style_class (MX_STYLABLE (toolbar_area),
+                               "ToolbarArea");
 
   clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
                          video_incoming_area,

@@ -473,6 +473,12 @@ MxFrame.CallWindow
   border-image: url('call-window-border.png') 3;
 }
 
+MxFrame.ToolbarArea
+{
+  padding: 16;
+  border-image: url('controls-bg.png') 0;
+}
+
 /* Info Panels */
 MexInfoPanel
 {
