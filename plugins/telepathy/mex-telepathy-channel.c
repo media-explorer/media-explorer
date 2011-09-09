@@ -413,6 +413,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
 
 
   toolbar = mx_box_layout_new ();
+  clutter_actor_set_width (toolbar, 980);
   mx_stylable_set_style_class (MX_STYLABLE (toolbar),
                                "MexCallControlsTitle");
   // Put the buttons in the toolbar
@@ -420,7 +421,11 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                                            CLUTTER_ACTOR (avatar_image),
                                            0,
                                            "expand",
-                                           TRUE,
+                                           FALSE,
+                                           "x-align",
+                                           MX_ALIGN_END,
+                                           "x-fill",
+                                           FALSE,
                                            NULL);
 
   mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
