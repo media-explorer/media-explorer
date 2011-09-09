@@ -169,6 +169,10 @@ mex_background_changed_cb (MexBackgroundManager *manager,
       /* Stop the old background */
       mex_background_set_active (data->background, FALSE);
     }
+   else
+     {
+       bg_was_visible = TRUE;
+     }
 
   data->background = new_background;
 
