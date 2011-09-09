@@ -368,9 +368,17 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                                         NULL);
   mx_image_set_from_file (MX_IMAGE (avatar_image),
                           static_image_path,
-                          NULL);
-  g_free (static_image_path);
-  
+                          &error);
+
+  if (error)
+    {
+      g_warning ("Error loading texture %s", error->message);
+      g_clear_error (&error);
+    }
+
+  if (static_image_path)
+    g_free (static_image_path);
+
   priv->title_label = mx_label_new ();
   mx_label_set_y_align (MX_LABEL (priv->title_label), MX_ALIGN_MIDDLE);
   mx_label_set_x_align (MX_LABEL (priv->title_label), MX_ALIGN_MIDDLE);
@@ -505,6 +513,9 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                     "show",
                     G_CALLBACK (mex_telepathy_channel_on_video_shown),
                     self);
+
+  if (error)
+    g_error_free (error);
 }
 
 static gboolean
