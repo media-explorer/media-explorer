@@ -1003,6 +1003,22 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
       // Add the alias to the label.
       mx_label_set_text (MX_LABEL (self->priv->title_label),
                          tp_contact_get_alias (current));
+      
+      GFile *file = tp_contact_get_avatar_file (current);
+      if (file)
+        {
+          gchar *filename = g_file_get_path (file);
+          GError *error = NULL;
+          MEX_DEBUG ("setting new avatar filename to %s", filename);
+          mx_image_set_from_file (MX_IMAGE(self->priv->avatar_image),
+                                  filename,
+                                  &error);
+          if (error)
+            {
+              MEX_ERROR ("ERROR %s loading avatar from file %s\n",
+                         error->message, filename);
+            }
+        }
     }
 }
 
@@ -1018,7 +1034,9 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
   MEX_INFO ("New channel");
 
   TpHandle contactHandle = tp_channel_get_handle (priv->channel, NULL);
-  TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS };
+  TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
+                                  TP_CONTACT_FEATURE_AVATAR_DATA,
+                                  TP_CONTACT_FEATURE_AVATAR_TOKEN};
   if (contactHandle)
     tp_connection_get_contacts_by_handle (
       priv->connection, 1, &contactHandle, 1,
