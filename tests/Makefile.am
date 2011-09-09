@@ -2,9 +2,9 @@ include $(top_srcdir)/build/Makefile.am.gtester
 
 NULL =
 
-noinst_PROGRAMS = $(TEST_PROGS) test-config
+noinst_PROGRAMS = $(TEST_PROGS) test-config test-keys
 
-progs_ldadd =							\
+progs_ldadd =						\
 	$(top_builddir)/mex/libmex-@MEX_API_VERSION@.la	\
 	$(MEX_LIBS)
 
@@ -33,6 +33,5 @@ test_epg_LDADD    = $(progs_ldadd)
 test_config_SOURCES = test-config.c
 test_config_LDADD   = $(progs_ldadd)
 
-TEST_PROGS        += test-keys
 test_keys_SOURCES  = test-keys.c
 test_keys_LDADD    = $(progs_ldadd)
