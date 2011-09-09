@@ -20,8 +20,6 @@
 #include "config.h"
 #endif
 
-/* required by glibc for strptime from time.h */
-#define _XOPEN_SOURCE 600
 #include <time.h>
 #include <math.h>
 #include <stdlib.h>
@@ -282,21 +280,21 @@ mex_metadata_humanise_date (const gchar *iso8601_date)
   if (iso8601_date)
     {
       gchar humanised[255];
-      struct tm tm_parsed;
-      gchar *valid;
+      GTimeVal tv_parsed;
+      GDate *date;
+      gboolean valid;
 
-      /* clear tm_parsed */
-      memset (&tm_parsed, '\0', sizeof (struct tm));
-
-      valid = strptime (iso8601_date, "%FT%TZ", &tm_parsed);
-
-      if (valid && (*valid == '\0' || *valid == 'T' || *valid == 'Z'))
+      valid = g_time_val_from_iso8601 (iso8601_date, &tv_parsed);
+      if (valid)
         {
-          strftime (humanised, 255, "%e %b %Y", &tm_parsed);
+          date = g_date_new ();
+          g_date_set_time_val (date, &tv_parsed);
+          g_date_strftime (humanised, 255, "%e %b %Y", date);
+          g_date_free (date);
           return g_strdup (humanised);
         }
-      g_free (valid);
     }
+
   return NULL;
 }
 
