@@ -124,8 +124,6 @@ static void mex_get_stream_cb (MexProgram   *program,
                                const GError *error,
                                gpointer      user_data);
 
-static void save_old_content (MexPlayer *player);
-
 static void media_eos_cb (ClutterMedia *media,
                           MexPlayer    *player);
 
@@ -140,6 +138,51 @@ static void media_update_progress (GObject    *gobject,
 static void media_uri_changed_cb (GObject    *gobject,
                                   GParamSpec *pspec,
                                   MexPlayer  *player);
+
+static void
+clear_resume_position (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  if (!priv->content)
+    return;
+
+  MEX_DEBUG ("Clearing resume position");
+
+  mex_content_set_metadata (priv->content,
+                            MEX_CONTENT_METADATA_LAST_POSITION,
+                            "0");
+  mex_content_save_metadata (priv->content);
+}
+
+static void
+save_resume_position (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+  guint position;
+  gchar str[20];
+
+  if (!priv->content)
+    return;
+
+  if (priv->current_position == 0.0)
+    return;
+
+  if (priv->duration)
+    {
+      position = (guint) (priv->current_position * priv->duration);
+      snprintf (str, sizeof (str), "%u", position);
+
+      MEX_DEBUG ("Saving resume position %d", position);
+
+      mex_content_set_metadata (priv->content,
+                                MEX_CONTENT_METADATA_LAST_POSITION,
+                                str);
+  }
+
+  mex_content_set_last_used_metadatas (priv->content);
+  mex_content_save_metadata (priv->content);
+}
 
 /* MxFocusable implementation */
 static MxFocusable *
@@ -178,7 +221,7 @@ mex_player_set_content (MexContentView *view,
 
   if (priv->content)
     {
-      save_old_content (MEX_PLAYER (view));
+      save_resume_position (MEX_PLAYER (view));
       g_object_unref (priv->content);
       priv->content = NULL;
     }
@@ -642,7 +685,7 @@ static void
 controls_stopped_cb (MexMediaControls *controls,
                      MexPlayer        *player)
 {
-  save_old_content (player);
+  save_resume_position (player);
 
   if (player->priv->hide_controls_source)
     {
@@ -659,6 +702,10 @@ media_eos_cb (ClutterMedia *media,
 {
   MexPlayerPrivate *priv = player->priv;
   MexContent *enqueued_content;
+
+  /* Starts by clearing the resume position on this content */
+  priv->current_position = 0.0;
+  clear_resume_position (player);
 
   /* Check to see if we have enqueued content and if so play it next */
   enqueued_content =
@@ -681,7 +728,6 @@ media_eos_cb (ClutterMedia *media,
       clutter_media_set_progress (media, 0.0);
       clutter_media_set_playing (media, FALSE);
 
-      priv->current_position = 0.0;
       priv->at_eos = TRUE;
     }
 
@@ -702,33 +748,6 @@ media_playing_cb (ClutterMedia *media,
   /* reset at_eos flag if a video is now playing */
   if (clutter_media_get_playing (media))
     priv->at_eos = FALSE;
-}
-
-static void
-save_old_content (MexPlayer *player)
-{
-  MexPlayerPrivate *priv = player->priv;
-  guint position;
-  gchar str[20];
-
-  if (!priv->content)
-    return;
-
-  if (priv->duration)
-    {
-      position = (guint) (priv->current_position * priv->duration);
-
-      if (position > 0)
-        {
-          snprintf (str, sizeof (str), "%u", position);
-          mex_content_set_metadata (priv->content,
-                                    MEX_CONTENT_METADATA_LAST_POSITION,
-                                    str);
-        }
-  }
-
-  mex_content_set_last_used_metadatas (priv->content);
-  mex_content_save_metadata (priv->content);
 }
 
 static void
@@ -763,7 +782,9 @@ media_update_progress (GObject    *gobject,
   MexPlayerPrivate *priv = player->priv;
 
   if (!priv->at_eos)
-    priv->current_position = clutter_media_get_progress (priv->media);
+    {
+      priv->current_position = clutter_media_get_progress (priv->media);
+    }
 }
 
 static void
@@ -964,7 +985,19 @@ mex_get_stream_cb (MexProgram   *program,
             }
         }
 
+      MEX_DEBUG ("Resuming position %lf", resume_position);
+
       clutter_media_set_progress (CLUTTER_MEDIA (priv->media), resume_position);
+    }
+
+  /* When printing traces, let's give the reason why we don't resume */
+  if (MEX_DEBUG_ENABLED && (resume_position == 0.0))
+    {
+      if (!mex_generic_content_get_last_position_start (generic_content))
+        MEX_DEBUG ("Not resuming as last-position-start is FALSE");
+
+      if (mex_media_controls_get_playing_queue (controls))
+        MEX_DEBUG ("Not resuming as the content is played from the queue");
     }
 
   clutter_media_set_playing (CLUTTER_MEDIA (priv->media), TRUE);
@@ -976,7 +1009,7 @@ mex_player_quit (MexPlayer *player)
   MexPlayerPrivate *priv = player->priv;
 
   MEX_DEBUG ("quit");
-  save_old_content (player);
+  save_resume_position (player);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), NULL);
   clutter_media_set_playing (priv->media, FALSE);
   g_signal_emit (player, signals[CLOSE_REQUEST], 0);
@@ -988,7 +1021,7 @@ mex_player_stop (MexPlayer *player)
   MexPlayerPrivate *priv = player->priv;
 
   MEX_DEBUG ("stop");
-  save_old_content (player);
+  save_resume_position (player);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), NULL);
   clutter_media_set_playing (priv->media, FALSE);
 }
