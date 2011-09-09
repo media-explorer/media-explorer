@@ -50,7 +50,10 @@ enum
   PROP_NAME,
   PROP_URI,
   PROP_THUMBNAIL_URI,
-  PROP_LOGO_URI
+  PROP_LOGO_URI,
+
+  /* MexContent interface */
+  PROP_LAST_POSITION_START
 };
 
 struct _MexChannelPrivate
@@ -126,6 +129,10 @@ mex_channel_get_property (GObject    *object,
     case PROP_LOGO_URI:
       g_value_set_string (value, priv->logo_uri);
       break;
+    case PROP_LAST_POSITION_START:
+      g_value_set_boolean (value, FALSE);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -153,6 +160,10 @@ mex_channel_set_property (GObject      *object,
     case PROP_LOGO_URI:
       mex_channel_set_logo_uri (channel, g_value_get_string (value));
       break;
+    case PROP_LAST_POSITION_START:
+      /* that property is always FALSE for a channel */
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -218,6 +229,11 @@ mex_channel_class_init (MexChannelClass *klass)
 			       NULL,
 			       G_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_LOGO_URI, pspec);
+
+  /* MexContent */
+  g_object_class_override_property (object_class,
+                                    PROP_LAST_POSITION_START,
+                                    "last-position-start");
 }
 
 static void
