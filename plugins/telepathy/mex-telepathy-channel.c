@@ -44,6 +44,7 @@ G_DEFINE_TYPE (MexTelepathyChannel, mex_telepathy_channel, G_TYPE_OBJECT)
 struct _MexTelepathyChannelPrivate
 {
   ClutterActor *video_call_page;
+  MxImage      *avatar_image;
   ClutterActor *camera_button;
   ClutterActor *mute_button;
   ClutterActor *end_button;
@@ -277,7 +278,6 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   ClutterActor *static_outgoing;
   ClutterActor *video_incoming_area;
   ClutterActor *video_incoming;
-  ClutterActor *avatar_image;
 
   MxAction *end_action;
   MxAction *camera_action;
@@ -361,12 +361,12 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   priv->video_call_page = mx_stack_new ();
 
   // Create the user label
-  avatar_image = mx_image_new ();
+  priv->avatar_image = mx_image_new ();
   static_image_path = g_build_filename (mex_get_data_dir (),
                                         "style",
                                         "thumb-call-avatar-small.png",
                                         NULL);
-  mx_image_set_from_file (MX_IMAGE (avatar_image),
+  mx_image_set_from_file (MX_IMAGE (priv->avatar_image),
                           static_image_path,
                           &error);
 
@@ -418,7 +418,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                                "MexCallControlsTitle");
   // Put the buttons in the toolbar
   mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
-                                           CLUTTER_ACTOR (avatar_image),
+                                           priv->avatar_image,
                                            0,
                                            "expand",
                                            FALSE,
