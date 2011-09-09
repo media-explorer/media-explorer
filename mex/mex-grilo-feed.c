@@ -758,6 +758,7 @@ update_source (MexGriloFeed *feed, GrlMediaSource *new_source)
   }
 
   if (new_source) {
+    gchar *lower;
     const gchar *source_name =
       grl_metadata_source_get_name (GRL_METADATA_SOURCE (new_source));
 
@@ -767,11 +768,13 @@ update_source (MexGriloFeed *feed, GrlMediaSource *new_source)
                       G_CALLBACK (klass->content_updated),
                       feed);
 
-    if (strcasestr (source_name, "removable")) {
+    lower = g_ascii_strdown (source_name, -1);
+    if (strstr (lower, "removable")) {
       g_object_set (feed, "icon-name", "icon-panelheader-usb", NULL);
     } else {
       g_object_set (feed, "icon-name", "icon-panelheader-computer", NULL);
     }
+    g_free (lower);
   }
 }
 
