@@ -301,6 +301,33 @@ libmex_@MEX_API_VERSION@_la_LIBADD =					\
 libmex_@MEX_API_VERSION@_la_LDFLAGS = -no-undefined
 
 #
+# Internal unit tests
+#
+
+include $(top_srcdir)/build/Makefile.am.gtester
+
+noinst_PROGRAMS = $(TEST_PROGS)
+
+test_ldadd =				\
+	libmex-@MEX_API_VERSION@.la	\
+	$(MEX_LIBS)
+
+test_cppflags = 				\
+	-I$(top_srcdir)				\
+	-I$(top_srcdir)/mex			\
+	$(MEX_CFLAGS)				\
+	$(MEX_MAINTAINER_CFLAGS)		\
+	$(MEX_DEBUG_CFLAGS)			\
+	$(NULL)
+
+TESTS_ENVIRONMENT = srcdir=$(srcdir)
+
+TEST_PROGS                += mex-test-internal
+mex_test_internal_SOURCES  = mex-test-internal.c mex-test-internal.h
+mex_test_internal_CPPFLAGS = $(test_cppflags)
+mex_test_internal_LDADD    = $(test_ldadd)
+
+#
 # Introspection
 #
 
