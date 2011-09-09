@@ -414,3 +414,32 @@ mex_metadata_get_metadata (GList **metadata_template, MexContent *content)
         }
     }
 }
+
+#if defined (ENABLE_TESTS)
+
+#include <locale.h>
+
+#include "mex-test-internal.h"
+
+void
+mex_test_metadata_humanise_date (void)
+{
+  gchar *human;
+
+  setlocale (LC_TIME, "C");
+
+  human = mex_metadata_humanise_date ("2010-06-16T10:49:58Z");
+  g_assert_cmpstr (human, ==, "16 Jun 2010");
+  g_free (human);
+
+  /* invalid one */
+  human = NULL;
+  human = mex_metadata_humanise_date ("Invalid");
+  g_assert (human == NULL);
+
+  /* NULL */
+  human = mex_metadata_humanise_date (NULL);
+  g_assert (human == NULL);
+}
+
+#endif

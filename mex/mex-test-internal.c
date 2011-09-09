@@ -29,6 +29,8 @@ main (int   argc,
     mex_init (&argc, &argv);
 
     g_test_add_func ("/internal/epg/round_30min", mex_test_epg_round_30min);
+    g_test_add_func ("/internal/metadata/humanise_date",
+                     mex_test_metadata_humanise_date);
 
     return g_test_run ();
 }
