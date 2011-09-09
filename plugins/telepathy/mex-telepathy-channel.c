@@ -285,7 +285,10 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
 
   GError *error = NULL;
 
-  MexShadow *shadow = mex_shadow_new ();
+  MexShadow *shadow;
+
+  shadow = mex_shadow_new ();
+
   mex_shadow_set_radius_x (shadow, 15);
   mex_shadow_set_radius_y (shadow, 15);
   ClutterColor shadow_color = {0, 0, 0, 64};
@@ -471,11 +474,11 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
                              video_incoming_area,
                              FALSE);
-  
+
   mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
                              video_incoming_area,
                              FALSE);
-  
+
   /* Arrange the toolbar area on the page */
   mx_stack_child_set_x_align (MX_STACK (priv->video_call_page),
                               toolbar_area,
