@@ -827,7 +827,8 @@ mex_telepathy_plugin_on_incoming_call_accept (MxAction *action G_GNUC_UNUSED,
   MEX_DEBUG ("accept chosen");
   MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
   tp_channel_dispatch_operation_handle_with_async (
-    self->priv->dispatch_operation, NULL,
+    self->priv->dispatch_operation,
+    tp_base_client_get_bus_name (self->priv->client),
     mex_telepathy_plugin_on_handle_with,
     NULL);
 
