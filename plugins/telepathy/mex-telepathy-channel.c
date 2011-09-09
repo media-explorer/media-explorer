@@ -318,15 +318,18 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
       g_clear_error (&error);
     }
 
+  if (static_image_path)
+    g_free (static_image_path);
+
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE
                                          (static_outgoing), TRUE);
 
   priv->calling_label = mx_label_new();
   mx_label_set_y_align (MX_LABEL (priv->calling_label), MX_ALIGN_MIDDLE);
   mx_label_set_x_align (MX_LABEL (priv->calling_label), MX_ALIGN_MIDDLE);
-  
+
   spinner = mx_spinner_new();
-  
+
   calling_box = mx_box_layout_new ();
   mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
                                            priv->calling_label,
@@ -372,7 +375,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   clutter_actor_set_height (video_incoming, 576.0);
   mx_stylable_set_style_class (MX_STYLABLE (priv->video_incoming_area),
                                "CallWindow");
-  clutter_actor_add_effect (priv->video_incoming_area, 
+  clutter_actor_add_effect (priv->video_incoming_area,
                             CLUTTER_EFFECT (shadow));
 
   priv->incoming_sink =
@@ -389,7 +392,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                                "PreviewStack");
 
   clutter_actor_set_height (video_preview_area, 150.0);
-  clutter_actor_add_effect (video_preview_area, 
+  clutter_actor_add_effect (video_preview_area,
                             CLUTTER_EFFECT (shadow));
 
   video_preview_padding = mx_frame_new ();
@@ -533,7 +536,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
                              priv->video_incoming_area,
                              FALSE);
-  
+
   mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
                              priv->calling_frame,
                              FALSE);
@@ -1058,7 +1061,7 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
       gchar *alias = tp_contact_get_alias (current);
       mx_label_set_text (MX_LABEL (self->priv->title_label),
                          alias);
-      
+
       gchar *text = g_strdup_printf("Calling %s", alias);
       mx_label_set_text (MX_LABEL (self->priv->calling_label), text);
       g_free (text);
@@ -1076,6 +1079,7 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
             {
               MEX_ERROR ("ERROR %s loading avatar from file %s\n",
                          error->message, filename);
+              g_clear_error (&error);
             }
         }
     }
