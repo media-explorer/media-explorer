@@ -30,6 +30,7 @@ depcomp
 dox*.pc
 gtk-doc.make
 install-sh
+intltool-*.in
 libtool
 ltmain.sh
 mex*.pc
