@@ -289,13 +289,10 @@ mex_metadata_humanise_date (const gchar *iso8601_date)
       /* clear tm_parsed */
       memset (&tm_parsed, '\0', sizeof (struct tm));
 
-      valid = strptime (iso8601_date, "%FT%TZ%z", &tm_parsed);
+      valid = strptime (iso8601_date, "%FT%TZ", &tm_parsed);
 
-      /* valid populates with characters that can't be parsed therefore it
-         is null when a full parse has happened */
-      if (valid == NULL)
+      if (valid && (*valid == '\0' || *valid == 'T' || *valid == 'Z'))
         {
-          /* arg1 NULL to measure desired allocation for humanised */
           strftime (humanised, 255, "%e %b %Y", &tm_parsed);
           return g_strdup (humanised);
         }
