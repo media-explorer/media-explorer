@@ -121,26 +121,27 @@ mex_resizing_hbox_open (MexScene              *actor,
   MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (actor)->priv;
   GList *l;
 
-  priv->state = STATE_OPEN;
+  priv->state = STATE_OPENING;
 
   /* make sure all children are visible again */
   for (l = priv->children; l; l = g_list_next (l))
     {
       if (l->data != priv->current_focus)
         {
-          clutter_actor_animate (l->data, CLUTTER_EASE_OUT_QUAD, ANIMATION_DURATION / 2.0,
+          clutter_actor_animate (l->data, CLUTTER_EASE_OUT_QUAD,
+                                 ANIMATION_DURATION / 2.0,
                                  "opacity", (guchar) INACTIVE_OPACITY, NULL);
         }
     }
 
   /* fade in the children of the column */
-  if (MEX_IS_SCROLL_VIEW (priv->current_focus)
-      && MEX_IS_COLUMN_VIEW (mx_bin_get_child (MX_BIN (priv->current_focus))))
+  if (MEX_IS_COLUMN_VIEW (priv->current_focus))
     {
       ClutterActor *container;
       GList *actors, *children;
 
-      container = mx_bin_get_child (MX_BIN (priv->current_focus));
+      container =
+        (ClutterActor *) mex_column_view_get_column (MEX_COLUMN_VIEW (priv->current_focus));
       children = clutter_container_get_children (CLUTTER_CONTAINER (container));
 
       for (actors = children; actors; actors = g_list_next (actors))
@@ -151,8 +152,10 @@ mex_resizing_hbox_open (MexScene              *actor,
       g_list_free (children);
     }
 
-  if (callback)
-    callback (CLUTTER_ACTOR (actor), data);
+  clutter_timeline_start (priv->state_timeline);
+
+  priv->state_callback = callback;
+  priv->state_userdata = data;
 }
 
 static void
@@ -161,7 +164,10 @@ mex_resizing_hbox_state_timeline_complete_cb (ClutterTimeline *timeline,
 {
   MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (hbox)->priv;
 
-  priv->state = STATE_CLOSED;
+  if (priv->state == STATE_OPENING)
+    priv->state = STATE_OPEN;
+  else
+    priv->state = STATE_CLOSED;
 
   if (priv->state_callback)
     priv->state_callback (CLUTTER_ACTOR (hbox), priv->state_userdata);
@@ -1149,14 +1155,15 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
                                      &child_box);
 
       /* fade in/out the children of the column */
-      if (MEX_IS_SCROLL_VIEW (priv->current_focus)
-          && MEX_IS_COLUMN_VIEW (mx_bin_get_child (MX_BIN (priv->current_focus))))
+      if (MEX_IS_COLUMN_VIEW (priv->current_focus))
         {
           ClutterActor *container;
           GList *l, *children;
 
-          container = mx_bin_get_child (MX_BIN (priv->current_focus));
-          children = clutter_container_get_children (CLUTTER_CONTAINER (container));
+          container =
+            (ClutterActor *) mex_column_view_get_column (MEX_COLUMN_VIEW (priv->current_focus));
+          children =
+            clutter_container_get_children (CLUTTER_CONTAINER (container));
 
           for (l = children; l; l = g_list_next (l))
             {
