@@ -353,6 +353,7 @@ mex_content_box_toggle_open (MexContentBox *box)
   else
     {
       priv->is_closing = TRUE;
+
       /* closing */
       mex_push_focus (MX_FOCUSABLE (priv->tile));
       clutter_timeline_set_direction (priv->timeline,
@@ -663,6 +664,10 @@ mex_content_box_timeline_completed (ClutterTimeline *timeline,
       mx_stylable_set_style_class (MX_STYLABLE (box), "");
       g_object_notify_by_pspec (G_OBJECT (box), properties[PROP_OPEN]);
     }
+
+  if (!priv->is_open)
+    mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list),
+                                  NULL);
 }
 
 static void

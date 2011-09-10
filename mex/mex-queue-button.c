@@ -507,7 +507,7 @@ mex_queue_button_set_content (MexContentView *view,
                         "notify::queued",
                         (GCallback)_content_notify_queued_cb,
                         self);
-      g_object_notify (G_OBJECT (priv->content), "queued");
+      mex_queue_button_update (self);
     }
 }
 

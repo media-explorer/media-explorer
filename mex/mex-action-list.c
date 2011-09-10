@@ -241,6 +241,14 @@ mx_focusable_iface_init (MxFocusableIface *iface)
 }
 
 static void
+mex_action_list_content_updated_cb (MexContent    *content,
+                                    GParamSpec    *pspec,
+                                    MexActionList *action_list)
+{
+  mex_action_list_refresh (action_list);
+}
+
+static void
 mex_action_list_set_content (MexContentView *view,
                              MexContent     *content)
 {
@@ -251,12 +259,21 @@ mex_action_list_set_content (MexContentView *view,
     return;
 
   if (priv->content)
-    g_object_unref (priv->content);
-
-  priv->content = content;
+    {
+      g_signal_handlers_disconnect_by_func (priv->content,
+                                            mex_action_list_content_updated_cb,
+                                            action_list);
+      g_object_unref (priv->content);
+      priv->content = NULL;
+    }
 
   if (content)
-    g_object_ref (content);
+    {
+      priv->content = g_object_ref (content);
+      g_signal_connect (priv->content, "notify",
+                        G_CALLBACK (mex_action_list_content_updated_cb),
+                        action_list);
+    }
 
   mex_action_list_refresh (action_list);
 }
