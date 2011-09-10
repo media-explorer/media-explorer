@@ -170,10 +170,15 @@ mex_resizing_hbox_state_timeline_complete_cb (ClutterTimeline *timeline,
     priv->state = STATE_CLOSED;
 
   if (priv->state_callback)
-    priv->state_callback (CLUTTER_ACTOR (hbox), priv->state_userdata);
+    {
+      ClutterCallback callback = priv->state_callback;
+      gpointer data = priv->state_userdata;
 
-  priv->state_callback = NULL;
-  priv->state_userdata = NULL;
+      priv->state_callback = NULL;
+      priv->state_userdata = NULL;
+
+      callback (CLUTTER_ACTOR (hbox), data);
+    }
 }
 
 static void
