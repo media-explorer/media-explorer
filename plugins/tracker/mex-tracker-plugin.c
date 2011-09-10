@@ -38,7 +38,9 @@ struct _MexTrackerPluginPrivate {
   GHashTable *image_models;
   GHashTable *music_models;
 
-  GList *query_keys;
+  GList *query_video_keys;
+  GList *query_image_keys;
+  GList *query_music_keys;
   GList *video_keys;
   GList *image_keys;
   GList *music_keys;
@@ -65,10 +67,22 @@ mex_tracker_plugin_finalize (GObject *gobject)
   MexTrackerPlugin *self = MEX_TRACKER_PLUGIN (gobject);
   MexTrackerPluginPrivate *priv = self->priv;
 
-  if (priv->query_keys)
+  if (priv->query_video_keys)
     {
-      g_list_free (priv->query_keys);
-      priv->query_keys = NULL;
+      g_list_free (priv->query_video_keys);
+      priv->query_video_keys = NULL;
+    }
+
+  if (priv->query_image_keys)
+    {
+      g_list_free (priv->query_image_keys);
+      priv->query_image_keys = NULL;
+    }
+
+  if (priv->query_music_keys)
+    {
+      g_list_free (priv->query_music_keys);
+      priv->query_music_keys = NULL;
     }
 
   if (priv->video_keys)
@@ -128,7 +142,7 @@ add_model (MexTrackerPlugin *self,
            GrlMediaPlugin *plugin,
            MexTrackerCategory category)
 {
-  GList *metadata_keys;
+  GList *metadata_keys, *query_keys;
   MexFeed *feed, *dir_feed;
   GrlMedia *box;
   MexModelInfo *info;
@@ -146,6 +160,7 @@ add_model (MexTrackerPlugin *self,
               "FILTER (fn:starts-with(nie:mimeType(?urn),'image/'))";
       models = self->priv->image_models;
       metadata_keys = self->priv->image_keys;
+      query_keys = self->priv->query_image_keys;
       box = grl_media_image_new ();
       break;
 
@@ -156,6 +171,7 @@ add_model (MexTrackerPlugin *self,
               "FILTER (fn:starts-with(nie:mimeType(?urn),'video/'))";
       models = self->priv->video_models;
       metadata_keys = self->priv->video_keys;
+      query_keys = self->priv->query_video_keys;
       box = grl_media_video_new ();
       break;
 
@@ -166,13 +182,14 @@ add_model (MexTrackerPlugin *self,
               "FILTER (fn:starts-with(nie:mimeType(?urn),'audio/'))";
       models = self->priv->music_models;
       metadata_keys = self->priv->music_keys;
+      query_keys = self->priv->query_music_keys;
       box = grl_media_audio_new ();
       break;
     }
 
   grl_media_set_id (GRL_MEDIA (box), NULL);
   feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (plugin),
-                                     self->priv->query_keys,
+                                     query_keys,
                                      metadata_keys,
                                      NULL, box);
   mex_model_set_sort_func (MEX_MODEL (feed),
@@ -196,7 +213,7 @@ add_model (MexTrackerPlugin *self,
   info->default_sort_index = 2;
 
   dir_feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (plugin),
-                                         self->priv->query_keys,
+                                         query_keys,
                                          metadata_keys,
                                          query, NULL);
   mex_model_set_sort_func (MEX_MODEL (dir_feed),
@@ -299,23 +316,40 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
   priv->music_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
                                               g_object_unref, NULL);
 
-  priv->query_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
-                                                GRL_METADATA_KEY_TITLE,
-                                                GRL_METADATA_KEY_MIME,
-                                                GRL_METADATA_KEY_URL,
-                                                GRL_METADATA_KEY_DATE,
-                                                GRL_METADATA_KEY_THUMBNAIL,
-                                                GRL_METADATA_KEY_PLAY_COUNT,
-                                                GRL_METADATA_KEY_ALBUM,
-                                                GRL_METADATA_KEY_ARTIST,
-                                                NULL);
+  priv->query_video_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                      GRL_METADATA_KEY_TITLE,
+                                                      GRL_METADATA_KEY_MIME,
+                                                      GRL_METADATA_KEY_URL,
+                                                      GRL_METADATA_KEY_DATE,
+                                                      GRL_METADATA_KEY_THUMBNAIL,
+                                                      GRL_METADATA_KEY_PLAY_COUNT,
+                                                      NULL);
+
+  priv->query_image_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                      GRL_METADATA_KEY_TITLE,
+                                                      GRL_METADATA_KEY_MIME,
+                                                      GRL_METADATA_KEY_URL,
+                                                      GRL_METADATA_KEY_DATE,
+                                                      GRL_METADATA_KEY_THUMBNAIL,
+                                                      GRL_METADATA_KEY_PLAY_COUNT,
+                                                      NULL);
+
+  priv->query_music_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                      GRL_METADATA_KEY_TITLE,
+                                                      GRL_METADATA_KEY_MIME,
+                                                      GRL_METADATA_KEY_URL,
+                                                      GRL_METADATA_KEY_DATE,
+                                                      GRL_METADATA_KEY_THUMBNAIL,
+                                                      GRL_METADATA_KEY_PLAY_COUNT,
+                                                      GRL_METADATA_KEY_ALBUM,
+                                                      GRL_METADATA_KEY_ARTIST,
+                                                      NULL);
 
   priv->image_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
                                                 GRL_METADATA_KEY_DESCRIPTION,
                                                 GRL_METADATA_KEY_THUMBNAIL,
                                                 GRL_METADATA_KEY_WIDTH,
                                                 GRL_METADATA_KEY_HEIGHT,
-                                                GRL_METADATA_KEY_PLAY_COUNT,
                                                 GRL_METADATA_KEY_LAST_PLAYED,
                                                 GRL_METADATA_KEY_CAMERA_MODEL,
                                                 GRL_METADATA_KEY_EXPOSURE_TIME,
@@ -332,7 +366,6 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                 GRL_METADATA_KEY_WIDTH,
                                                 GRL_METADATA_KEY_HEIGHT,
                                                 GRL_METADATA_KEY_LAST_POSITION,
-                                                GRL_METADATA_KEY_PLAY_COUNT,
                                                 GRL_METADATA_KEY_LAST_PLAYED,
                                                 NULL);
 
@@ -340,7 +373,6 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                 GRL_METADATA_KEY_DURATION,
                                                 GRL_METADATA_KEY_THUMBNAIL,
                                                 GRL_METADATA_KEY_LAST_POSITION,
-                                                GRL_METADATA_KEY_PLAY_COUNT,
                                                 GRL_METADATA_KEY_LAST_PLAYED,
                                                 NULL);
 
