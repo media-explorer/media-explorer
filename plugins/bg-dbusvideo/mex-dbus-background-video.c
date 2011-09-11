@@ -105,11 +105,8 @@ mex_dbus_background_video_constructed (GObject *object)
   if (G_OBJECT_CLASS (mex_dbus_background_video_parent_class)->constructed)
     G_OBJECT_CLASS (mex_dbus_background_video_parent_class)->constructed (object);
 
-  clutter_media_set_uri (CLUTTER_MEDIA (object), priv->video_url);
   /* Don't start playing until we're activated */
   clutter_media_set_playing (CLUTTER_MEDIA (object), FALSE);
-
-  g_signal_connect (object, "eos", G_CALLBACK (eos_cb), object);
 }
 
 static void
@@ -157,11 +154,14 @@ mex_dbus_background_video_set_active (MexBackground *self,
   priv->active = active;
   if (active)
     {
+      g_signal_connect (priv->media, "eos", G_CALLBACK (eos_cb), self);
       clutter_media_set_uri (CLUTTER_MEDIA (priv->media), priv->video_url);
       clutter_media_set_playing (CLUTTER_MEDIA (priv->media), TRUE);
     }
   else
     {
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            G_CALLBACK (eos_cb), self);
       clutter_media_set_playing (CLUTTER_MEDIA (priv->media), FALSE);
       clutter_media_set_uri (CLUTTER_MEDIA (priv->media), NULL);
     }
