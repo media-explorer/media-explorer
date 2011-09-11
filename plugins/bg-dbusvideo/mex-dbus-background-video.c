@@ -38,6 +38,7 @@ G_DEFINE_TYPE_WITH_CODE (MexDbusBackgroundVideo,
 struct _MexDbusBackgroundVideoPrivate
 {
   gboolean      active;
+  const gchar  *name;
   gchar        *video_url;
   ClutterMedia *media;
 };
