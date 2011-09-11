@@ -643,9 +643,22 @@ mex_content_box_tile_clicked_cb (ClutterActor       *tile,
                                  ClutterButtonEvent *event,
                                  MexContentBox      *self)
 {
-  mex_push_focus (MX_FOCUSABLE (tile));
+  /* Because key based interactions moving the focus involve
+     opening/closing the content box, we have to be careful about the
+     order in which we change focus and open/close the box with mouse
+     interactions. */
+  if (mex_content_box_get_open (self))
+    {
+      mex_content_box_toggle_open (MEX_CONTENT_BOX (self));
 
-  mex_content_box_toggle_open (MEX_CONTENT_BOX (self));
+      mex_push_focus (MX_FOCUSABLE (tile));
+    }
+  else
+    {
+      mex_push_focus (MX_FOCUSABLE (tile));
+
+      mex_content_box_toggle_open (MEX_CONTENT_BOX (self));
+    }
 
   return TRUE;
 }
