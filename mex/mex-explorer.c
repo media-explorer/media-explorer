@@ -1205,7 +1205,6 @@ mex_explorer_set_focused_model (MexExplorer *explorer,
   MxFocusManager *manager;
   GObject *object;
   GList *c, *children;
-  ClutterContainer *container;
 
   g_return_if_fail (MEX_IS_EXPLORER (explorer));
 
@@ -1213,19 +1212,14 @@ mex_explorer_set_focused_model (MexExplorer *explorer,
   if (!object)
     return;
 
-  /* check that the current container is the resizing hbox */
-  container = g_object_get_qdata (object, mex_explorer_container_quark);
-  if (!container || !MEX_IS_RESIZING_HBOX (container))
-    return;
-
-  children = clutter_container_get_children (container);
+  children = clutter_container_get_children (CLUTTER_CONTAINER (object));
   for (c = children; c; c = c->next)
     {
       MexModel *m;
 
-      ClutterActor *column = mx_bin_get_child (c->data);
+      ClutterActor *column_view = (ClutterActor *) c->data;
 
-      m = g_object_get_qdata (G_OBJECT (column), mex_explorer_model_quark);
+      m = g_object_get_qdata (G_OBJECT (column_view), mex_explorer_model_quark);
 
       if (m == model)
         {
@@ -1234,7 +1228,8 @@ mex_explorer_set_focused_model (MexExplorer *explorer,
 
           manager = mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
 
-          mx_focus_manager_push_focus_with_hint (manager, MX_FOCUSABLE (column),
+          mx_focus_manager_push_focus_with_hint (manager,
+                                                 MX_FOCUSABLE (column_view),
                                                  MX_FOCUS_HINT_FIRST);
           break;
         }
