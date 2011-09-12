@@ -180,6 +180,8 @@ mex_telepathy_channel_on_video_shown (ClutterActor *actor,
   ClutterStage *stage;
   MxFocusManager *fmanager;
 
+  clutter_actor_hide (CLUTTER_ACTOR (priv->video_incoming_area) );
+
   stage = CLUTTER_STAGE (clutter_actor_get_stage (CLUTTER_ACTOR (actor)));
 
   if (stage)
@@ -511,7 +513,6 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                          video_preview_padding,
                          toolbar_area,
                          NULL);
-  clutter_actor_hide (CLUTTER_ACTOR (priv->video_incoming_area) );
 
   /* Arrange the preview video area on the page */
   mx_stack_child_set_x_align (MX_STACK (priv->video_call_page),
