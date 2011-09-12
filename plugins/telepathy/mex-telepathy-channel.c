@@ -286,6 +286,7 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   MxAction *end_action;
   MxAction *camera_action;
   MxAction *mute_action;
+  ClutterActor *calling_padding;
   ClutterActor *calling_box;
   ClutterActor *spinner;
 
@@ -359,9 +360,14 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   priv->calling_frame = mx_frame_new ();
   clutter_actor_set_width (CLUTTER_ACTOR (priv->calling_frame), 475);
   mx_stylable_set_style_class (MX_STYLABLE (priv->calling_frame),
+                               "CallingFrameBorder");
+  calling_padding = mx_frame_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (calling_padding),
                                "CallingFrame");
-  mx_bin_set_child (MX_BIN (priv->calling_frame), calling_box);
+  mx_bin_set_child (MX_BIN (priv->calling_frame), calling_padding);
   mx_bin_set_fill (MX_BIN (priv->calling_frame), TRUE, TRUE);
+  mx_bin_set_child (MX_BIN (calling_padding), calling_box);
+  mx_bin_set_fill (MX_BIN (calling_padding), TRUE, TRUE);
 
   priv->video_incoming_area = mx_frame_new();
   video_incoming = clutter_texture_new ();

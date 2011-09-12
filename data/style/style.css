@@ -485,6 +485,12 @@ MxFrame.CallingFrame
   background-color: #00000033;
 }
 
+MxFrame.CallingFrameBorder
+{
+  padding: 1;
+  background-color: #77777733;
+}
+
 /* Info Panels */
 MexInfoPanel
 {
