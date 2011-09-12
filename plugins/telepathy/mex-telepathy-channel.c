@@ -455,9 +455,9 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   priv->mute_button = mex_action_button_new (mute_action);
   mx_stylable_set_style_class (MX_STYLABLE (priv->mute_button), "MediaMute");
 
-
   toolbar = mx_box_layout_new ();
   clutter_actor_set_width (toolbar, 980);
+  clutter_actor_set_height (toolbar, 48);
   mx_stylable_set_style_class (MX_STYLABLE (toolbar),
                                "MexCallControlsTitle");
   // Put the buttons in the toolbar
