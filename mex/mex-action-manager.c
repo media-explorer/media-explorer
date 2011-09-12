@@ -16,6 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#include <stdlib.h>
 
 #include "mex-action-manager.h"
 #include "mex-marshal.h"
@@ -180,8 +181,8 @@ mex_action_manager_get_actions_for_content (MexActionManager *manager,
       const gchar *action_name;
       action_name = mx_action_get_name (info->action);
 
-      /* If there isn't a last position skip: */
-      if (!last_position)
+      /* If there isn't a last position, skip */
+      if (last_position == NULL || atoi (last_position) <= 0)
         {
           if (g_str_equal (action_name, "play-from-last") ||
               g_str_equal (action_name, "play-from-begin") ||

@@ -159,16 +159,9 @@ set_metadata_from_media (MexContent          *content,
   case G_TYPE_INT:
     n = grl_data_get_int (GRL_DATA (media), grl_key);
 
-    if (n > 0)
-      {
-        string = g_strdup_printf ("%i", n);
-        mex_content_set_metadata (content, mex_key, string);
-        g_free (string);
-      }
-    else
-      {
-        mex_content_set_metadata (content, mex_key, NULL);
-      }
+    string = g_strdup_printf ("%i", n);
+    mex_content_set_metadata (content, mex_key, string);
+    g_free (string);
     break;
 
   case G_TYPE_FLOAT:
