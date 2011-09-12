@@ -44,7 +44,7 @@ G_DEFINE_TYPE (MexTelepathyChannel, mex_telepathy_channel, G_TYPE_OBJECT)
 struct _MexTelepathyChannelPrivate
 {
   ClutterActor *video_call_page;
-  MxImage      *avatar_image;
+  ClutterActor *avatar_image;
   ClutterActor *camera_button;
   ClutterActor *mute_button;
   ClutterActor *end_button;
@@ -284,8 +284,8 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   MxAction *end_action;
   MxAction *camera_action;
   MxAction *mute_action;
-  MxBoxLayout *calling_box;
-  MxSpinner *spinner;
+  ClutterActor *calling_box;
+  ClutterActor *spinner;
 
   GError *error = NULL;
 
@@ -328,9 +328,10 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   mx_label_set_y_align (MX_LABEL (priv->calling_label), MX_ALIGN_MIDDLE);
   mx_label_set_x_align (MX_LABEL (priv->calling_label), MX_ALIGN_MIDDLE);
 
-  spinner = mx_spinner_new();
+  spinner = mx_spinner_new ();
 
   calling_box = mx_box_layout_new ();
+
   mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
                                            priv->calling_label,
                                            0,
@@ -1053,16 +1054,20 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
 
   for (i = 0; i < n_contacts; ++i)
     {
+      gchar *text;
+      const gchar *alias;
+      TpContact *current;
+
       // Get the contacts.
-      TpContact *current = contacts[i];
+      current = contacts[i];
 
       // Connect to alias change signal.
       // Add the alias to the label.
-      gchar *alias = tp_contact_get_alias (current);
+      alias = tp_contact_get_alias (current);
       mx_label_set_text (MX_LABEL (self->priv->title_label),
                          alias);
 
-      gchar *text = g_strdup_printf("Calling %s", alias);
+      text = g_strdup_printf ("Calling %s", alias);
       mx_label_set_text (MX_LABEL (self->priv->calling_label), text);
       g_free (text);
 
