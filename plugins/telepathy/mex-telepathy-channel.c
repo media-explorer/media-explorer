@@ -1068,7 +1068,10 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
       mx_label_set_text (MX_LABEL (self->priv->title_label),
                          alias);
 
-      text = g_strdup_printf ("Calling %s", alias);
+      if (tp_channel_get_requested(self->priv->channel))
+        text = g_strdup_printf ("Calling %s", alias);
+      else
+        text = g_strdup_printf ("Setting up call with %s", alias);
       mx_label_set_text (MX_LABEL (self->priv->calling_label), text);
       g_free (text);
 
