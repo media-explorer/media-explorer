@@ -16,10 +16,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-
 #include "mex-plugin-manager.h"
 #include "mex-marshal.h"
 #include <gmodule.h>
@@ -84,7 +80,7 @@ build_plugin_search_paths (void)
   gchar **search_paths;
 
   search_paths = g_new0 (gchar *, 3);
-  search_paths[0] = g_strdup (MEX_SHELL_PLUGIN_PATH);
+  search_paths[0] = g_strdup (PKGLIBDIR "/plugins");
   search_paths[1] = g_strdup (getenv ("MEX_PLUGIN_PATH"));
 
   return search_paths;
@@ -338,3 +334,4 @@ mex_plugin_manager_refresh (MexPluginManager *manager)
         }
     }
 }
+
