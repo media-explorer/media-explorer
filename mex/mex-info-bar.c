@@ -355,7 +355,7 @@ _app_launcher_cb (ClutterActor *actor, gpointer command)
   if (!g_spawn_command_line_async ((const gchar *)command, &error))
     {
       g_warning (G_STRLOC ": Error launching: %s", error->message);
-      g_clear_error (&error);
+      g_error_free (error);
     }
 
   return TRUE;
