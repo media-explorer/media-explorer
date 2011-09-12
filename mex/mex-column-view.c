@@ -483,6 +483,25 @@ mex_column_view_pick (ClutterActor *actor, const ClutterColor *color)
   clutter_actor_paint (priv->header);
 }
 
+static gboolean
+mex_column_button_release_event (ClutterActor       *actor,
+                                 ClutterButtonEvent *event)
+{
+  gboolean returnval;
+  MexColumnViewPrivate *priv = MEX_COLUMN_VIEW (actor)->priv;
+
+  returnval = CLUTTER_ACTOR_CLASS (mex_column_view_parent_class)->
+    button_release_event (actor, event);
+
+  if (!returnval && !priv->has_focus)
+    {
+      mex_push_focus (MX_FOCUSABLE (actor));
+      return TRUE;
+    }
+
+  return returnval;
+}
+
 static void
 mex_column_view_class_init (MexColumnViewClass *klass)
 {
@@ -500,6 +519,7 @@ mex_column_view_class_init (MexColumnViewClass *klass)
   a_class->allocate             = mex_column_view_allocate;
   a_class->paint                = mex_column_view_paint;
   a_class->pick                 = mex_column_view_pick;
+  a_class->button_release_event = mex_column_button_release_event;
 
   g_type_class_add_private (klass, sizeof (MexColumnViewPrivate));
 

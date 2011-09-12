@@ -1086,25 +1086,6 @@ mex_column_unmap (ClutterActor *actor)
 }
 
 static gboolean
-mex_column_button_release_event (ClutterActor       *actor,
-                                 ClutterButtonEvent *event)
-{
-  gboolean returnval;
-  MexColumnPrivate *priv = MEX_COLUMN (actor)->priv;
-
-  returnval = CLUTTER_ACTOR_CLASS (mex_column_parent_class)->
-    button_release_event (actor, event);
-
-  if (!returnval && !priv->has_focus)
-    {
-      mex_push_focus (MX_FOCUSABLE (actor));
-      return TRUE;
-    }
-
-  return returnval;
-}
-
-static gboolean
 mex_column_get_paint_volume (ClutterActor       *self,
                              ClutterPaintVolume *volume)
 {
@@ -1145,7 +1126,6 @@ mex_column_class_init (MexColumnClass *klass)
   a_class->pick                 = mex_column_pick;
   a_class->map                  = mex_column_map;
   a_class->unmap                = mex_column_unmap;
-  a_class->button_release_event = mex_column_button_release_event;
   a_class->get_paint_volume     = mex_column_get_paint_volume;
 
   g_type_class_add_private (klass, sizeof (MexColumnPrivate));
