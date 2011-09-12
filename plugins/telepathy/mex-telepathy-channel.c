@@ -1086,6 +1086,8 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
                          error->message, filename);
               g_clear_error (&error);
             }
+          if (filename)
+            g_free (filename);
         }
     }
 }
