@@ -31,7 +31,7 @@
 
 #include "mex-metadata-utils.h"
 
-#define TV_REGEX "(?<showname>.*)\\.(?<season>(?:\\d{1,2})|(?:[sS]\\K\\d{1,2}))(?<episode>(?:\\d{2})|(?:[eE]\\K\\d{1,2}))\\.?(?<name>.*)?"
+#define TV_REGEX "(?<showname>.*)\\.(?<season>(?:\\d{1,2})|(?:[sS]\\K\\d{1,2}))(?<episode>(?:\\d{2}[^px0-9])|(?:[eE]\\K\\d{1,2}))\\.?(?<name>.*)?"
 #define MOVIE_REGEX "(?<name>.*)\\.?[\\(\\[](?<year>[12][90]\\d{2})[\\)\\]]"
 
 const gchar *blacklisted_prefix[] = {
@@ -40,7 +40,6 @@ const gchar *blacklisted_prefix[] = {
 
 /* Blacklisted are words that we ignore everything after */
 const char *blacklist[] = {
-    "720p", "1080p",
     "ws", "WS", "proper", "PROPER",
     "repack", "real.repack",
     "hdtv", "HDTV", "pdtv", "PDTV", "notv", "NOTV",
