@@ -507,8 +507,11 @@ _set_metadata (MexInfoPanel *self, MexInfoPanelMime mime)
           info->key == MEX_CONTENT_METADATA_LAST_POSITION)
         {
           gchar *human_text = _append_human (info->value, info->key);
-          g_string_append (string, human_text);
-          g_free (human_text);
+          if (human_text)
+            {
+              g_string_append (string, human_text);
+              g_free (human_text);
+            }
         }
       else
         {
