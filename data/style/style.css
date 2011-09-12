@@ -211,7 +211,7 @@ MexTile.Important:focus > MxIcon.Info
   -mx-icon-name: "icon-info-highlight";
 }
 
-MexColumn.Search MexTile.Important:focus > MxIcon.Info
+MexColumnView.Search MexTile.Important:focus > MxIcon.Info
 {
   -mx-icon-name: none;
 }
@@ -624,13 +624,13 @@ MxDialog.MexInfoBarDialog MexTile MxButton
 }
 
 /* Search Column */
-MexColumn.Search MexTile.Important
+MexColumnView.Search MexTile.Important
 {
   border-image: none;
   x-mex-header-background: none;
 }
 
-MexColumn.Search MexTile.Important:focus
+MexColumnView.Search MexTile.Important:focus
 {
   x-mex-header-background: url("highlight-bg.png");
 }
