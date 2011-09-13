@@ -734,7 +734,7 @@ mex_telepathy_channel_on_video_framerate_changed (TfContent           *content,
   if (framerate != 0)
     priv->framerate = framerate;
 
-  mex_telepathy_channel_update_video_parameters (self, FALSE);
+  //mex_telepathy_channel_update_video_parameters (self, FALSE);
 }
 
 static void
