@@ -685,13 +685,17 @@ mex_telepathy_channel_update_video_parameters (MexTelepathyChannel *self,
 {
   MexTelepathyChannelPrivate *priv = self->priv;
   GstCaps *caps;
-  GstClock *clock;
+  GstPad *src, *peer;
+
+  src = gst_element_get_static_pad (priv->video_input, "src");
+  peer = gst_pad_get_peer (src);
 
   if (restart)
     {
       /* Assuming the pipeline is in playing state */
       gst_element_set_locked_state (priv->video_input, TRUE);
       gst_element_set_state (priv->video_input, GST_STATE_NULL);
+      gst_bin_remove (GST_BIN (priv->pipeline), priv->video_input);
     }
 
   g_object_get (priv->video_capsfilter, "caps", &caps, NULL);
@@ -707,17 +711,15 @@ mex_telepathy_channel_update_video_parameters (MexTelepathyChannel *self,
 
   if (restart)
     {
-      clock = gst_pipeline_get_clock (GST_PIPELINE (priv->pipeline));
-      /* Need to reset the clock if we set the pipeline back to ready by hand */
-      if (clock != NULL)
-        {
-          gst_element_set_clock (priv->video_input, clock);
-          g_object_unref (clock);
-        }
+      gst_bin_add (GST_BIN (priv->pipeline), priv->video_input);
 
+      gst_pad_link (src, peer);
       gst_element_set_locked_state (priv->video_input, FALSE);
       gst_element_sync_state_with_parent (priv->video_input);
     }
+
+  gst_object_unref (src);
+  gst_object_unref (peer);
 }
 
 static void
