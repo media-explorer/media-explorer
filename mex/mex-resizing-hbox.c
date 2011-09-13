@@ -607,6 +607,13 @@ mex_resizing_hbox_move_focus (MxFocusable      *focusable,
 
   if (l)
     {
+      if (MEX_IS_COLUMN_VIEW (priv->current_focus))
+        mex_column_view_set_focus (MEX_COLUMN_VIEW (priv->current_focus),
+                                   FALSE);
+      if (MEX_IS_COLUMN_VIEW (l->data))
+        mex_column_view_set_focus (MEX_COLUMN_VIEW (l->data),
+                                   TRUE);
+
       priv->prev_width = priv->current_width;
       return mx_focusable_accept_focus (MX_FOCUSABLE (new_focus), hint);
     }
