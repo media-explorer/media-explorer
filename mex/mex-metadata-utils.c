@@ -347,6 +347,39 @@ mex_metadata_info_new (MexContentMetadata  key,
 }
 
 /**
+ * mex_metadata_info_new: (skip)
+ * @key: Metadata key
+ * @key_string: A field label for the metadata value
+ * @priority: How important this metadata is. 0 = High
+ *
+ * Container to pass through mex_metadata_get_metadata
+ *
+ * Returns: a new #MexMetadataInfo
+ */
+MexMetadataInfo *
+mex_metadata_info_new_with_visibility (MexContentMetadata key,
+                                       const gchar *key_string,
+                                       gint priority,
+                                       MexMetadataInfoVisibleCb visible_cb,
+                                       gpointer user_data)
+{
+  MexMetadataInfo *info = mex_metadata_info_new (key, key_string, priority);
+
+  info->visible_cb = visible_cb;
+  info->visible_data = user_data;
+
+  return info;
+}
+
+gboolean
+mex_metadata_info_get_visible (MexMetadataInfo *info, const gchar *value)
+{
+  return (info->visible_cb == NULL) ?
+    TRUE :
+    info->visible_cb (value, info->visible_data);
+}
+
+/**
  * mex_metadata_info_free:
  * @info: MexMetadaInfo
  *

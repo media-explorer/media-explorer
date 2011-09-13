@@ -23,12 +23,16 @@
 
 #include <mex/mex-content.h>
 
+typedef gboolean (*MexMetadataInfoVisibleCb) (const gchar *value, gpointer user_data);
+
 typedef struct
 {
-  MexContentMetadata key;
-  const gchar      *key_string;
-  gint              priority;
-  const gchar       *value;
+  MexContentMetadata        key;
+  const gchar              *key_string;
+  gint                      priority;
+  const gchar              *value;
+  MexMetadataInfoVisibleCb  visible_cb;
+  gpointer                  visible_data;
 } MexMetadataInfo;
 
 void mex_metadata_from_uri (const gchar *uri,
@@ -50,6 +54,15 @@ MexMetadataInfo *mex_metadata_info_new (MexContentMetadata key,
                                         const gchar *key_string,
                                         gint priority);
 
+MexMetadataInfo *mex_metadata_info_new_with_visibility (MexContentMetadata key,
+                                                        const gchar *key_string,
+                                                        gint priority,
+                                                        MexMetadataInfoVisibleCb visible_cb,
+                                                        gpointer user_data);
+
 void mex_metadata_info_free (MexMetadataInfo *info);
+
+gboolean mex_metadata_info_get_visible (MexMetadataInfo *info,
+                                        const gchar *value);
 
 #endif

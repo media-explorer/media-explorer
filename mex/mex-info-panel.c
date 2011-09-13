@@ -488,7 +488,8 @@ _set_metadata (MexInfoPanel *self, MexInfoPanelMime mime)
       MexMetadataInfo *info;
       info = temp->data;
 
-      if (!info->value)
+      if (!info->value ||
+          !mex_metadata_info_get_visible (info, info->value))
         continue;
 
       /* Add the separator after the first iteration has occurred (i>0) */
@@ -643,6 +644,14 @@ mex_info_panel_set_content (MexContentView *view, MexContent *content)
     }
 }
 
+static gboolean
+resume_visible_cb (const gchar *value, gpointer user_data)
+{
+  if (value && (atoi (value) > 0))
+    return TRUE;
+  return FALSE;
+}
+
 static void
 mex_info_panel_init (MexInfoPanel *self)
 {
@@ -691,9 +700,12 @@ mex_info_panel_init (MexInfoPanel *self)
                                           0));
   video_metadata_template =
     g_list_append (video_metadata_template,
-                   mex_metadata_info_new (MEX_CONTENT_METADATA_LAST_POSITION,
-                                          _("Resume from: "),
-                                          0));
+                   mex_metadata_info_new_with_visibility (
+                                MEX_CONTENT_METADATA_LAST_POSITION,
+                                _("Resume from: "),
+                                0,
+                                resume_visible_cb,
+                                self));
   video_metadata_template =
     g_list_append (video_metadata_template,
                    mex_metadata_info_new (MEX_CONTENT_METADATA_DURATION,
@@ -719,9 +731,12 @@ mex_info_panel_init (MexInfoPanel *self)
                                           0));
   music_metadata_template =
     g_list_append (music_metadata_template,
-                   mex_metadata_info_new (MEX_CONTENT_METADATA_LAST_POSITION,
-                                          _("Resume from: "),
-                                          0));
+                   mex_metadata_info_new_with_visibility (
+                                MEX_CONTENT_METADATA_LAST_POSITION,
+                                _("Resume from: "),
+                                0,
+                                resume_visible_cb,
+                                self));
   music_metadata_template =
     g_list_append (music_metadata_template,
                    mex_metadata_info_new (MEX_CONTENT_METADATA_DURATION,
