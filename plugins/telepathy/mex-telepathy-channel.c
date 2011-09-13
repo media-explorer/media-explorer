@@ -210,17 +210,13 @@ mex_telepathy_channel_on_hangup (MxAction *action,
 }
 
 static void
-mex_telepathy_channel_toggle_camera (MxAction *action,
-                                     gpointer  user_data)
+mex_telepathy_channel_set_camera_state (MexTelepathyChannel *self, gboolean on)
 {
-  MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
   MexTelepathyChannelPrivate *priv = self->priv;
-  TpyCallChannel *channel = TPY_CALL_CHANNEL (self->priv->channel);
+  MxAction *action = mx_button_get_action (
+    MX_BUTTON (self->priv->camera_button));
 
-  tpy_call_channel_send_video (channel, !priv->sending_video);
-  priv->sending_video = !priv->sending_video;
-
-  if (priv->sending_video)
+  if (on)
     {
       clutter_actor_show (priv->video_outgoing);
       // We are starting, so change the button to pause.
@@ -236,6 +232,20 @@ mex_telepathy_channel_toggle_camera (MxAction *action,
                                      priv->camera_button), "CameraOn");
       mx_action_set_display_name (action, "Camera On");
     }
+}
+
+static void
+mex_telepathy_channel_toggle_camera (MxAction *action,
+                                     gpointer  user_data)
+{
+  MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
+  MexTelepathyChannelPrivate *priv = self->priv;
+  TpyCallChannel *channel = TPY_CALL_CHANNEL (self->priv->channel);
+
+  priv->sending_video = !priv->sending_video;
+
+  tpy_call_channel_send_video (channel, priv->sending_video);
+  mex_telepathy_channel_set_camera_state (self, priv->sending_video);
 }
 
 void
@@ -452,7 +462,8 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                        self);
 
   priv->camera_button = mex_action_button_new (camera_action);
-  mx_stylable_set_style_class (MX_STYLABLE (priv->camera_button), "CameraOff");
+  /* off by default */
+  mex_telepathy_channel_set_camera_state (self, FALSE);
 
   mute_action =
     mx_action_new_full("Mute",
@@ -846,10 +857,6 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
                       mex_telepathy_channel_on_video_resolution_changed),
                     self);
 
-  g_signal_connect (content, "start-sending",
-                    G_CALLBACK (mex_telepathy_channel_on_video_start_sending),
-                    self);
-
   return result;
 }
 
@@ -1102,6 +1109,20 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
     }
 }
 
+static void
+mex_telepathy_channel_on_ready (TpyCallChannel *channel,
+  GParamSpec *spec, gpointer user_data)
+{
+  MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
+  MexTelepathyChannelPrivate *priv = self->priv;
+  TpySendingState state = tpy_call_channel_get_video_state (channel);
+
+  priv->sending_video = (state == TPY_SENDING_STATE_PENDING_SEND
+    || state == TPY_SENDING_STATE_SENDING);
+
+  mex_telepathy_channel_set_camera_state (self, priv->sending_video);
+}
+
 void
 mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
 {
@@ -1110,6 +1131,7 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
   GstBus *bus;
   GstElement *pipeline;
   GstStateChangeReturn ret;
+  gboolean ready;
 
   MEX_INFO ("New channel");
 
@@ -1150,6 +1172,9 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
                                          NULL, NULL, NULL, NULL);
 
   priv->channel = g_object_ref (priv->channel);
+  g_signal_connect (priv->channel, "notify::ready",
+                    G_CALLBACK (mex_telepathy_channel_on_ready),
+                    self);
   g_signal_connect (priv->channel, "invalidated",
                     G_CALLBACK (mex_telepathy_channel_on_proxy_invalidated),
                     self);
@@ -1157,6 +1182,10 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
   g_signal_connect (TPY_CALL_CHANNEL (priv->channel), "state-changed",
                     G_CALLBACK (mex_telepathy_channel_on_call_state_changed),
                     self);
+
+  g_object_get (priv->channel, "ready", &ready, NULL);
+  if (ready)
+    mex_telepathy_channel_on_ready (priv->channel, NULL, self);
 }
 
 static void
