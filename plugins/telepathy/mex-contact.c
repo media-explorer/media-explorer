@@ -436,6 +436,30 @@ mex_contact_on_capabilities_changed (TpContact  *contact,
   mex_contact_compute_mimetype(self);
 }
 
+static void
+mex_contact_on_avatar_file_changed  (TpContact  *contact,
+                                     GParamSpec *spec,
+                                     MexContact *self)
+{
+  MEX_DEBUG ("Avatar file changed");
+
+  MexContactPrivate *priv = self->priv;
+
+  GFile *file = tp_contact_get_avatar_file (priv->contact);
+  if (!file)
+    {
+      const gchar *dir = mex_get_data_dir ();
+      const gchar *tmp = g_build_filename (dir, "style", "thumb-call-avatar.png", NULL);
+      file = g_file_new_for_path (tmp);
+      priv->avatar_path = g_file_get_uri (file);
+      g_object_unref (file);
+    }
+  else
+    {
+      priv->avatar_path = g_file_get_uri (file);
+    }
+}
+
 void
 mex_contact_set_tp_contact (MexContact *self,
                             TpContact  *contact)
@@ -464,19 +488,7 @@ mex_contact_set_tp_contact (MexContact *self,
   g_object_ref(contact);
   priv->contact = contact;
 
-  GFile *file = tp_contact_get_avatar_file (priv->contact);
-  if (!file)
-    {
-      const gchar *dir = mex_get_data_dir ();
-      const gchar *tmp = g_build_filename (dir, "style", "thumb-call-avatar.png", NULL);
-      file = g_file_new_for_path(tmp);
-      priv->avatar_path = g_file_get_uri (file);
-      g_object_unref (file);
-    }
-  else
-    {
-      priv->avatar_path = g_file_get_uri (file);
-    }
+  mex_contact_on_avatar_file_changed (priv->contact, NULL, self);
 
   if (tp_contact_get_publish_state(contact) == TP_SUBSCRIPTION_STATE_ASK)
     {
@@ -495,6 +507,11 @@ mex_contact_set_tp_contact (MexContact *self,
   g_signal_connect (contact,
                     "notify::capabilities",
                     G_CALLBACK (mex_contact_on_capabilities_changed),
+                    self);
+
+  g_signal_connect (contact,
+                    "notify::avatar-file",
+                    G_CALLBACK (mex_contact_on_avatar_file_changed),
                     self);
 
   g_object_notify (G_OBJECT (self), "contact");
