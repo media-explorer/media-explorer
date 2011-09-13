@@ -57,8 +57,8 @@ struct _MexTelepathyChannelPrivate
   GstElement   *incoming_sink;
   GstElement   *outgoing_sink;
   GstElement   *outgoing_mic;
+  GstElement   *mic_volume;
   gboolean      sending_video;
-  gboolean      muted;
 
   GstElement   *pipeline;
   guint         buswatch;
@@ -121,6 +121,11 @@ mex_telepathy_channel_dispose (GObject *gobject)
     {
       g_object_unref (priv->outgoing_mic);
       priv->outgoing_mic = NULL;
+    }
+  if (priv->mic_volume)
+    {
+      g_object_unref (priv->mic_volume);
+      priv->mic_volume = NULL;
     }
   if (priv->pipeline)
     {
@@ -256,23 +261,20 @@ mex_telepathy_channel_toggle_mute (MxAction *action,
   MexTelepathyChannelPrivate *priv = self->priv;
   GstStateChangeReturn ret;
 
-  priv->muted = !priv->muted;
+  gboolean muted;
+  g_object_get (priv->mic_volume, "mute", &muted, NULL);
 
-  if (priv->muted)
+  muted = !muted;
+  g_object_set (priv->mic_volume, "mute", muted, NULL);
+
+  if (muted)
     {
-      if (gst_element_set_state (priv->outgoing_mic, GST_STATE_PAUSED)
-          == GST_STATE_CHANGE_FAILURE)
-        MEX_WARNING ("failed to mute microphone");
       mx_stylable_set_style_class (MX_STYLABLE(
                                      priv->mute_button), "MediaUnmute");
       mx_action_set_display_name (action, "Mic On");
     }
   else
     {
-      if (gst_element_set_state (priv->outgoing_mic, GST_STATE_PLAYING)
-          == GST_STATE_CHANGE_FAILURE)
-        MEX_WARNING ("failed to unmute microphone");
-
       mx_stylable_set_style_class (MX_STYLABLE(priv->mute_button), "MediaMute");
       mx_action_set_display_name (action, "Mic Off");
     }
@@ -886,9 +888,9 @@ mex_telepathy_channel_on_content_added (TfChannel *channel,
     case FS_MEDIA_TYPE_AUDIO:
       MEX_DEBUG ("Audio content added");
       element = gst_parse_bin_from_description (
-        "autoaudiosrc ! audioresample ! audioconvert ", TRUE, NULL);
+        "autoaudiosrc ! audioresample ! audioconvert ! volume name=micvolume", TRUE, NULL);
       priv->outgoing_mic = element;
-      priv->muted = FALSE;
+      priv->mic_volume = gst_bin_get_by_name (GST_BIN (priv->outgoing_mic), "micvolume");
       break;
     case FS_MEDIA_TYPE_VIDEO:
       MEX_DEBUG ("Video content added");
