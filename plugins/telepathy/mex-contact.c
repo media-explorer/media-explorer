@@ -280,8 +280,8 @@ mex_contact_compute_mimetype (MexContact *self)
 
           tp_value_array_unpack(arr, 2, &fixed, &allowed);
 
-          if (g_hash_table_size (fixed) != 2)
-            continue;
+          /* TODO: In the future, it might be useful to check if there are any
+             keys we don't understand */
 
           chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
           handle_type = tp_asv_get_uint32 (fixed,
