@@ -1,0 +1,159 @@
+*.mex-tweet-card-body
+{
+  border-image: url('tweet_bg.png') 0;
+  padding: 6 6 0 48;
+}
+
+*.mex-tweet-card-body:focus
+{
+  border-image: url('tweet_bg_highlight.png') 0;
+  padding: 6 6 0 48;
+}
+
+*.mex-tweet-card-avatar-frame
+{
+  padding: 6 0 0 0;
+}
+
+*.mex-tweet-card-author-button
+{
+  border-image: none;
+  color: #31312eff;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: "Droid Sans";
+}
+
+*.mex-tweet-card-author-button:focus
+{
+  border-image: none;
+  color: #31312eff;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: "Droid Sans";
+}
+
+
+
+*.mex-tweet-card-content-label
+{
+  font-size: 16px;
+  color: #31312eff;
+  padding: 6 6 2 13;
+  font-family: "Droid Sans";
+}
+
+*.mex-tweet-card-date-label
+{
+  font-size: 12px;
+  color: #5f5f5cff;
+  font-weight: bold;
+  padding: 2 6 13 13;
+  font-family: "Droid Sans";
+  border-image: url("hr.png") 2 0 0 0;
+}
+
+*#mex-twitter-applet-expander-box
+{
+  border-image: url('blurb-area-bg.png') 0;
+}
+
+*.mex-twitter-applet-options-button,
+*.mex-twitter-applet-options-button-toggled,
+*#mex-twitter-applet-close-button
+{
+  border-image: none;
+}
+
+*.mex-twitter-applet-options-button MxLabel,
+*.mex-twitter-applet-options-button-toggled MxLabel,
+*#mex-twitter-applet-close-button MxLabel
+{
+  font-family: "Droid Sans";
+  color: white;
+  font-size: 19px;
+}
+
+*#mex-twitter-applet-close-button MxIcon
+{
+  -mx-content-image: url("button-close-white.png");
+}
+
+
+*.mex-twitter-applet-options-button MxIcon
+{
+  -mx-content-image: url("button-arrow-down-white.png");
+}
+
+*.mex-twitter-applet-options-button-toggled MxIcon
+{
+  -mx-content-image: url("button-arrow-up-white.png");
+}
+
+*.mex-twitter-applet-options-button:focus,
+*.mex-twitter-applet-options-button-toggled:focus,
+*#mex-twitter-applet-close-button:focus
+{
+  border-image: url("button-bg-hover.png") 1 0;
+}
+
+*#mex-twitter-applet-blurb-label,
+*#mex-twitter-applet-filter-label
+{
+  font-family: "Droid Sans";
+  color: white;
+  font-size: 19px;
+}
+
+*#mex-twitter-applet-blurb-table
+{
+  padding: 6 6 6 12;
+}
+
+*#mex-twitter-applet-options-table
+{
+  border-image: url("hr.png") 2 0 0 0;
+  padding: 10 6 10 12;
+}
+
+*.mex-twitter-applet-toggled-button
+{
+  border-image: url("button-check.png") 1 22 22 1;
+  padding: 2 28 2 2;
+  font-size: 13px;
+  color: #31312e;
+  font-family: "Droid Sans";
+}
+
+*.mex-twitter-applet-untoggled-button
+{
+  border-image: url("button.png") 1 22 22 1;
+  padding: 2 28 2 2;
+  font-size: 13px;
+  color: #31312e;
+  font-family: "Droid Sans";
+}
+
+*.mex-twitter-applet-toggled-button:focus
+{
+  border-image: url("button-check-highlight.png") 1 22 22 1;
+  padding: 2 28 2 2;
+  font-size: 13px;
+  color: #31312e;
+  font-family: "Droid Sans";
+}
+
+*.mex-twitter-applet-untoggled-button:focus
+{
+  border-image: url("button-highlight.png") 1 22 22 1;
+  padding: 2 28 2 2;
+  font-size: 13px;
+  color: #31312e;
+  font-family: "Droid Sans";
+}
+
+*#mex-twitter-applet-scroll-view
+{
+  border-image: url("main_bg.png") 7 0 0 0;
+  padding: 10 0 11 16;
+}
