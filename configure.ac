@@ -409,7 +409,6 @@ AS_IF([test "x$enable_examples" = "xyes"],
       AC_DEFINE([ENABLE_EXAMPLES], [1], [Build examples]))
 
 # GTK Doc check
-enable_gtk_doc=no
 m4_ifdef([GTK_DOC_CHECK], [
 GTK_DOC_CHECK([1.13], [--flavour no-tmpl])
 ])
