@@ -224,7 +224,7 @@ mex_grid_view_allocate (ClutterActor           *actor,
                         ClutterAllocationFlags  flags)
 {
   MexGridViewPrivate *priv = MEX_GRID_VIEW (actor)->priv;
-  gfloat menu_min_width, menu_width;
+  gfloat menu_min_width, menu_width, grid_width;
   ClutterActorBox child_box;
 
   CLUTTER_ACTOR_CLASS (mex_grid_view_parent_class)->allocate (actor, box,
@@ -249,10 +249,13 @@ mex_grid_view_allocate (ClutterActor           *actor,
 
   child_box.y1 += GRID_TOP_PADDING;
   child_box.x1 = child_box.x1 + MENU_MIN_WIDTH;
+
+  grid_width = child_box.x2 - child_box.x1;
+
   if (priv->state == STATE_OPENING)
-    child_box.x2 = child_box.x2 * clutter_alpha_get_alpha (priv->alpha);
+    child_box.x2 = child_box.x1 + grid_width * clutter_alpha_get_alpha (priv->alpha);
   else if (priv->state == STATE_CLOSING_STAGE1)
-    child_box.x2 = child_box.x2 * (1 - clutter_alpha_get_alpha (priv->alpha));
+    child_box.x2 = child_box.x1 + grid_width * (1 - clutter_alpha_get_alpha (priv->alpha));
   else if (priv->state == STATE_CLOSED || priv->state == STATE_CLOSING_STAGE2)
     child_box.x2 = child_box.x1;
   clutter_actor_allocate (priv->grid_layout, &child_box, flags);
