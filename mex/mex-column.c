@@ -251,6 +251,10 @@ mex_column_remove (ClutterContainer *container,
       priv->has_focus = FALSE;
     }
 
+  g_signal_handlers_disconnect_by_func (actor,
+                                        content_box_open_notify,
+                                        container);
+
   /* Remove the old actor */
   if (priv->expand_timeline)
     g_signal_handlers_disconnect_by_func (priv->expand_timeline,
