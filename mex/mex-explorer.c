@@ -504,20 +504,17 @@ mex_explorer_unset_container_cb (gpointer  model,
 }
 
 static void
-mex_explorer_show_maybe_focus (GController          *controller,
-                               GControllerAction     action,
-                               GControllerReference *ref,
-                               MexModel             *model)
+mex_explorer_show_maybe_focus (ClutterActor *column,
+                               ClutterActor *box,
+                               MexExplorer  *explorer)
 {
-  MexExplorer *explorer =
-    MEX_EXPLORER (g_object_get_qdata (G_OBJECT (model),
-                                      mex_explorer_explorer_quark));
+  ClutterActor *column_view;
   MexExplorerPrivate *priv = explorer->priv;
-  ClutterActor *column_view =
-    CLUTTER_ACTOR (g_object_get_qdata (G_OBJECT (model),
-                                       mex_explorer_container_quark));
 
-  /* Show the scroll-view the column is in */
+  column_view = clutter_actor_get_parent (clutter_actor_get_parent (column));
+  g_assert (MEX_IS_COLUMN_VIEW (column_view));
+
+  /* Show the column-view the column is in */
   clutter_actor_show (column_view);
 
   if (priv->has_temporary_focus)
@@ -657,12 +654,11 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
    */
   if (!placeholder_text || !(*placeholder_text))
     {
-      GController *controller = mex_model_get_controller (model);
       clutter_actor_hide (column_view);
 
-      g_signal_connect (controller, "changed",
+      g_signal_connect (column, "actor-added",
                         G_CALLBACK (mex_explorer_show_maybe_focus),
-                        model);
+                        explorer);
     }
 
   /* Create the proxy to create objects for the column */
@@ -706,10 +702,10 @@ mex_explorer_model_removed_cb (MexAggregateModel *aggregate,
   ClutterActor *column_view = g_object_get_qdata (G_OBJECT (model),
                                                   mex_explorer_container_quark);
   ClutterActor *parent = clutter_actor_get_parent (column_view);
-  GController *controller = mex_model_get_controller (model);;
+  ClutterActor *column = (ClutterActor*) mex_column_view_get_column (MEX_COLUMN_VIEW (column_view));
 
-  /* Disconnect controller */
-  g_signal_handlers_disconnect_by_func (controller,
+  /* Disconnect container */
+  g_signal_handlers_disconnect_by_func (column,
                                         G_CALLBACK (mex_explorer_show_maybe_focus),
                                         explorer);
 
