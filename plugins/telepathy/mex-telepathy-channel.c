@@ -1,7 +1,7 @@
 /*
  * Mex - a media explorer
  *
- * Copyright  2011 Collabora Ltd.
+ * Copyright © 2011 Collabora Ltd.
  *   @author Jeremy Whiting <jeremy.whiting@collabora.com>
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -50,15 +50,21 @@ struct _MexTelepathyChannelPrivate
   ClutterActor *end_button;
   ClutterActor *title_label;
   ClutterActor *video_outgoing;
-  ClutterActor *video_incoming_area;
-  ClutterActor *calling_frame;
-  ClutterActor *calling_label;
+  ClutterActor *busy_box;
+  ClutterActor *busy_label;
+
+  ClutterActor *incoming_texture;
+  ClutterActor *toolbar_area;
+  ClutterActor *preview_area;
+
+  ClutterActor *full_frame;
 
   GstElement   *incoming_sink;
   GstElement   *outgoing_sink;
   GstElement   *outgoing_mic;
   GstElement   *mic_volume;
   gboolean      sending_video;
+  gboolean      show_page;
 
   GstElement   *pipeline;
   guint         buswatch;
@@ -107,27 +113,6 @@ mex_telepathy_channel_dispose (GObject *gobject)
       priv->video_call_page = NULL;
     }
 
-  if (priv->incoming_sink)
-    {
-      g_object_unref (priv->incoming_sink);
-      priv->incoming_sink = NULL;
-    }
-
-  if (priv->outgoing_sink)
-    {
-      g_object_unref (priv->outgoing_sink);
-      priv->outgoing_sink = NULL;
-    }
-  if (priv->outgoing_mic)
-    {
-      g_object_unref (priv->outgoing_mic);
-      priv->outgoing_mic = NULL;
-    }
-  if (priv->mic_volume)
-    {
-      g_object_unref (priv->mic_volume);
-      priv->mic_volume = NULL;
-    }
   if (priv->pipeline)
     {
       g_object_unref (priv->pipeline);
@@ -138,31 +123,21 @@ mex_telepathy_channel_dispose (GObject *gobject)
       g_object_unref (priv->connection);
       priv->connection = NULL;
     }
-  if (priv->channel)
-    {
-      g_object_unref (priv->channel);
-      priv->channel = NULL;
-    }
   if (priv->tf_channel)
     {
       g_object_unref (priv->tf_channel);
       priv->tf_channel = NULL;
     }
+  if (priv->channel)
+    {
+      g_object_unref (priv->channel);
+      priv->channel = NULL;
+    }
   if (priv->notifiers)
     {
-      g_object_unref (priv->notifiers);
+      g_list_foreach (priv->notifiers, (GFunc)g_object_unref, NULL);
+      g_list_free (priv->notifiers);
       priv->notifiers = NULL;
-    }
-
-  if (priv->video_input)
-    {
-      g_object_unref (priv->video_input);
-      priv->video_input = NULL;
-    }
-  if (priv->video_capsfilter)
-    {
-      g_object_unref (priv->video_capsfilter);
-      priv->video_capsfilter = NULL;
     }
 }
 
@@ -187,7 +162,7 @@ mex_telepathy_channel_on_video_shown (ClutterActor *actor,
   ClutterStage *stage;
   MxFocusManager *fmanager;
 
-  clutter_actor_hide (CLUTTER_ACTOR (priv->video_incoming_area) );
+  clutter_actor_hide (CLUTTER_ACTOR (priv->full_frame) );
 
   stage = CLUTTER_STAGE (clutter_actor_get_stage (CLUTTER_ACTOR (actor)));
 
@@ -281,150 +256,18 @@ mex_telepathy_channel_toggle_mute (MxAction *action,
     }
 }
 
-static void
-mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
+void
+mex_telepathy_channel_create_toolbar (MexTelepathyChannel *self)
 {
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
 
   gchar *static_image_path;
-
   ClutterActor *toolbar;
-  ClutterActor *toolbar_area;
-  ClutterActor *video_preview_padding;
-  ClutterActor *video_preview_area;
-  ClutterActor *static_outgoing;
-  ClutterActor *video_incoming;
 
   MxAction *end_action;
   MxAction *camera_action;
   MxAction *mute_action;
-  ClutterActor *calling_padding;
-  ClutterActor *calling_box;
-  ClutterActor *spinner;
-
   GError *error = NULL;
-
-  MexShadow *shadow;
-  ClutterColor shadow_color = {0, 0, 0, 64};
-
-  MEX_DEBUG ("creating video page");
-
-  shadow = mex_shadow_new ();
-
-  mex_shadow_set_radius_x (shadow, 15);
-  mex_shadow_set_radius_y (shadow, 15);
-  mex_shadow_set_color (shadow, &shadow_color);
-
-  priv->video_outgoing = clutter_texture_new ();
-  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->video_outgoing),
-                                         TRUE);
-
-  priv->outgoing_sink =
-    clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->video_outgoing));
-
-  static_image_path = g_build_filename (mex_get_data_dir (),
-                                        "style",
-                                        "thumb-call-pip-off.png",
-                                        NULL);
-
-  static_outgoing = clutter_texture_new_from_file (static_image_path,
-                                                   &error);
-  if (error)
-    {
-      g_warning ("Error loading texture %s", error->message);
-      g_clear_error (&error);
-    }
-
-  if (static_image_path)
-    g_free (static_image_path);
-
-  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE
-                                         (static_outgoing), TRUE);
-
-  priv->calling_label = mx_label_new();
-  mx_label_set_y_align (MX_LABEL (priv->calling_label), MX_ALIGN_MIDDLE);
-  mx_label_set_x_align (MX_LABEL (priv->calling_label), MX_ALIGN_MIDDLE);
-
-  spinner = mx_spinner_new ();
-
-  calling_box = mx_box_layout_new ();
-
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
-                                           priv->calling_label,
-                                           0,
-                                           "expand",
-                                           TRUE,
-                                           "x-align",
-                                           MX_ALIGN_START,
-                                           "x-fill",
-                                           FALSE,
-                                           NULL);
-
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
-                                           spinner,
-                                           1,
-                                           "expand",
-                                           TRUE,
-                                           "x-align",
-                                           MX_ALIGN_END,
-                                           "x-fill",
-                                           FALSE,
-                                           NULL);
-
-  priv->calling_frame = mx_frame_new ();
-  clutter_actor_set_width (CLUTTER_ACTOR (priv->calling_frame), 475);
-  mx_stylable_set_style_class (MX_STYLABLE (priv->calling_frame),
-                               "CallingFrameBorder");
-  calling_padding = mx_frame_new ();
-  mx_stylable_set_style_class (MX_STYLABLE (calling_padding),
-                               "CallingFrame");
-  mx_bin_set_child (MX_BIN (priv->calling_frame), calling_padding);
-  mx_bin_set_fill (MX_BIN (priv->calling_frame), TRUE, TRUE);
-  mx_bin_set_child (MX_BIN (calling_padding), calling_box);
-  mx_bin_set_fill (MX_BIN (calling_padding), TRUE, TRUE);
-
-  priv->video_incoming_area = mx_frame_new();
-  video_incoming = clutter_texture_new ();
-  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (video_incoming),
-                                         TRUE);
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->video_incoming_area),
-                               video_incoming);
-
-  mx_bin_set_fill (MX_BIN (priv->video_incoming_area),
-                   TRUE,
-                   TRUE);
-  clutter_actor_set_width (video_incoming, 768.0);
-  clutter_actor_set_height (video_incoming, 576.0);
-  mx_stylable_set_style_class (MX_STYLABLE (priv->video_incoming_area),
-                               "CallWindow");
-  clutter_actor_add_effect (priv->video_incoming_area,
-                            CLUTTER_EFFECT (shadow));
-
-  priv->incoming_sink =
-    clutter_gst_video_sink_new (CLUTTER_TEXTURE (video_incoming));
-
-  video_preview_area = mx_stack_new ();
-
-  clutter_container_add (CLUTTER_CONTAINER (video_preview_area),
-                         static_outgoing,
-                         priv->video_outgoing,
-                         NULL);
-
-  mx_stylable_set_style_class (MX_STYLABLE (video_preview_area),
-                               "PreviewStack");
-
-  clutter_actor_set_height (video_preview_area, 150.0);
-  clutter_actor_add_effect (video_preview_area,
-                            CLUTTER_EFFECT (shadow));
-
-  video_preview_padding = mx_frame_new ();
-  mx_stylable_set_style_class (MX_STYLABLE (video_preview_padding),
-                               "PreviewPadding");
-  mx_bin_set_child (MX_BIN (video_preview_padding), video_preview_area);
-
-  /* Top container */
-  priv->video_call_page = mx_stack_new ();
 
   // Create the user label
   priv->avatar_image = mx_image_new ();
@@ -437,10 +280,10 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                           &error);
 
   if (error)
-    {
-      g_warning ("Error loading texture %s", error->message);
-      g_clear_error (&error);
-    }
+  {
+    g_warning ("Error loading texture %s", error->message);
+    g_clear_error (&error);
+  }
 
   if (static_image_path)
     g_free (static_image_path);
@@ -448,7 +291,6 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   priv->title_label = mx_label_new ();
   mx_label_set_y_align (MX_LABEL (priv->title_label), MX_ALIGN_MIDDLE);
   mx_label_set_x_align (MX_LABEL (priv->title_label), MX_ALIGN_MIDDLE);
-
 
   end_action =
     mx_action_new_full ("End",
@@ -523,82 +365,286 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                                            TRUE,
                                            NULL);
 
-  toolbar_area = mx_frame_new ();
-  mx_bin_set_child (MX_BIN (toolbar_area), toolbar);
-  mx_stylable_set_style_class (MX_STYLABLE (toolbar_area),
+  priv->toolbar_area = mx_frame_new ();
+  mx_bin_set_child (MX_BIN (priv->toolbar_area), toolbar);
+  mx_stylable_set_style_class (MX_STYLABLE (priv->toolbar_area),
                                "ToolbarArea");
+}
+
+void
+mex_telepathy_channel_create_preview (MexTelepathyChannel *self)
+{
+  MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
+
+  ClutterActor *video_preview_area;
+
+  ClutterActor *static_outgoing;
+  MexShadow *shadow;
+
+  gchar *static_image_path;
+  GError *error = NULL;
+
+  priv->video_outgoing = clutter_texture_new ();
+  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->video_outgoing),
+                                         TRUE);
+
+  priv->outgoing_sink =
+    clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->video_outgoing));
+
+  static_image_path = g_build_filename (mex_get_data_dir (),
+                                        "style",
+                                        "thumb-call-pip-off.png",
+                                        NULL);
+
+  static_outgoing = clutter_texture_new_from_file (static_image_path,
+                    &error);
+  if (error)
+  {
+    g_warning ("Error loading texture %s", error->message);
+    g_clear_error (&error);
+  }
+
+  if (static_image_path)
+    g_free (static_image_path);
+
+  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE
+                                         (static_outgoing), TRUE);
+
+  video_preview_area = mx_stack_new ();
+
+  clutter_container_add (CLUTTER_CONTAINER (video_preview_area),
+                         static_outgoing,
+                         priv->video_outgoing,
+                         NULL);
+
+  mx_stylable_set_style_class (MX_STYLABLE (video_preview_area),
+                               "PreviewStack");
+
+  shadow = mex_shadow_new ();
+
+  mex_shadow_set_radius_x (shadow, 15);
+  mex_shadow_set_radius_y (shadow, 15);
+  ClutterColor shadow_color = {0, 0, 0, 64};
+  mex_shadow_set_color (shadow, &shadow_color);
+
+  clutter_actor_set_height (video_preview_area, 150.0);
+  clutter_actor_add_effect (video_preview_area,
+                            CLUTTER_EFFECT (shadow));
+
+  priv->preview_area = mx_frame_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (priv->preview_area),
+                               "PreviewPadding");
+  mx_bin_set_child (MX_BIN (priv->preview_area), video_preview_area);
+}
+
+void
+mex_telepathy_channel_create_busy_box (MexTelepathyChannel *self)
+{
+  MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
+
+  ClutterActor *calling_padding;
+  ClutterActor *calling_box;
+  ClutterActor *spinner;
+
+  priv->busy_label = mx_label_new();
+  mx_label_set_y_align (MX_LABEL (priv->busy_label), MX_ALIGN_MIDDLE);
+  mx_label_set_x_align (MX_LABEL (priv->busy_label), MX_ALIGN_MIDDLE);
+
+  spinner = mx_spinner_new ();
+
+  calling_box = mx_box_layout_new ();
+
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
+                                           priv->busy_label,
+                                           0,
+                                           "expand",
+                                           TRUE,
+                                           "x-align",
+                                           MX_ALIGN_START,
+                                           "x-fill",
+                                           FALSE,
+                                           NULL);
+
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
+                                           spinner,
+                                           1,
+                                           "expand",
+                                           TRUE,
+                                           "x-align",
+                                           MX_ALIGN_END,
+                                           "x-fill",
+                                           FALSE,
+                                           NULL);
+
+  priv->busy_box = mx_frame_new ();
+  clutter_actor_set_width (CLUTTER_ACTOR (priv->busy_box), 475);
+  mx_stylable_set_style_class (MX_STYLABLE (priv->busy_box),
+                               "CallingFrameBorder");
+  calling_padding = mx_frame_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (calling_padding),
+                               "CallingFrame");
+  mx_bin_set_child (MX_BIN (priv->busy_box), calling_padding);
+  mx_bin_set_fill (MX_BIN (priv->busy_box), TRUE, TRUE);
+  mx_bin_set_child (MX_BIN (calling_padding), calling_box);
+  mx_bin_set_fill (MX_BIN (calling_padding), TRUE, TRUE);
+}
+
+void
+mex_telepathy_channel_create_incoming_video (MexTelepathyChannel *self)
+{
+  MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
+
+  MexShadow *shadow;
+
+  shadow = mex_shadow_new ();
+
+  mex_shadow_set_radius_x (shadow, 15);
+  mex_shadow_set_radius_y (shadow, 15);
+  ClutterColor shadow_color = {0, 0, 0, 64};
+  mex_shadow_set_color (shadow, &shadow_color);
+
+  /* Setup the incoming surface to draw to */
+  priv->incoming_texture = clutter_texture_new ();
+  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->incoming_texture),
+                                         TRUE);
+
+  /* Create a frame for it with a styled border */
+  priv->full_frame = mx_frame_new();
+  clutter_actor_set_name (priv->full_frame, "Incoming Frame");
+  clutter_actor_set_width (priv->full_frame, 768.0);
+  clutter_actor_set_height (priv->full_frame, 576.0);
+  mx_bin_set_fill (MX_BIN (priv->full_frame), TRUE, TRUE);
+  mx_stylable_set_style_class (MX_STYLABLE (priv->full_frame),
+                               "CallWindow");
+  clutter_actor_add_effect (priv->full_frame,
+                            CLUTTER_EFFECT (shadow));
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->full_frame),
+                               priv->incoming_texture);
+
+  priv->incoming_sink =
+    clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->incoming_texture));
+}
+
+void
+mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
+{
+  MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
+
+  /* Create the widgets to place */
+  mex_telepathy_channel_create_toolbar (self);
+  mex_telepathy_channel_create_preview (self);
+  mex_telepathy_channel_create_busy_box (self);
+  mex_telepathy_channel_create_incoming_video (self);
+
+  /* Top container */
+  priv->video_call_page = mx_stack_new ();
 
   clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
-                         priv->video_incoming_area,
-                         priv->calling_frame,
-                         video_preview_padding,
-                         toolbar_area,
+                         priv->full_frame,
+                         priv->busy_box,
+                         priv->preview_area,
+                         priv->toolbar_area,
                          NULL);
 
   /* Arrange the preview video area on the page */
   mx_stack_child_set_x_align (MX_STACK (priv->video_call_page),
-                              video_preview_padding,
+                              priv->preview_area,
                               MX_ALIGN_END);
 
   mx_stack_child_set_y_align (MX_STACK (priv->video_call_page),
-                              video_preview_padding,
+                              priv->preview_area,
                               MX_ALIGN_START);
 
   mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
-                             video_preview_padding,
+                             priv->preview_area,
                              FALSE);
 
   mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
-                             video_preview_padding,
+                             priv->preview_area,
                              FALSE);
 
+  /* Arrange the incoming video area on the page */
   mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
-                             priv->video_incoming_area,
+                             priv->full_frame,
                              FALSE);
 
   mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
-                             priv->video_incoming_area,
+                             priv->full_frame,
                              FALSE);
 
+  /* Arrange the busy box on the page */
   mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
-                             priv->calling_frame,
+                             priv->busy_box,
                              FALSE);
 
   mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
-                             priv->calling_frame,
+                             priv->busy_box,
                              FALSE);
 
   /* Arrange the toolbar area on the page */
   mx_stack_child_set_x_align (MX_STACK (priv->video_call_page),
-                              toolbar_area,
+                              priv->toolbar_area,
                               MX_ALIGN_MIDDLE);
 
   mx_stack_child_set_y_align (MX_STACK (priv->video_call_page),
-                              toolbar_area,
+                              priv->toolbar_area,
                               MX_ALIGN_END);
 
   mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
-                             toolbar_area,
+                             priv->toolbar_area,
                              TRUE);
 
   mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
-                             toolbar_area,
+                             priv->toolbar_area,
                              FALSE);
 
-  // Connect to hide signals.
+  /* Connect to hide signals. */
   g_signal_connect (priv->video_call_page,
                     "hide",
                     G_CALLBACK (mex_telepathy_channel_on_video_closed),
                     self);
 
-  // Connect to show signals.
+  /* Connect to show signals. */
   g_signal_connect (priv->video_call_page,
                     "show",
                     G_CALLBACK (mex_telepathy_channel_on_video_shown),
                     self);
 
-  if (error)
-    g_error_free (error);
+  if (priv->show_page)
+    {
+      g_signal_emit (self,
+                     mex_telepathy_channel_signals[SHOW_ACTOR],
+                     0,
+                     g_object_ref (priv->video_call_page));
+      priv->show_page = FALSE;
+    }
+}
+
+void
+mex_telepathy_channel_set_tool_mode (MexTelepathyChannel *self,
+                                    MexToolMode mode,
+                                    guint duration)
+{
+  MexTelepathyChannelPrivate *priv = self->priv;
+
+  if (mode == TOOL_MODE_PIP)
+    {
+      clutter_actor_set_width (priv->full_frame, 320.0);
+      clutter_actor_set_height (priv->full_frame, 240.0);
+      /* Hide the toolbar and preview areas */
+      clutter_actor_hide (priv->toolbar_area);
+      clutter_actor_hide (priv->preview_area);
+      clutter_actor_hide (priv->busy_box);
+    }
+  else if (mode == TOOL_MODE_FULL)
+    {
+      clutter_actor_set_width (priv->full_frame, 768.0);
+      clutter_actor_set_height (priv->full_frame, 576.0);
+      /* Show the toolbar and preview areas */
+      clutter_actor_show (priv->toolbar_area);
+      clutter_actor_show (priv->preview_area);
+      clutter_actor_show (priv->busy_box);
+    }
 }
 
 static gboolean
@@ -644,7 +690,7 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
   GstStateChangeReturn ret;
 
   /* Upon pad added, clear the "in progress" box+padding */
-  clutter_actor_hide (CLUTTER_ACTOR (priv->calling_frame));
+  clutter_actor_hide (CLUTTER_ACTOR (priv->busy_box));
 
   MEX_DEBUG ("New src pad: %s", cstr);
   g_object_get (content, "media-type", &mtype, NULL);
@@ -657,21 +703,24 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
         TRUE, NULL);
       break;
     case FS_MEDIA_TYPE_VIDEO:
-      element = self->priv->incoming_sink;
-      clutter_actor_show (CLUTTER_ACTOR (priv->video_incoming_area) );
+      element = priv->incoming_sink;
+      clutter_actor_show (CLUTTER_ACTOR (priv->full_frame) );
       break;
     default:
       MEX_WARNING ("Unknown media type");
       return;
     }
 
-  gst_bin_add (GST_BIN (priv->pipeline), element);
+  if (!gst_bin_add (GST_BIN (priv->pipeline), element))
+    {
+      MEX_WARNING ("Failed to add sink element to pipeline");
+    }
   sinkpad = gst_element_get_pad (element, "sink");
   ret = gst_element_set_state (element, GST_STATE_PLAYING);
   if (ret == GST_STATE_CHANGE_FAILURE)
     {
       tp_channel_close_async (TP_CHANNEL (priv->channel), NULL, NULL);
-      MEX_WARNING ("Failed to start sink pipeline !?");
+      MEX_WARNING ("Failed to start tee sink pipeline !?");
       return;
     }
 
@@ -832,8 +881,10 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
       MEX_WARNING("Couldn't create tee element !?");
       return NULL;
     }
+
   teesink = gst_element_get_pad(tee, "sink");
-  gst_bin_add (GST_BIN(result), tee);
+  gst_bin_add (GST_BIN (result), tee);
+
   if (GST_PAD_LINK_FAILED (gst_pad_link (pad, teesink)))
     {
       MEX_WARNING ("Couldn't link source pipeline to tee !?");
@@ -940,6 +991,7 @@ mex_telepathy_channel_conference_added (TfChannel  *channel,
   MexTelepathyChannelPrivate *priv = self->priv;
 
   GKeyFile *keyfile;
+  ClutterMedia *player;
 
   MEX_INFO ("Conference added");
 
@@ -960,10 +1012,13 @@ mex_telepathy_channel_conference_added (TfChannel  *channel,
   gst_bin_add (GST_BIN (priv->pipeline), conference);
   gst_element_set_state (conference, GST_STATE_PLAYING);
 
-  g_signal_emit(self,
-                mex_telepathy_channel_signals[SHOW_ACTOR],
-                0,
-                g_object_ref (priv->video_call_page));
+  if (priv->video_call_page)
+    g_signal_emit (self,
+                   mex_telepathy_channel_signals[SHOW_ACTOR],
+                   0,
+                   g_object_ref (priv->video_call_page));
+  else
+    priv->show_page = TRUE;
 }
 
 static gboolean
@@ -971,7 +1026,7 @@ mex_telepathy_channel_dump_pipeline (gpointer user_data)
 {
   MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
 
-  if (self->priv->pipeline)
+  if (self->priv && self->priv->pipeline)
     {
       GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS (GST_BIN (self->priv->pipeline),
                                          GST_DEBUG_GRAPH_SHOW_ALL,
@@ -1049,12 +1104,17 @@ mex_telepathy_channel_on_proxy_invalidated (TpProxy *proxy,
     }
 
   if (priv->tf_channel != NULL)
-    g_object_unref (priv->tf_channel);
+    {
+      g_object_unref (priv->tf_channel);
+      priv->tf_channel = NULL;
+    }
 
   g_list_foreach (priv->notifiers, (GFunc)g_object_unref, NULL);
   g_list_free (priv->notifiers);
+  priv->notifiers = NULL;
 
   g_object_unref (priv->channel);
+  priv->channel = NULL;
 
   g_signal_emit (self,
                  mex_telepathy_channel_signals[HIDE_ACTOR],
@@ -1096,7 +1156,7 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
         text = g_strdup_printf ("Calling %s", alias);
       else
         text = g_strdup_printf ("Setting up call with %s", alias);
-      mx_label_set_text (MX_LABEL (self->priv->calling_label), text);
+      mx_label_set_text (MX_LABEL (self->priv->busy_label), text);
       g_free (text);
 
       file = tp_contact_get_avatar_file (current);
@@ -1197,11 +1257,7 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
 
   g_object_get (priv->channel, "ready", &ready, NULL);
   if (ready)
-    {
-      mex_telepathy_channel_on_ready (TPY_CALL_CHANNEL (priv->channel),
-                                      NULL,
-                                      self);
-    }
+    mex_telepathy_channel_on_ready (TPY_CALL_CHANNEL (priv->channel), NULL, self);
 }
 
 static void
@@ -1315,6 +1371,7 @@ mex_telepathy_channel_init (MexTelepathyChannel *self)
   self->priv->connection = NULL;
   self->priv->channel = NULL;
   self->priv->tf_channel = NULL;
+  self->priv->show_page = FALSE;
   mex_telepathy_channel_create_video_page (self);
 }
 

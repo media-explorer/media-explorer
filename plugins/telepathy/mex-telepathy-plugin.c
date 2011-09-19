@@ -84,7 +84,7 @@ struct _MexTelepathyPluginPrivate
   GList *contacts;
   GHashTable *contact_accounts;
 
-  GList                      *channels;
+  MexTelepathyChannel        *channel;
   TpAccountManager           *account_manager;
   TpBaseClient               *client;
   TpBaseClient               *approver;
@@ -139,10 +139,10 @@ mex_telepathy_plugin_dispose (GObject *gobject)
       priv->contacts = g_list_delete_link (priv->contacts, priv->contacts);
     }
 
-  while (priv->channels)
+  while (priv->channel)
     {
-      g_object_unref (priv->channels->data);
-      priv->channels = g_list_delete_link (priv->channels, priv->channels);
+      g_object_unref (priv->channel);
+      priv->channel = NULL;
     }
 
   mex_model_clear (priv->model);
@@ -620,12 +620,7 @@ mex_telepathy_plugin_on_account_status_changed (TpAccount  *account,
     }
 }
 
-static void
-tool_provider_iface_init (MexToolProviderInterface *iface G_GNUC_UNUSED)
-{
-}
-
-static void
+void
 mex_telepathy_plugin_on_presence_request_finished (GObject      *source_object,
                                                    GAsyncResult *res,
                                                    gpointer      user_data G_GNUC_UNUSED)
@@ -767,6 +762,20 @@ mex_telepathy_plugin_hide_prompt_dialog (MexTelepathyPlugin *self)
   self->priv->dialog = NULL;
 }
 
+
+static void
+mex_telepathy_plugin_set_tool_mode (MexToolProvider *provider,
+                                   MexToolMode mode,
+                                   guint duration)
+{
+  MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (provider);
+  if (self->priv->channel)
+    {
+      MEX_INFO ("Setting toolmode on tool to %d", mode);
+      mex_telepathy_channel_set_tool_mode (self->priv->channel, mode, duration);
+    }
+}
+
 static void
 mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler         *handler G_GNUC_UNUSED,
                                           TpAccount               *account        G_GNUC_UNUSED,
@@ -790,20 +799,24 @@ mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler         *handler G_GNU
 
   tp_handle_channels_context_accept (handler_context);
 
-  channel = g_object_new (MEX_TYPE_TELEPATHY_CHANNEL,
+  if (priv->channel)
+    {
+      /* Close previous channel so we can start a new one */
+      g_object_unref(priv->channel);
+    }
+
+  priv->channel = g_object_new (MEX_TYPE_TELEPATHY_CHANNEL,
                           "connection", connection,
                           "channel", proxy,
                           NULL);
-  g_signal_connect (channel,
+  g_signal_connect (priv->channel,
                     "show-actor",
                     G_CALLBACK (mex_telepathy_plugin_on_show_call),
                     self);
-  g_signal_connect (channel,
+  g_signal_connect (priv->channel,
                     "hide-actor",
                     G_CALLBACK (mex_telepathy_plugin_on_hide_call),
                     self);
-
-  priv->channels = g_list_append (priv->channels, g_object_ref (channel));
 }
 
 static void
@@ -1262,6 +1275,12 @@ action_provider_iface_init (MexActionProviderInterface *iface)
 
 {
   iface->get_actions = mex_telepathy_plugin_get_actions;
+}
+
+static void
+tool_provider_iface_init (MexToolProviderInterface *iface)
+{
+  iface->set_tool_mode = mex_telepathy_plugin_set_tool_mode;
 }
 
 static GType
