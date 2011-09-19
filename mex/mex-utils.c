@@ -27,6 +27,7 @@
 
 #include <mex/mex-content-view.h>
 #include <mex/mex-program.h>
+#include <mex/mex-settings.h>
 
 #ifdef HAVE_COGL_GLES2
 
@@ -817,4 +818,31 @@ mex_content_from_uri (const gchar *uri)
                             uri);
 
   return MEX_CONTENT (program);
+}
+
+/* Note setting backend is to be rewritten in future versions */
+GKeyFile *
+mex_get_settings_key_file (void)
+{
+  gchar *settings_path;
+
+  settings_path = mex_settings_find_config_file (mex_settings_get_default (),
+                                                 "mex.conf");
+
+  if (settings_path)
+    {
+      GKeyFile *mex_conf;
+
+      mex_conf = g_key_file_new ();
+
+      g_key_file_load_from_file (mex_conf,
+                                 settings_path,
+                                 G_KEY_FILE_NONE,
+                                 NULL);
+
+      g_free (settings_path);
+
+      return mex_conf;
+    }
+  return NULL;
 }

@@ -120,4 +120,6 @@ gboolean mex_actor_has_focus (MxFocusManager *manager,
 
 MexContent *mex_content_from_uri (const gchar *uri);
 
+GKeyFile *mex_get_settings_key_file (void);
+
 #endif /* _MEX_UTILS_H */
