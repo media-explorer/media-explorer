@@ -138,8 +138,12 @@ mex_library_plugin_init (MexLibraryPlugin *self)
       GList *query_keys;
       MexFeed *feed;
       GrlMedia *box;
+      gchar **paths;
       const gchar *path;
       MexModelInfo *video_info, *photo_info, *music_info;
+      GKeyFile *mex_settings_key;
+      gint paths_len, i;
+      GList *metadata_keys;
 
       query_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
                                               GRL_METADATA_KEY_TITLE,
@@ -148,96 +152,180 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                               GRL_METADATA_KEY_DATE,
                                               NULL);
 
-      /* Add the videos model */
       path = g_get_user_special_dir (G_USER_DIRECTORY_VIDEOS);
-      box = mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
-                                                 query_keys, path);
 
-      if (box)
+      /* Add the videos model */
+
+      metadata_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                 GRL_METADATA_KEY_DESCRIPTION,
+                                                 GRL_METADATA_KEY_DURATION,
+                                                 GRL_METADATA_KEY_THUMBNAIL,
+                                                 GRL_METADATA_KEY_WIDTH,
+                                                 GRL_METADATA_KEY_HEIGHT,
+                                                 NULL);
+
+      mex_settings_key = mex_get_settings_key_file ();
+      paths = g_key_file_get_string_list (mex_settings_key,
+                                          "library-plugin",
+                                          "video_paths",
+                                          &paths_len,
+                                          NULL);
+
+     paths = (gchar **)g_realloc ((gpointer)paths,
+                                  (paths_len + 2) * sizeof (gchar *));
+
+     paths[paths_len] =
+       g_strdup (g_get_user_special_dir (G_USER_DIRECTORY_VIDEOS));
+
+     paths_len++;
+     paths[paths_len] = NULL;
+
+      if (paths)
         {
-          GList *metadata_keys =
-            grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
-                                       GRL_METADATA_KEY_DESCRIPTION,
-                                       GRL_METADATA_KEY_DURATION,
-                                       GRL_METADATA_KEY_THUMBNAIL,
-                                       GRL_METADATA_KEY_WIDTH,
-                                       GRL_METADATA_KEY_HEIGHT,
-                                       NULL);
+          for (i = 0; i < paths_len; i++)
+            {
+              box =
+                mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
+                                                     query_keys, paths[i]);
+              if (box)
+                {
+                  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                                             query_keys, metadata_keys, box);
 
-          feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
-                                     query_keys, metadata_keys, box);
-          g_object_set (feed, "icon-name", "icon-library",
-                        "placeholder-text", "No videos found", NULL);
+                  g_object_set (feed, "icon-name", "icon-library",
+                                "placeholder-text", "No videos found", NULL);
 
+                  mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
 
-          mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
+                  video_info =
+                    mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
+                                                        "videos",
+                                                        i*-1);
 
-          video_info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
-                                                           "videos", 0);
-          priv->models = g_list_append (priv->models, video_info);
-          g_object_unref (feed);
-          g_list_free (metadata_keys);
+                  priv->models = g_list_append (priv->models, video_info);
+                  g_object_unref (feed);
+                }
+            }
         }
+
+      if (metadata_keys)
+        g_list_free (metadata_keys);
+      if (paths)
+        g_strfreev (paths);
 
       /* Add the photos model */
-      path = g_get_user_special_dir (G_USER_DIRECTORY_PICTURES);
-      box = mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
-                                                 query_keys, path);
 
-      if (box)
+      metadata_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                 GRL_METADATA_KEY_DESCRIPTION,
+                                                 GRL_METADATA_KEY_THUMBNAIL,
+                                                 GRL_METADATA_KEY_WIDTH,
+                                                 GRL_METADATA_KEY_HEIGHT,
+                                                 NULL);
+
+      paths = g_key_file_get_string_list (mex_settings_key,
+                                          "library-plugin",
+                                          "pictures_paths",
+                                          &paths_len,
+                                          NULL);
+
+      paths = (gchar **)g_realloc ((gpointer)paths,
+                                   (paths_len + 2) * sizeof (gchar *));
+
+      paths[paths_len] =
+        g_strdup (g_get_user_special_dir (G_USER_DIRECTORY_PICTURES));
+
+      paths_len++;
+      paths[paths_len] = NULL;
+
+      if (paths)
         {
-          GList *metadata_keys =
-            grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
-                                       GRL_METADATA_KEY_DESCRIPTION,
-                                       GRL_METADATA_KEY_THUMBNAIL,
-                                       GRL_METADATA_KEY_WIDTH,
-                                       GRL_METADATA_KEY_HEIGHT,
-                                       NULL);
+          for (i = 0; i < paths_len; i++)
+            {
+              box =
+                mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
+                                                     query_keys, paths[i]);
+              if (box)
+                {
+                  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                                             query_keys, metadata_keys, box);
+                  g_object_set (feed, "icon-name", "icon-library",
+                                "placeholder-text", "No pictures found", NULL);
 
-          feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
-                                     query_keys, metadata_keys, box);
-          g_object_set (feed, "icon-name", "icon-library",
-                        "placeholder-text", "No pictures found", NULL);
+                  mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
 
-          mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
-
-          photo_info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
-                                                           "pictures", 0);
-          priv->models = g_list_append (priv->models, photo_info);
-          g_object_unref (feed);
-          g_list_free (metadata_keys);
+                  photo_info =
+                    mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
+                                                        "pictures", 0);
+                  priv->models = g_list_append (priv->models, photo_info);
+                  g_object_unref (feed);
+                }
+            }
         }
+
+      if (metadata_keys)
+        g_list_free (metadata_keys);
+      if (paths)
+        g_strfreev (paths);
 
       /* Add the music model */
-      path = g_get_user_special_dir (G_USER_DIRECTORY_MUSIC);
-      box = mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
-                                                 query_keys, path);
+      metadata_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                 GRL_METADATA_KEY_DESCRIPTION,
+                                                 GRL_METADATA_KEY_THUMBNAIL,
+                                                 GRL_METADATA_KEY_WIDTH,
+                                                 GRL_METADATA_KEY_HEIGHT,
+                                                 GRL_METADATA_KEY_ARTIST,
+                                                 GRL_METADATA_KEY_ALBUM,
+                                                 NULL);
 
-      if (box)
+      paths = g_key_file_get_string_list (mex_settings_key,
+                                          "library-plugin",
+                                          "music_paths",
+                                          &paths_len,
+                                          NULL);
+
+      paths = (gchar **)g_realloc ((gpointer)paths,
+                                   (paths_len + 2) * sizeof (gchar *));
+
+      paths[paths_len] =
+        g_strdup (g_get_user_special_dir (G_USER_DIRECTORY_MUSIC));
+
+      paths_len++;
+      paths[paths_len] = NULL;
+
+      if (paths)
         {
-          GList *metadata_keys =
-            grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
-                                       GRL_METADATA_KEY_DESCRIPTION,
-                                       GRL_METADATA_KEY_THUMBNAIL,
-                                       GRL_METADATA_KEY_WIDTH,
-                                       GRL_METADATA_KEY_HEIGHT,
-                                       GRL_METADATA_KEY_ARTIST,
-                                       GRL_METADATA_KEY_ALBUM,
-                                       NULL);
+          for (i = 0; i < paths_len; i++)
+            {
+              box =
+                mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
+                                                     query_keys, paths[i]);
+              if (box)
+                {
+                  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                                             query_keys, metadata_keys, box);
+                  g_object_set (feed, "icon-name", "icon-library",
+                                "placeholder-text", "No Music found", NULL);
 
-          feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
-                                     query_keys, metadata_keys, box);
-          g_object_set (feed, "icon-name", "icon-library",
-                        "placeholder-text", "No music found", NULL);
+                  mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
 
-          mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
-
-          music_info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
-                                                           "music", 0);
-          priv->models = g_list_append (priv->models, music_info);
-          g_object_unref (feed);
-          g_list_free (metadata_keys);
+                  music_info =
+                    mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
+                                                        "music", 0);
+                  priv->models = g_list_append (priv->models, music_info);
+                  g_object_unref (feed);
+                }
+            }
         }
+
+      /* clean up */
+
+      if (metadata_keys)
+        g_list_free (metadata_keys);
+      if (paths)
+        g_strfreev (paths);
+
+      if (mex_settings_key)
+        g_key_file_free (mex_settings_key);
 
       g_list_free (query_keys);
     }
