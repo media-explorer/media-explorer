@@ -265,6 +265,12 @@ mex_column_view_dispose (GObject *object)
       priv->placeholder_actor = NULL;
     }
 
+  if (priv->column)
+    {
+      clutter_actor_destroy (priv->column);
+      priv->column = NULL;
+    }
+
   G_OBJECT_CLASS (mex_column_view_parent_class)->dispose (object);
 }
 
