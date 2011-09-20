@@ -83,9 +83,6 @@ MexActionManager *mex_action_manager_get_default (void);
 
 GList *mex_action_manager_get_actions (MexActionManager *manager);
 
-GList *mex_action_manager_get_actions_for_mime (MexActionManager *manager,
-                                                const gchar      *mime);
-
 GList *mex_action_manager_get_actions_for_content (MexActionManager *manager,
                                                    MexContent      *content);
 
