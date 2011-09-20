@@ -506,7 +506,7 @@ mex_generic_model_init (MexGenericModel *self)
  *
  * Creates an empty #MexGenericModel.
  *
- * Return value: A #MexGenericModel
+ * Return value: (transfer full): A #MexGenericModel
  */
 MexModel *
 mex_generic_model_new (const gchar *title,

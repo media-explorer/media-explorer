@@ -341,6 +341,13 @@ mex_aggregate_model_get_models (MexAggregateModel *aggregate)
   return aggregate->priv->models;
 }
 
+/**
+ * mex_aggregate_model_get_model_for_content:
+ *
+ * Return value: (transfer none): the #MexModel
+ *
+ * Since: 0.2
+ */
 MexModel *
 mex_aggregate_model_get_model_for_content (MexAggregateModel *aggregate,
                                            MexContent        *content)

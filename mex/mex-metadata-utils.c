@@ -347,7 +347,7 @@ mex_metadata_info_new (MexContentMetadata  key,
 }
 
 /**
- * mex_metadata_info_new: (skip)
+ * mex_metadata_info_new_with_visibility: (skip)
  * @key: Metadata key
  * @key_string: A field label for the metadata value
  * @priority: How important this metadata is. 0 = High

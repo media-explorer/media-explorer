@@ -472,6 +472,11 @@ mex_model_manager_get_category_info (MexModelManager *manager,
   return g_hash_table_lookup (priv->categories, name);
 }
 
+/**
+ * mex_model_info_new: (skip)
+ *
+ * Since: 0.2
+ */
 MexModelInfo *
 mex_model_info_new (MexModel         *model,
                     const gchar      *category,
@@ -518,6 +523,12 @@ mex_model_info_new (MexModel         *model,
   return info;
 }
 
+/**
+ * mex_model_info_copy: (skip)
+ * @info: the #MexModelInfo to copy
+ *
+ * Returns: a new #MexModelInfo, copy of @info
+ */
 MexModelInfo *
 mex_model_info_copy (const MexModelInfo *info)
 {

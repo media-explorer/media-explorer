@@ -554,7 +554,7 @@ mex_date_to_string (GDateTime *date)
 }
 
 /**
- * mex_model_info_new_with_sort_funcs:
+ * mex_model_info_new_with_sort_funcs: (skip)
  * @model: A #MexModel
  * @category: A category name
  * @priority: The model priority
@@ -820,7 +820,11 @@ mex_content_from_uri (const gchar *uri)
   return MEX_CONTENT (program);
 }
 
-/* Note setting backend is to be rewritten in future versions */
+/**
+ * mex_get_settings_key_file: (skip)
+ *
+ * Note setting backend is to be rewritten in future versions
+ */
 GKeyFile *
 mex_get_settings_key_file (void)
 {

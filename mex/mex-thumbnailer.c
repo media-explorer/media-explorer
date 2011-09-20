@@ -316,7 +316,7 @@ on_queue (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
 #endif
 
 /**
- * mex_thumbnailer_generate:
+ * mex_thumbnailer_generate: (skip)
  * @url: the URL to thumbnail
  * @mime_type: the MIME type of the URL (will be sniffed if %NULL)
  * @callback: function to callback when thumbnailing is successfull
@@ -328,7 +328,10 @@ on_queue (DBusGProxy *proxy, DBusGProxyCall *call, void *user_data)
  * calling this function.
  */
 void
-mex_thumbnailer_generate (const char *url, const char *mime_type, MexThumbnailCallback callback, gpointer user_data)
+mex_thumbnailer_generate (const char           *url,
+                          const char           *mime_type,
+                          MexThumbnailCallback  callback,
+                          gpointer              user_data)
 {
 #ifdef WITH_THUMBNAILER_INTERNAL
   mex_internal_thumbnail (url, callback, user_data);

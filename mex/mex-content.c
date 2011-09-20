@@ -87,7 +87,8 @@ mex_content_get_type (void)
  *
  * Retrieves a #GParamSpec for @key for this content.
  *
- * Return value: The #GParamSpec of the property corresponding to the @key
+ * Return value: (transfer none): The #GParamSpec of the property corresponding
+ * to the @key
  *
  * Since: 0.2
  */
@@ -256,6 +257,14 @@ mex_content_save_metadata (MexContent *content)
              g_type_name (G_OBJECT_TYPE (content)));
 }
 
+/**
+ * mex_content_foreach_metadata:
+ * @content: the #MexContent
+ * @callback: (scope call): the callback to call
+ * @data: the data given to the callback
+ *
+ * Since: 0.2
+ */
 void
 mex_content_foreach_metadata (MexContent           *content,
                               MexContentMetadataCb  callback,

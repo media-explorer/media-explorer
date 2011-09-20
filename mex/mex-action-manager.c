@@ -113,6 +113,13 @@ mex_action_manager_init (MexActionManager *self)
                                          mex_action_manager_free_info);
 }
 
+/**
+ * mex_action_manager_get_default:
+ *
+ * Return value: (transfer none): the #MexActionManager singleton
+ *
+ * Since: 0.2
+ */
 MexActionManager *
 mex_action_manager_get_default (void)
 {
@@ -134,6 +141,14 @@ mex_action_manager_sort_cb (gconstpointer a,
   return info_b->priority - info_a->priority;
 }
 
+/**
+ * mex_action_manager_get_actions:
+ * @manager: the #MexActionManager
+ *
+ * Return value: (transfer container): a #GList of #MxAction
+ *
+ * Since: 0.2
+ */
 GList *
 mex_action_manager_get_actions (MexActionManager *manager)
 {
@@ -153,6 +168,15 @@ mex_action_manager_get_actions (MexActionManager *manager)
   return actions;
 }
 
+/**
+ * mex_action_manager_get_actions_for_content:
+ * @manager: the #MexActionManager
+ * @content: a #MexContent
+ *
+ * Return value: (transfer container): a #GList of #MxAction
+ *
+ * Since: 0.2
+ */
 GList *
 mex_action_manager_get_actions_for_content (MexActionManager *manager,
                                             MexContent      *content)

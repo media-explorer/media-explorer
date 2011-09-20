@@ -97,8 +97,8 @@ mex_model_get_type (void)
  *
  * Retrieves the #GController object for this @model.
  *
- * Return value: A #GController. Call g_object_unref() on the controller once
- * finished with it.
+ * Return value: (transfer full): A #GController. Call g_object_unref() on the
+ * controller once finished with it.
  *
  * Since: 0.2
  */
@@ -127,7 +127,7 @@ mex_model_get_controller (MexModel *model)
  *
  * Retrieves the #MexContent object at position @index_ for this @model.
  *
- * Return value: A #GController. Call g_object_unref() on the controller once
+ * Return value: (transfer full): A #GController. Call g_object_unref() on the controller once
  * finished with it.
  *
  * Since: 0.2
@@ -210,10 +210,18 @@ mex_model_clear (MexModel *model)
              g_type_name (G_OBJECT_TYPE (model)));
 }
 
+/**
+ * mex_model_set_sort_func:
+ * @model: the model to sort
+ * @sort_func: (scope call): the function to sort the model with
+ * @user_data: data given to @sort_func when called
+ *
+ * Since: 0.2
+ */
 void
 mex_model_set_sort_func (MexModel         *model,
                          MexModelSortFunc  sort_func,
-                         gpointer          userdata)
+                         gpointer          user_data)
 {
   MexModelIface *iface;
 
@@ -223,7 +231,7 @@ mex_model_set_sort_func (MexModel         *model,
 
   if (G_LIKELY (iface->set_sort_func))
     {
-      iface->set_sort_func (model, sort_func, userdata);
+      iface->set_sort_func (model, sort_func, user_data);
       return;
     }
 
@@ -272,6 +280,16 @@ mex_model_index (MexModel   *model,
   return 0;
 }
 
+/**
+ * mex_model_get_model:
+ * @model: the model
+ *
+ * FIXME
+ *
+ * Return value: (transfer none): the model
+ *
+ * Since: 0.2
+ */
 MexModel *
 mex_model_get_model (MexModel *model)
 {

@@ -74,7 +74,7 @@ void mex_model_remove_content (MexModel   *model,
 void mex_model_clear (MexModel *model);
 void mex_model_set_sort_func (MexModel         *model,
                               MexModelSortFunc  sort_func,
-                              gpointer          userdata);
+                              gpointer          user_data);
 guint mex_model_get_length (MexModel *model);
 gint  mex_model_index      (MexModel   *model,
                             MexContent *content);

@@ -35,6 +35,12 @@ static GList *listeners = NULL;
 
 static gboolean online_init (void);
 
+/**
+ * mex_online_add_notify: (skip)
+ * @callback: the callback to call we come online
+ * @user_data: the data given to the callback when called
+ *
+ */
 void
 mex_online_add_notify (MexOnlineNotify callback,
                        gpointer        user_data)
@@ -51,6 +57,12 @@ mex_online_add_notify (MexOnlineNotify callback,
   listeners = g_list_prepend (listeners, data);
 }
 
+/**
+ * mex_online_remove_notify: (skip)
+ * @callback: the callback to remove
+ * @user_data: the data given when the callback was added
+ *
+ */
 void
 mex_online_remove_notify (MexOnlineNotify callback,
                           gpointer        user_data)
