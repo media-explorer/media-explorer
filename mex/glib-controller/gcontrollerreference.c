@@ -559,7 +559,7 @@ g_controller_reference_get_index_string (GControllerReference *ref,
 }
 
 /**
- * g_controller_reference_get_index_pointer:
+ * g_controller_reference_get_index_pointer: (skip)
  * @ref: a #GControllerReference
  * @pos: the position of the index
  *

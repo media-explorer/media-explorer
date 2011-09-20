@@ -72,7 +72,7 @@ INTROSPECTION_COMPILER_ARGS = --includedir=$(top_srcdir) --includedir=$(top_buil
 
 GController-1.0.gir: $(INTROSPECTION_SCANNER) libglib-controller-1.0.la
 
-GController_1_0_gir_SCANNERFLAGS = --identifier-prefix=G
+GController_1_0_gir_SCANNERFLAGS = --identifier-prefix=G --warn-all
 GController_1_0_gir_INCLUDES = GObject-2.0
 GController_1_0_gir_CFLAGS = $(GCONTROLLER_CFLAGS) -I$(top_srcdir)/mex -I$(top_srcdir)/mex/glib-controller -I$(top_builddir) -DG_DISABLE_DEPRECATED -DGLIB_CONTROLLER_COMPILATION
 GController_1_0_gir_LIBS = libglib-controller-1.0.la
