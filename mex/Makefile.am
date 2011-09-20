@@ -356,6 +356,7 @@ Mex_0_2_gir_PACKAGES = 	\
 Mex_0_2_gir_LIBS = libmex-@MEX_API_VERSION@.la
 Mex_0_2_gir_FILES = $(mex_headers) $(mex_sources) $(mex_built_sources)
 Mex_0_2_gir_SCANNERFLAGS = 				\
+	--warn-all					\
 	--identifier-prefix=Mex 			\
 	--symbol-prefix=mex				\
 	--add-include-path=$(builddir)/glib-controller	\
