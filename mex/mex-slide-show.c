@@ -106,6 +106,8 @@ static void download_queue_completed (MexDownloadQueue *queue,
 static void mex_slide_show_set_playing (MexSlideShow *slideshow,
                                         gboolean      playing);
 
+static void mex_slide_show_show (MexSlideShow *self);
+
 /* MxFocusable Implementation */
 static MxFocusable*
 mex_slide_show_accept_focus (MxFocusable *focusable,
@@ -612,6 +614,12 @@ captured_event_cb (ClutterActor *actor,
   MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (actor)->priv;
   MxFocusable *play_pause;
 
+  if (event->type == CLUTTER_MOTION)
+    {
+      mex_slide_show_show (MEX_SLIDE_SHOW (actor));
+      return FALSE;
+    }
+
   /* ensure that any key press cancels the hiding of the controls, or that
    * if the down key is pressed, the controls are made visible */
   if (event->type != CLUTTER_KEY_PRESS)
@@ -787,6 +795,7 @@ mex_slide_show_hide (MexSlideShow *self)
 static void
 mex_slide_show_show (MexSlideShow *self)
 {
+  reset_controls_timeout (self);
   clutter_state_set_state (self->priv->state, "controls");
 }
 
@@ -817,6 +826,8 @@ mex_slide_show_init (MexSlideShow *self)
   GError *err = NULL;
   MxAction *action;
   gchar *tmp;
+
+  clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
 
   self->priv = priv = SLIDE_SHOW_PRIVATE (self);
 
