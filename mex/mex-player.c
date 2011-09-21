@@ -435,7 +435,7 @@ mex_player_captured_event (ClutterActor *actor,
     {
     case CLUTTER_BUTTON_PRESS:
     case CLUTTER_MOTION:
-      if (!priv->controls_visible)
+      if (!priv->controls_visible && !priv->info_visible)
         mex_player_set_controls_visible (self, TRUE);
       else
         mex_player_restart_timer (MEX_PLAYER (actor));
