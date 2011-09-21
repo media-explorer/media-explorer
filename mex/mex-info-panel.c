@@ -312,7 +312,7 @@ subtitle_combo_box_notify (MxComboBox   *box,
 
   /* audio track */
   title = g_strdup_printf (_("Subtitles (%s)"),
-                           (char *) g_list_nth_data (list, index_ - 1));
+                           (index_ == 0) ? _("None") : (char *) g_list_nth_data (list, index_ - 1));
 
   mx_combo_box_set_active_text (MX_COMBO_BOX (priv->subtitle_combo_box), title);
 
