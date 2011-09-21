@@ -27,6 +27,9 @@
 
 #include <glib/gi18n.h>
 
+#define MEX_LOG_DOMAIN_DEFAULT  gnome_dvb_log_domain
+MEX_LOG_DOMAIN_STATIC (gnome_dvb_log_domain);
+
 static void mex_model_provider_iface_init (MexModelProviderInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexGnomeDvbPlugin, mex_gnome_dvb_plugin,
@@ -94,7 +97,7 @@ _handle_error (GError **err)
 {
   if (*err)
     {
-      g_warning ("Error: %s", (*err)->message);
+      MEX_DEBUG ("%s", (*err)->message);
       g_clear_error (err);
 
       return TRUE;
@@ -338,6 +341,8 @@ mex_gnome_dvb_plugin_init (MexGnomeDvbPlugin *self)
   GrlPluginRegistry *registry;
   MexModel *feed;
   MexModelInfo *info;
+
+  MEX_LOG_DOMAIN_INIT (gnome_dvb_log_domain, "gnome-dvb-plugin");
 
   feed = mex_generic_model_new (_("TV"), "icon-panelheader-tv");
 
