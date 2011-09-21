@@ -428,16 +428,13 @@ mex_player_captured_event (ClutterActor *actor,
   MexPlayer *self = MEX_PLAYER (actor);
   MexPlayerPrivate *priv = self->priv;
 
-  /* Do nothing if the info panel is up */
-  if (priv->controls_prev_visible)
-    return FALSE;
-
   /* If a mouse button was pressed and the controls aren't visible, show them,
    * otherwise restart the control-showing timer.
    */
   switch (event->type)
     {
     case CLUTTER_BUTTON_PRESS:
+    case CLUTTER_MOTION:
       if (!priv->controls_visible)
         mex_player_set_controls_visible (self, TRUE);
       else
@@ -802,6 +799,8 @@ mex_player_init (MexPlayer *self)
   MexPlayerPrivate *priv;
 
   self->priv = priv = PLAYER_PRIVATE (self);
+
+  clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
 
 #ifdef USE_PLAYER_CLUTTER_GST
   priv->media = (ClutterMedia *) clutter_gst_video_texture_new ();

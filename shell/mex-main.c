@@ -1079,7 +1079,6 @@ mex_captured_event_cb (ClutterActor *actor,
 
         case CLUTTER_ENTER:
         case CLUTTER_LEAVE:
-        case CLUTTER_MOTION:
         case CLUTTER_SCROLL:
           return TRUE;
         default:
