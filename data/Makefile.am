@@ -222,7 +222,7 @@ endif
 
 applicationsdir = $(datadir)/applications
 dist_applications_DATA =			\
-	mex.desktop			\
+	media-explorer.desktop			\
 	$(NULL)
 
 if ENABLE_REBINDER

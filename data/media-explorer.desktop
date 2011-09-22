@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Media Explorer
-Exec=mex -f
+Exec=media-explorer -f
 Icon=mex
 Categories=AudioVideo;Video;TV;Player;
 Terminal=false
