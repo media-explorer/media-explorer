@@ -185,7 +185,6 @@ _content_type_resolved (GObject               *mount,
                         GAsyncResult          *result,
                         MexOpticalDiscManager *self)
 {
-  MexOpticalDiscManagerPrivate *priv = MEX_OPTICAL_DISC_MANAGER (self)->priv;
   GError *error = NULL;
   gchar **content_types;
 
@@ -213,8 +212,6 @@ _volume_monitor_mount_added_cb (GVolumeMonitor        *volume_monitor,
                                 GMount                *mount,
                                 MexOpticalDiscManager *self)
 {
-  MexOpticalDiscManagerPrivate *priv = MEX_OPTICAL_DISC_MANAGER (self)->priv;
-
   g_mount_guess_content_type (mount,
                               FALSE,
                               NULL,
@@ -227,8 +224,6 @@ _volume_monitor_mount_removed_cb (GVolumeMonitor        *volume_monitor,
                                   GMount                *mount,
                                   MexOpticalDiscManager *self)
 {
-  MexOpticalDiscManagerPrivate *priv = MEX_OPTICAL_DISC_MANAGER (self)->priv;
-
   g_mount_guess_content_type (mount,
                               FALSE,
                               NULL,
@@ -270,7 +265,6 @@ mex_optical_disc_manager_init (MexOpticalDiscManager *self)
 {
   MexOpticalDiscManagerPrivate *priv;
   MexModelInfo *model_info;
-  MexModel *optical_discs_model;
   MexActionInfo *eject_action;
 
   GList *mounts = NULL;
@@ -323,12 +317,6 @@ mex_optical_disc_manager_init (MexOpticalDiscManager *self)
   priv->actions = g_list_append (priv->actions, eject_action);
 }
 
-static MexOpticalDiscManager *
-mex_optical_disc_manager_new (void)
-{
-  return g_object_new (MEX_TYPE_OPTICAL_DISC_MANAGER, NULL);
-}
-
 static const GList *
 mex_optical_disc_manager_get_models (MexModelProvider *model_provider)
 {
@@ -359,11 +347,8 @@ action_provider_iface_init (MexActionProviderInterface *iface)
   iface->get_actions = mex_optical_disc_manager_get_actions;
 }
 
-
-G_MODULE_EXPORT const GType
+G_MODULE_EXPORT GType
 mex_get_plugin_type (void)
 {
   return MEX_TYPE_OPTICAL_DISC_MANAGER;
 }
-
-

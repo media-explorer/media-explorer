@@ -70,9 +70,6 @@ mex_dbusinput_plugin_dispose (GObject *object)
 static void
 mex_dbusinput_plugin_finalize (GObject *object)
 {
-  MexDbusinputPluginPrivate *priv = MEX_DBUSINPUT_PLUGIN (object)->priv;
-
-
   G_OBJECT_CLASS (mex_dbusinput_plugin_parent_class)->finalize (object);
 }
 
@@ -80,7 +77,6 @@ static void
 mex_dbusinput_plugin_class_init (MexDbusinputPluginClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  GParamSpec *pspec;
 
   g_type_class_add_private (klass, sizeof (MexDbusinputPluginPrivate));
 
@@ -105,11 +101,8 @@ _method_cb (GDBusConnection *connection,
       guint keyflag;
       ClutterEvent *event;
       ClutterKeyEvent *kevent;
-      ClutterActor *focused;
 
       g_variant_get (parameters, "(u)", &keyflag);
-
-      focused = clutter_stage_get_key_focus (CLUTTER_STAGE (priv->stage));
 
       event = clutter_event_new (CLUTTER_KEY_PRESS);
       kevent = (ClutterKeyEvent *)event;
@@ -152,13 +145,6 @@ static const GDBusInterfaceVTable interface_table =
   NULL,
   NULL
 };
-
-static void
-_on_name_lost (GDBusConnection *connection,
-               const gchar *name,
-               gpointer user_data)
-{
-}
 
 static void
 _bus_acquired (GDBusConnection *connection,

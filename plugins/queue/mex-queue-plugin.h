@@ -20,6 +20,8 @@
 #define _MEX_QUEUE_PLUGIN
 
 #include <glib-object.h>
+#include <gmodule.h>
+#include <mex/mex.h>
 
 G_BEGIN_DECLS
 
@@ -54,6 +56,8 @@ typedef struct
 } MexQueuePluginClass;
 
 GType mex_queue_plugin_get_type (void);
+
+G_MODULE_EXPORT const GType mex_get_plugin_type (void);
 
 G_END_DECLS
 

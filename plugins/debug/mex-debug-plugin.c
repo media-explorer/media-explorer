@@ -340,8 +340,6 @@ do_fps (GObject             *instance,
         ClutterModifierType  modifiers,
         gpointer             user_data)
 {
-  MexDebugPlugin *plugin = MEX_DEBUG_PLUGIN (user_data);
-  MexDebugPluginPrivate *priv = plugin->priv;
   static guint source_id = 0;
   static GTimer *timer = NULL;
   static gulong handler_id = 0;
@@ -511,7 +509,7 @@ mex_debug_plugin_init (MexDebugPlugin *self)
   old_log_handler = g_log_set_default_handler (mex_debug_log_handler, NULL);
 }
 
-G_MODULE_EXPORT const GType
+G_MODULE_EXPORT GType
 mex_get_plugin_type (void)
 {
   return MEX_TYPE_DEBUG_PLUGIN;

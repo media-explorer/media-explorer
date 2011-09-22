@@ -413,6 +413,7 @@ mex_search_plugin_search (MexSearchPlugin *self,
         {
           MexFeed *feed;
           MexModelInfo *info;
+          GController *controller;
 
           if (g_str_equal (source_id, "grl-tracker"))
             feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (meta_src),
@@ -430,7 +431,7 @@ mex_search_plugin_search (MexSearchPlugin *self,
 
           g_object_set (G_OBJECT (feed), "placeholder-text",
                         _("No videos found"), NULL);
-          GController *controller = mex_model_get_controller (MEX_MODEL (feed));
+          controller = mex_model_get_controller (MEX_MODEL (feed));
 
           /* Attach to the changed signal so that we can alter the
            * mime-type of content if necessary.

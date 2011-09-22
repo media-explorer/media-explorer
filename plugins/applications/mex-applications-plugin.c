@@ -234,7 +234,7 @@ action_provider_iface_init (MexActionProviderInterface *iface)
   iface->get_actions = mex_applications_plugin_get_actions;
 }
 
-G_MODULE_EXPORT const GType
+G_MODULE_EXPORT GType
 mex_get_plugin_type (void)
 {
   return MEX_TYPE_APPLICATIONS_PLUGIN;

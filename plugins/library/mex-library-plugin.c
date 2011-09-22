@@ -139,10 +139,10 @@ mex_library_plugin_init (MexLibraryPlugin *self)
       MexFeed *feed;
       GrlMedia *box;
       gchar **paths;
-      const gchar *path;
       MexModelInfo *video_info, *photo_info, *music_info;
       GKeyFile *mex_settings_key;
-      gint paths_len, i;
+      gint i;
+      gsize paths_len;
       GList *metadata_keys;
 
       query_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
@@ -151,8 +151,6 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                               GRL_METADATA_KEY_URL,
                                               GRL_METADATA_KEY_DATE,
                                               NULL);
-
-      path = g_get_user_special_dir (G_USER_DIRECTORY_VIDEOS);
 
       /* Add the videos model */
 

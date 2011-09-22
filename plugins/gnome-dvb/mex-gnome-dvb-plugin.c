@@ -113,7 +113,6 @@ get_channel_url_ready_cb (GObject      *proxy,
 {
   GError *err = NULL;
   GVariant *variant;
-  int i, size;
   gchar *url;
   gboolean result;
 
@@ -154,10 +153,7 @@ get_channel_infos_ready_cb (GObject      *proxy,
                             gpointer      plugin)
 {
   GError *err = NULL;
-  GVariant *variant, *child;
-  int i, size;
-  gchar *object_path;
-  gboolean result;
+  GVariant *variant;
   GVariantIter iter;
   MexGnomeDvbPluginPrivate *priv = MEX_GNOME_DVB_PLUGIN (plugin)->priv;
   gchar *name, *id;
@@ -235,9 +231,7 @@ get_channel_list_ready_cb (GObject      *proxy,
 {
   GError *err = NULL;
   GVariant *variant;
-  int i, size;
   gchar *object_path;
-  gboolean result;
 
   variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), res, &err);
 
@@ -337,8 +331,6 @@ static void
 mex_gnome_dvb_plugin_init (MexGnomeDvbPlugin *self)
 {
   MexGnomeDvbPluginPrivate *priv = self->priv = DVB_PLUGIN_PRIVATE (self);
-  GrlMediaPlugin *plugin;
-  GrlPluginRegistry *registry;
   MexModel *feed;
   MexModelInfo *info;
 

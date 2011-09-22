@@ -21,6 +21,8 @@
 #define __MEX_OPTICALDISCMANAGER_H__
 
 #include <glib-object.h>
+#include <gmodule.h>
+#include <mex/mex.h>
 
 G_BEGIN_DECLS
 
@@ -58,6 +60,7 @@ struct _MexOpticalDiscManagerClass
 };
 
 GType           mex_optical_disc_manager_get_type         (void) G_GNUC_CONST;
+GType           mex_get_plugin_type                       (void);
 
 G_END_DECLS
 

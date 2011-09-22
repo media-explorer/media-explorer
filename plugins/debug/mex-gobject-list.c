@@ -238,15 +238,6 @@ gobject_list_get_summary (void)
 }
 
 static gint
-tuplecmp (gconstpointer pa,
-          gconstpointer pb)
-{
-  const GObjectListTuple *a = pa, *b = pb;
-
-  return b->value - a->value;
-}
-
-static gint
 tuplecmp_reverse (gconstpointer pa,
                   gconstpointer pb)
 {
@@ -282,7 +273,7 @@ _dump_classes_list (void)
 }
 
 static void
-_sig_usr1_handler (int signal)
+_sig_usr1_handler (int signal_nr)
 {
   g_print ("Living Objects:\n");
 

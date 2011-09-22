@@ -181,19 +181,6 @@ registry_source_added_cb (GrlPluginRegistry *registry,
   handle_new_source_plugin (plugin, source);
 }
 
-static int
-source_compare (gconstpointer listdata, gconstpointer userdata)
-{
-  GrlMediaSource *user_source, *list_source;
-
-  g_object_get (MEX_GRILO_FEED (listdata),
-                "grilo-source", &list_source,
-                NULL);
-  user_source = GRL_MEDIA_SOURCE (userdata);
-
-  return (user_source == list_source) ? 0 : -1;
-}
-
 static void
 registry_source_removed_cb (GrlPluginRegistry *registry,
                             GrlMediaPlugin *source,

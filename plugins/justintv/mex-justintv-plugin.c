@@ -112,8 +112,6 @@ add_model (MexJustintvPlugin *self,
 static void
 handle_new_source_plugin (MexJustintvPlugin *self, GrlMediaPlugin *plugin)
 {
-  GrlSupportedOps ops;
-  GrlMetadataSource *meta = GRL_METADATA_SOURCE (plugin);
   const char *id;
 
   id = grl_media_plugin_get_id (plugin);
