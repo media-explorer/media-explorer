@@ -123,28 +123,13 @@ background_finalize_cb (MexBackgroundManager *manager,
 {
   GList *l;
   MexBackgroundManagerPrivate *priv = manager->priv;
-  MexBackground *new = NULL;
 
-  /* Here we are saying, if background gets freed then:
-   * a) remove it from our registered background list
-   * b) if we have another background in our list provide that
-   */
+  /* If a background gets destroyed, remove it from the list of registered
+   * backgrounds */
 
   l = g_list_find (priv->backgrounds, background);
   if (!l)
     return; /* Weird ! */
-
-  if (priv->current == background)
-    {
-      if (l->next)
-        new = MEX_BACKGROUND (l->next->data);
-      else if (l->prev)
-        new = MEX_BACKGROUND (l->prev->data);
-
-      priv->current = new;
-      if (priv->current)
-        g_signal_emit (manager, signals[BACKGROUND_CHANGED], 0, priv->current);
-    }
 
   priv->backgrounds = g_list_delete_link (priv->backgrounds, l);
 }
