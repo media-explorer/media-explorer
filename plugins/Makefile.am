@@ -8,6 +8,7 @@ CLEANFILES =
 AM_CPPFLAGS =					\
 	-I$(top_srcdir)				\
 	-I$(top_srcdir)/mex			\
+	$(MEX_MAINTAINER_CFLAGS)		\
 	$(MEX_CFLAGS)				\
 	$(NULL)
 
