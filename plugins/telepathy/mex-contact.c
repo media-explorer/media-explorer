@@ -172,8 +172,8 @@ mex_contact_class_init (MexContactClass *klass)
   g_object_class_install_property (object_class, PROP_CONTACT, pspec);
 }
 
-gboolean
-mex_contact_should_add_mimetype_to_model(gchar *mimetype)
+static gboolean
+mex_contact_should_add_mimetype_to_model (gchar *mimetype)
 {
   if (!tp_strdiff(mimetype, "x-mex-av-contact"))
     {
@@ -197,7 +197,7 @@ mex_contact_should_add_to_model(MexContact *self)
   return mex_contact_should_add_mimetype_to_model(self->priv->mimetype);
 }
 
-gboolean
+static gboolean
 mex_contact_validate_presence(TpContact *contact)
 {
   TpConnectionPresenceType presence = tp_contact_get_presence_type(contact);
@@ -260,11 +260,11 @@ mex_contact_compute_mimetype (MexContact *self)
                                    TP_CONTACT_FEATURE_CAPABILITIES))
     {
       // Capabilities
+      TpCapabilities *capabilities;
+      GPtrArray *classes;
       guint i;
 
-      TpCapabilities *capabilities;
       capabilities = tp_contact_get_capabilities(priv->contact);
-      GPtrArray *classes;
       classes = tp_capabilities_get_channel_classes(capabilities);
 
       new_mimetype = "x-mex-contact";
@@ -275,7 +275,6 @@ mex_contact_compute_mimetype (MexContact *self)
           GHashTable *fixed;
           GStrv allowed;
           const gchar *chan_type;
-          TpHandleType handle_type;
           gboolean valid;
 
           tp_value_array_unpack(arr, 2, &fixed, &allowed);
@@ -284,9 +283,9 @@ mex_contact_compute_mimetype (MexContact *self)
              keys we don't understand */
 
           chan_type = tp_asv_get_string (fixed, TP_PROP_CHANNEL_CHANNEL_TYPE);
-          handle_type = tp_asv_get_uint32 (fixed,
-                                           TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
-                                           &valid);
+          tp_asv_get_uint32 (fixed,
+                             TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
+                             &valid);
 
           if (!valid)
             {
@@ -372,7 +371,7 @@ mex_contact_on_subscription_states_changed (TpContact *contact,
   mex_contact_compute_mimetype(self);
 }
 
-void
+static void
 mex_contact_on_contact_upgraded (TpConnection     *connection,
                                  guint             n_contacts,
                                  TpContact *const *contacts,
@@ -396,7 +395,6 @@ mex_contact_on_presence_changed (TpContact *contact,
 
   if (!tp_contact_has_feature(contact, TP_CONTACT_FEATURE_CAPABILITIES))
     {
-      MEX_DEBUG ("Feature capabilities is not ready yet");
       static TpContactFeature contact_features[] =
       {
         TP_CONTACT_FEATURE_ALIAS,
@@ -410,6 +408,8 @@ mex_contact_on_presence_changed (TpContact *contact,
       {
         contact
       };
+
+      MEX_DEBUG ("Feature capabilities is not ready yet");
 
       tp_connection_upgrade_contacts (tp_contact_get_connection (contact),
                                       G_N_ELEMENTS (contacts),
@@ -441,6 +441,7 @@ mex_contact_set_tp_contact (MexContact *self,
                             TpContact  *contact)
 {
   MexContactPrivate *priv;
+  GFile *file;
 
   g_return_if_fail (MEX_IS_CONTACT (self));
 
@@ -464,7 +465,7 @@ mex_contact_set_tp_contact (MexContact *self,
   g_object_ref(contact);
   priv->contact = contact;
 
-  GFile *file = tp_contact_get_avatar_file (priv->contact);
+  file = tp_contact_get_avatar_file (priv->contact);
   if (!file)
     {
       const gchar *dir = mex_get_data_dir ();

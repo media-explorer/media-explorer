@@ -37,7 +37,7 @@ G_DEFINE_TYPE (TpyAutomaticClientFactory, tpy_automatic_client_factory,
 #define chainup ((TpSimpleClientFactoryClass *)             \
                  tpy_automatic_client_factory_parent_class)
 
-TpyCallChannel *
+static TpyCallChannel *
 tpy_call_channel_new_with_factory (TpSimpleClientFactory *factory,
                                    TpConnection          *conn,
                                    const gchar           *object_path,

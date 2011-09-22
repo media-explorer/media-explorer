@@ -253,13 +253,12 @@ mex_telepathy_channel_toggle_camera (MxAction *action,
   mex_telepathy_channel_set_camera_state (self, priv->sending_video);
 }
 
-void
+static void
 mex_telepathy_channel_toggle_mute (MxAction *action,
                                    gpointer  user_data)
 {
   MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
   MexTelepathyChannelPrivate *priv = self->priv;
-  GstStateChangeReturn ret;
 
   gboolean muted;
   g_object_get (priv->mic_volume, "mute", &muted, NULL);
@@ -280,10 +279,9 @@ mex_telepathy_channel_toggle_mute (MxAction *action,
     }
 }
 
-void
+static void
 mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
 {
-  MEX_DEBUG ("creating video page");
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
 
   gchar *static_image_path;
@@ -305,12 +303,14 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
   GError *error = NULL;
 
   MexShadow *shadow;
+  ClutterColor shadow_color = {0, 0, 0, 64};
+
+  MEX_DEBUG ("creating video page");
 
   shadow = mex_shadow_new ();
 
   mex_shadow_set_radius_x (shadow, 15);
   mex_shadow_set_radius_y (shadow, 15);
-  ClutterColor shadow_color = {0, 0, 0, 64};
   mex_shadow_set_color (shadow, &shadow_color);
 
   priv->video_outgoing = clutter_texture_new ();
@@ -774,10 +774,10 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
                                           TfContent           *content)
 {
   MexTelepathyChannelPrivate *priv = self->priv;
-  GstElement *result, *input, *rate, *scaler, *colorspace, *capsfilter;
+  GstElement *result, *input, *rate, *scaler, *colorspace, *capsfilter, *tee;
   GstCaps *caps;
   guint framerate = 0, width = 0, height = 0;
-  GstPad *pad, *ghost;
+  GstPad *pad, *ghost, *teesink, *teesrc, *outsink;
 
   result = gst_bin_new ("video_input");
   input = gst_element_factory_make ("autovideosrc", NULL);
@@ -822,13 +822,13 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
   pad = gst_element_get_static_pad (capsfilter, "src");
   g_assert (pad != NULL);
 
-  GstElement *tee = gst_element_factory_make("tee", NULL);
+  tee = gst_element_factory_make("tee", NULL);
   if (!tee)
     {
       MEX_WARNING("Couldn't create tee element !?");
       return NULL;
     }
-  GstPad *teesink = gst_element_get_pad(tee, "sink");
+  teesink = gst_element_get_pad(tee, "sink");
   gst_bin_add (GST_BIN(result), tee);
   if (GST_PAD_LINK_FAILED (gst_pad_link (pad, teesink)))
     {
@@ -838,8 +838,8 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
   pad = gst_element_get_request_pad (tee, "src%d");
 
   // Link the tee to the preview widget.
-  GstPad *teesrc = gst_element_get_request_pad(tee, "src%d");
-  GstPad *outsink = gst_element_get_pad (self->priv->outgoing_sink, "sink");
+  teesrc = gst_element_get_request_pad(tee, "src%d");
+  outsink = gst_element_get_pad (self->priv->outgoing_sink, "sink");
   gst_bin_add (GST_BIN(result), self->priv->outgoing_sink);
   gst_pad_link (teesrc, outsink);
 
@@ -1062,7 +1062,7 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
                                           TpContact *const *contacts,
                                           guint             n_failed,
                                           const TpHandle   *failed,
-                                          const GError     *error,
+                                          const GError     *fetched_error,
                                           gpointer          user_data,
                                           GObject          *weak_object)
 {
@@ -1075,6 +1075,7 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
       gchar *text;
       const gchar *alias;
       TpContact *current;
+      GFile *file;
 
       // Get the contacts.
       current = contacts[i];
@@ -1092,7 +1093,7 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
       mx_label_set_text (MX_LABEL (self->priv->calling_label), text);
       g_free (text);
 
-      GFile *file = tp_contact_get_avatar_file (current);
+      file = tp_contact_get_avatar_file (current);
       if (file)
         {
           gchar *filename = g_file_get_path (file);
@@ -1127,7 +1128,7 @@ mex_telepathy_channel_on_ready (TpyCallChannel *channel,
   mex_telepathy_channel_set_camera_state (self, priv->sending_video);
 }
 
-void
+static void
 mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
 {
   MexTelepathyChannelPrivate *priv = self->priv;
@@ -1137,12 +1138,13 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
   GstStateChangeReturn ret;
   gboolean ready;
 
-  MEX_INFO ("New channel");
-
   TpHandle contactHandle = tp_channel_get_handle (priv->channel, NULL);
   TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
                                   TP_CONTACT_FEATURE_AVATAR_DATA,
                                   TP_CONTACT_FEATURE_AVATAR_TOKEN};
+
+  MEX_INFO ("New channel");
+
   if (contactHandle)
     tp_connection_get_contacts_by_handle (
       priv->connection, 1, &contactHandle, 1,
@@ -1189,7 +1191,11 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
 
   g_object_get (priv->channel, "ready", &ready, NULL);
   if (ready)
-    mex_telepathy_channel_on_ready (priv->channel, NULL, self);
+    {
+      mex_telepathy_channel_on_ready (TPY_CALL_CHANNEL (priv->channel),
+                                      NULL,
+                                      self);
+    }
 }
 
 static void
@@ -1244,6 +1250,7 @@ static void
 mex_telepathy_channel_class_init (MexTelepathyChannelClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  GParamSpec *pspec;
 
   object_class->get_property = mex_telepathy_channel_get_property;
   object_class->set_property = mex_telepathy_channel_set_property;
@@ -1280,7 +1287,6 @@ mex_telepathy_channel_class_init (MexTelepathyChannelClass *klass)
                   CLUTTER_TYPE_ACTOR);
 
   // Properties
-  GParamSpec *pspec;
   pspec = g_param_spec_object ("channel",
                                "Channel",
                                "Telepathy Channel Object",
