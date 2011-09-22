@@ -53,7 +53,7 @@ libglib_controller_1_0_la_CPPFLAGS =	\
 	$(NULL)
 libglib_controller_1_0_la_CFLAGS =	\
 	$(GCONTROLLER_CFLAGS)		\
-	$(MAINTAINER_CFLAGS)		\
+	$(MEX_WARNING_CFLAGS)		\
 	$(GCOV_CFLAGS)			\
 	$(NULL)
 libglib_controller_1_0_la_LDFLAGS =	\

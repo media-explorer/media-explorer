@@ -286,7 +286,7 @@ libmex_@MEX_API_VERSION@_la_CPPFLAGS =	\
 
 libmex_@MEX_API_VERSION@_la_CFLAGS =	\
 	$(MEX_CFLAGS)			\
-	$(MEX_MAINTAINER_CFLAGS)	\
+	$(MEX_WARNING_CFLAGS)		\
 	$(MEX_DEBUG_CFLAGS)		\
 	$(TRACKER_CFLAGS)		\
 	$(NM_CFLAGS)			\
@@ -320,7 +320,7 @@ test_cppflags = 				\
 	-I$(top_srcdir)				\
 	-I$(top_srcdir)/mex			\
 	$(MEX_CFLAGS)				\
-	$(MEX_MAINTAINER_CFLAGS)		\
+	$(MEX_WARNING_CFLAGS)			\
 	$(MEX_DEBUG_CFLAGS)			\
 	$(NULL)
 

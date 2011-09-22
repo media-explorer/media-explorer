@@ -359,16 +359,16 @@ AM_CONDITIONAL([ENABLE_INTERNAL_THUMBNAILER],
 
 
 # enable strict compiler flags
-AC_ARG_ENABLE([maintainer-flags],
-              [AC_HELP_STRING([--enable-maintainer-flags=@<:@no/yes@:>@],
+AC_ARG_ENABLE([warning-flags],
+              [AC_HELP_STRING([--enable-warning-flags=@<:@no/yes@:>@],
                               [Use strict compiler flags @<:@default=yes@:>@])],
               [],
-              [enable_maintainer_flags=yes])
+              [enable_warning_flags=yes])
 
-AS_IF([test "x$enable_maintainer_flags" = "xyes"],
+AS_IF([test "x$enable_warning_flags" = "xyes"],
       [
         #-Wwrite-strings
-        AS_COMPILER_FLAGS([MEX_MAINTAINER_CFLAGS],
+        AS_COMPILER_FLAGS([MEX_WARNING_CFLAGS],
                           ["-Wall -Wshadow -Wcast-align -Wmissing-declarations
                             -Wdeclaration-after-statement -Wmissing-prototypes
                             -Wredundant-decls -Wmissing-noreturn -Wpointer-arith
@@ -379,12 +379,12 @@ AS_IF([test "x$enable_maintainer_flags" = "xyes"],
                             -Wpacked -Winvalid-pch -Wsync-nand"])
       ],
       [
-        AS_COMPILER_FLAGS([MEX_MAINTAINER_CFLAGS],
+        AS_COMPILER_FLAGS([MEX_WARNING_CFLAGS],
                           ["-Wall"])
       ]
 )
 
-AC_SUBST(MEX_MAINTAINER_CFLAGS)
+AC_SUBST(MEX_WARNING_CFLAGS)
 
 # Compile tests
 AC_ARG_ENABLE([tests],

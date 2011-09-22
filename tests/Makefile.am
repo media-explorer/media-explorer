@@ -14,7 +14,7 @@ AM_CPPFLAGS = 					\
 	-DTESTDATADIR=\"$(srcdir)\"		\
 	-DABS_TESTDATADIR=\"$(abs_srcdir)\"	\
 	$(MEX_CFLAGS)				\
-	$(MEX_MAINTAINER_CFLAGS)		\
+	$(MEX_WARNING_CFLAGS)			\
 	$(MEX_DEBUG_CFLAGS)			\
 	$(NULL)
 

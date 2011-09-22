@@ -11,7 +11,7 @@ noinst_PROGRAMS = 			\
 AM_CFLAGS = 						\
 	-I$(top_srcdir)					\
 	-I$(top_srcdir)/mex				\
-	$(MEX_MAINTAINER_CFLAGS)			\
+	$(MEX_WARNING_CFLAGS)				\
 	$(MEX_DEBUG_CFLAGS)				\
 	$(MEX_CFLAGS)					\
 	-DLIBDIR=\"$(libdir)\"				\
