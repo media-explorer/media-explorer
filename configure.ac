@@ -374,9 +374,10 @@ AS_IF([test "x$enable_warning_flags" = "xyes"],
                             -Wredundant-decls -Wmissing-noreturn -Wpointer-arith
                             -Winline -Wformat-nonliteral -Wformat-security
                             -Winit-self -Wmissing-include-dirs -Wundef
-                            -Waggregate-return -Wempty-body
+                            -Waggregate-return -Wempty-body -Wpacked
                             -Wmissing-format-attribute -Wnested-externs
-                            -Wpacked -Winvalid-pch -Wsync-nand"])
+
+                            -Qunused-arguments"])
       ],
       [
         AS_COMPILER_FLAGS([MEX_WARNING_CFLAGS],
