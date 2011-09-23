@@ -455,6 +455,17 @@ MxBoxLayout.MexCallControlsTitle
   border-image: url('item-title-bg.png') 1 0 0;
 }
 
+/* Tool frame ui */
+MxFrame.PipTool
+{
+  padding: 58 130 130 58;
+}
+
+MxFrame.FullTool
+{
+  padding: 0 0 0 0;
+}
+
 /* Call ui */
 MxFrame.PreviewPadding
 {

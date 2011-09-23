@@ -2,6 +2,7 @@
  * Mex - a media explorer
  *
  * Copyright © 2010, 2011 Intel Corporation.
+ * Copyright © 2011 Collabora Ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -76,6 +77,10 @@ typedef struct
 
   ClutterActor    *current_tool;
   MexToolProvider *current_tool_provider;
+  MexToolMode      current_tool_mode;
+  ClutterActor    *other_tool;
+  MexToolProvider *other_tool_provider;
+  MexToolMode      other_tool_mode;
 
   ClutterActor *current_applet;
   ClutterActor *last_applet;
@@ -1410,10 +1415,19 @@ mex_tool_remove_actor_cb (MexToolProvider *provider,
                           ClutterActor    *actor,
                           MexData         *data)
 {
+  MexToolMode mode = TOOL_MODE_FULL;
+
   if (data->current_tool_provider == provider && data->current_tool == actor)
     {
       data->current_tool = NULL;
       data->current_tool_provider = NULL;
+      mode = data->current_tool_mode;
+    }
+  else if (data->other_tool_provider == provider && data->other_tool == actor)
+    {
+      data->other_tool = NULL;
+      data->other_tool_provider = NULL;
+      mode = data->other_tool_mode;
     }
   else
     {
@@ -1423,7 +1437,21 @@ mex_tool_remove_actor_cb (MexToolProvider *provider,
 
   mex_hide_actor (data, actor);
 
-  mex_go_back (data);
+  /* Only go back to the home screen if we are closing a fullscreen tool */
+  if (mode == TOOL_MODE_FULL)
+    mex_go_back (data);
+}
+
+static void
+mex_tool_setup_frame (ClutterActor *actor,
+                      MexData *data,
+                      gchar *style_class)
+{
+  ClutterActor *frame = mx_frame_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (frame), style_class);
+  clutter_container_add_actor (CLUTTER_CONTAINER (frame), actor);
+  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
+                               frame);
 }
 
 static void
@@ -1431,32 +1459,80 @@ mex_tool_present_actor_cb (MexToolProvider *provider,
                            ClutterActor    *actor,
                            MexData         *data)
 {
+  MexToolProviderInterface *iface;
+
   if (G_UNLIKELY (actor == NULL))
     return;
 
-  if (data->current_tool)
+  /* Check for existing visible tools or players */
+  if (data->current_tool && data->current_tool != actor
+     || clutter_media_get_playing (data->media) )
     {
-      if (data->current_tool != actor)
-        mex_hide_actor (data, data->current_tool);
+      /* Hide the old other_tool if there is one */
+      if (data->other_tool && data->other_tool != actor)
+        mex_hide_actor(data, data->other_tool);
 
-      data->current_tool = NULL;
-      data->current_tool_provider = NULL;
+      data->other_tool_provider = provider;
+      data->other_tool = actor;
+      clutter_actor_set_opacity (actor, 0x00);
+
+      iface = MEX_TOOL_PROVIDER_GET_IFACE (provider);
+
+      if (G_LIKELY (iface->set_tool_mode))
+        iface->set_tool_mode(provider, TOOL_MODE_PIP, 0);
+
+      /* default other tool to pip mode */
+      data->other_tool_mode = TOOL_MODE_PIP;
+
+      if (!clutter_actor_get_parent (actor))
+        {
+          mex_tool_setup_frame (actor, data, "PipTool");
+        }
+      ClutterActor *frame = clutter_actor_get_parent (actor);
+      mx_bin_set_fill (MX_BIN (frame), FALSE, FALSE);
+      mx_stack_child_set_x_align (MX_STACK (data->stack),
+                                  frame,
+                                  MX_ALIGN_END);
+      mx_stack_child_set_y_align (MX_STACK (data->stack),
+                                  frame,
+                                  MX_ALIGN_START);
+      mx_stack_child_set_x_fill (MX_STACK (data->stack),
+                                 frame,
+                                 FALSE);
+      mx_stack_child_set_y_fill (MX_STACK (data->stack),
+                                 frame,
+                                 FALSE);
+
+      mex_show_actor (data, actor);
     }
+  else
+    {
+      data->current_tool_provider = provider;
 
-  data->current_tool_provider = provider;
+      data->current_tool = actor;
+      data->current_tool_mode = TOOL_MODE_FULL;
+      clutter_actor_set_opacity (actor, 0x00);
 
-  data->current_tool = actor;
-  clutter_actor_set_opacity (actor, 0x00);
+      if (!clutter_actor_get_parent (actor))
+        {
+          mex_tool_setup_frame (actor, data, "FullTool");
+        }
+      ClutterActor *frame = clutter_actor_get_parent (actor);
+      mx_bin_set_fill (MX_BIN (frame), TRUE, TRUE);
+      mx_stack_child_set_x_fill (MX_STACK (data->stack),
+                                 frame,
+                                 TRUE);
+      mx_stack_child_set_y_fill (MX_STACK (data->stack),
+                                 frame,
+                                 TRUE);
 
-  if (!clutter_actor_get_parent (actor))
-    clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), actor);
+      mex_show_actor (data, actor);
 
-  mex_show_actor (data, actor);
-
-  /* hide other actors */
-  mex_hide_actor (data, data->explorer);
-  mex_hide_actor (data, data->slide_show);
-  mex_hide_actor (data, data->player);
+      /* hide other actors */
+      mex_hide_actor (data, data->explorer);
+      mex_hide_actor (data, data->slide_show);
+      mex_hide_actor (data, data->player);
+    }
 }
 
 static void
