@@ -85,7 +85,7 @@ void mex_notification_source_emit_notification_remove (MexNotificationSource *so
 
 GType mex_notification_get_type (void);
 #define MEX_TYPE_NOTIFICATION mex_notification_get_type ()
-void mex_notification_free (MexNotification *notification);
+void mex_notification_free (gpointer boxed_type);
 
 
 G_END_DECLS

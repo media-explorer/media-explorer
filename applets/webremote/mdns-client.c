@@ -92,7 +92,6 @@ mdns_service_add_service (AvahiClient *client, MdnsServiceInfo *info)
     {
       if (ret == AVAHI_ERR_COLLISION)
         {
-          gchar *new_name;
           gint retry;
           gint i; /* safety belt */
 
@@ -160,6 +159,9 @@ mdns_service_client_state_changed_cb (AvahiClient *client,
       case AVAHI_CLIENT_S_COLLISION:
         if (info->mdns_entry_group)
           avahi_entry_group_reset (info->mdns_entry_group);
+        break;
+
+      default:
         break;
     }
 }

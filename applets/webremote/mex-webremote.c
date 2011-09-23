@@ -103,7 +103,8 @@ send_response (SoupServer   *server,
     {
       processed_data = self->data;
       data_size = strlen (processed_data);
-      mime_type = g_content_type_guess (NULL, processed_data, data_size, NULL);
+      mime_type = g_content_type_guess (NULL, (guchar *) processed_data,
+                                        data_size, NULL);
     }
 
   if (error)
@@ -296,8 +297,7 @@ auth_cb (SoupAuthDomain *domain,
          const gchar    *password,
          MexWebRemote   *self)
 {
-  gchar *temp, *message;
-  gchar **userpass;
+  gchar *temp;
 
   temp = g_strdup_printf ("%s:%s", username, password);
 

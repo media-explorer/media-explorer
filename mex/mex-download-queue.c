@@ -172,7 +172,7 @@ mex_download_queue_cache_insert (MexDownloadQueue *queue,
 
   queue->priv->cache_size += item->length;
 
-  MEX_DEBUG ("cache (%'" G_GSSIZE_FORMAT "): added: %s",
+  MEX_DEBUG ("cache (%" G_GSSIZE_FORMAT "): added: %s",
              queue->priv->cache_size, uri);
 
   /* keep cache size under MAX_CACHE_SIZE */
@@ -200,7 +200,7 @@ mex_download_queue_cache_insert (MexDownloadQueue *queue,
         {
           queue->priv->cache_size -= value_to_remove->length;
 
-          MEX_DEBUG ("cache (%'" G_GSSIZE_FORMAT "): removed: %s",
+          MEX_DEBUG ("cache (%" G_GSSIZE_FORMAT "): removed: %s",
                      queue->priv->cache_size, key_to_remove);
 
           g_hash_table_remove (queue->priv->cache, key_to_remove);

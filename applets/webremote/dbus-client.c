@@ -78,7 +78,7 @@ verify_dbus_player_proxy (DBusClient *dbus_client)
       return TRUE;
   else
     {
-      if (dbus_client->mex_player = dbus_player_proxy_new (dbus_client))
+      if ((dbus_client->mex_player = dbus_player_proxy_new (dbus_client)))
         return TRUE;
       else
         return FALSE;
@@ -93,7 +93,7 @@ verify_dbus_input_proxy (DBusClient *dbus_client)
       return TRUE;
   else
     {
-      if (dbus_client->mex_player = dbus_input_proxy_new (dbus_client))
+      if ((dbus_client->mex_player = dbus_input_proxy_new (dbus_client)))
         return TRUE;
       else
         return FALSE;

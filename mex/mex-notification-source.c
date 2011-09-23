@@ -29,7 +29,7 @@ enum
   LAST_SIGNAL
 };
 
-static MexNotification *mex_notification_dup (MexNotification *notification);
+static gpointer mex_notification_dup (gpointer boxed_type);
 
 G_DEFINE_BOXED_TYPE (MexNotification,
                      mex_notification,
@@ -122,17 +122,20 @@ mex_notification_source_emit_notification_remove (MexNotificationSource *source,
 }
 
 void
-mex_notification_free (MexNotification *notification)
+mex_notification_free (gpointer boxed_type)
 {
+  MexNotification *notification = boxed_type;
+
   g_object_unref (notification->source);
   g_free (notification->message);
   g_free (notification->icon);
   g_slice_free (MexNotification, notification);
 }
 
-static MexNotification *
-mex_notification_dup (MexNotification *notification)
+static gpointer
+mex_notification_dup (gpointer boxed_type)
 {
+  MexNotification *notification = boxed_type;
   MexNotification *new_notification;
 
   new_notification = _mex_notification_new ();
