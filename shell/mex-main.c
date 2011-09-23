@@ -1962,6 +1962,52 @@ static const gchar *show_action_mimetypes[] = { "image/", NULL };
 static const gchar *back_action_mimetypes[] = { "x-mex/back", NULL };
 static const gchar *group_action_mimetypes[] = { "x-mex/group", NULL };
 
+static void
+mex_open_files_action (MxAction *action,
+                       GVariant *parameter,
+                       MexData  *data)
+{
+  MexContent *first_content = NULL;
+  MexModel *queue_model;
+  GList *queue_models = NULL;
+  gboolean first_done = FALSE;
+  gint i;
+  const gchar **files = g_variant_get_bytestring_array (parameter, NULL);
+
+
+  queue_models = mex_model_manager_get_models_for_category (mex_model_manager_get_default (),
+                                                            "queue");
+
+  queue_model = MEX_MODEL (queue_models->data);
+
+  for (i=0; files[i]; i++)
+    {
+      gchar *uri;
+      MexContent *content;
+
+      uri = g_filename_to_uri (files[i], NULL, NULL);
+      /* It's possible a filename is not specified, such as dvd:/// */
+      if (!uri && g_str_has_prefix (files[i], "dvd"))
+        uri = g_strdup (files[i]);
+
+      content = mex_content_from_uri (uri);
+      g_free (uri);
+
+      if (content)
+        {
+          if (!first_done)
+            first_content = content;
+          mex_model_add_content (queue_model, content);
+        }
+    }
+
+  mex_content_view_set_context (MEX_CONTENT_VIEW (data->player),
+                                queue_model);
+  mex_content_view_set_content (MEX_CONTENT_VIEW (data->player),
+                                first_content);
+
+  mex_player_content_set_externally_cb (data);
+}
 
 int
 main (int argc, char **argv)
@@ -1970,6 +2016,7 @@ main (int argc, char **argv)
   gchar *web_settings_loc;
   MxWindow *window;
   MxApplication *app;
+  MxAction *open_files_action;
   MexModel *root_model;
   GOptionContext *context;
   MexModelManager *mmanager;
@@ -2053,6 +2100,22 @@ main (int argc, char **argv)
   clutter_gst_init (&argc, &argv);
 #endif
 
+  /* Create application */
+  app = mx_application_new (&argc, &argv, "Media Explorer",
+                            MX_APPLICATION_SINGLE_INSTANCE);
+  if (mx_application_is_running (app))
+    {
+      mx_application_invoke_action_with_parameter (app, "Open",
+                                                   g_variant_new_bytestring_array (opt_file, -1));
+      return 0;
+    }
+  open_files_action = mx_action_new_with_parameter ("Open",
+                                                    G_VARIANT_TYPE_BYTESTRING_ARRAY);
+  g_signal_connect (open_files_action, "activate",
+                    G_CALLBACK (mex_open_files_action), &data);
+  mx_application_add_action (app, open_files_action);
+
+
   clutter_set_font_flags (clutter_get_font_flags () & ~CLUTTER_FONT_MIPMAPPING);
 
   /* log domain */
@@ -2135,9 +2198,6 @@ main (int argc, char **argv)
   auto_start_dbus_service (MEX_REBINDER_DBUS_INTERFACE);
 #endif /* HAVE_REBINDER */
 
-  /* Create application */
-  app = mx_application_new (&argc, &argv, "Media Explorer",
-                            MX_APPLICATION_SINGLE_INSTANCE);
   mex_style_load_default ();
 
   if (error)
@@ -2472,47 +2532,6 @@ main (int argc, char **argv)
   if (opt_touch)
     mex_enable_touch_events (&data, TRUE);
 
-  if (opt_file)
-    {
-      MexContent *first_content = NULL;
-      MexModel *queue_model;
-      GList *queue_models = NULL;
-      gboolean first_done = FALSE;
-      gint i;
-
-      queue_models = mex_model_manager_get_models_for_category (mmanager,
-                                                               "queue");
-
-      queue_model = MEX_MODEL (queue_models->data);
-
-      for (i=0; opt_file[i]; i++)
-        {
-          gchar *uri;
-          MexContent *content;
-
-          uri = g_filename_to_uri (opt_file[i], NULL, NULL);
-          /* It's possible a filename is not specified, such as dvd:/// */
-          if (!uri && g_str_has_prefix (opt_file[i], "dvd"))
-            uri = g_strdup (opt_file[i]);
-
-          content = mex_content_from_uri (uri);
-          g_free (uri);
-
-          if (content)
-            {
-              if (!first_done)
-                first_content = content;
-              mex_model_add_content (queue_model, content);
-            }
-        }
-
-      mex_content_view_set_context (MEX_CONTENT_VIEW (data.player),
-                                    queue_model);
-      mex_content_view_set_content (MEX_CONTENT_VIEW (data.player),
-                                    first_content);
-
-      mex_player_content_set_externally_cb (&data);
-    }
 
 #if defined (HAVE_DBUS_GLIB) && defined (HAVE_WEBREMOTE)
   web_settings_loc = mex_settings_find_config_file (mex_settings_get_default (),
@@ -2562,6 +2581,13 @@ main (int argc, char **argv)
 
   /* Start with background video activated */
   mex_activate_background (&data, TRUE);
+
+  /* open any files from the command line */
+  if (opt_file)
+    g_action_activate (G_ACTION (open_files_action),
+                       g_variant_new_bytestring_array (opt_file, -1));
+
+
 
   mx_application_run (app);
 
