@@ -2106,7 +2106,7 @@ main (int argc, char **argv)
   if (mx_application_is_running (app))
     {
       mx_application_invoke_action_with_parameter (app, "Open",
-                                                   g_variant_new_bytestring_array (opt_file, -1));
+                                                   g_variant_new_bytestring_array ((const gchar**) opt_file, -1));
       return 0;
     }
   open_files_action = mx_action_new_with_parameter ("Open",
@@ -2585,7 +2585,8 @@ main (int argc, char **argv)
   /* open any files from the command line */
   if (opt_file)
     g_action_activate (G_ACTION (open_files_action),
-                       g_variant_new_bytestring_array (opt_file, -1));
+                       g_variant_new_bytestring_array ((const gchar**) opt_file,
+                                                       -1));
 
 
 
