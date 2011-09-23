@@ -152,13 +152,13 @@ http_post (SoupServer   *server,
       gchar *sparql_request;
       gchar *result = NULL;
 
-      if (self->opt_debug)
-        g_debug ("Got Search request: %s", search_term);
-
       /* If we were able to connect to tracker backend use it */
       if (self->tracker_interface)
         {
           search_term = g_strdup (post_request + strlen ("trackersearch="));
+
+          if (self->opt_debug)
+            g_debug ("Got Search request: %s", search_term);
 
           sparql_request =
             g_strdup_printf ("SELECT ?title ?url {"
@@ -381,9 +381,8 @@ sig_webremote_quit (int sig)
 
 int main (int argc, char **argv)
 {
-  g_type_init ();
-
   MexWebRemote webremote = { 0, };
+
   SoupServer *server;
   SoupAuthDomain *domain;
 
@@ -413,6 +412,8 @@ int main (int argc, char **argv)
           "Disable authentication", NULL },
         { NULL }
     };
+
+  g_type_init ();
 
   context = g_option_context_new ("- Media explorer web remote");
 

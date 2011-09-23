@@ -15,6 +15,7 @@ mex_webremote_CFLAGS = \
 		-I$(top_srcdir) \
 		-I$(top_srcdir)/mex \
 		$(MEX_CFLAGS) \
+		$(MEX_WARNING_CFLAGS) \
 		$(WEBREMOTE_CFLAGS) \
 		-DMEXPKGDATADIR=\"$(pkgdatadir)\"
 		-DG_LOG_DOMAIN=\"MexWebremote\"

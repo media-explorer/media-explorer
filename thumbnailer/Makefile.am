@@ -6,7 +6,7 @@ mex_thumbnailer_CFLAGS = 		\
 	-I$(top_srcdir)/mex		\
 	$(MEX_DEBUG_CFLAGS)		\
 	$(MEX_CFLAGS)			\
-	$(MAINTAINER_FLAGS) 		\
+	$(MEX_WARNING_CFLAGS) 		\
 	$(NULL)
 
 mex_thumbnailer_LDADD = 						\

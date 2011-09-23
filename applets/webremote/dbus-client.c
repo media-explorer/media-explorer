@@ -300,9 +300,9 @@ fail_out:
 DBusClient *dbus_client_new (void)
 {
   DBusClient *dbus_client;
+  GError *error = NULL;
 
   dbus_client = g_new0 (DBusClient, 1);
-  GError *error=NULL;
 
   dbus_client->mex_input = NULL;
   dbus_client->mex_player = NULL;

@@ -35,7 +35,7 @@ GINTERFACE_SOURCES = \
 
 libmex_player_ginterfaces_la_SOURCES = $(GINTERFACE_SOURCES)
 libmex_player_ginterfaces_la_LIBADD = $(MEX_LIBS) -lm
-libmex_player_ginterfaces_la_CFLAGS = $(MEX_CFLAGS)
+libmex_player_ginterfaces_la_CFLAGS = $(MEX_CFLAGS) $(MEX_WARNING_CFLAGS)
 
 %-bindings.h: %.xml
 	$(AM_V_GEN)dbus-binding-tool --mode=glib-client --output=$@ --prefix=$(subst -,_,$*) $^

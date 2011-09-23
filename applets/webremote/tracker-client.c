@@ -119,9 +119,9 @@ TrackerInterface *
 tracker_interface_new (void)
 {
   TrackerInterface *tracker_interface;
+  GError *error = NULL;
 
   tracker_interface = g_new0 (TrackerInterface, 1);
-  GError *error=NULL;
 
   /* connect to the tracker sparql backend */
   tracker_interface->connection =

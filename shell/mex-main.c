@@ -43,14 +43,14 @@
 
 #include "mex-version.h"
 
-#if HAVE_CLUTTER_X11
+#ifdef HAVE_CLUTTER_X11
 #include <clutter/x11/clutter-x11.h>
 #endif
-#if HAVE_REBINDER
+#ifdef HAVE_REBINDER
 #include "rebinder.h"
 #endif
 
-#if HAVE_WEBREMOTE
+#ifdef HAVE_WEBREMOTE
 #include "webremote.h"
 #endif
 
@@ -310,7 +310,7 @@ run_play_transition (MexData      *data,
   ClutterActor *fade;
   gfloat x, y, width, height, stage_width, stage_height;
   ClutterColor black = {0, 0, 0, 255};
-  ClutterActor *focused, *a;
+  ClutterActor *a;
   MxFocusManager *manager;
   gint duration = 500;
 
@@ -468,41 +468,6 @@ mex_is_toplevel_plugin_model (MexData  *data,
     return TRUE;
   else
     return FALSE;
-}
-
-static const MexModelInfo *
-mex_get_toplevel_model_info (MexData  *data,
-                             MexModel *model)
-{
-  GList *m, *models;
-
-  const MexModelInfo *info = NULL;
-  MexModelManager *manager = mex_model_manager_get_default ();
-
-  if (model && MEX_IS_PROXY_MODEL (model))
-    model = mex_proxy_model_get_model (MEX_PROXY_MODEL (model));
-
-  if (model && (info = mex_model_manager_get_model_info (manager, model)))
-    return info;
-
-  models = mex_explorer_get_models (MEX_EXPLORER (data->explorer));
-
-  for (m = models; m; m = m->next)
-    {
-      MexModel *child_model = mex_model_get_model (m->data);
-      const MexModelInfo *m_info =
-        mex_model_manager_get_model_info (manager, child_model);
-      if (m_info)
-        info = m_info;
-    }
-
-  g_list_free (models);
-
-  if (!info && data->toplevel_plugin_model)
-    info = mex_model_manager_get_model_info (manager,
-                                             data->toplevel_plugin_model);
-
-  return info;
 }
 
 static void
@@ -674,51 +639,6 @@ mex_header_activated_cb (MexExplorer *explorer,
 
 
 static void
-mex_container_repopulating_cb (MxActorManager *manager,
-                               gulong          id,
-                               ClutterActor   *container,
-                               ClutterActor   *actor,
-                               ClutterActor   *our_container)
-{
-  /* Fade in the container now it's repopulating */
-  if (container == our_container)
-    {
-      ClutterActor *parent = clutter_actor_get_parent (container);
-
-      clutter_actor_set_opacity (container, 0x00);
-      clutter_actor_show (container);
-      clutter_actor_animate (container,
-                             CLUTTER_EASE_OUT_CUBIC, 250,
-                             "opacity", 0xff,
-                             NULL);
-
-      if (MEX_IS_SCROLL_VIEW (parent))
-        mex_scroll_view_set_indicators_hidden (MEX_SCROLL_VIEW (parent), FALSE);
-
-      g_signal_handlers_disconnect_by_func (manager,
-                                            mex_container_repopulating_cb,
-                                            container);
-    }
-}
-
-static void
-mex_hide_repopulating_container (ClutterActor *container)
-{
-  ClutterActor *parent = clutter_actor_get_parent (container);
-  ClutterActor *stage = clutter_actor_get_stage (container);
-  MxActorManager *manager =
-    mx_actor_manager_get_for_stage (CLUTTER_STAGE (stage));
-
-  g_signal_connect (manager, "actor-added",
-                    G_CALLBACK (mex_container_repopulating_cb), container);
-
-  clutter_actor_hide (container);
-
-  if (MEX_IS_SCROLL_VIEW (parent))
-    mex_scroll_view_set_indicators_hidden (MEX_SCROLL_VIEW (parent), TRUE);
-}
-
-static void
 mex_notify_depth_cb (MexExplorer *explorer,
                      GParamSpec  *pspec,
                      MexData     *data)
@@ -848,16 +768,19 @@ mex_show_home_screen (MexData *data)
   mex_explorer_set_focused_model (MEX_EXPLORER (data->explorer), model);
 }
 
-void
+static void
 mex_go_back_transition_complete (ClutterAnimation *animation,
-                gpointer *data)
+                                 gpointer         *data)
 {
-  ClutterActor *actor = (ClutterActor*) clutter_animation_get_object (animation);
+  ClutterActor *actor;
+
+  actor = (ClutterActor*) clutter_animation_get_object (animation);
   clutter_actor_destroy (actor);
 }
-void
+
+static void
 mex_go_back_transition_first_stage (ClutterAnimation *animation,
-                MexData *data)
+                                    MexData          *data)
 {
   MxFocusManager *manager;
   ClutterActor *actor;
@@ -1044,7 +967,7 @@ mex_captured_event_cb (ClutterActor *actor,
                        ClutterEvent *event,
                        MexData      *data)
 {
-  gboolean handled, fullscreen;
+  gboolean handled;
   ClutterKeyEvent *key_event;
 
   /* Motion events are used to show/hide the cursor when the application is
@@ -1721,38 +1644,6 @@ auto_start_dbus_service (const gchar *name)
                                                     name, 0,
                                                     start_service_reply, NULL);
 }
-
-static gboolean
-request_dbus_name (const gchar *name)
-{
-  DBusGConnection *connection;
-  DBusGProxy *proxy;
-  guint32 request_status;
-  GError *error = NULL;
-
-  connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-  if (connection == NULL) {
-    g_warning ("Failed to open connection to DBus: %s", error->message);
-    g_error_free (error);
-    return FALSE;
-  }
-
-  proxy = dbus_g_proxy_new_for_name (connection,
-                                     DBUS_SERVICE_DBUS,
-                                     DBUS_PATH_DBUS,
-                                     DBUS_INTERFACE_DBUS);
-
-  if (!org_freedesktop_DBus_request_name (proxy, name,
-                                          DBUS_NAME_FLAG_DO_NOT_QUEUE,
-                                          &request_status,
-                                          &error)) {
-    g_warning ("Failed to request name: %s", error->message);
-    g_error_free (error);
-    return FALSE;
-  }
-
-  return request_status == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER;
-}
 #endif
 
 static void
@@ -1768,7 +1659,7 @@ welcome_run (MexData *data)
 {
   GError *error = NULL;
   ClutterScript *script;
-  ClutterActor *welcome, *main_frame, *old_child;
+  ClutterActor *welcome, *main_frame;
 
   script = clutter_script_new ();
 
@@ -1849,7 +1740,6 @@ webremote_quit (void)
 {
   DBusGConnection *connection;
   DBusGProxy *proxy;
-  guint32 request_status;
   GError *error = NULL;
 
   connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
@@ -1884,9 +1774,6 @@ out_of_box (MexData *data)
   GError *error = NULL;
   gchar *out_box_done;
   const gchar oob[] = "out-of-box-done";
-
-  MexNotificationSource *source;
-  MexNotification *help_message;
 
   settings = mex_settings_get_default ();
   out_box_done = mex_settings_find_config_file (settings, oob);
@@ -2033,11 +1920,11 @@ mex_open_group_cb (MxAction *action,
 static void
 cleanup_before_exit (void)
 {
-#if HAVE_REBINDER
+#ifdef HAVE_REBINDER
   rebinder_quit ();
 #endif
 
-#if HAVE_WEBREMOTE
+#ifdef HAVE_WEBREMOTE
   webremote_quit ();
 #endif
 }
@@ -2105,12 +1992,11 @@ main (int argc, char **argv)
   MexActionInfo back = { 0, };
   MexActionInfo group = { 0, };
 
-
-  /* initialise translations */
-  setlocale (LC_ALL, "");
-  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
-  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-  textdomain (GETTEXT_PACKAGE);
+#ifdef HAVE_CLUTTER_CEX100
+  const ClutterColor black = { 0x00, 0x00, 0x00, 0x00 };
+#else
+  const ClutterColor black = { 0x00, 0x00, 0x00, 0xff };
+#endif /* HAVE_CLUTTER_CEX100 */
 
   /* FIXME: Replace this with a configuration file */
   MexModelCategoryInfo videos = { "videos", _("Videos"), "icon-panelheader-videos", 20, _("Connect an external drive or update your network settings to see Videos here.") };
@@ -2119,11 +2005,11 @@ main (int argc, char **argv)
   MexModelCategoryInfo music = { "music", _("Music"), "icon-panelheader-music", 40, _("Connect an external drive or update your network settings to see Music here.") };
   MexModelCategoryInfo queue = { "queue", _("Queue"), "icon-panelheader-queue", 50, _("This is your custom playlist.  Select Add to queue from the info menu on any video file to add it here.") };
 
-#ifdef HAVE_CLUTTER_CEX100
-  const ClutterColor black = { 0x00, 0x00, 0x00, 0x00 };
-#else
-  const ClutterColor black = { 0x00, 0x00, 0x00, 0xff };
-#endif /* HAVE_CLUTTER_CEX100 */
+  /* initialise translations */
+  setlocale (LC_ALL, "");
+  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+  textdomain (GETTEXT_PACKAGE);
 
   /*
    * Workaround SQLite Tracker backend problems by relying on the bus
@@ -2634,7 +2520,6 @@ main (int argc, char **argv)
   if (web_settings_loc)
     {
       GKeyFile *web_settings;
-      GError *error = NULL;
       gboolean autostart;
 
       web_settings = g_key_file_new ();
@@ -2643,6 +2528,7 @@ main (int argc, char **argv)
                                  web_settings_loc,
                                  G_KEY_FILE_NONE, NULL);
 
+      error = NULL;
       autostart = g_key_file_get_boolean (web_settings, "settings",
                                           "autostart", &error);
       /* We get an error if the config key is not found so do the

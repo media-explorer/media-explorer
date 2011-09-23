@@ -7,7 +7,7 @@ AM_CFLAGS =					\
 	-I$(top_srcdir)/applets/webremote	\
 	$(MEX_CFLAGS)				\
 	$(MEX_DEBUG_CFLAGS)			\
-	$(MAINTAINER_FLAGS) 			\
+	$(MEX_WARNING_CFLAGS) 			\
 	-DG_LOG_DOMAIN=\"Mex\"			\
 	-DPKGDATADIR=\""$(pkgdatadir)"\"	\
 	$(NULL)
