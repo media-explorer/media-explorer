@@ -2,6 +2,7 @@
  * Mex - a media explorer
  *
  * Copyright © 2010, 2011 Intel Corporation.
+ * Copyright © 2011 Collabora Ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -51,6 +52,13 @@ G_BEGIN_DECLS
 typedef struct _MexToolProvider          MexToolProvider;
 typedef struct _MexToolProviderInterface MexToolProviderInterface;
 
+typedef enum
+{
+  TOOL_MODE_FULL,
+  TOOL_MODE_PIP, /* Picture in picture */
+  TOOL_MODE_SBS /* Side-by-side */
+} MexToolMode;
+
 typedef struct
 {
   const gchar         *action_name;
@@ -68,6 +76,9 @@ struct _MexToolProviderInterface
   /* virtual functions */
   const GList * (*get_tools)    (MexToolProvider *provider);
   const GList * (*get_bindings) (MexToolProvider *provider);
+  void          (*set_tool_mode) (MexToolProvider *provider,
+                                 MexToolMode mode,
+                                 guint duration);
 
   /* signals */
   void (* present_actor)       (MexToolProvider *provider,
