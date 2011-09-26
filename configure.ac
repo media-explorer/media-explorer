@@ -375,15 +375,18 @@ AS_IF([test "x$enable_warning_flags" = "xyes"],
                             -Winline -Wformat-nonliteral -Wformat-security
                             -Winit-self -Wmissing-include-dirs -Wundef
                             -Waggregate-return -Wempty-body -Wpacked
-                            -Wmissing-format-attribute -Wnested-externs
-
-                            -Qunused-arguments"])
+                            -Wmissing-format-attribute -Wnested-externs"])
       ],
       [
         AS_COMPILER_FLAGS([MEX_WARNING_CFLAGS],
                           ["-Wall"])
       ]
 )
+
+# Unfortunately, some versions of gcc don't return an error code when an option is not
+# recognized and then AS_COMPILER_FLAGS() above does not exclude unknown options.
+AS_IF([test "x$CC" = "xclang"],
+      [MEX_WARNING_CFLAGS="$MEX_WARNING_CFLAGS -Qunused-arguments"])
 
 AC_SUBST(MEX_WARNING_CFLAGS)
 
