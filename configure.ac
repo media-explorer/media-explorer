@@ -483,6 +483,7 @@ AS_MEX_PLUGIN(telepathy,
                farsight2-0.10])
 AS_MEX_PLUGIN(debug-buddy)
 AS_MEX_PLUGIN(gnome-dvb)
+AS_MEX_PLUGIN(dvb)
 AS_MEX_PLUGIN(opticaldisc)
 AS_MEX_PLUGIN(twitter-send, [libsocialweb-client])
 AS_MEX_PLUGIN(apps, [webkit-clutter-mx])
