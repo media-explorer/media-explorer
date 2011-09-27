@@ -103,6 +103,8 @@ typedef struct
   guint cursor_timeout_source;
 } MexData;
 
+void mex_toggle_pip (MexData *data);
+
 static void mex_show_actor (MexData *data, ClutterActor *actor);
 static void mex_hide_actor (MexData *data, ClutterActor *actor);
 
@@ -1093,6 +1095,10 @@ mex_captured_event_cb (ClutterActor *actor,
     case CLUTTER_KEY_F11 :
       mex_toggle_fullscreen ();
       return TRUE;
+
+    case CLUTTER_KEY_p :
+      mex_toggle_pip(data);
+      return TRUE;
     }
 
   /* Handle the rest of the shortcuts/bindings */
@@ -1442,6 +1448,61 @@ mex_tool_remove_actor_cb (MexToolProvider *provider,
     mex_go_back (data);
 }
 
+void
+mex_tool_set_mode (ClutterActor *actor,
+                   MexData *data,
+                   MexToolMode mode,
+                   guint duration)
+{
+  ClutterActor *frame = clutter_actor_get_parent (actor);
+
+  if (mode == TOOL_MODE_PIP)
+    {
+      mx_stylable_set_style_class (MX_STYLABLE(frame), "PipTool");
+      mx_bin_set_fill (MX_BIN (frame), FALSE, FALSE);
+      mx_stack_child_set_x_align (MX_STACK (data->stack),
+                                  frame,
+                                  actor == data->current_tool ? MX_ALIGN_START : MX_ALIGN_END);
+      mx_stack_child_set_y_align (MX_STACK (data->stack),
+                                  frame,
+                                  MX_ALIGN_END);
+      mx_stack_child_set_x_fill (MX_STACK (data->stack),
+                                 frame,
+                                 FALSE);
+      mx_stack_child_set_y_fill (MX_STACK (data->stack),
+                                 frame,
+                                 FALSE);
+    }
+  else if (mode == TOOL_MODE_FULL)
+    {
+      mx_stylable_set_style_class (MX_STYLABLE(frame), "FullTool");
+      mx_bin_set_fill (MX_BIN (frame), TRUE, TRUE);
+      mx_stack_child_set_x_fill (MX_STACK (data->stack),
+                                 frame,
+                                 TRUE);
+      mx_stack_child_set_y_fill (MX_STACK (data->stack),
+                                 frame,
+                                 TRUE);
+    }
+  else if (mode == TOOL_MODE_SBS)
+    {
+      mx_stylable_set_style_class (MX_STYLABLE(frame), "FullTool");
+      mx_bin_set_fill (MX_BIN (frame), FALSE, FALSE);
+      mx_stack_child_set_x_fill (MX_STACK (data->stack),
+                                 frame,
+                                 FALSE);
+      mx_stack_child_set_y_fill (MX_STACK (data->stack),
+                                 frame,
+                                 FALSE);
+      mx_stack_child_set_x_align (MX_STACK (data->stack),
+                                  frame,
+                                  actor == data->current_tool ? MX_ALIGN_START : MX_ALIGN_END);
+      mx_stack_child_set_y_align (MX_STACK (data->stack),
+                                  frame,
+                                  MX_ALIGN_MIDDLE);
+    }
+}
+
 static void
 mex_tool_setup_frame (ClutterActor *actor,
                       MexData *data,
@@ -1479,7 +1540,7 @@ mex_tool_present_actor_cb (MexToolProvider *provider,
       iface = MEX_TOOL_PROVIDER_GET_IFACE (provider);
 
       if (G_LIKELY (iface->set_tool_mode))
-        iface->set_tool_mode(provider, TOOL_MODE_PIP, 0);
+        iface->set_tool_mode(provider, TOOL_MODE_PIP, 100);
 
       /* default other tool to pip mode */
       data->other_tool_mode = TOOL_MODE_PIP;
@@ -1488,21 +1549,7 @@ mex_tool_present_actor_cb (MexToolProvider *provider,
         {
           mex_tool_setup_frame (actor, data, "PipTool");
         }
-      ClutterActor *frame = clutter_actor_get_parent (actor);
-      mx_bin_set_fill (MX_BIN (frame), FALSE, FALSE);
-      mx_stack_child_set_x_align (MX_STACK (data->stack),
-                                  frame,
-                                  MX_ALIGN_END);
-      mx_stack_child_set_y_align (MX_STACK (data->stack),
-                                  frame,
-                                  MX_ALIGN_START);
-      mx_stack_child_set_x_fill (MX_STACK (data->stack),
-                                 frame,
-                                 FALSE);
-      mx_stack_child_set_y_fill (MX_STACK (data->stack),
-                                 frame,
-                                 FALSE);
-
+      mex_tool_set_mode (actor, data, TOOL_MODE_PIP, 100);
       mex_show_actor (data, actor);
     }
   else
@@ -1517,15 +1564,7 @@ mex_tool_present_actor_cb (MexToolProvider *provider,
         {
           mex_tool_setup_frame (actor, data, "FullTool");
         }
-      ClutterActor *frame = clutter_actor_get_parent (actor);
-      mx_bin_set_fill (MX_BIN (frame), TRUE, TRUE);
-      mx_stack_child_set_x_fill (MX_STACK (data->stack),
-                                 frame,
-                                 TRUE);
-      mx_stack_child_set_y_fill (MX_STACK (data->stack),
-                                 frame,
-                                 TRUE);
-
+      mex_tool_set_mode (actor, data, TOOL_MODE_FULL, 100);
       mex_show_actor (data, actor);
 
       /* hide other actors */
@@ -1533,6 +1572,55 @@ mex_tool_present_actor_cb (MexToolProvider *provider,
       mex_hide_actor (data, data->slide_show);
       mex_hide_actor (data, data->player);
     }
+}
+
+void
+mex_tool_toggle_mode (MexData *data,
+                      MexToolProvider *provider,
+                      ClutterActor *actor,
+                      MexToolMode *mode)
+{
+  /* Set the tool mode of the pip one to full and vice versa */
+  MexToolProviderInterface *iface;
+
+  if (provider)
+    {
+      iface = MEX_TOOL_PROVIDER_GET_IFACE (provider);
+      if (G_LIKELY (iface->set_tool_mode))
+        {
+          if (*mode == TOOL_MODE_PIP)
+            {
+              iface->set_tool_mode (provider, TOOL_MODE_SBS, 500);
+              mex_tool_set_mode (actor, data, TOOL_MODE_SBS, 500);
+              *mode = TOOL_MODE_SBS;
+            }
+          else if (*mode == TOOL_MODE_SBS)
+            {
+              iface->set_tool_mode (provider, TOOL_MODE_FULL, 500);
+              mex_tool_set_mode (actor, data, TOOL_MODE_FULL, 500);
+              *mode = TOOL_MODE_FULL;
+            }
+          else if (*mode == TOOL_MODE_FULL)
+            {
+              iface->set_tool_mode (provider, TOOL_MODE_PIP, 500);
+              mex_tool_set_mode (actor, data, TOOL_MODE_PIP, 500);
+              *mode = TOOL_MODE_PIP;
+            }
+        }
+    }
+}
+
+void
+mex_toggle_pip (MexData *data)
+{
+  mex_tool_toggle_mode (data,
+                        data->current_tool_provider,
+                        data->current_tool,
+                        &data->current_tool_mode);
+  mex_tool_toggle_mode (data,
+                        data->other_tool_provider,
+                        data->other_tool,
+                        &data->other_tool_mode);
 }
 
 static void
