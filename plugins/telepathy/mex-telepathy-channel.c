@@ -629,8 +629,11 @@ mex_telepathy_channel_set_tool_mode (MexTelepathyChannel *self,
 
   if (mode == TOOL_MODE_PIP)
     {
-      clutter_actor_set_width (priv->full_frame, 320.0);
-      clutter_actor_set_height (priv->full_frame, 240.0);
+      clutter_actor_animate (priv->full_frame, CLUTTER_EASE_IN_CUBIC,
+                             duration,
+                             "width", 320.0,
+                             "height", 240.0,
+                             NULL);
       /* Hide the toolbar and preview areas */
       clutter_actor_hide (priv->toolbar_area);
       clutter_actor_hide (priv->preview_area);
@@ -638,12 +641,27 @@ mex_telepathy_channel_set_tool_mode (MexTelepathyChannel *self,
     }
   else if (mode == TOOL_MODE_FULL)
     {
-      clutter_actor_set_width (priv->full_frame, 768.0);
-      clutter_actor_set_height (priv->full_frame, 576.0);
+      clutter_actor_animate (priv->full_frame, CLUTTER_EASE_IN_CUBIC,
+                             duration,
+                             "width", 768.0,
+                             "height", 576.0,
+                             NULL);
       /* Show the toolbar and preview areas */
       clutter_actor_show (priv->toolbar_area);
       clutter_actor_show (priv->preview_area);
-      clutter_actor_show (priv->busy_box);
+      //clutter_actor_show (priv->busy_box);
+    }
+  else if (mode == TOOL_MODE_SBS)
+    {
+      clutter_actor_animate (priv->full_frame, CLUTTER_EASE_IN_CUBIC,
+                             duration,
+                             "width", 640.0,
+                             "height", 480.0,
+                             NULL);
+      /* Show the toolbar and preview areas */
+      clutter_actor_hide (priv->toolbar_area);
+      clutter_actor_hide (priv->preview_area);
+      clutter_actor_hide (priv->busy_box);
     }
 }
 
@@ -1372,6 +1390,7 @@ mex_telepathy_channel_init (MexTelepathyChannel *self)
   self->priv->channel = NULL;
   self->priv->tf_channel = NULL;
   self->priv->show_page = FALSE;
+  self->priv->video_call_page = NULL;
   mex_telepathy_channel_create_video_page (self);
 }
 
