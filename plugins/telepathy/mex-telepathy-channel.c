@@ -1030,7 +1030,7 @@ mex_telepathy_channel_conference_added (TfChannel  *channel,
   gst_bin_add (GST_BIN (priv->pipeline), conference);
   gst_element_set_state (conference, GST_STATE_PLAYING);
 
-  if (priv->video_call_page)
+  if (CLUTTER_IS_ACTOR (priv->video_call_page))
     g_signal_emit (self,
                    mex_telepathy_channel_signals[SHOW_ACTOR],
                    0,
