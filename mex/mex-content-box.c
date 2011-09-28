@@ -324,6 +324,14 @@ mex_content_box_toggle_open (MexContentBox *box)
 {
   MexContentBoxPrivate *priv = box->priv;
   gboolean close_notified, next_is_open;
+  const gchar *mimetype;
+
+  /* search history items should not appear in the "open" state */
+  mimetype = mex_content_get_metadata (priv->content,
+                                       MEX_CONTENT_METADATA_MIMETYPE);
+  if (!g_strcmp0 (mimetype, "x-mex/search"))
+    return;
+
 
   /* if the close animation was cancelled then no notify for the closed state
    * will have been sent, therefore notify for the opened state does not need
