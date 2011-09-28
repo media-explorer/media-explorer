@@ -308,3 +308,13 @@ dist_mex_bg_backdrop_DATA = \
 	-DMEX_DATA_PLUGIN_DIR=\"$(mex_bg_backdropdir)\"
 01mex_bg_backdrop_la_LIBADD = $(_libadd)
 endif
+
+if USE_PLUGIN_TWITTER_SEND
+plugins_LTLIBRARIES += 60mex-twitter-send.la
+
+60mex_twitter_send_la_SOURCES = 		\
+	twitter-send/mex-twitter-send-plugin.c	\
+	twitter-send/mex-twitter-send-plugin.h
+60mex_twitter_send_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Twitter-Send\" $(PLUGIN_TWITTER_SEND_CFLAGS)
+60mex_twitter_send_la_LIBADD = $(_libadd) $(PLUGIN_TWITTER_SEND_LIBS)
+endif
