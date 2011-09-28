@@ -19,10 +19,14 @@
 
 #include "mex-twitter-send-plugin.h"
 
+#include <libsocialweb-client/sw-client.h>
+
 #include <glib/gi18n.h>
 
 #define MEX_LOG_DOMAIN_DEFAULT  twitter_send_log_domain
 MEX_LOG_DOMAIN_STATIC(twitter_send_log_domain);
+
+static const gchar *app_mimetypes[] = { "video", "audio", "x-mex/media", "x-mex-channel", NULL };
 
 static void action_provider_iface_init (MexActionProviderInterface *iface);
 G_DEFINE_TYPE_WITH_CODE (MexTwitterSendPlugin,
@@ -38,7 +42,15 @@ G_DEFINE_TYPE_WITH_CODE (MexTwitterSendPlugin,
 
 struct _MexTwitterSendPluginPrivate
 {
-  GList *actions;
+  GList                      *actions;
+
+  SwClient                   *client;
+  SwClientService            *service;
+
+  ClutterActor               *dialog;
+  ClutterActor               *prompt_label;
+
+  const gchar                *last_title;
 };
 
 G_GNUC_UNUSED static void
@@ -56,6 +68,11 @@ mex_twitter_send_plugin_dispose (GObject *gobject)
       g_free (info);
 
       priv->actions = g_list_delete_link (priv->actions, priv->actions);
+    }
+  if (priv->dialog)
+    {
+      g_object_unref (priv->dialog);
+      priv->dialog = NULL;
     }
 
   G_OBJECT_CLASS (mex_twitter_send_plugin_parent_class)->dispose (gobject);
@@ -78,15 +95,188 @@ mex_twitter_send_plugin_class_init (MexTwitterSendPluginClass *klass)
 }
 
 static void
+mex_twitter_send_plugin_hide_prompt_dialog (MexTwitterSendPlugin *self)
+{
+  /* Hide the dialog. */
+  clutter_actor_destroy (self->priv->dialog);
+}
+
+static void
+mex_twitter_send_plugin_on_status_updated (SwClientService *service,
+                                           const GError    *error,
+                                           gpointer         user_data)
+{
+  MexTwitterSendPlugin *self = MEX_TWITTER_SEND_PLUGIN (user_data);
+
+  if (error != NULL)
+    {
+      mex_info_bar_new_notification (MEX_INFO_BAR (mex_info_bar_get_default ()),
+                                     _("There has been an error while posting "
+                                       "your tweet!"),
+                                     20);
+    }
+  else
+    {
+      mex_info_bar_new_notification (MEX_INFO_BAR (mex_info_bar_get_default ()),
+                                     _("Your tweet was posted successfully!"),
+                                     20);
+    }
+
+  mex_twitter_send_plugin_hide_prompt_dialog (self);
+}
+
+static void
+mex_twitter_send_plugin_on_cancel_tweet (MxAction *action     G_GNUC_UNUSED,
+                                         gpointer  user_data)
+{
+  MexTwitterSendPlugin *self = MEX_TWITTER_SEND_PLUGIN (user_data);
+
+  /* TODO: Should we do anything here? */
+  MEX_DEBUG ("No tweet");
+
+  mex_twitter_send_plugin_hide_prompt_dialog (self);
+}
+
+static void
+mex_twitter_send_plugin_on_tweet (MxButton *button,
+                                  gpointer  user_data)
+{
+  MexTwitterSendPlugin *self = MEX_TWITTER_SEND_PLUGIN (user_data);
+  MexTwitterSendPluginPrivate *priv = self->priv;
+  gchar *tweet;
+
+  MEX_DEBUG ("accept chosen");
+
+  tweet = g_strdup_printf (_("I have watched %s on media-explorer."
+                             " It's %s"), priv->last_title,
+                           mx_button_get_label (MX_BUTTON (button)));
+
+  sw_client_service_update_status (priv->service,
+                                   mex_twitter_send_plugin_on_status_updated,
+                                   tweet, self);
+}
+
+static void
+mex_twitter_send_plugin_on_share_action (MxAction *action,
+                                         gpointer  user_data)
+{
+  MexTwitterSendPlugin *self = MEX_TWITTER_SEND_PLUGIN (user_data);
+  MexTwitterSendPluginPrivate *priv = self->priv;
+  ClutterActor *stack, *layout;
+  MxButtonGroup *button_group;
+  ClutterActor *awesome_button, *decent_button,
+               *pretty_bad_button, *horrible_button, *dontshare_button;
+  gchar *label_text;
+
+  MexContent *current_content = mex_action_get_content (action);
+  priv->last_title = mex_content_get_metadata (current_content,
+                                               MEX_CONTENT_METADATA_TITLE);
+
+  priv->dialog = mx_dialog_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (priv->dialog),
+                               "MexErrorDialog");
+  clutter_actor_set_name (priv->dialog, "twitter-send-prompt-dialog");
+
+  stack = mx_window_get_child (mex_get_main_window ());
+  mx_dialog_set_transient_parent (MX_DIALOG (priv->dialog), stack);
+
+  label_text = g_strdup_printf (_("What do you think of %s?"),
+                                priv->last_title);
+  priv->prompt_label = mx_label_new_with_text (label_text);
+  MEX_DEBUG ("Label text: %s", label_text);
+
+  awesome_button = mx_button_new_with_label (_("Awesome!"));
+  decent_button = mx_button_new_with_label (_("Decent."));
+  pretty_bad_button = mx_button_new_with_label (_("Pretty bad."));
+  horrible_button = mx_button_new_with_label (_("Horrible!"));
+  dontshare_button = mx_button_new_with_label (_("Don't share"));
+
+  button_group = mx_button_group_new ();
+  mx_button_group_add (button_group, MX_BUTTON (awesome_button));
+  mx_button_group_add (button_group, MX_BUTTON (decent_button));
+  mx_button_group_add (button_group, MX_BUTTON (pretty_bad_button));
+  mx_button_group_add (button_group, MX_BUTTON (horrible_button));
+  mx_button_group_add (button_group, MX_BUTTON (dontshare_button));
+
+  g_signal_connect (awesome_button,
+                    "clicked",
+                    G_CALLBACK (mex_twitter_send_plugin_on_tweet),
+                    self);
+  g_signal_connect (decent_button,
+                    "clicked",
+                    G_CALLBACK (mex_twitter_send_plugin_on_tweet),
+                    self);
+  g_signal_connect (pretty_bad_button,
+                    "clicked",
+                    G_CALLBACK (mex_twitter_send_plugin_on_tweet),
+                    self);
+  g_signal_connect (horrible_button,
+                    "clicked",
+                    G_CALLBACK (mex_twitter_send_plugin_on_tweet),
+                    self);
+  g_signal_connect (dontshare_button,
+                    "clicked",
+                    G_CALLBACK (mex_twitter_send_plugin_on_cancel_tweet),
+                    self);
+
+  layout = mx_box_layout_new ();
+  mx_box_layout_set_orientation (MX_BOX_LAYOUT (layout),
+                                 MX_ORIENTATION_VERTICAL);
+
+  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
+                           priv->prompt_label,
+                           0);
+
+  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
+                           awesome_button,
+                           1);
+  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
+                           decent_button,
+                           2);
+  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
+                           pretty_bad_button,
+                           3);
+  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
+                           horrible_button,
+                           4);
+  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
+                           dontshare_button,
+                           5);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->dialog), layout);
+
+  clutter_actor_show (priv->dialog);
+  clutter_actor_raise_top (priv->dialog);
+  mex_push_focus (MX_FOCUSABLE (priv->dialog));
+
+  g_free (label_text);
+}
+
+static void
 mex_twitter_send_plugin_init (MexTwitterSendPlugin *self)
 {
   MexTwitterSendPluginPrivate *priv;
+  MexActionInfo *action_info;
 
   priv = self->priv = TWITTER_SEND_PLUGIN_PRIVATE (self);
   priv->actions = NULL;
 
+  /* lsw init */
+  priv->client = sw_client_new ();
+  priv->service = sw_client_get_service (priv->client, "twitter");
+
   /* log domain */
   MEX_LOG_DOMAIN_INIT (twitter_send_log_domain, "TwitterSend");
+
+  /* actions */
+  action_info = g_new0 (MexActionInfo, 1);
+  action_info->action = mx_action_new_full ("x-mex-twitter-applet-share",
+                                            _("Share"),
+                                            G_CALLBACK (mex_twitter_send_plugin_on_share_action),
+                                            self);
+  mx_action_set_icon (action_info->action, "media-share-mex");
+  action_info->mime_types = g_strdupv ((gchar **)app_mimetypes);
+  priv->actions = g_list_append (priv->actions, action_info);
 }
 
 MexTwitterSendPlugin *
