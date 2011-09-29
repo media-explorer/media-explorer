@@ -922,23 +922,116 @@ static void
 mex_column_shrink_child (ClutterActor *child)
 {
   ClutterActorClass *actor_class;
-  gfloat new_height, old_height;
+  gfloat new_height;
+  ClutterAnimation *animation;
 
   /* get the preferred directly from the class, to avoid getting any fixed
    * value */
   actor_class = CLUTTER_ACTOR_GET_CLASS (child);
   actor_class->get_preferred_height (child, -1, &new_height, NULL);
 
-  old_height = clutter_actor_get_height (child);
-
-  if (old_height == new_height)
-    return;
+  animation = clutter_actor_get_animation (child);
 
   /* prevent the completed signal being called if the child was expanding */
-  clutter_actor_detach_animation (child);
+  if (animation)
+    g_signal_handlers_disconnect_by_func (animation, child_expand_complete_cb,
+                                          child);
 
   clutter_actor_animate (child, CLUTTER_EASE_OUT_CUBIC, 200,
                          "height", new_height, NULL);
+}
+
+static void
+mex_column_expand_children (MexColumn    *column,
+                            ClutterActor *start_at)
+{
+  MexColumnPrivate *priv = column->priv;
+  guint offset, increment;
+  GList *c;
+  gchar **markers;
+  gint i;
+  gboolean start;
+
+  if (priv->n_items < 1)
+    return;
+
+  /* Open/close boxes as appropriate */
+  offset = 0;
+  increment = 150;
+
+  clutter_timeline_set_duration (priv->expand_timeline,
+                                 priv->n_items * increment);
+
+  clutter_timeline_set_delay (priv->expand_timeline, 350);
+
+  /* remove the previous markers */
+  markers = clutter_timeline_list_markers (priv->expand_timeline, -1, NULL);
+  if (markers)
+    {
+      for (i = 0; markers[i]; i++)
+        {
+          clutter_timeline_remove_marker (priv->expand_timeline,
+                                          markers[i]);
+        }
+    }
+  g_strfreev (markers);
+
+  /* start is TRUE if start_at is NULL, otherwise it is set to TRUE when the
+   * start_at item is found */
+  start = (start_at == NULL);
+
+  for (c = priv->children; c; c = g_list_next (c))
+    {
+      gchar signal_name[32+16];
+      ClutterActor *child = c->data;
+
+      if (!MEX_IS_CONTENT_BOX (child))
+        continue;
+
+      mex_content_box_set_important (MEX_CONTENT_BOX (child), TRUE);
+      mex_column_expand_child (child);
+
+      /* continue until the start item has been found */
+      if (child == start_at)
+        start = TRUE;
+
+      if (!start)
+        continue;
+
+      /* Note, 'marker-reached::' is 16 characters long */
+      g_snprintf (signal_name, G_N_ELEMENTS (signal_name),
+                  "marker-reached::%p", child);
+
+      /* stagger opening */
+      clutter_timeline_add_marker_at_time (priv->expand_timeline,
+                                           signal_name + 16, offset);
+      g_signal_connect_swapped (priv->expand_timeline, signal_name,
+                                G_CALLBACK (mex_column_expand_child),
+                                child);
+
+      offset += increment;
+
+    }
+
+    clutter_timeline_start (priv->expand_timeline);
+}
+
+static void
+mex_column_shrink_children (MexColumn *column)
+{
+  MexColumnPrivate *priv = column->priv;
+  GList *l;
+
+  if (priv->n_items < 1)
+    return;
+
+  clutter_timeline_stop (priv->expand_timeline);
+
+  for (l = priv->children; l; l = g_list_next (l))
+    {
+      mex_column_shrink_child (l->data);
+      mex_content_box_set_important (MEX_CONTENT_BOX (l->data), FALSE);
+    }
 }
 
 static void
@@ -947,9 +1040,8 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
                               MexColumn      *self)
 {
   GList *c;
-  guint offset, increment;
   ClutterActor *focused, *focused_cell;
-  gboolean cell_has_focus, open, set_tile_important;
+  gboolean cell_has_focus;
 
   MexColumnPrivate *priv = self->priv;
 
@@ -957,7 +1049,6 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
 
   /* Check if we have focus, and what child is focused */
   focused_cell = NULL;
-  set_tile_important = priv->has_focus;
   cell_has_focus = FALSE;
 
   if (focused)
@@ -988,74 +1079,23 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
     mx_adjustment_interpolate (priv->adjustment, 0, 250,
                                CLUTTER_EASE_OUT_CUBIC);
 
-  /* Open/close boxes as appropriate */
-  offset = 0;
-  increment = 150;
-
-  /* If we're changing the tile importance, initialise the state manager */
-  if (set_tile_important && priv->n_items > 0)
+  if (cell_has_focus)
     {
-      if (priv->expand_timeline)
-        g_object_unref (priv->expand_timeline);
-      priv->expand_timeline =
-        clutter_timeline_new (priv->n_items * increment);
-      if (priv->has_focus_changed)
-        clutter_timeline_set_delay (priv->expand_timeline, 350);
+      gboolean open;
+
+      open = FALSE;
+      for (c = priv->children; c; c = g_list_next (c))
+        {
+          ClutterActor *child = c->data;
+          if (priv->current_focus == child)
+            open = TRUE;
+
+          if (open)
+            mex_column_expand_child (child);
+          else
+            mex_column_shrink_child (child);
+        }
     }
-
-  /* Loop through children and set the content box important/unimportant
-   * as necessary */
-  open = priv->has_focus && (focused_cell == NULL);
-  for (c = priv->children; c; c = c->next)
-    {
-      gchar signal_name[32+16];
-      ClutterActor *child = c->data;
-
-      if ((!priv->collapse && priv->has_focus) || (child == focused_cell))
-        open = TRUE;
-
-      if (!MEX_IS_CONTENT_BOX (child))
-        continue;
-
-      /* Note, 'marker-reached::' is 16 characters long */
-      g_snprintf (signal_name, G_N_ELEMENTS (signal_name),
-                  "marker-reached::%p", child);
-
-      if (!open)
-        {
-          /* close */
-          if (priv->expand_timeline)
-            {
-              if (clutter_timeline_has_marker (priv->expand_timeline,
-                                               signal_name + 16))
-                clutter_timeline_remove_marker (priv->expand_timeline,
-                                                signal_name + 16);
-              g_signal_handlers_disconnect_by_func (priv->expand_timeline,
-                                                    mex_column_expand_child,
-                                                    child);
-            }
-          mex_column_shrink_child (child);
-        }
-      else if (set_tile_important)
-        {
-          /* stagger opening */
-          clutter_timeline_add_marker_at_time (priv->expand_timeline,
-                                               signal_name + 16, offset);
-          g_signal_connect_swapped (priv->expand_timeline, signal_name,
-                                    G_CALLBACK (mex_column_expand_child),
-                                    child);
-
-          offset += increment;
-        }
-      else
-        {
-          mex_column_expand_child (child);
-        }
-      mex_content_box_set_important (MEX_CONTENT_BOX (child), priv->has_focus);
-    }
-
-  if (priv->expand_timeline && set_tile_important && (offset >= increment))
-    clutter_timeline_start (priv->expand_timeline);
 
   priv->has_focus_changed = FALSE;
 }
@@ -1165,6 +1205,10 @@ mex_column_init (MexColumn *self)
   /* Set the column as reactive and enable collapsing */
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
   priv->collapse = TRUE;
+
+  /* Create a timeline for the expand animation. The duration is calculated
+   * before the timeline is started. */
+  priv->expand_timeline = clutter_timeline_new (1);
 }
 
 
@@ -1224,17 +1268,13 @@ mex_column_set_focus (MexColumn *column, gboolean focus)
 
   if (priv->has_focus != focus)
     {
-      ClutterActor *stage;
-
       priv->has_focus = focus;
       priv->has_focus_changed = TRUE;
 
-      if ((stage = clutter_actor_get_stage (CLUTTER_ACTOR (column))))
-        {
-          MxFocusManager *manager =
-            mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
-          mex_column_notify_focused_cb (manager, NULL, column);
-        }
+      if (focus)
+        mex_column_expand_children (column, priv->current_focus);
+      else
+        mex_column_shrink_children (column);
     }
 }
 
