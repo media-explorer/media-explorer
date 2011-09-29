@@ -1241,7 +1241,12 @@ mex_refresh_root_model (MexData *data)
 
       /* prevent the length display in the search column */
       if (!g_strcmp0 (c_info->name, "search"))
-        g_object_set (aggregate, "display-item-count", FALSE, NULL);
+        {
+          g_object_set (aggregate,
+                        "display-item-count", FALSE,
+                        "always-visible", TRUE,
+                        NULL);
+        }
 
       g_object_set (G_OBJECT (aggregate),
                     "title", c_info->display_name,
