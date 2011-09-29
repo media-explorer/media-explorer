@@ -599,6 +599,11 @@ mex_header_activated_cb (MexExplorer *explorer,
             n_models_with_items++;
 
           n_items += length;
+
+          /* check if a provider wants to override this action */
+          plugin = g_hash_table_lookup (data->model_to_provider, l->data);
+          if (plugin && mex_model_provider_model_activated (plugin, l->data))
+            return;
         }
 
       /* no items in the models */
