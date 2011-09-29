@@ -283,7 +283,6 @@ mex_action_list_set_content (MexContentView *view,
  */
     }
 
-  mex_action_list_refresh (action_list);
 }
 
 static MexContent *
@@ -310,6 +309,9 @@ mex_action_list_set_context (MexContentView *view,
 
   if (model)
     g_object_ref (model);
+
+
+  mex_action_list_refresh (MEX_ACTION_LIST (view));
 }
 
 static MexModel *
