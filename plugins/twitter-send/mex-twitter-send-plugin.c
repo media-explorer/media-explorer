@@ -186,8 +186,8 @@ mex_twitter_send_plugin_on_share_action (MxAction *action,
   MEX_DEBUG ("Label text: %s", label_text);
 
   awesome_button = mx_button_new_with_label (_("Awesome!"));
-  decent_button = mx_button_new_with_label (_("Decent."));
-  pretty_bad_button = mx_button_new_with_label (_("Pretty bad."));
+  decent_button = mx_button_new_with_label (_("Decent"));
+  pretty_bad_button = mx_button_new_with_label (_("Pretty bad"));
   horrible_button = mx_button_new_with_label (_("Horrible!"));
   dontshare_button = mx_button_new_with_label (_("Don't share"));
 
