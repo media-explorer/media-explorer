@@ -275,8 +275,8 @@ mex_column_remove (ClutterContainer *container,
         clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
                                "opacity", 255, NULL);
 
-      /* clutter_actor_animate (priv->header, CLUTTER_EASE_IN_OUT_QUAD, 200, */
-      /*                        "opacity", 255, NULL); */
+      priv->open_boxes--;
+      g_object_notify (G_OBJECT (self), "opened");
     }
 
   g_signal_emit_by_name (self, "actor-removed", actor);
