@@ -1224,8 +1224,17 @@ mex_column_set_focus (MexColumn *column, gboolean focus)
 
   if (priv->has_focus != focus)
     {
+      ClutterActor *stage;
+
       priv->has_focus = focus;
       priv->has_focus_changed = TRUE;
+
+      if ((stage = clutter_actor_get_stage (CLUTTER_ACTOR (column))))
+        {
+          MxFocusManager *manager =
+            mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
+          mex_column_notify_focused_cb (manager, NULL, column);
+        }
     }
 }
 
