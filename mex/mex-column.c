@@ -248,7 +248,6 @@ mex_column_remove (ClutterContainer *container,
     {
       priv->current_focus = link_->next ? link_->next->data :
         (link_->prev ? link_->prev->data : NULL);
-      priv->has_focus = FALSE;
     }
 
   g_signal_handlers_disconnect_by_func (actor,
