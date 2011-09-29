@@ -240,13 +240,15 @@ mx_focusable_iface_init (MxFocusableIface *iface)
   iface->accept_focus = mex_action_list_accept_focus;
 }
 
-static void
-mex_action_list_content_updated_cb (MexContent    *content,
-                                    GParamSpec    *pspec,
-                                    MexActionList *action_list)
-{
-  mex_action_list_refresh (action_list);
-}
+/*
+ * static void
+ * mex_action_list_content_updated_cb (MexContent    *content,
+ *                                   GParamSpec    *pspec,
+ *                                   MexActionList *action_list)
+ *{
+ * mex_action_list_refresh (action_list);
+ *}
+ */
 
 static void
 mex_action_list_set_content (MexContentView *view,
@@ -260,9 +262,12 @@ mex_action_list_set_content (MexContentView *view,
 
   if (priv->content)
     {
-      g_signal_handlers_disconnect_by_func (priv->content,
-                                            mex_action_list_content_updated_cb,
-                                            action_list);
+/* see Comment #1
+ *
+ *     g_signal_handlers_disconnect_by_func (priv->content,
+ *                                           mex_action_list_content_updated_cb,
+ *                                            action_list);
+ */
       g_object_unref (priv->content);
       priv->content = NULL;
     }
@@ -270,9 +275,12 @@ mex_action_list_set_content (MexContentView *view,
   if (content)
     {
       priv->content = g_object_ref (content);
-      g_signal_connect (priv->content, "notify",
-                        G_CALLBACK (mex_action_list_content_updated_cb),
-                        action_list);
+
+/* see Comment #1
+ *     g_signal_connect (priv->content, "notify",
+ *                       G_CALLBACK (mex_action_list_content_updated_cb),
+ *                       action_list);
+ */
     }
 
   mex_action_list_refresh (action_list);
@@ -349,6 +357,13 @@ mex_action_list_new (void)
   return g_object_new (MEX_TYPE_ACTION_LIST, NULL);
 }
 
+/* Comment #1
+ * Due to the Queue button maintaining it's own state we
+ * cannot refresh it or special case it as the button order
+ * in the container will break
+ * https://github.com/media-explorer/media-explorer/issues/153
+ */
+
 void
 mex_action_list_refresh (MexActionList *action_list)
 {
@@ -363,9 +378,12 @@ mex_action_list_refresh (MexActionList *action_list)
   manager = mex_action_manager_get_default ();
 
   /* Clear old menu contents */
-  clutter_container_foreach (CLUTTER_CONTAINER (priv->layout),
-                             (ClutterCallback)clutter_actor_destroy,
-                             NULL);
+
+/* see Comment #1
+ * clutter_container_foreach (CLUTTER_CONTAINER (priv->layout),
+ *                          (ClutterCallback)clutter_actor_destroy,
+ *                          NULL);
+ */
 
   if (!priv->content)
     return;
