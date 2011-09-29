@@ -1621,6 +1621,20 @@ mex_toggle_pip (MexData *data)
                         data->other_tool_provider,
                         data->other_tool,
                         &data->other_tool_mode);
+  /* Show or hide data->explorer depending on the tool_modes in use */
+  if ((data->current_tool &&
+      (data->current_tool_mode == TOOL_MODE_SBS
+       || data->current_tool_mode == TOOL_MODE_FULL)) ||
+      (data->other_tool &&
+      (data->other_tool_mode == TOOL_MODE_SBS
+       || data->other_tool_mode == TOOL_MODE_FULL)))
+    {
+      mex_hide_actor (data, data->explorer);
+    }
+  else
+    {
+      mex_show_actor (data, data->explorer);
+    }
 }
 
 static void
