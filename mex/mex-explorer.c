@@ -1212,6 +1212,12 @@ mex_explorer_set_focused_model (MexExplorer *explorer,
   if (!object)
     return;
 
+  if (!CLUTTER_IS_CONTAINER (object))
+    {
+      mex_push_focus (MX_FOCUSABLE (object));
+      return;
+    }
+
   children = clutter_container_get_children (CLUTTER_CONTAINER (object));
   for (c = children; c; c = c->next)
     {
