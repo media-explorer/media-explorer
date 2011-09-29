@@ -337,18 +337,6 @@ mex_search_plugin_update_history (MexSearchPlugin *self,
 
       g_free (contents);
     }
-  else
-    {
-      /* Add a default search so the column isn't hidden.
-       * TODO: Have a way of inserting 'stock' content rather than doing
-       *       this, I suppose.
-       */
-      MexContent *content = MEX_CONTENT (mex_program_new (priv->history_model));
-      mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, "MeeGo");
-      mex_content_set_metadata (content, MEX_CONTENT_METADATA_MIMETYPE,
-                                "x-mex/search");
-      mex_model_add_content (MEX_MODEL (priv->history_model), content);
-    }
 }
 
 static void
