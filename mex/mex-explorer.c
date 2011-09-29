@@ -576,7 +576,7 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   gchar *placeholder_text;
   ClutterContainer *container;
   ClutterActor *column_view, *label;
-  gboolean display_item_count;
+  gboolean display_item_count, always_visible;
   gchar *title;
   MexColumn *column;
 
@@ -632,30 +632,34 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
                           column_view, "icon-name",
                           G_BINDING_SYNC_CREATE);
 
+  g_object_get (G_OBJECT (model),
+                "placeholder-text", &placeholder_text,
+                "always-visible", &always_visible,
+                NULL);
+
   /* placeholder actor for when there are no items */
-  label = mx_label_new ();
-  mx_stylable_set_style_class (MX_STYLABLE (label), "placeholder-label");
-  /* set the maximum width */
-  g_object_set (label, "natural-width", 426.0, "natural-height", 239.0, NULL);
+  label = g_object_new (MX_TYPE_LABEL,
+                        "style-class",
+                        (placeholder_text && placeholder_text[0]) ? "placeholder-label" : "",
+                        "natural-width", 426.0,
+                        "natural-height", 239.0,
+                        "line-wrap", TRUE,
+                        NULL);
   g_object_bind_property (model, "placeholder-text",
                           label, "text",
                           G_BINDING_SYNC_CREATE);
-  clutter_text_set_line_wrap (CLUTTER_TEXT (mx_label_get_clutter_text (MX_LABEL (label))), TRUE);
   mex_column_view_set_placeholder_actor (MEX_COLUMN_VIEW (column_view), label);
 
   /* If there's no place-holder text, start hidden and show when there's an
    * actor added.
    */
-  placeholder_text = NULL;
-  g_object_get (G_OBJECT (model), "placeholder-text", &placeholder_text, NULL);
-
-  /* FIXME: This column will stay hidden if there's placeholder text
-   *        set after this point
-   */
-  if (!placeholder_text || !(*placeholder_text))
+  if ((!placeholder_text || !(*placeholder_text)) && !always_visible)
     {
       clutter_actor_hide (column_view);
 
+      /* FIXME: This column will stay hidden if there's placeholder text
+       *        set after this point
+       */
       g_signal_connect (column, "actor-added",
                         G_CALLBACK (mex_explorer_show_maybe_focus),
                         explorer);

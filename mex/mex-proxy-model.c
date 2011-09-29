@@ -279,6 +279,10 @@ mex_proxy_model_set_model (MexProxyModel *proxy,
         g_object_bind_property (priv->model, "display-item-count",
                                 proxy, "display-item-count",
                                 G_BINDING_SYNC_CREATE));
+      priv->bindings = g_list_prepend (priv->bindings,
+        g_object_bind_property (priv->model, "always-visible",
+                                proxy, "always-visible",
+                                G_BINDING_SYNC_CREATE));
 
       /* Synthesise a 'replace' signal to populate existing items */
       mex_proxy_model_controller_changed_cb (controller,

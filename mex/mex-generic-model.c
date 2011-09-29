@@ -28,7 +28,8 @@ enum {
   PROP_PLACEHOLDER_TEXT,
   PROP_DISPLAY_ITEM_COUNT,
   PROP_SORT_FUNC,
-  PROP_SORT_DATA
+  PROP_SORT_DATA,
+  PROP_ALWAYS_VISIBLE
 };
 
 struct _MexGenericModelPrivate {
@@ -43,6 +44,7 @@ struct _MexGenericModelPrivate {
   gchar *placeholder_text;
 
   guint  display_item_count : 1;
+  guint  always_visible     : 1;
 };
 
 #define GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj),           \
@@ -390,6 +392,10 @@ mex_generic_model_set_property (GObject      *object,
     priv->display_item_count = g_value_get_boolean (value);
     break;
 
+  case PROP_ALWAYS_VISIBLE:
+    priv->always_visible = g_value_get_boolean (value);
+    break;
+
   default:
     break;
   }
@@ -433,6 +439,10 @@ mex_generic_model_get_property (GObject    *object,
     g_value_set_pointer (value, priv->sort_data);
     break;
 
+  case PROP_ALWAYS_VISIBLE:
+    g_value_set_boolean (value, priv->always_visible);
+    break;
+
   default:
     break;
   }
@@ -474,6 +484,13 @@ mex_generic_model_class_init (MexGenericModelClass *klass)
                                 TRUE,
                                 G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
   g_object_class_install_property (o_class, PROP_DISPLAY_ITEM_COUNT, pspec);
+
+  pspec = g_param_spec_boolean ("always-visible",
+                                "Always Visible",
+                                "Whether to always display this model",
+                                FALSE,
+                                G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+  g_object_class_install_property (o_class, PROP_ALWAYS_VISIBLE, pspec);
 
   /* MexModel properties */
   g_object_class_override_property (o_class, PROP_TITLE, "title");
