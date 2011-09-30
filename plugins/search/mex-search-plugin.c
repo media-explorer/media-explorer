@@ -414,7 +414,7 @@ mex_search_plugin_search (MexSearchPlugin *self,
                                    GINT_TO_POINTER (TRUE));
 
           info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
-                                                     "search", 0);
+                                                     "search-results", 0);
           mex_model_manager_add_model (manager, info);
 
           g_object_set (G_OBJECT (feed), "placeholder-text",
@@ -710,10 +710,14 @@ mex_search_plugin_init (MexSearchPlugin *self)
   ClutterActor *icon, *header, *text, *frame, *box, *hbox;
   MexSearchPluginPrivate *priv = self->priv = SEARCH_PLUGIN_PRIVATE (self);
   MexModelCategoryInfo search = { "search", _("Search"), "icon-panelheader-search", 0, "" };
+  /* create a category for search results that is not shown on the home screen */
+  MexModelCategoryInfo search_results = {
+      "search-results", _("Search"), "icon-panelheader-search", -1, "" };
   MexModelManager *manager = mex_model_manager_get_default ();
 
   manager = mex_model_manager_get_default ();
   mex_model_manager_add_category (manager, &search);
+  mex_model_manager_add_category (manager, &search_results);
 
   /* Create the history model and models list */
   priv->history_model = mex_feed_new (_("Search"), _("Search"));
