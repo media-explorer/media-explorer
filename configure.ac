@@ -88,6 +88,12 @@ AC_SUBST(MX_REQ_VERSION)
 AC_SUBST(GRILO_REQ_VERSION)
 AC_SUBST(CLUTTER_REQ_VERSION)
 AC_SUBST(CLUTTER_GST_REQ_VERSION)
+AC_SUBST(GSTREAMER_REQ_VERSION)
+
+# telepathy plugin
+TELEPATHY_GLIB_REQ_VERSION=0.15.5
+
+AC_SUBST(TELEPATHY_GLIB_REQ_VERSION)
 
 # you can specify a --with-profile=$profile as a configuration option to hopefully
 # get sane defaults.
@@ -529,7 +535,12 @@ AS_MEX_PLUGIN(tracker)
 AS_MEX_PLUGIN(dbusinput)
 AS_MEX_PLUGIN(bliptv)
 AS_MEX_PLUGIN(justintv)
-AS_MEX_PLUGIN(telepathy, [telepathy-glib >= 0.15.5 gstreamer-0.10 telepathy-farstream telepathy-yell farsight2-0.10])
+AS_MEX_PLUGIN(telepathy,
+              [telepathy-glib >= $TELEPATHY_GLIB_REQ_VERSION  \
+               gstreamer-0.10                                 \
+               telepathy-farstream                            \
+               telepathy-yell                                 \
+               farsight2-0.10])
 AS_MEX_PLUGIN(debug-buddy)
 AS_MEX_PLUGIN(gnome-dvb)
 AS_MEX_PLUGIN(opticaldisc)
