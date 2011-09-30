@@ -790,6 +790,12 @@ mex_explorer_present (MexExplorer  *explorer,
   /* transition between the old child and the new */
   priv->in_transition = TRUE;
 
+  if (!CLUTTER_ACTOR_IS_VISIBLE (explorer))
+    {
+      mex_explorer_open_child (priv->current_child, explorer);
+      return;
+    }
+
   /* get the target position */
   mex_scene_get_current_target (MEX_SCENE (child), &target);
 

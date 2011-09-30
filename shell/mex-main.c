@@ -696,6 +696,7 @@ mex_show_actor (MexData      *data,
       mx_widget_set_disabled (MX_WIDGET (data->layout), FALSE);
       clutter_actor_set_opacity (data->layout, 0xff);
       mex_activate_background (data, TRUE);
+      clutter_actor_show (data->explorer);
     }
   else if (actor == data->player)
     {
@@ -728,6 +729,7 @@ mex_hide_actor (MexData      *data,
       /* main menu view */
       mx_widget_set_disabled (MX_WIDGET (data->layout), TRUE);
       clutter_actor_set_opacity (data->layout, 0);
+      clutter_actor_hide (data->explorer);
     }
   else if (actor == data->player)
     {
