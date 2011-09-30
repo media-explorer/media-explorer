@@ -31,6 +31,9 @@
 
 #include <glib/gi18n-lib.h>
 
+#include <gst/gst.h>
+#include <gst/tag/tag.h>
+
 #include <clutter-gst/clutter-gst.h>
 #include <clutter-gst/clutter-gst-player.h>
 
@@ -83,6 +86,74 @@ struct _MexInfoPanelPrivate
   GList *image_metadata_template;
   GList *music_metadata_template;
 };
+
+static void
+free_string_list (GList *l)
+{
+  while (l)
+    {
+      g_free (l->data);
+      l = g_list_delete_link (l, l);
+    }
+}
+
+static gchar *
+get_stream_description (GstTagList *tags,
+                        gint        track_num)
+{
+  gchar *description = NULL;
+
+  if (tags)
+    {
+
+      gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &description);
+
+      if (description)
+        {
+          const gchar *language = gst_tag_get_language_name (description);
+
+          if (language)
+            {
+              g_free (description);
+              description = g_strdup (language);
+            }
+        }
+
+      if (!description)
+        gst_tag_list_get_string (tags, GST_TAG_CODEC, &description);
+    }
+
+  if (!description)
+    {
+      /* In this context Tracks is either an audio track or a subtitles
+       * track */
+      description = g_strdup_printf (_("Track %d"), track_num);
+    }
+
+  return description;
+}
+
+static GList *
+get_streams_descriptions (GList *tags_list)
+{
+  GList *descriptions = NULL, *l;
+  gint track_num = 1, n_streams;
+
+  n_streams = g_list_length (tags_list);
+
+  for (l = tags_list; l; l = g_list_next (l))
+    {
+      GstTagList *tags = l->data;
+      gchar *description;
+
+      description = get_stream_description (tags, track_num);
+      track_num++;
+
+      descriptions = g_list_prepend (descriptions, description);
+    }
+
+  return g_list_reverse (descriptions);
+}
 
 static MexContent*
 mex_info_panel_get_content (MexContentView *view)
@@ -245,7 +316,9 @@ audio_combo_box_notify (MxComboBox   *box,
 {
 #if USE_PLAYER_CLUTTER_GST
   MexInfoPanelPrivate *priv = panel->priv;
+  GstTagList *tags;
   ClutterGstPlayer *player;
+  gchar *description;
   GList *list;
   gchar *title;
   gint index_;
@@ -267,11 +340,12 @@ audio_combo_box_notify (MxComboBox   *box,
   else
     clutter_gst_player_set_audio_stream (player, index_);
 
-  list = clutter_gst_player_get_audio_streams (player);
-
   /* audio track */
-  title = g_strdup_printf (_("Audio (%s)"),
-                           (char *) g_list_nth_data (list, index_));
+  list = clutter_gst_player_get_audio_streams (player);
+  tags = (GstTagList *) g_list_nth_data (list, index_);
+  description = get_stream_description (tags, index_ + 1);
+  title = g_strdup_printf (_("Audio (%s)"), description);
+  g_free (description);
 
   mx_combo_box_set_active_text (MX_COMBO_BOX (priv->audio_combo_box), title);
 
@@ -308,11 +382,22 @@ subtitle_combo_box_notify (MxComboBox   *box,
   else
     clutter_gst_player_set_subtitle_track (player, index_ - 1);
 
-  list = clutter_gst_player_get_subtitle_tracks (player);
-
   /* audio track */
-  title = g_strdup_printf (_("Subtitles (%s)"),
-                           (index_ == 0) ? _("None") : (char *) g_list_nth_data (list, index_ - 1));
+  if (index_ == 0)
+    {
+      title = g_strdup_printf (_("Subtitles (None)"));
+    }
+  else
+    {
+      GstTagList *tags;
+      gchar *description;
+
+      list = clutter_gst_player_get_subtitle_tracks (player);
+      tags = (GstTagList *) g_list_nth_data (list, index_ - 1);
+      description = get_stream_description (tags, index_);
+      title = g_strdup_printf (_("Subtitles (%s)"), description);
+      g_free (description);
+    }
 
   mx_combo_box_set_active_text (MX_COMBO_BOX (priv->subtitle_combo_box), title);
 
@@ -770,7 +855,7 @@ on_media_audio_streams_changed (ClutterMedia *media,
 {
   ClutterGstPlayer *player = CLUTTER_GST_PLAYER (media);
   MexInfoPanelPrivate *priv = panel->priv;
-  GList *streams, *l;
+  GList *streams, *l, *descriptions;
   gint n_streams;
 
   streams = clutter_gst_player_get_audio_streams (player);
@@ -786,13 +871,17 @@ on_media_audio_streams_changed (ClutterMedia *media,
     }
 
   mx_combo_box_remove_all (MX_COMBO_BOX (priv->audio_combo_box));
-  for (l = streams; l; l = g_list_next (l))
+
+  descriptions = get_streams_descriptions (streams);
+  for (l = descriptions; l; l = g_list_next (l))
     {
-      const gchar *description = l->data;
+      gchar *description = l->data;
 
       mx_combo_box_append_text (MX_COMBO_BOX (priv->audio_combo_box),
                                 description);
     }
+  free_string_list (descriptions);
+
   clutter_actor_show (priv->audio_combo_box);
 }
 
@@ -818,7 +907,7 @@ on_media_subtitle_tracks_changed (ClutterMedia *media,
 {
   ClutterGstPlayer *player = CLUTTER_GST_PLAYER (media);
   MexInfoPanelPrivate *priv = panel->priv;
-  GList *tracks, *l;
+  GList *tracks, *l, *descriptions;
   gint n_tracks;
 
   tracks = clutter_gst_player_get_subtitle_tracks (player);
@@ -840,13 +929,17 @@ on_media_subtitle_tracks_changed (ClutterMedia *media,
   mx_combo_box_append_text (MX_COMBO_BOX (priv->subtitle_combo_box),
                             _("None"));
 
-  for (l = tracks; l; l = g_list_next (l))
+  /* TRANSLATORS: In this context, track is a subtitles track */
+  descriptions = get_streams_descriptions (tracks);
+  for (l = descriptions; l; l = g_list_next (l))
     {
-      const gchar *description = l->data;
+      gchar *description = l->data;
 
       mx_combo_box_append_text (MX_COMBO_BOX (priv->subtitle_combo_box),
                                 description);
     }
+  free_string_list (descriptions);
+
   clutter_actor_show (priv->subtitle_combo_box);
 }
 
