@@ -246,7 +246,6 @@ mex_twitter_send_plugin_on_share_action (MxAction *action,
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->dialog), layout);
 
   clutter_actor_show (priv->dialog);
-  clutter_actor_raise_top (priv->dialog);
   mex_push_focus (MX_FOCUSABLE (priv->dialog));
 
   g_free (label_text);
