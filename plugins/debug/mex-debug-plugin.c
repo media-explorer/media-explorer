@@ -34,7 +34,7 @@
 #include "mex-debug-plugin.h"
 #include "mex-gobject-list.h"
 
-#include <cogl/cogl-pango.h>
+#include <cogl-pango/cogl-pango.h>
 
 static void mex_tool_provider_iface_init (MexToolProviderInterface *iface);
 G_DEFINE_TYPE_WITH_CODE (MexDebugPlugin,

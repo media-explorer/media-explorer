@@ -79,12 +79,14 @@ AC_HEADER_STDC
 GLIB_REQ_VERSION=2.26
 MX_REQ_VERSION=1.3.2
 GRILO_REQ_VERSION=0.1.16
+CLUTTER_REQ_VERSION=1.8.0
 CLUTTER_GST_REQ_VERSION=1.4.0
 GSTREAMER_REQ_VERSION=0.10.26
 
 AC_SUBST(GLIB_REQ_VERSION)
 AC_SUBST(MX_REQ_VERSION)
 AC_SUBST(GRILO_REQ_VERSION)
+AC_SUBST(CLUTTER_REQ_VERSION)
 AC_SUBST(CLUTTER_GST_REQ_VERSION)
 
 # you can specify a --with-profile=$profile as a configuration option to hopefully
@@ -160,6 +162,7 @@ modules="glib-2.0 >= $GLIB_REQ_VERSION                  \
          gio-2.0                                        \
          gdk-pixbuf-2.0                                 \
          libsoup-2.4                                    \
+         clutter-1.0 >= $CLUTTER_REQ_VERSION            \
          mx-1.0 >= $MX_REQ_VERSION                      \
          grilo-0.1 >= $GRILO_REQ_VERSION                \
          gstreamer-0.10 >= $GSTREAMER_REQ_VERSION       \
