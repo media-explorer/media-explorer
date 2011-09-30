@@ -1,9 +1,30 @@
+Mex 0.2.0                                                            2011-09-30
+===============================================================================
+
+  • List of changes since Mex 0.1.6
+
+    » Addition of video conferencing plugin using the telepathy framework
+     (contribution from Collabora)
+
+    » Ability to "open with" media explorer e.g. from your file browser
+
+    » Media explorer grilo filesystem plugin can now take multiple
+     folder locations in the mex.conf
+
+    » The usual bulk of small adjustments in the ui and content framework,
+      various fixes (leaks/performance) and maintenance work.
+
+Contributors to this release:
+
+ Damien Lespiau, Jeremy Whiting, Dario Freddi, Lionel Landwerlin,
+ Thomas Wood, Michael Wood, Sjoerd Simons, Juan A. Suarez Romero, Nick Richards
+
 Mex 0.1.6                                                            2011-08-31
 ===============================================================================
 
   • List of changes since Mex 0.1.4
 
-    » Addition of a optical-disc plugin
+    » Addition of an optical-disc plugin
 
     » Audio track and subtitle selection
 
