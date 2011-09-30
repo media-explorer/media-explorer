@@ -137,9 +137,7 @@ static GList *
 get_streams_descriptions (GList *tags_list)
 {
   GList *descriptions = NULL, *l;
-  gint track_num = 1, n_streams;
-
-  n_streams = g_list_length (tags_list);
+  gint track_num = 1;
 
   for (l = tags_list; l; l = g_list_next (l))
     {
