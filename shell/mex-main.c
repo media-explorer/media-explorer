@@ -2121,8 +2121,19 @@ main (int argc, char **argv)
                             MX_APPLICATION_SINGLE_INSTANCE);
   if (mx_application_is_running (app))
     {
-      mx_application_invoke_action_with_parameter (app, "Open",
-                                                   g_variant_new_bytestring_array ((const gchar**) opt_file, -1));
+      if (opt_file)
+        {
+          GVariant *param;
+
+          param = g_variant_new_bytestring_array ((const gchar**) opt_file, -1);
+
+          mx_application_invoke_action_with_parameter (app, "Open", param);
+        }
+
+      mx_application_invoke_action (app, "Raise");
+
+      g_object_unref (app);
+
       return 0;
     }
   open_files_action = mx_action_new_with_parameter ("Open",
