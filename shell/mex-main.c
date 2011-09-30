@@ -1234,6 +1234,10 @@ mex_refresh_root_model (MexData *data)
       MexModel *aggregate;
       MexModelCategoryInfo *c_info = c->data;
 
+      /* categories with priority of -1 should not be shown on the home view */
+      if (c_info->priority == -1)
+        continue;
+
       /* Create a new aggregate model for this category */
       aggregate = mex_aggregate_model_new ();
 
