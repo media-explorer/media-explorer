@@ -154,6 +154,7 @@ mex_twitter_send_plugin_on_tweet (MxButton *button,
   sw_client_service_update_status (priv->service,
                                    mex_twitter_send_plugin_on_status_updated,
                                    tweet, self);
+  g_free (tweet);
 }
 
 static void
