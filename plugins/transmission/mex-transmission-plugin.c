@@ -25,6 +25,7 @@
 #include <libsoup/soup.h>
 #include <json-glib/json-glib.h>
 
+#include <mex/mex-log.h>
 #include <mex/mex-plugin.h>
 #include <mex/mex-model-provider.h>
 #include <mex/mex-action-provider.h>
@@ -33,6 +34,9 @@
 
 #include "mex-transmission-plugin.h"
 #include "mex-torrent.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  transmission_log_domain
+MEX_LOG_DOMAIN_STATIC (transmission_log_domain);
 
 #define RPC_URL                       "http://localhost:9091/transmission/rpc"
 #define TRANSMISSION_SESSION          "X-Transmission-Session-Id"
@@ -142,7 +146,7 @@ on_response_received (SoupSession *session,
 
       priv->session_id = g_strdup (session_id);
 
-      //g_message ("updated session id is %s", priv->session_id);
+      MEX_INFO ("Session Id is %s", priv->session_id);
 
       /* resend the message with the updated session id */
       soup_message_headers_append (message->request_headers,
@@ -312,6 +316,8 @@ mex_transmission_plugin_init (MexTransmissionPlugin *self)
     };
 
   self->priv = priv = GET_PRIVATE (self);
+
+  MEX_LOG_DOMAIN_INIT (transmission_log_domain, "transmission");
 
   priv->session = soup_session_async_new ();
 
