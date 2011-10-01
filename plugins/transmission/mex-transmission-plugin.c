@@ -37,12 +37,7 @@
 #define RPC_URL               "http://localhost:9091/transmission/rpc"
 #define TRANSMISSION_SESSION  "X-Transmission-Session-Id"
 
-static void model_provider_iface_init (MexModelProviderInterface *iface);
-G_DEFINE_TYPE_WITH_CODE (MexTransmissionPlugin,
-                         mex_transmission_plugin,
-                         G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (MEX_TYPE_MODEL_PROVIDER,
-                                                model_provider_iface_init))
+G_DEFINE_TYPE (MexTransmissionPlugin, mex_transmission_plugin, G_TYPE_OBJECT)
 
 #define GET_PRIVATE(o)                                          \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o),                            \
@@ -50,7 +45,6 @@ G_DEFINE_TYPE_WITH_CODE (MexTransmissionPlugin,
                                 MexTransmissionPluginPrivate))
 
 struct _MexTransmissionPluginPrivate {
-  GList *models;
   MexModel *transmission_model;
 
   SoupSession *session;
@@ -226,25 +220,6 @@ mex_transmission_update_model (MexTransmissionPlugin *self)
 }
 
 /*
- * MexModelProvider implementation
- */
-
-static const GList *
-mex_transmission_plugin_get_models (MexModelProvider *model_provider)
-{
-  MexTransmissionPlugin *plugin = MEX_TRANSMISSION_PLUGIN (model_provider);
-  MexTransmissionPluginPrivate *priv = plugin->priv;
-
-  return priv->models;
-}
-
-static void
-model_provider_iface_init (MexModelProviderInterface *iface)
-{
-  iface->get_models = mex_transmission_plugin_get_models;
-}
-
-/*
  * GObject implementation
  */
 
@@ -253,12 +228,6 @@ mex_transmission_plugin_finalize (GObject *object)
 {
   MexTransmissionPlugin *plugin = MEX_TRANSMISSION_PLUGIN (object);
   MexTransmissionPluginPrivate *priv = plugin->priv;
-
-  while (priv->models)
-    {
-      mex_model_info_free (priv->models->data);
-      priv->models = g_list_delete_link (priv->models, priv->models);
-    }
 
   if (priv->session)
     g_object_unref (priv->session);
@@ -302,11 +271,10 @@ mex_transmission_plugin_init (MexTransmissionPlugin *self)
                                                    "downloads", 0);
   g_object_unref (priv->transmission_model);
 
-  priv->models = g_list_append (priv->models, model_info);
-
   manager = mex_model_manager_get_default ();
   mex_model_manager_add_category (manager, &downloads);
   mex_model_manager_add_model (manager, model_info);
+  mex_model_info_free (model_info);
 
   mex_transmission_update_model (self);
 }
