@@ -23,6 +23,8 @@
 #include <glib-object.h>
 #include <gmodule.h>
 
+#include "mex-tool-provider.h"
+
 G_BEGIN_DECLS
 
 #define MEX_TYPE_TELEPATHY_CHANNEL mex_telepathy_channel_get_type()
@@ -62,6 +64,12 @@ typedef struct
 GType mex_telepathy_channel_get_type (void);
 
 MexTelepathyChannel *mex_telepathy_channel_new (void);
+
+void
+mex_telepathy_channel_set_tool_mode (MexTelepathyChannel *self,
+                                     MexToolMode mode,
+                                     guint duration);
+
 
 G_MODULE_EXPORT const GType mex_get_channel_type (void);
 

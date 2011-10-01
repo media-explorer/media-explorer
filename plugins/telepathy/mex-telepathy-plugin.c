@@ -42,6 +42,7 @@
 
 #include <telepathy-farstream/telepathy-farstream.h>
 
+#include <telepathy-yell/extensions.h>
 #include <telepathy-yell/interfaces.h>
 
 #include <glib/gi18n.h>
@@ -620,7 +621,7 @@ mex_telepathy_plugin_on_account_status_changed (TpAccount  *account,
     }
 }
 
-void
+static void
 mex_telepathy_plugin_on_presence_request_finished (GObject      *source_object,
                                                    GAsyncResult *res,
                                                    gpointer      user_data G_GNUC_UNUSED)
@@ -789,7 +790,6 @@ mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler         *handler G_GNU
   MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
   MexTelepathyPluginPrivate *priv = self->priv;
   TpChannel *proxy = channels->data;
-  MexTelepathyChannel *channel;
 
   /* Clean up the dialog if the action was approved elsewhere */
   if (priv->dialog != NULL)

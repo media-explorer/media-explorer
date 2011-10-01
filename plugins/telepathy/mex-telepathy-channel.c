@@ -256,7 +256,7 @@ mex_telepathy_channel_toggle_mute (MxAction *action,
     }
 }
 
-void
+static void
 mex_telepathy_channel_create_toolbar (MexTelepathyChannel *self)
 {
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
@@ -371,7 +371,7 @@ mex_telepathy_channel_create_toolbar (MexTelepathyChannel *self)
                                "ToolbarArea");
 }
 
-void
+static void
 mex_telepathy_channel_create_preview (MexTelepathyChannel *self)
 {
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
@@ -380,6 +380,7 @@ mex_telepathy_channel_create_preview (MexTelepathyChannel *self)
 
   ClutterActor *static_outgoing;
   MexShadow *shadow;
+  ClutterColor shadow_color = {0, 0, 0, 64};
 
   gchar *static_image_path;
   GError *error = NULL;
@@ -424,7 +425,6 @@ mex_telepathy_channel_create_preview (MexTelepathyChannel *self)
 
   mex_shadow_set_radius_x (shadow, 15);
   mex_shadow_set_radius_y (shadow, 15);
-  ClutterColor shadow_color = {0, 0, 0, 64};
   mex_shadow_set_color (shadow, &shadow_color);
 
   clutter_actor_set_height (video_preview_area, 150.0);
@@ -437,7 +437,7 @@ mex_telepathy_channel_create_preview (MexTelepathyChannel *self)
   mx_bin_set_child (MX_BIN (priv->preview_area), video_preview_area);
 }
 
-void
+static void
 mex_telepathy_channel_create_busy_box (MexTelepathyChannel *self)
 {
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
@@ -489,18 +489,18 @@ mex_telepathy_channel_create_busy_box (MexTelepathyChannel *self)
   mx_bin_set_fill (MX_BIN (calling_padding), TRUE, TRUE);
 }
 
-void
+static void
 mex_telepathy_channel_create_incoming_video (MexTelepathyChannel *self)
 {
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
 
   MexShadow *shadow;
+  ClutterColor shadow_color = {0, 0, 0, 64};
 
   shadow = mex_shadow_new ();
 
   mex_shadow_set_radius_x (shadow, 15);
   mex_shadow_set_radius_y (shadow, 15);
-  ClutterColor shadow_color = {0, 0, 0, 64};
   mex_shadow_set_color (shadow, &shadow_color);
 
   /* Setup the incoming surface to draw to */
@@ -525,7 +525,7 @@ mex_telepathy_channel_create_incoming_video (MexTelepathyChannel *self)
     clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->incoming_texture));
 }
 
-void
+static void
 mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
 {
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
@@ -828,18 +828,6 @@ mex_telepathy_channel_on_video_resolution_changed (TfContent           *content,
   mex_telepathy_channel_update_video_parameters (self, TRUE);
 }
 
-static gboolean
-mex_telepathy_channel_on_video_start_sending (TfContent *content,
-                                              gpointer   user_data)
-{
-  MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
-  MexTelepathyChannelPrivate *priv = self->priv;
-
-  priv->sending_video = TRUE;
-
-  return TRUE;
-}
-
 static GstElement *
 mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
                                           TfContent           *content)
@@ -1009,7 +997,6 @@ mex_telepathy_channel_conference_added (TfChannel  *channel,
   MexTelepathyChannelPrivate *priv = self->priv;
 
   GKeyFile *keyfile;
-  ClutterMedia *player;
 
   MEX_INFO ("Conference added");
 
