@@ -36,11 +36,13 @@ enum
   PROP_0,
 
   PROP_NAME,
+  PROP_ID,
   PROP_SIZE
 };
 
 struct _MexTorrentPrivate
 {
+  gint64 id;
   gchar *name;
   gint64 size;
 };
@@ -99,6 +101,9 @@ mex_torrent_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_ID:
+      g_value_set_int64 (value, priv->id);
+      break;
     case PROP_NAME:
       g_value_set_string (value, priv->name);
       break;
@@ -122,6 +127,9 @@ mex_torrent_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_ID:
+      priv->id = g_value_get_int64 (value);
+      break;
     case PROP_NAME:
       g_free (priv->name);
       priv->name = g_strdup (g_value_get_string (value));
@@ -152,6 +160,14 @@ mex_torrent_class_init (MexTorrentClass *klass)
   object_class->get_property = mex_torrent_get_property;
   object_class->set_property = mex_torrent_set_property;
   object_class->finalize = mex_torrent_finalize;
+
+  pspec = g_param_spec_int64 ("id",
+                              "Id",
+                              "Numeric identifier of the torrent",
+                              0, G_MAXINT64,
+                              0,
+                              G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY);
+  g_object_class_install_property (object_class, PROP_ID, pspec);
 
   pspec = g_param_spec_string ("name",
 			       "Name",

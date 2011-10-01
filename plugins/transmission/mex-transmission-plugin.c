@@ -106,6 +106,7 @@ decode_response (MexTransmissionPlugin *plugin,
       json_reader_end_element (reader);
 
       torrent = g_object_new (MEX_TYPE_TORRENT,
+                              "id", id,
                               "name", name,
                               "size", total_size,
                               NULL);
