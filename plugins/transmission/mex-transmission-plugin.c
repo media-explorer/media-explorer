@@ -34,8 +34,9 @@
 #include "mex-transmission-plugin.h"
 #include "mex-torrent.h"
 
-#define RPC_URL               "http://localhost:9091/transmission/rpc"
-#define TRANSMISSION_SESSION  "X-Transmission-Session-Id"
+#define RPC_URL                       "http://localhost:9091/transmission/rpc"
+#define TRANSMISSION_SESSION          "X-Transmission-Session-Id"
+#define TRANSMISSION_REFRESH_TIMEOUT  10000 /* in ms */
 
 G_DEFINE_TYPE (MexTransmissionPlugin, mex_transmission_plugin, G_TYPE_OBJECT)
 
@@ -49,6 +50,11 @@ struct _MexTransmissionPluginPrivate {
 
   SoupSession *session;
   gchar *session_id;
+
+  /* we cache the update request to avoid repeatedly building it every
+   * TRANSMISSION_REFRESH_TIMEOUT */
+  gchar* update_request_data;
+  gsize  update_request_length;
 };
 
 static void
@@ -157,20 +163,17 @@ on_response_received (SoupSession *session,
     }
 }
 
-static void
-mex_transmission_send_request (MexTransmissionPlugin *plugin,
-                               const gchar           *method,
-                               JsonNode              *arguments)
+static gchar *
+request_to_data (const gchar *method,
+                 JsonNode    *arguments,
+                 gsize       *length_out)
 {
-  MexTransmissionPluginPrivate *priv = plugin->priv;
   JsonGenerator *generator;
-  SoupMessage *message;
   JsonBuilder *builder;
-  JsonNode *root;
   gsize length = 0;
+  JsonNode *root;
   gchar *data;
 
-  /* build the json data */
   builder = json_builder_new ();
   json_builder_begin_object (builder);
   json_builder_set_member_name (builder, "method");
@@ -187,6 +190,26 @@ mex_transmission_send_request (MexTransmissionPlugin *plugin,
   data = json_generator_to_data (generator, &length);
   g_object_unref (generator);
 
+  if (length_out)
+    *length_out = length;
+
+  return data;
+}
+
+#if 0
+static void
+mex_transmission_send_request (MexTransmissionPlugin *plugin,
+                               const gchar           *method,
+                               JsonNode              *arguments)
+{
+  MexTransmissionPluginPrivate *priv = plugin->priv;
+  SoupMessage *message;
+  gsize length = 0;
+  gchar *data;
+
+  /* build the json data */
+  data = request_to_data (method, arguments, &length);
+
   /* send the message */
   message = soup_message_new ("POST", RPC_URL);
   soup_message_set_request (message, "application/json", SOUP_MEMORY_TAKE,
@@ -194,14 +217,30 @@ mex_transmission_send_request (MexTransmissionPlugin *plugin,
   soup_session_queue_message (priv->session, message,
                               on_response_received, plugin);
 }
+#endif
 
 static void
-mex_transmission_update_model (MexTransmissionPlugin *self)
+mex_transmission_send_static_message (MexTransmissionPlugin *plugin,
+                                      const gchar           *data,
+                                      gsize                  length)
 {
+  MexTransmissionPluginPrivate *priv = plugin->priv;
+  SoupMessage *message;
+
+  /* send the message */
+  message = soup_message_new ("POST", RPC_URL);
+  soup_message_set_request (message, "application/json", SOUP_MEMORY_STATIC,
+                            data, length);
+  soup_session_queue_message (priv->session, message,
+                              on_response_received, plugin);
+}
+
+static void
+build_update_request (MexTransmissionPlugin *plugin)
+{
+  MexTransmissionPluginPrivate *priv = plugin->priv;
   JsonBuilder *builder;
   JsonNode *arguments;
-
-  g_message ("update model");
 
   builder = json_builder_new ();
   json_builder_begin_object (builder);
@@ -216,7 +255,19 @@ mex_transmission_update_model (MexTransmissionPlugin *self)
   arguments = json_builder_get_root (builder);
   g_object_unref (builder);
 
-  mex_transmission_send_request (self, "torrent-get", arguments);
+  priv->update_request_data = request_to_data ("torrent-get",
+                                               arguments,
+                                               &priv->update_request_length);
+}
+
+static void
+mex_transmission_update_model (MexTransmissionPlugin *self)
+{
+  MexTransmissionPluginPrivate *priv = self->priv;
+
+  mex_transmission_send_static_message (self,
+                                        priv->update_request_data,
+                                        priv->update_request_length);
 }
 
 /*
@@ -275,6 +326,9 @@ mex_transmission_plugin_init (MexTransmissionPlugin *self)
   mex_model_manager_add_category (manager, &downloads);
   mex_model_manager_add_model (manager, model_info);
   mex_model_info_free (model_info);
+
+  /* build the update request and cache it */
+  build_update_request (self);
 
   mex_transmission_update_model (self);
 }
