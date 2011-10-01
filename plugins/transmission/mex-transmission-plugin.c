@@ -287,7 +287,7 @@ mex_transmission_plugin_init (MexTransmissionPlugin *self)
   MexModelCategoryInfo downloads =
     {
       "downloads", _("Downloads"), "icon-apps", 60,
-      _("Add torrents with the Tranmission web interface, monitor and play "
+      _("Add torrents with the Transmission web interface, monitor and play "
         "them from here.")
     };
 
