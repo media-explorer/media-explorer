@@ -526,20 +526,12 @@ mex_telepathy_plugin_on_contact_list_changed(TpConnection *connection G_GNUC_UNU
 
 static void
 mex_telepathy_plugin_on_connection_ready (TpConnection *connection,
-                                          const GError *error,
-                                          gpointer      user_data)
+                                    GParamSpec *params,
+                                    MexTelepathyPlugin *self)
 {
-  MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
   MexTelepathyPluginPrivate *priv = self->priv;
   GPtrArray *contacts;
   guint i;
-
-  if (error != NULL)
-    {
-      MEX_WARNING ("%s", error->message);
-      return;
-    }
-
   MEX_DEBUG ("Connection ready!");
 
   contacts = tp_connection_dup_contact_list (connection);
@@ -579,10 +571,19 @@ mex_telepathy_plugin_on_account_status_changed (TpAccount  *account,
       if (old_status != TP_CONNECTION_STATUS_CONNECTED)
         {
           MEX_DEBUG ("Account got connected!");
-          mex_telepathy_plugin_on_connection_ready (tp_account_get_connection (
-                                                      account),
-                                                    NULL,
-                                                    self);
+          TpConnection *connection = tp_account_get_connection (account);
+          if (connection != NULL)
+            {
+              mex_telepathy_plugin_on_connection_ready (connection,
+                                                        NULL,
+                                                        self);
+            }
+          else
+            {
+              g_signal_connect (account, "notify::connection",
+                                G_CALLBACK (mex_telepathy_plugin_on_connection_ready),
+                                self);
+            }
         }
       break;
     default:
@@ -890,7 +891,7 @@ mex_telepathy_plugin_incoming_call_prompt (MexTelepathyPlugin *self,
   TpHandle contactHandle;
 
   MEX_DEBUG ("showing accept/deny dialog");
-    
+
   accept_action = mx_action_new_full (
       "accept", "Accept",
       G_CALLBACK (mex_telepathy_plugin_on_incoming_call_accept), self);
@@ -1078,6 +1079,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   };
   GQuark connection_features[] = {
     TP_CONNECTION_FEATURE_CONTACT_LIST,
+    TP_CONNECTION_FEATURE_CONNECTED,
     0
   };
   static TpContactFeature contact_features[] = {
