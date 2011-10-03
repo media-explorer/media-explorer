@@ -526,27 +526,30 @@ mex_telepathy_plugin_on_contact_list_changed(TpConnection *connection G_GNUC_UNU
 
 static void
 mex_telepathy_plugin_on_connection_ready (TpConnection *connection,
-                                    GParamSpec *params,
-                                    MexTelepathyPlugin *self)
+                                          GParamSpec *params,
+                                          MexTelepathyPlugin *self)
 {
   MexTelepathyPluginPrivate *priv = self->priv;
   GPtrArray *contacts;
   guint i;
   MEX_DEBUG ("Connection ready!");
 
-  contacts = tp_connection_dup_contact_list (connection);
-
-  priv->building_contact_list = TRUE;
-
-  for (i = 0; i < contacts->len; i++)
+  if (tp_connection_get_contact_list_state (connection) == TP_CONTACT_LIST_STATE_SUCCESS)
     {
-      TpContact *contact = g_ptr_array_index (contacts, i);
-      mex_telepathy_plugin_add_contact (contact, self);
+      contacts = tp_connection_dup_contact_list (connection);
+
+      priv->building_contact_list = TRUE;
+
+      for (i = 0; i < contacts->len; i++)
+        {
+          TpContact *contact = g_ptr_array_index (contacts, i);
+          mex_telepathy_plugin_add_contact (contact, self);
+        }
+
+      priv->building_contact_list = FALSE;
+
+      g_ptr_array_unref (contacts);
     }
-
-  priv->building_contact_list = FALSE;
-
-  g_ptr_array_unref (contacts);
 
   g_signal_connect(connection,
                    "contact-list-changed",
