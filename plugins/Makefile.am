@@ -1,5 +1,5 @@
-plugin_datadir = $(datadir)/mex/plugins
-pluginsdir = $(libdir)/mex/plugins
+plugin_datadir = $(pkgdatadir)/plugins
+pluginsdir = $(pkglibdir)/plugins
 plugins_LTLIBRARIES =
 
 EXTRA_DIST =

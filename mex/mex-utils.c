@@ -692,7 +692,7 @@ mex_get_data_dir (void)
 
       for (i = 0; system_data_dirs[i]; i++)
         {
-          datadir = g_build_filename (system_data_dirs[i], "mex", NULL);
+          datadir = g_build_filename (system_data_dirs[i], PACKAGE_NAME, NULL);
 
           if (g_file_test (datadir, G_FILE_TEST_IS_DIR))
             break;

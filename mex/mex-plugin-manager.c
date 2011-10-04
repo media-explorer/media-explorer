@@ -63,7 +63,7 @@ build_plugin_search_paths (void)
   mex_directory = g_win32_get_package_installation_directory_of_module (NULL);
   search_paths = g_new0 (gchar *, 3);
   search_paths[0] = g_build_filename (mex_directory,
-                                      "lib", "mex", "plugins",
+                                      "lib", PACKAGE_NAME, "plugins",
                                       NULL);
   g_free (mex_directory);
   search_paths[1] = g_strdup (getenv ("MEX_PLUGIN_PATH"));

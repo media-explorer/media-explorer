@@ -35,7 +35,7 @@ rebinder_get_config_dir (void)
   if (path)
     return path;
 
-  path = g_build_filename (g_get_user_config_dir (), "mex", NULL);
+  path = g_build_filename (g_get_user_config_dir (), PACKAGE_NAME, NULL);
 
   /* create the configuration directory if needed */
   config_dir = g_file_new_for_path (path);
