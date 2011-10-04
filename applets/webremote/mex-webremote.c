@@ -417,7 +417,7 @@ int main (int argc, char **argv)
 
   context = g_option_context_new ("- Media explorer web remote");
 
-  g_option_context_add_main_entries (context, entries, "mex");
+  g_option_context_add_main_entries (context, entries, "mex-webremote");
 
   settings_load (&webremote);
 
