@@ -75,54 +75,48 @@ get_content_internal (MexGenericModel *model,
  */
 
 static gint
+binary_search (GArray           *array,
+               MexContent       *content,
+               MexModelSortFunc  sort,
+               gpointer          user_data)
+{
+  gint first, last, mid;
+
+  first = 0;
+  last = array->len == 0 ? 0 : array->len - 1;
+
+  while (first <= last)
+    {
+      MexContent *e;
+      gint cmp;
+
+      mid = (first + last) / 2;
+      e = g_array_index (array, MexContent *, mid);
+      cmp = sort (e, content, user_data);
+      if (cmp < 0)
+        first = mid + 1;
+      else if (cmp > 0)
+        last = mid - 1;
+      else
+        return mid;
+    }
+
+  /* not found, encode first in a negative value to be used as the index
+   * to insert into a sorted array */
+  return - (first + 1);
+}
+
+static gint
 mex_generic_model_insert_sorted (MexGenericModel *self,
                                  MexContent      *content)
 {
-  gint low, high, position;
-
   MexGenericModelPrivate *priv = self->priv;
-  gint result;
-  gboolean sorted_once = FALSE;
+  gint position;
 
-  /* Binary search - we assume the array is already sorted */
-  low = 0;
-  high = priv->items->len == 0 ? 0 : priv->items->len - 1;
-  position = (high + low) / 2;
-  while (high != low)
-    {
-      MexContent *child =
-        g_array_index (priv->items, MexContent *, position);
-      result = priv->sort_func (content, child, priv->sort_data);
-      sorted_once = TRUE;
-
-      if (result > 0)
-        {
-          if (low == position)
-            break;
-          low = position;
-        }
-      else if (result < 0)
-        {
-          if (high == position)
-            break;
-          high = position;
-        }
-      else
-        break;
-
-      position = (high + low) / 2;
-    }
-
-  /* We may need to insert-after, depending on the last comparison */
-  if (!sorted_once && priv->items->len > 0)
-    {
-      position = 0;
-      result = priv->sort_func (content,
-                                g_array_index (priv->items, MexContent *, 0),
-                                priv->sort_data);
-    }
-  if (result >= 0)
-    position++;
+  position = binary_search (priv->items, content,
+                            priv->sort_func, priv->sort_data);
+  if (position < 0)
+    position = -position - 1;
 
   g_array_insert_val (priv->items, position, content);
 
