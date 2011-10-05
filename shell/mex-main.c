@@ -712,6 +712,18 @@ mex_show_actor (MexData      *data,
   /* raise the actor above any others (e.g. the player) */
   clutter_actor_raise_top (actor);
 
+  if (data->current_tool && data->current_tool_mode == TOOL_MODE_PIP)
+    {
+      ClutterActor *frame = clutter_actor_get_parent (data->current_tool);
+      clutter_actor_raise_top (frame);
+    }
+
+  if (data->other_tool && data->other_tool_mode == TOOL_MODE_PIP)
+    {
+      ClutterActor *frame = clutter_actor_get_parent (data->other_tool);
+      clutter_actor_raise_top (frame);
+    }
+
   /* keep track of the current actor */
   data->current_actor = actor;
 }
@@ -1627,7 +1639,8 @@ mex_toggle_pip (MexData *data)
        || data->current_tool_mode == TOOL_MODE_FULL)) ||
       (data->other_tool &&
       (data->other_tool_mode == TOOL_MODE_SBS
-       || data->other_tool_mode == TOOL_MODE_FULL)))
+       || data->other_tool_mode == TOOL_MODE_FULL)) ||
+      clutter_media_get_playing (data->media))
     {
       mex_hide_actor (data, data->explorer);
     }
