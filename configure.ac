@@ -345,31 +345,6 @@ AS_IF([test "x$enable_idle_video" = "xyes"],
                  [Play the idle video in the background])])
 AM_CONDITIONAL([ENABLE_IDLE_VIDEO], [test "x$enable_idle_video" = "xyes"])
 
-
-AC_ARG_WITH([thumbnailer],
-            [AS_HELP_STRING([--with-thumbnailer],
-                            [which thumbnailer to use (internal, tumbler)])],
-                            [],
-                            [with_thumbnailer=internal])
-
-AS_CASE(["$with_thumbnailer"],
-
-        ["internal"],
-        [
-        AC_DEFINE([WITH_THUMBNAILER_INTERNAL], 1, [Use internal thumbnailer])
-        ],
-
-        ["tumbler"],
-        [
-        AC_DEFINE([WITH_THUMBNAILER_TUMBLER], 1, [Use Tumbler for thumbnailing])
-        ],
-
-        [AC_MSG_ERROR([Unknown argument "$with_thumbnailer" to --with-thumbnailer])]
-)
-AM_CONDITIONAL([ENABLE_INTERNAL_THUMBNAILER],
-               [test "x$with_thumbnailer" = "xinternal"])
-
-
 # enable strict compiler flags
 AC_ARG_ENABLE([warning-flags],
               [AC_HELP_STRING([--enable-warning-flags=@<:@no/yes@:>@],
@@ -597,7 +572,6 @@ echo ""
 echo " • Backends:"
 echo "        Online detection : ${with_online}"
 echo "        Media playback   : ${with_player}"
-echo "        Thumbnailer      : ${with_thumbnailer}"
 echo ""
 echo " • Documentation:"
 echo "        Build API Reference: ${enable_gtk_doc}"

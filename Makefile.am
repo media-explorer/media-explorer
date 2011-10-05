@@ -12,9 +12,7 @@ if ENABLE_EXTERNAL_PLAYER
 SUBDIRS += player
 endif
 
-if ENABLE_INTERNAL_THUMBNAILER
 SUBDIRS += thumbnailer
-endif
 
 SUBDIRS += data doc po
 

@@ -2,11 +2,7 @@ digraph "G" {
   fontsize = 8;
   ratio = auto;
   "meta-mex" [color="lightcoral",style="filled",label="meta-mex"];
-  "meta-mex" -> "tumbler";
   "meta-mex" -> "mex";
-  "tumbler" [color="lightskyblue",style="filled",label="tumbler\n(master)"];
-  "tumbler" -> "glib";
-  "tumbler" -> "cairo";
   "mex" [color="lightskyblue",style="filled",label="mex\n(master)"];
   "mex" -> "clutter";
   "mex" -> "clutter-gst";
