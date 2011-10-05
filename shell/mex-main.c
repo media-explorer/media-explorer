@@ -1467,6 +1467,8 @@ mex_plugin_loaded_cb (MexPluginManager *plugin_manager,
                       GObject          *plugin,
                       MexData          *data)
 {
+  MEX_DEBUG ("Loaded media explorer plugin %s", G_OBJECT_TYPE_NAME (plugin));
+
   if (MEX_IS_MODEL_PROVIDER (plugin))
     {
       GList *m;
@@ -2189,7 +2191,8 @@ main (int argc, char **argv)
                 }
               else
                 {
-                  MEX_DEBUG ("loaded: %s plugin", enabled_plugins[i]);
+                  MEX_DEBUG ("Loaded grilo plugin: %s plugin",
+                             enabled_plugins[i]);
                 }
             }
           g_strfreev (enabled_plugins);
