@@ -17,12 +17,7 @@
  */
 
 #include "mex-player-client.h"
-#include "mex-media-player-bindings.h"
 #include "mex-player-common.h"
-
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
-#include <dbus/dbus-glib-bindings.h>
 
 #include <clutter/clutter.h>
 
@@ -51,8 +46,7 @@ enum {
 
 struct _MexPlayerClientPrivate
 {
-  DBusGProxy *proxy;
-  DBusGConnection *connection;
+  GDBusProxy *proxy;
 
   /* We basically cache these values */
   gdouble progress;
@@ -112,32 +106,44 @@ mex_player_client_get_property (GObject    *object,
 }
 
 static void
-_generic_call_async_cb (DBusGProxy *proxy,
-                        GError     *error,
-                        gpointer    userdata)
+_generic_call_async_cb (GObject      *proxy,
+                        GAsyncResult *res,
+                        gpointer      userdata)
 {
-  const gchar *api_call = (const gchar *)userdata;
+  GError *error = NULL;
+  GVariant *result;
+
+  result = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), res,
+                                     &error);
 
   if (error)
     {
-      g_warning (G_STRLOC ": Error making %s call: %s",
-                 api_call,
+      g_warning (G_STRLOC ": Error setting property: %s",
                  error->message);
     }
+
+  g_variant_unref (result);
 }
 
 static void
-_set_uri_call_cb (DBusGProxy *proxy,
-                  GError     *error,
-                  gpointer    userdata)
+_set_uri_call_cb (GObject      *proxy,
+                  GAsyncResult *res,
+                  gpointer      userdata)
 {
-  MexPlayerClient        *client = (MexPlayerClient *) userdata;
+  MexPlayerClient *client = MEX_PLAYER_CLIENT (userdata);
+  GError *error = NULL;
+  GVariant *result;
 
-  if (error) {
-    g_warning (G_STRLOC ": Error making SetUri call: %s",
-               error->message);
-    return;
-  }
+  result = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), res,
+                                     &error);
+  g_variant_unref (result);
+
+  if (error)
+    {
+      g_warning (G_STRLOC ": Error making SetUri call: %s",
+                 error->message);
+      return;
+    }
 
   g_object_notify (G_OBJECT (client), "uri");
 }
@@ -153,10 +159,10 @@ mex_player_client_set_uri (MexPlayerClient *client,
 
   priv->uri = g_strdup (uri);
 
-  com_meego_mex_MediaPlayer_set_uri_async (priv->proxy,
-                                           uri,
-                                           _set_uri_call_cb,
-                                           client);
+  g_dbus_proxy_call (priv->proxy, "SetUri",
+                     g_variant_new ("(s)", (uri) ? uri : ""),
+                     G_DBUS_CALL_FLAGS_NONE, -1, NULL, _set_uri_call_cb,
+                     client);
 }
 
 static void
@@ -167,10 +173,9 @@ mex_player_client_set_progress (MexPlayerClient *client,
 
   priv->progress = progress;
 
-  com_meego_mex_MediaPlayer_set_progress_async (priv->proxy,
-                                                progress,
-                                                _generic_call_async_cb,
-                                                "SetProgress");
+  g_dbus_proxy_call (priv->proxy, "SetProgress",
+                     g_variant_new ("(d)", progress), G_DBUS_CALL_FLAGS_NONE,
+                     -1, NULL, _generic_call_async_cb, client);
 }
 
 static void
@@ -181,10 +186,10 @@ mex_player_client_set_audio_volume (MexPlayerClient *client,
 
   priv->audio_volume = audio_volume;
 
-  com_meego_mex_MediaPlayer_set_audio_volume_async (priv->proxy,
-                                                    audio_volume,
-                                                    _generic_call_async_cb,
-                                                    "SetAudioVolume");
+  g_dbus_proxy_call (priv->proxy, "SetAudioVolume",
+                     g_variant_new ("(d)", audio_volume),
+                     G_DBUS_CALL_FLAGS_NONE, -1, NULL, _generic_call_async_cb,
+                     client);
 }
 
 static void
@@ -195,10 +200,10 @@ mex_player_client_set_playing (MexPlayerClient *client,
 
   priv->playing = playing;
 
-  com_meego_mex_MediaPlayer_set_playing_async (priv->proxy,
-                                               playing,
-                                               _generic_call_async_cb,
-                                               "SetPlaying");
+  g_dbus_proxy_call (priv->proxy, "SetPlaying",
+                     g_variant_new ("(b)", playing),
+                     G_DBUS_CALL_FLAGS_NONE, -1, NULL, _generic_call_async_cb,
+                     client);
 }
 
 static void
@@ -237,12 +242,6 @@ mex_player_client_dispose (GObject *object)
 {
   MexPlayerClient *self = MEX_PLAYER_CLIENT (object);
   MexPlayerClientPrivate *priv = self->priv;
-
-  if (priv->connection)
-    {
-      dbus_g_connection_unref (priv->connection);
-      priv->connection = NULL;
-    }
 
   if (priv->proxy)
     {
@@ -303,9 +302,8 @@ mex_player_client_class_init (MexPlayerClientClass *klass)
 }
 
 static void
-_progress_changed_cb (DBusGProxy      *proxy,
-                      gdouble          progress,
-                      MexPlayerClient *client)
+_progress_changed_cb (MexPlayerClient *client,
+                      gdouble          progress)
 {
   MexPlayerClientPrivate *priv = client->priv;
 
@@ -315,9 +313,8 @@ _progress_changed_cb (DBusGProxy      *proxy,
 }
 
 static void
-_audio_volume_changed_cb (DBusGProxy      *proxy,
-                          gdouble          audio_volume,
-                          MexPlayerClient *client)
+_audio_volume_changed_cb (MexPlayerClient *client,
+                          gdouble          audio_volume)
 {
   MexPlayerClientPrivate *priv = client->priv;
 
@@ -327,9 +324,8 @@ _audio_volume_changed_cb (DBusGProxy      *proxy,
 }
 
 static void
-_duration_changed_cb (DBusGProxy      *proxy,
-                      gdouble          duration,
-                      MexPlayerClient *client)
+_duration_changed_cb (MexPlayerClient *client,
+                      gdouble          duration)
 {
   MexPlayerClientPrivate *priv = client->priv;
 
@@ -339,9 +335,8 @@ _duration_changed_cb (DBusGProxy      *proxy,
 }
 
 static void
-_playing_changed_cb (DBusGProxy      *proxy,
-                     gboolean         playing,
-                     MexPlayerClient *client)
+_playing_changed_cb (MexPlayerClient *client,
+                     gboolean         playing)
 {
   MexPlayerClientPrivate *priv = client->priv;
 
@@ -351,9 +346,8 @@ _playing_changed_cb (DBusGProxy      *proxy,
 }
 
 static void
-_can_seek_changed_cb (DBusGProxy      *proxy,
-                      gboolean         can_seek,
-                      MexPlayerClient *client)
+_can_seek_changed_cb (MexPlayerClient *client,
+                      gboolean         can_seek)
 {
   MexPlayerClientPrivate *priv = client->priv;
 
@@ -363,9 +357,8 @@ _can_seek_changed_cb (DBusGProxy      *proxy,
 }
 
 static void
-_buffer_fill_changed_cb (DBusGProxy      *proxy,
-                         gdouble          buffer,
-                         MexPlayerClient *client)
+_buffer_fill_changed_cb (MexPlayerClient *client,
+                         gdouble          buffer)
 {
   MexPlayerClientPrivate *priv = client->priv;
 
@@ -375,10 +368,58 @@ _buffer_fill_changed_cb (DBusGProxy      *proxy,
 }
 
 static void
-_eos_cb (DBusGProxy      *proxy,
-         MexPlayerClient *client)
+_eos_cb (MexPlayerClient *client)
 {
   g_signal_emit_by_name (client, "eos");
+}
+
+static void
+player_signal_cb (GDBusProxy *proxy,
+                  gchar      *sender_name,
+                  gchar      *signal_name,
+                  GVariant   *parameters,
+                  gpointer    user_data)
+{
+  MexPlayerClient *client = MEX_PLAYER_CLIENT (user_data);
+  gdouble d = 0;
+  gboolean b = FALSE;
+
+  g_return_if_fail (signal_name != NULL);
+
+  if (g_str_equal (signal_name, "ProgressChanged"))
+    {
+      g_variant_get (parameters, "(d)", &d);
+      _progress_changed_cb (client, d);
+    }
+  else if (g_str_equal (signal_name, "DurationChanged"))
+    {
+      g_variant_get (parameters, "(d)", &d);
+      _duration_changed_cb (client, d);
+    }
+  else if (g_str_equal (signal_name, "PlayingChanged"))
+    {
+      g_variant_get (parameters, "(b)", &b);
+      _playing_changed_cb (client, b);
+    }
+  else if (g_str_equal (signal_name, "CanSeekChanged"))
+    {
+      g_variant_get (parameters, "(b)", &b);
+      _can_seek_changed_cb (client, b);
+    }
+  else if (g_str_equal (signal_name, "BufferFillChanged"))
+    {
+      g_variant_get (parameters, "(d)", &d);
+      _buffer_fill_changed_cb (client, d);
+    }
+  else if (g_str_equal (signal_name, "AudioVolumeChanged"))
+    {
+      g_variant_get (parameters, "(d)", &d);
+      _audio_volume_changed_cb (client, d);
+    }
+  else if (g_str_equal (signal_name, "EOS"))
+    {
+      _eos_cb (client);
+    }
 }
 
 static void
@@ -390,83 +431,23 @@ mex_player_client_init (MexPlayerClient *self)
   self->priv = GET_PRIVATE (self);
   priv = self->priv;
 
-  priv->connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
+  priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
+                                               G_DBUS_PROXY_FLAGS_NONE, NULL,
+                                               MEX_PLAYER_SERVICE_NAME,
+                                               MEX_PLAYER_OBJECT_PATH,
+                                               MEX_PLAYER_INTERFACE_NAME,
+                                               NULL, &error);
 
-  if (!priv->connection)
-  {
-    g_critical (G_STRLOC ": Error getting DBUS connection: %s",
-                error->message);
-    return;
-  }
+  if (error)
+    {
+      g_critical (G_STRLOC ": Error connecting to remote player: %s",
+                  error->message);
+      g_error_free (error);
+      return;
+    }
 
-  priv->proxy = dbus_g_proxy_new_for_name (priv->connection,
-                                           MEX_PLAYER_SERVICE_NAME,
-                                           MEX_PLAYER_OBJECT_PATH,
-                                           MEX_PLAYER_INTERFACE_NAME);
-
-  dbus_g_proxy_add_signal (priv->proxy,
-                           "ProgressChanged",
-                           G_TYPE_DOUBLE,
-                           G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->proxy,
-                           "AudioVolumeChanged",
-                           G_TYPE_DOUBLE,
-                           G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->proxy,
-                           "DurationChanged",
-                           G_TYPE_DOUBLE,
-                           G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->proxy,
-                           "PlayingChanged",
-                           G_TYPE_BOOLEAN,
-                           G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->proxy,
-                           "CanSeekChanged",
-                           G_TYPE_BOOLEAN,
-                           G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->proxy,
-                           "BufferFillChanged",
-                           G_TYPE_DOUBLE,
-                           G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (priv->proxy,
-                           "EOS",
-                           G_TYPE_INVALID);
-
-  dbus_g_proxy_connect_signal (priv->proxy,
-                               "ProgressChanged",
-                               (GCallback)_progress_changed_cb,
-                               self,
-                               NULL);
-  dbus_g_proxy_connect_signal (priv->proxy,
-                               "DurationChanged",
-                               (GCallback)_duration_changed_cb,
-                               self,
-                               NULL);
-  dbus_g_proxy_connect_signal (priv->proxy,
-                               "PlayingChanged",
-                               (GCallback)_playing_changed_cb,
-                               self,
-                               NULL);
-  dbus_g_proxy_connect_signal (priv->proxy,
-                               "CanSeekChanged",
-                               (GCallback)_can_seek_changed_cb,
-                               self,
-                               NULL);
-  dbus_g_proxy_connect_signal (priv->proxy,
-                               "BufferFillChanged",
-                               (GCallback)_buffer_fill_changed_cb,
-                               self,
-                               NULL);
-  dbus_g_proxy_connect_signal (priv->proxy,
-                               "AudioVolumeChanged",
-                               (GCallback)_audio_volume_changed_cb,
-                               self,
-                               NULL);
-  dbus_g_proxy_connect_signal (priv->proxy,
-                               "EOS",
-                               (GCallback)_eos_cb,
-                               self,
-                               NULL);
+  g_signal_connect (priv->proxy, "g-signal", G_CALLBACK (player_signal_cb),
+                    self);
 }
 
 MexPlayerClient *
