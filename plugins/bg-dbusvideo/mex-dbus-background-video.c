@@ -100,8 +100,6 @@ mex_dbus_background_video_finalize (GObject *object)
 static void
 mex_dbus_background_video_constructed (GObject *object)
 {
-  MexDbusBackgroundVideoPrivate *priv = MEX_DBUS_BACKGROUND_VIDEO (object)->priv;
-
   if (G_OBJECT_CLASS (mex_dbus_background_video_parent_class)->constructed)
     G_OBJECT_CLASS (mex_dbus_background_video_parent_class)->constructed (object);
 
@@ -119,6 +117,7 @@ mex_dbus_background_video_class_init (MexDbusBackgroundVideoClass *klass)
 
   object_class->get_property = mex_dbus_background_video_get_property;
   object_class->set_property = mex_dbus_background_video_set_property;
+  object_class->constructed = mex_dbus_background_video_constructed;
   object_class->dispose = mex_dbus_background_video_dispose;
   object_class->finalize = mex_dbus_background_video_finalize;
 }
