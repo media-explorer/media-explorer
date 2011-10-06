@@ -577,8 +577,10 @@ mex_telepathy_plugin_on_account_status_changed (TpAccount  *account,
     case TP_CONNECTION_STATUS_CONNECTED:
       if (old_status != TP_CONNECTION_STATUS_CONNECTED)
         {
-          MEX_DEBUG ("Account got connected!");
           TpConnection *connection = tp_account_get_connection (account);
+
+          MEX_DEBUG ("Account got connected!");
+
           if (connection != NULL)
             {
               mex_telepathy_plugin_on_connection_ready (connection,
