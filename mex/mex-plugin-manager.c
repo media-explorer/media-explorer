@@ -16,16 +16,21 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#include "mex-plugin-manager.h"
-#include "mex-marshal.h"
-#include <gmodule.h>
 #include <string.h>
 #include <stdlib.h>
 
+#include <gmodule.h>
+
+#include "mex-marshal.h"
+#include "mex-plugin.h"
+#include "mex-plugin-manager.h"
+
 G_DEFINE_TYPE (MexPluginManager, mex_plugin_manager, G_TYPE_OBJECT)
 
-#define PLUGIN_MANAGER_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_PLUGIN_MANAGER, MexPluginManagerPrivate))
+#define PLUGIN_MANAGER_PRIVATE(o)                         \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o),                      \
+                                MEX_TYPE_PLUGIN_MANAGER,  \
+                                MexPluginManagerPrivate))
 
 enum
 {
@@ -161,6 +166,7 @@ mex_plugin_manager_load_plugin (MexPluginManager *manager,
   GModule *module;
   gpointer symbol;
   GObject *plugin;
+  MexPluginDescription *plugin_info;
   GType plugin_type;
   gchar *plugin_name;
   gchar *plugin_suffix;
@@ -188,16 +194,17 @@ mex_plugin_manager_load_plugin (MexPluginManager *manager,
       return;
     }
 
-  if (!g_module_symbol (module, "mex_get_plugin_type", &symbol))
+  if (!g_module_symbol (module, "mex_plugin_info", &symbol))
     {
-      g_warning (G_STRLOC ": Unable to get symbol 'mex_get_plugin_type': %s",
+      g_warning (G_STRLOC ": Unable to get symbol 'mex_plugin_info': %s",
                  g_module_error ());
       g_module_close (module);
       g_free (plugin_name);
       return;
     }
 
-  plugin_type = (*(MexPluginGetTypeFunc)symbol)();
+  plugin_info = (MexPluginDescription *) symbol;
+  plugin_type = plugin_info->get_type ();
 
   if (!plugin_type)
     {
@@ -334,4 +341,3 @@ mex_plugin_manager_refresh (MexPluginManager *manager)
         }
     }
 }
-

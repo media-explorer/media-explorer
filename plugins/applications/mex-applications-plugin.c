@@ -22,6 +22,7 @@
 
 #include "mex-applications-plugin.h"
 
+#include <mex/mex-plugin.h>
 #include <mex/mex-model-provider.h>
 #include <mex/mex-action-provider.h>
 #include <mex/mex-generic-model.h>
@@ -234,8 +235,17 @@ action_provider_iface_init (MexActionProviderInterface *iface)
   iface->get_actions = mex_applications_plugin_get_actions;
 }
 
-G_MODULE_EXPORT GType
-mex_get_plugin_type (void)
+static GType
+mex_applications_get_type (void)
 {
   return MEX_TYPE_APPLICATIONS_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("applications",
+		   "A column with a few apps",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+		   "Robert Bradford <rob@linux.intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_applications_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

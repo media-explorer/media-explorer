@@ -354,8 +354,17 @@ mex_gnome_dvb_plugin_init (MexGnomeDvbPlugin *self)
                             self);
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_gnome_dvb_get_type (void)
 {
   return MEX_TYPE_GNOME_DVB_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("GNOME DVB",
+		   "GNOME DVB daemon integration",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Thomas Wood <thomas.wood@intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_gnome_dvb_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

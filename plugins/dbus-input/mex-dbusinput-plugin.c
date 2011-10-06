@@ -192,8 +192,17 @@ mex_dbusinput_plugin_init (MexDbusinputPlugin *self)
                                    NULL);
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_dbusinput_get_type (void)
 {
   return MEX_TYPE_DBUSINPUT_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("DBus Input",
+		   "Injecting key events with DBus",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Michael Wood <michael.g.wood@linux.intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_dbusinput_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

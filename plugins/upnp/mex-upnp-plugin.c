@@ -16,6 +16,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <grilo.h>
 #include <mex/mex-grilo-feed.h>
 #include "mex-upnp-plugin.h"
@@ -260,8 +264,17 @@ mex_upnp_plugin_new (void)
   return g_object_new (MEX_TYPE_UPNP_PLUGIN, NULL);
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_upnp_get_type (void)
 {
   return MEX_TYPE_UPNP_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("UPnP",
+		   "UPnP integration",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_upnp_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

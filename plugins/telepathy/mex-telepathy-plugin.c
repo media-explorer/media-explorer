@@ -18,6 +18,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-telepathy-plugin.h"
 
 #include "mex-contact.h"
@@ -1211,8 +1215,18 @@ action_provider_iface_init (MexActionProviderInterface *iface)
   iface->get_actions = mex_telepathy_plugin_get_actions;
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_telepathy_get_type (void)
 {
   return MEX_TYPE_TELEPATHY_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("Telepathy",
+		   "Audio and video chat support",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Dario Freddi <dario.freddi@collabora.com>,"
+                   "Jeremy Whiting <jeremy.whiting@collabora.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_telepathy_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

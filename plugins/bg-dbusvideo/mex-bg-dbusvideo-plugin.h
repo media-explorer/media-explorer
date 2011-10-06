@@ -58,8 +58,6 @@ GType mex_bg_dbusvideo_plugin_get_type (void);
 
 MexBgDbusvideoPlugin* mex_bg_dbusvideo_plugin_new (void);
 
-G_MODULE_EXPORT const GType mex_get_plugin_type (void);
-
 G_END_DECLS
 
 #endif

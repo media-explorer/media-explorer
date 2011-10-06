@@ -16,6 +16,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-bg-backdrop-plugin.h"
 #include "mex-backdrop.h"
 
@@ -82,8 +86,18 @@ mex_bg_backdrop_plugin_new (void)
   return g_object_new (MEX_TYPE_BG_BACKDROP_PLUGIN, NULL);
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_bg_backdrop_get_type (void)
 {
   return MEX_TYPE_BG_BACKDROP_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("bg-backdrop",
+		   "A bubbly background written with Clutter",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Øyvind Kolås <pippin@linux.intel.com>,"
+                   "Michael Wood <michael.g.wood@linux.intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_bg_backdrop_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

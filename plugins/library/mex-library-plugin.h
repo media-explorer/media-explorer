@@ -16,8 +16,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-/* mex-library-plugin.h */
-
 #ifndef _MEX_LIBRARY_PLUGIN_H
 #define _MEX_LIBRARY_PLUGIN_H
 
@@ -66,8 +64,6 @@ struct _MexLibraryPluginClass
 };
 
 GType mex_library_plugin_get_type (void) G_GNUC_CONST;
-
-G_MODULE_EXPORT const GType mex_get_plugin_type (void);
 
 G_END_DECLS
 

@@ -58,8 +58,6 @@ GType mex_bg_video_plugin_get_type (void);
 
 MexBgVideoPlugin* mex_bg_video_plugin_new (void);
 
-G_MODULE_EXPORT const GType mex_get_plugin_type (void);
-
 G_END_DECLS
 
 #endif

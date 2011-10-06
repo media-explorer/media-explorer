@@ -38,17 +38,18 @@ G_BEGIN_DECLS
 
 typedef struct _MexDebugPluginPrivate MexDebugPluginPrivate;
 
-typedef struct {
+typedef struct
+{
   GObject parent;
   MexDebugPluginPrivate *priv;
 } MexDebugPlugin;
 
-typedef struct {
+typedef struct
+{
   GObjectClass parent_class;
 } MexDebugPluginClass;
 
 GType     mex_debug_plugin_get_type   (void);
-GType     mex_get_plugin_type         (void);
 
 G_END_DECLS
 

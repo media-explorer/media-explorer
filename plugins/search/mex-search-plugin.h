@@ -67,8 +67,6 @@ struct _MexSearchPluginClass
 
 GType mex_search_plugin_get_type (void) G_GNUC_CONST;
 
-G_MODULE_EXPORT const GType mex_get_plugin_type (void);
-
 G_END_DECLS
 
 #endif /* _MEX_SEARCH_PLUGIN_H */

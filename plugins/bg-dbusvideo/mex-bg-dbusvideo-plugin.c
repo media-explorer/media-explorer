@@ -16,6 +16,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-bg-dbusvideo-plugin.h"
 #include "mex-dbus-background-video.h"
 
@@ -82,8 +86,17 @@ mex_bg_dbusvideo_plugin_new (void)
   return g_object_new (MEX_TYPE_BG_DBUSVIDEO_PLUGIN, NULL);
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_bg_dbusvideo_get_type (void)
 {
   return MEX_TYPE_BG_DBUSVIDEO_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("bg-dbusvideo",
+		   "A video background using the dbus player",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Lionel Landwerlin <lionel.g.landwerlin@linux.intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_bg_dbusvideo_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

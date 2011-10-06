@@ -58,8 +58,6 @@ GType mex_tracker_plugin_get_type (void);
 
 MexTrackerPlugin* mex_tracker_plugin_new (void);
 
-G_MODULE_EXPORT const GType mex_get_plugin_type (void);
-
 G_END_DECLS
 
 #endif

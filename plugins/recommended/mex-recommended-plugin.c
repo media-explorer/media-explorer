@@ -16,10 +16,14 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-/* mex-recommended-plugin.c */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <mex/mex-plugin.h>
+#include <mex/mex-grilo-feed.h>
 
 #include "mex-recommended-plugin.h"
-#include <mex/mex-grilo-feed.h>
 
 static void mex_model_provider_iface_init (MexModelProviderInterface *iface);
 
@@ -174,8 +178,17 @@ mex_recommended_plugin_init (MexRecommendedPlugin *self)
     g_warning ("Apple trailers plugin not found");
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_recommended_get_type (void)
 {
   return MEX_TYPE_RECOMMENDED_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("Recommanded",
+		   "A demo plugin that presents the Apple trailers",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Robert Bradford <rob@linux.intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_recommended_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

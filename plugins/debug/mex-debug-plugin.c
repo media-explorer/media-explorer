@@ -509,8 +509,17 @@ mex_debug_plugin_init (MexDebugPlugin *self)
   old_log_handler = g_log_set_default_handler (mex_debug_log_handler, NULL);
 }
 
-G_MODULE_EXPORT GType
-mex_get_plugin_type (void)
+static GType
+mex_debug_get_type (void)
 {
   return MEX_TYPE_DEBUG_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("Debug",
+		   "Debugging facilities",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Damien Lespiau <damien.lespiau@intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_debug_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

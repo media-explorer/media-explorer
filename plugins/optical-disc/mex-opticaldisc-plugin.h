@@ -60,7 +60,6 @@ struct _MexOpticalDiscManagerClass
 };
 
 GType           mex_optical_disc_manager_get_type         (void) G_GNUC_CONST;
-GType           mex_get_plugin_type                       (void);
 
 G_END_DECLS
 

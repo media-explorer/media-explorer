@@ -54,7 +54,6 @@ typedef struct {
 } MexApplicationsPluginClass;
 
 GType   mex_applications_plugin_get_type  (void);
-GType   mex_get_plugin_type               (void);
 
 G_END_DECLS
 

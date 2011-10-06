@@ -835,8 +835,17 @@ mex_search_plugin_init (MexSearchPlugin *self)
   mex_view_model_start (MEX_VIEW_MODEL (view_model));
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_search_get_type (void)
 {
   return MEX_TYPE_SEARCH_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("Search",
+		   "Provides the search column",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Chris Lord <chris@linux.intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_search_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

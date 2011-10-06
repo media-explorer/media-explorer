@@ -347,8 +347,18 @@ action_provider_iface_init (MexActionProviderInterface *iface)
   iface->get_actions = mex_optical_disc_manager_get_actions;
 }
 
-G_MODULE_EXPORT GType
-mex_get_plugin_type (void)
+static GType
+mex_opticaldisc_get_type (void)
 {
   return MEX_TYPE_OPTICAL_DISC_MANAGER;
 }
+
+MEX_DEFINE_PLUGIN ("Optical Disc",
+		   "DVD integration",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Michael Wood <michael.g.wood@linux.intel.com>,"
+                   "Thomas Wood <thomas.wood@intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_opticaldisc_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

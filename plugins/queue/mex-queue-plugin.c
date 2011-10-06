@@ -154,8 +154,17 @@ action_provider_iface_init (MexActionProviderInterface *iface)
   iface->get_actions = mex_queue_plugin_get_actions;
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_queue_get_type (void)
 {
   return MEX_TYPE_QUEUE_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("Queue",
+		   "Provides the queue column",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Robert Bradford <rob@linux.intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_queue_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

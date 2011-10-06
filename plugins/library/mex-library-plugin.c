@@ -16,8 +16,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-/* mex-library-plugin.c */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -331,8 +329,17 @@ mex_library_plugin_init (MexLibraryPlugin *self)
     g_warning ("Filesystem plugin not found");
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_library_get_type (void)
 {
   return MEX_TYPE_LIBRARY_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("Library",
+		   "Provides a filesystem view",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Chris Lord <chris@linux.intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_library_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)

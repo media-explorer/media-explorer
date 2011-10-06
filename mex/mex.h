@@ -75,6 +75,7 @@
 #include <mex/mex-model-provider.h>
 #include <mex/mex-feed.h>
 #include <mex/mex-player.h>
+#include <mex/mex-plugin.h>
 #include <mex/mex-plugin-manager.h>
 #include <mex/mex-program.h>
 #include <mex/mex-proxy.h>

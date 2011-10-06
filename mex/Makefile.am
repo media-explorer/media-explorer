@@ -111,6 +111,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-os.h				\
 	$(top_srcdir)/mex/mex-player.h				\
 	$(top_srcdir)/mex/mex-player-common.h			\
+	$(top_srcdir)/mex/mex-plugin.h				\
 	$(top_srcdir)/mex/mex-plugin-manager.h			\
 	$(top_srcdir)/mex/mex-program.h				\
 	$(top_srcdir)/mex/mex-proxy.h				\

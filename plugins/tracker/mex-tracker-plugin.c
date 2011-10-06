@@ -396,8 +396,17 @@ mex_tracker_plugin_new (void)
   return g_object_new (MEX_TYPE_TRACKER_PLUGIN, NULL);
 }
 
-G_MODULE_EXPORT const GType
-mex_get_plugin_type (void)
+static GType
+mex_tracker_get_type (void)
 {
   return MEX_TYPE_TRACKER_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("Tracker",
+		   "Tracker integration",
+		   PACKAGE_VERSION,
+		   "LGPLv2.1+",
+                   "Lionel Landwerlin <lionel.g.landwerlin@linux.intel.com>",
+		   MEX_API_MAJOR, MEX_API_MINOR,
+		   mex_tracker_get_type,
+		   MEX_PLUGIN_PRIORITY_NORMAL)
