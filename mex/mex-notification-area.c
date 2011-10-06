@@ -212,7 +212,10 @@ _source_notification_removed_cb (MexNotificationSource *source,
   ClutterActor *actor;
 
   actor = g_hash_table_lookup (priv->notification_to_actor, notification);
-  _expire_notification (area, notification, actor);
+  if (actor)
+    _expire_notification (area, notification, actor);
+  else
+    g_warning ("Unknown notification removed");
 }
 
 static void
