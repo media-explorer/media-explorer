@@ -20,11 +20,8 @@
 #include "config.h"
 #endif
 
-#ifdef HAVE_DBUS_GLIB
-#include <dbus/dbus-glib.h>
-#endif
-
 #include "mex-screensaver.h"
+#include <gio/gio.h>
 
 G_DEFINE_TYPE (MexScreensaver, mex_screensaver, G_TYPE_OBJECT)
 
@@ -67,49 +64,38 @@ mex_screensaver_new (void)
   return g_object_new (MEX_TYPE_SCREENSAVER, NULL);
 }
 
-#ifdef HAVE_DBUS_GLIB
-static DBusGProxy *
+static GDBusProxy *
 connect_gnome_screensaverd (MexScreensaver *self)
 {
  MexScreensaverPrivate *priv = MEX_SCREENSAVER (self)->priv;
-
- DBusGConnection *dbus_connection;
- DBusGProxy *proxy = NULL;
- GError *error=NULL;
-
- dbus_connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
-
- if (dbus_connection == NULL)
-   {
-     g_warning ("Failed to connect to dbus %s\n",
-                (error) ? error->message : "");
-     if (error)
-       g_error_free (error);
-
-     return NULL;
-   }
+ GDBusProxy *proxy = NULL;
+ GError *error = NULL;
 
  /* Try with gnome 2 api first. gnome_version 0 is the default
   * representing the undetermined state
   */
  if (priv->gnome_version == 2 || priv->gnome_version == 0)
    {
-     proxy = dbus_g_proxy_new_for_name (dbus_connection,
-                                        "org.gnome.ScreenSaver",
-                                        "/org/gnome/ScreenSaver",
-                                        "org.gnome.ScreenSaver");
+     proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
+                                            G_DBUS_PROXY_FLAGS_NONE,
+                                            NULL,
+                                            "org.gnome.ScreenSaver",
+                                            "/org/gnome/ScreenSaver",
+                                            "org.gnome.ScreenSaver",
+                                            NULL, &error);
    }
 
  /* The gnome 2 api didn't work and we've been called again with version 3 */
  if (priv->gnome_version == 3)
    {
-     proxy = dbus_g_proxy_new_for_name (dbus_connection,
-                                        "org.gnome.SessionManager",
-                                        "/org/gnome/SessionManager",
-                                        "org.gnome.SessionManager");
+     proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
+                                            G_DBUS_PROXY_FLAGS_NONE,
+                                            NULL,
+                                            "org.gnome.SessionManager",
+                                            "/org/gnome/SessionManager",
+                                            "org.gnome.SessionManager",
+                                            NULL, &error);
    }
-
- dbus_g_connection_unref (dbus_connection);
 
  return proxy;
 }
@@ -119,8 +105,9 @@ mex_screensaver_inhibit (MexScreensaver *self)
 {
   MexScreensaverPrivate *priv = MEX_SCREENSAVER (self)->priv;
 
-  DBusGProxy *proxy;
+  GDBusProxy *proxy;
   GError *error = NULL;
+  GVariant *variant;
 
   /* If we're already inhibited don't inhibit again */
   if (priv->cookie > 0)
@@ -129,7 +116,7 @@ mex_screensaver_inhibit (MexScreensaver *self)
   if (priv->gnome_version == -1)
     return;
 
-    proxy = connect_gnome_screensaverd (self);
+  proxy = connect_gnome_screensaverd (self);
 
   if (!proxy)
     return;
@@ -137,20 +124,23 @@ mex_screensaver_inhibit (MexScreensaver *self)
   /* gnome_version will be 0 if the current version has not been determined */
   if (priv->gnome_version == 0 || priv->gnome_version == 2)
     {
-      if(dbus_g_proxy_call (proxy, "Inhibit", &error,
-                            G_TYPE_STRING, "Media Explorer",
-                            G_TYPE_STRING , "Playing media",
-                            G_TYPE_INVALID,
-                            G_TYPE_UINT, &priv->cookie,
-                            G_TYPE_INVALID))
+
+      if ((variant = g_dbus_proxy_call_sync (proxy, "Inhibit",
+                                            g_variant_new ("(ss)",
+                                                           "Media Explorer",
+                                                           "Playing media"),
+                                            G_DBUS_CALL_FLAGS_NONE, -1, NULL,
+                                            &error)))
         {
           priv->gnome_version = 2;
+          g_variant_get (variant, "(u)", &priv->cookie);
           g_object_unref (proxy);
+          g_variant_unref (variant);
         }
       else
         {
-          if (error->domain == DBUS_GERROR &&
-              error->code == DBUS_GERROR_UNKNOWN_METHOD)
+          if (error->domain == G_DBUS_ERROR &&
+              error->code == G_DBUS_ERROR_UNKNOWN_METHOD)
             {
               g_clear_error (&error);
               priv->gnome_version = 3;
@@ -160,7 +150,7 @@ mex_screensaver_inhibit (MexScreensaver *self)
             }
         }
     }
-  /* The code path may originate from the bail out on DBUS_GERROR_UNKNOWN_METHOD
+  /* The code path may originate from the bail out on G_DBUS_ERROR_UNKNOWN_METHOD
    * or if the version has been set by a previous call of the inhibit function
    * which has worked out the version.
    */
@@ -171,21 +161,22 @@ mex_screensaver_inhibit (MexScreensaver *self)
         proxy = connect_gnome_screensaverd (self);
 
       /* 8 = GSM_INHIBITOR_FLAG_IDLE */
-      if (dbus_g_proxy_call (proxy, "Inhibit", &error,
-                             G_TYPE_STRING, "MediaExplorer",
-                             G_TYPE_UINT, 0,
-                             G_TYPE_STRING , "Playing media",
-                             G_TYPE_UINT, 8,
-                             G_TYPE_INVALID,
-                             G_TYPE_UINT, &priv->cookie,
-                             G_TYPE_INVALID))
+      if ((variant = g_dbus_proxy_call_sync (proxy, "Inhibit",
+                                            g_variant_new ("(susu)",
+                                                           "MediaExplorer",
+                                                           0, "Playing media", 8),
+                                            G_DBUS_CALL_FLAGS_NONE, -1, NULL,
+                                            &error)))
         {
           priv->gnome_version = 3;
+          g_variant_get (variant, "(u)", &priv->cookie);
+          g_object_unref (proxy);
+          g_variant_unref (variant);
         }
       else
         {
-          if (error->domain == DBUS_GERROR &&
-              error->code == DBUS_GERROR_UNKNOWN_METHOD)
+          if (error->domain == G_DBUS_ERROR &&
+              error->code == G_DBUS_ERROR_UNKNOWN_METHOD)
             {
               g_clear_error (&error);
               priv->gnome_version = -1;
@@ -207,7 +198,7 @@ mex_screensaver_uninhibit (MexScreensaver *self)
 {
   MexScreensaverPrivate *priv = MEX_SCREENSAVER (self)->priv;
 
-  DBusGProxy *proxy;
+  GDBusProxy *proxy;
   GError *error = NULL;
 
   /* we're not inhibiting */
@@ -223,18 +214,18 @@ mex_screensaver_uninhibit (MexScreensaver *self)
 
       if (priv->gnome_version == 2)
         {
-          dbus_g_proxy_call (proxy, "UnInhibit", &error,
-                             G_TYPE_UINT, priv->cookie,
-                             G_TYPE_INVALID,
-                             G_TYPE_INVALID);
+          g_dbus_proxy_call_sync (proxy, "UnInhibit",
+                                  g_variant_new ("(u)", priv->cookie),
+                                  G_DBUS_CALL_FLAGS_NONE, -1, NULL,
+                                  &error);
         }
 
       if (priv->gnome_version == 3)
         {
-          dbus_g_proxy_call (proxy, "Uninhibit", &error,
-                             G_TYPE_UINT, priv->cookie,
-                             G_TYPE_INVALID,
-                             G_TYPE_INVALID);
+          g_dbus_proxy_call_sync (proxy, "Uninhibit",
+                                  g_variant_new ("(u)", priv->cookie),
+                                  G_DBUS_CALL_FLAGS_NONE, -1, NULL,
+                                  &error);
         }
 
       if (error)
@@ -251,16 +242,3 @@ mex_screensaver_uninhibit (MexScreensaver *self)
       g_object_unref (proxy);
     }
 }
-#else
-void
-mex_screensaver_uninhibit (MexScreensaver *self)
-{
-
-}
-
-void
-mex_screensaver_inhibit (MexScreensaver *self)
-{
-
-}
-#endif
