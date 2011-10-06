@@ -21,6 +21,7 @@
 #endif
 
 #include <glib.h>
+#include <gio/gio.h>
 
 #include "mex-online.h"
 #include "mex-marshal.h"
@@ -184,72 +185,92 @@ mex_is_online (void)
 
 #ifdef WITH_ONLINE_CONNMAN
 #include <string.h>
-#include <dbus/dbus-glib.h>
 
-static DBusGProxy *proxy = NULL;
+static GDBusProxy *proxy = NULL;
 static gboolean current_state;
 
-#define STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
-
 static void
-state_changed (DBusGProxy *proxy, const char *new_state)
+connman_manager_signal (GDBusProxy *aproxy,
+                        gchar      *sender_name,
+                        gchar      *signal_name,
+                        GVariant   *parameters,
+                        gpointer    user_data)
 {
-  current_state = (g_strcmp0 (new_state, "online") == 0);
-  emit_notify (current_state);
+
+  g_debug ("Signal : %s", signal_name);
+  if (!g_strcmp0 (signal_name, "StateChanged"))
+    {
+      gchar *new_state;
+
+      g_variant_get (parameters, "(s)", &new_state);
+
+      current_state = (g_strcmp0 (new_state, "online") == 0);
+
+      emit_notify (current_state);
+
+      g_free (new_state);
+    }
 }
 
 static void
-got_state_cb (DBusGProxy     *proxy,
-              DBusGProxyCall *call,
-              void           *user_data)
+got_state_cb (GDBusProxy   *aproxy,
+              GAsyncResult *res,
+              void         *user_data)
 {
   char *state = NULL;
   GError *error = NULL;
+  GVariant *variant;
 
-  if (!dbus_g_proxy_end_call (proxy, call, &error,
-                              G_TYPE_STRING, &state,
-                              G_TYPE_INVALID)) {
+  variant = g_dbus_proxy_call_finish (aproxy, res, &error);
+
+  if (!variant) {
     g_printerr ("Cannot get current online state: %s", error->message);
     g_error_free (error);
     return;
   }
 
+  g_variant_get (variant, "(s)", &state);
+
   current_state = (g_strcmp0 (state, "online") == 0);
   emit_notify (current_state);
   g_free (state);
+
+  g_variant_unref (variant);
 }
 
 static gboolean
 online_init (void)
 {
-  DBusGConnection *conn;
+  GError *error = NULL;
 
   if (proxy)
     return TRUE;
 
-  conn = dbus_g_bus_get (DBUS_BUS_SYSTEM, NULL);
-  if (!conn) {
-    g_warning ("Cannot get connection to system message bus");
-    return FALSE;
-  }
+  proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+                                         G_DBUS_PROXY_FLAGS_NONE,
+                                         NULL,
+                                         "net.connman",
+                                         "/",
+                                         "net.connman.Manager",
+                                         NULL, &error);
 
-  proxy = dbus_g_proxy_new_for_name (conn,
-                                     "net.connman",
-                                     "/",
-                                     "net.connman.Manager");
+  if (!proxy)
+    {
+      g_printerr ("Could not connect to Connection Manager: %s",
+                  error->message);
+      g_error_free (error);
+      return FALSE;
+    }
 
-  dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__STRING,
-                                     G_TYPE_NONE, G_TYPE_STRING,
-                                     G_TYPE_INVALID);
-  dbus_g_proxy_add_signal (proxy, "StateChanged", G_TYPE_STRING, NULL);
-  dbus_g_proxy_connect_signal (proxy, "StateChanged",
-                               (GCallback)state_changed, NULL, NULL);
+
+  g_signal_connect (proxy, "g-signal", G_CALLBACK (connman_manager_signal),
+                    NULL);
 
   current_state = FALSE;
 
   /* Get the current state */
-  dbus_g_proxy_begin_call (proxy, "GetState", got_state_cb,
-                           NULL, NULL, G_TYPE_INVALID);
+  g_dbus_proxy_call (proxy, "GetState", NULL, G_DBUS_CALL_FLAGS_NONE, -1,
+                     NULL, (GAsyncReadyCallback) got_state_cb, NULL);
 
   return TRUE;
 }
