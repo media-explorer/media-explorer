@@ -28,11 +28,6 @@
 
 #include <locale.h>
 
-#ifdef HAVE_DBUS_GLIB
-#include <dbus/dbus-glib.h>
-#include <dbus/dbus-glib-bindings.h>
-#endif
-
 #include <grilo.h>
 #include <mex/mex.h>
 #ifdef USE_PLAYER_CLUTTER_GST
@@ -1622,45 +1617,56 @@ mex_push_busy (MexData *data)
     }
 }
 
-#ifdef HAVE_DBUS_GLIB
 static void
-start_service_reply (DBusGProxy *proxy,
-                     guint       success,
-                     GError     *error,
-                     gpointer    user_data)
+start_service_reply (GObject      *proxy,
+                     GAsyncResult *result,
+                     gpointer      user_data)
 {
+  GVariant *variant;
+  GError *error = NULL;
+
+  variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (proxy), result, &error);
+
   if (error)
     {
       g_warning ("org.freedesktop.DBus.StartServiceByName() failed: %s",
                  error->message);
-      return;
+
+      g_error_free (error);
     }
+
+  if (variant)
+    g_variant_unref (variant);
 }
+
+
+#define DBUS_SERVICE_DBUS   "org.freedesktop.DBus"
+#define DBUS_PATH_DBUS      "/org/freedesktop/DBus"
+#define DBUS_INTERFACE_DBUS "org.freedesktop.DBus"
 
 static void
 auto_start_dbus_service (const gchar *name)
 {
-  DBusGConnection *connection;
-  DBusGProxy *proxy;
+  GDBusProxy *proxy;
   GError *error = NULL;
 
-  connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-  if (connection == NULL) {
-    g_warning ("Failed to open connection to DBus: %s", error->message);
-    g_error_free (error);
-    return;
-  }
+  proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
+                                         G_DBUS_PROXY_FLAGS_NONE, NULL,
+                                         DBUS_SERVICE_DBUS, DBUS_PATH_DBUS,
+                                         DBUS_INTERFACE_DBUS, NULL, &error);
 
-  proxy = dbus_g_proxy_new_for_name (connection,
-                                     DBUS_SERVICE_DBUS,
-                                     DBUS_PATH_DBUS,
-                                     DBUS_INTERFACE_DBUS);
+  if (error)
+    {
+      g_error_free (error);
+      return;
+    }
 
-  org_freedesktop_DBus_start_service_by_name_async (proxy,
-                                                    name, 0,
-                                                    start_service_reply, NULL);
+  g_dbus_proxy_call (proxy, "StartServiceByName",
+                     g_variant_new ("(su)", name, 0), G_DBUS_CALL_FLAGS_NONE,
+                     -1, NULL, start_service_reply, NULL);
+
+  g_object_unref (proxy);
 }
-#endif
 
 static void
 close_welcome_cb (MxButton *button,
@@ -1716,70 +1722,51 @@ welcome_run (MexData *data)
                     "clicked", G_CALLBACK (close_welcome_cb), data);
 }
 
-#if defined (HAVE_DBUS_GLIB) && defined (HAVE_REBINDER)
+#if defined (HAVE_REBINDER)
 static void
 rebinder_quit (void)
 {
-  DBusGConnection *connection;
-  DBusGProxy *proxy;
-  guint32 request_status;
-  GError *error = NULL;
+  GDBusProxy *proxy;
 
-  connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-  if (connection == NULL)
-    {
-      g_warning ("Failed to open connection to DBus: %s", error->message);
-      g_error_free (error);
-      return;
-    }
+  proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
+                                         G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+                                         NULL, MEX_REBINDER_DBUS_SERVICE,
+                                         MEX_REBINDER_DBUS_PATH,
+                                         MEX_REBINDER_DBUS_INTERFACE, NULL,
+                                         NULL);
+  if (!proxy)
+    return;
 
-  proxy = dbus_g_proxy_new_for_name (connection,
-                                     MEX_REBINDER_DBUS_SERVICE,
-                                     MEX_REBINDER_DBUS_PATH,
-                                     MEX_REBINDER_DBUS_INTERFACE);
-  if (proxy == NULL)
-    {
-      g_message ("Could not create proxy for %s", MEX_REBINDER_DBUS_SERVICE);
-      return;
-    }
-
-  dbus_g_proxy_call_no_reply (proxy, "Quit", G_TYPE_INVALID);
+  /* call the Quit method synchronously to ensure it is completed before the
+   * application itself has quit. */
+  g_dbus_proxy_call_sync (proxy, "Quit", NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL,
+                          NULL);
 
   g_object_unref (proxy);
-  dbus_g_connection_unref (connection);
 }
 #endif
 
-#if defined (HAVE_DBUS_GLIB) && defined (HAVE_WEBREMOTE)
+#if defined (HAVE_WEBREMOTE)
 static void
 webremote_quit (void)
 {
-  DBusGConnection *connection;
-  DBusGProxy *proxy;
-  GError *error = NULL;
+  GDBusProxy *proxy;
 
-  connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-  if (connection == NULL)
-    {
-      g_warning ("Failed to open connection to DBus: %s", error->message);
-      g_error_free (error);
-      return;
-    }
+  proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
+                                         G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
+                                         NULL, MEX_WEBREMOTE_DBUS_SERVICE,
+                                         MEX_WEBREMOTE_DBUS_PATH,
+                                         MEX_WEBREMOTE_DBUS_INTERFACE, NULL,
+                                         NULL);
+  if (!proxy)
+    return;
 
-  proxy = dbus_g_proxy_new_for_name (connection,
-                                     MEX_WEBREMOTE_DBUS_SERVICE,
-                                     MEX_WEBREMOTE_DBUS_PATH,
-                                     MEX_WEBREMOTE_DBUS_INTERFACE);
-  if (proxy == NULL)
-    {
-      g_message ("Could not create proxy for %s", MEX_WEBREMOTE_DBUS_SERVICE);
-      return;
-    }
-
-  dbus_g_proxy_call_no_reply (proxy, "Quit", G_TYPE_INVALID);
+  /* call the Quit method synchronously to ensure it is completed before the
+   * application itself has quit. */
+  g_dbus_proxy_call_sync (proxy, "Quit", NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL,
+                          NULL);
 
   g_object_unref (proxy);
-  dbus_g_connection_unref (connection);
 }
 #endif
 
@@ -2221,7 +2208,7 @@ main (int argc, char **argv)
     }
 
   /* Auto start the rebinder */
-#if defined (HAVE_DBUS_GLIB) && defined (HAVE_REBINDER)
+#if defined (HAVE_REBINDER)
   auto_start_dbus_service (MEX_REBINDER_DBUS_INTERFACE);
 #endif /* HAVE_REBINDER */
 
@@ -2562,7 +2549,7 @@ main (int argc, char **argv)
     mex_enable_touch_events (&data, TRUE);
 
 
-#if defined (HAVE_DBUS_GLIB) && defined (HAVE_WEBREMOTE)
+#if defined (HAVE_WEBREMOTE)
   web_settings_loc = mex_settings_find_config_file (mex_settings_get_default (),
                                                     "mex-webremote.conf");
   if (web_settings_loc)
