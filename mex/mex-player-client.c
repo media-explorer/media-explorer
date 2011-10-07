@@ -423,20 +423,14 @@ player_signal_cb (GDBusProxy *proxy,
 }
 
 static void
-mex_player_client_init (MexPlayerClient *self)
+mex_player_client_proxy_ready_cb (GObject      *object,
+                                  GAsyncResult *result,
+                                  gpointer      user_data)
 {
-  MexPlayerClientPrivate *priv;
+  MexPlayerClient *self = MEX_PLAYER_CLIENT (user_data);
   GError *error = NULL;
 
-  self->priv = GET_PRIVATE (self);
-  priv = self->priv;
-
-  priv->proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
-                                               G_DBUS_PROXY_FLAGS_NONE, NULL,
-                                               MEX_PLAYER_SERVICE_NAME,
-                                               MEX_PLAYER_OBJECT_PATH,
-                                               MEX_PLAYER_INTERFACE_NAME,
-                                               NULL, &error);
+  self->priv->proxy = g_dbus_proxy_new_finish (result, &error);
 
   if (error)
     {
@@ -446,9 +440,27 @@ mex_player_client_init (MexPlayerClient *self)
       return;
     }
 
-  g_signal_connect (priv->proxy, "g-signal", G_CALLBACK (player_signal_cb),
-                    self);
+  g_signal_connect (self->priv->proxy, "g-signal",
+                    G_CALLBACK (player_signal_cb), self);
 }
+
+static void
+mex_player_client_init (MexPlayerClient *self)
+{
+  MexPlayerClientPrivate *priv;
+
+  self->priv = GET_PRIVATE (self);
+  priv = self->priv;
+
+  g_dbus_proxy_new_for_bus (G_BUS_TYPE_SESSION,
+                            G_DBUS_PROXY_FLAGS_NONE, NULL,
+                            MEX_PLAYER_SERVICE_NAME,
+                            MEX_PLAYER_OBJECT_PATH,
+                            MEX_PLAYER_INTERFACE_NAME, NULL,
+                            mex_player_client_proxy_ready_cb,
+                            self);
+}
+
 
 MexPlayerClient *
 mex_player_client_new (void)
