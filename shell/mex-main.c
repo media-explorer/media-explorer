@@ -2243,6 +2243,8 @@ main (int argc, char **argv)
   data.window = window = mx_application_create_window (app);
   data.stage = mx_window_get_clutter_stage (window);
 #endif
+  mx_window_set_title (window, "Media Explorer");
+
 
   mex_set_main_window (window);
 
