@@ -2,7 +2,7 @@
 Type=Application
 Name=Media Explorer
 Exec=media-explorer %U -f
-Icon=mex
+Icon=media-explorer
 Categories=AudioVideo;Video;TV;Player;
 Terminal=false
 StartupNotify=true
