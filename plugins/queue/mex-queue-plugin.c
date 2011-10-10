@@ -167,4 +167,4 @@ MEX_DEFINE_PLUGIN ("Queue",
                    "Robert Bradford <rob@linux.intel.com>",
 		   MEX_API_MAJOR, MEX_API_MINOR,
 		   mex_queue_get_type,
-		   MEX_PLUGIN_PRIORITY_NORMAL)
+		   MEX_PLUGIN_PRIORITY_CORE)

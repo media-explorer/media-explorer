@@ -49,6 +49,7 @@ enum
 struct _MexPluginManagerPrivate
 {
   gchar      **search_paths;
+  GList       *descriptions;
   GHashTable  *plugins;
 };
 
@@ -159,13 +160,22 @@ mex_plugin_manager_finalize (GObject *object)
   G_OBJECT_CLASS (mex_plugin_manager_parent_class)->finalize (object);
 }
 
+static gint
+sort_by_prority (gconstpointer ap,
+                 gconstpointer bp)
+{
+  const MexPluginDescription *a = ap;
+  const MexPluginDescription *b = bp;
+
+  return a->priority - b->priority;
+}
+
 static void
-mex_plugin_manager_load_plugin (MexPluginManager *manager,
+mex_plugin_manager_open_plugin (MexPluginManager *manager,
                                 const gchar      *filename)
 {
   GModule *module;
   gpointer symbol;
-  GObject *plugin;
   MexPluginDescription *plugin_info;
   GType plugin_type;
   gchar *plugin_name;
@@ -177,13 +187,6 @@ mex_plugin_manager_load_plugin (MexPluginManager *manager,
   plugin_name = g_path_get_basename (filename);
   if ((plugin_suffix = g_strrstr (plugin_name, ".")))
     *plugin_suffix = '\0';
-
-  /* Check if plugin already exists */
-  if (g_hash_table_lookup (priv->plugins, plugin_name))
-    {
-      g_free (plugin_name);
-      return;
-    }
 
   module = g_module_open (filename, G_MODULE_BIND_LOCAL);
   if (!module)
@@ -204,8 +207,15 @@ mex_plugin_manager_load_plugin (MexPluginManager *manager,
     }
 
   plugin_info = (MexPluginDescription *) symbol;
-  plugin_type = plugin_info->get_type ();
+  /* Check if plugin is already loaded */
+  if (g_hash_table_lookup (priv->plugins, plugin_info))
+    {
+      g_module_close (module);
+      g_free (plugin_name);
+      return;
+    }
 
+  plugin_type = plugin_info->get_type ();
   if (!plugin_type)
     {
       g_warning (G_STRLOC ": Plugin '%s' didn't return a type", plugin_name);
@@ -217,13 +227,8 @@ mex_plugin_manager_load_plugin (MexPluginManager *manager,
   /* Unloading modules usually has bad effects - don't allow it */
   g_module_make_resident (module);
 
-  plugin = g_object_new (plugin_type, NULL);
-
-  g_hash_table_insert (priv->plugins,
-                       plugin_name,
-                       plugin);
-
-  g_signal_emit (manager, signals[PLUGIN_LOADED], 0, plugin);
+  priv->descriptions = g_list_insert_sorted (priv->descriptions, plugin_info,
+                                             sort_by_prority);
 }
 
 static void
@@ -263,10 +268,7 @@ mex_plugin_manager_init (MexPluginManager *self)
 
   priv->search_paths = build_plugin_search_paths ();
 
-  priv->plugins = g_hash_table_new_full (g_str_hash,
-                                         g_str_equal,
-                                         (GDestroyNotify)g_free,
-                                         (GDestroyNotify)g_object_unref);
+  priv->plugins = g_hash_table_new (g_direct_hash, g_direct_equal);
 }
 
 MexPluginManager *
@@ -283,8 +285,9 @@ mex_plugin_manager_get_default (void)
 void
 mex_plugin_manager_refresh (MexPluginManager *manager)
 {
-  gint i;
   MexPluginManagerPrivate *priv = manager->priv;
+  GList *l;
+  gint i;
 
   g_return_if_fail (MEX_IS_PLUGIN_MANAGER (manager));
 
@@ -315,22 +318,39 @@ mex_plugin_manager_refresh (MexPluginManager *manager)
             continue;
 
           full_file = g_build_filename (priv->search_paths[i], file, NULL);
-          files = g_list_insert_sorted (files, full_file,
-                                        (GCompareFunc)g_strcmp0);
+          files = g_list_prepend (files, full_file);
         }
 
       g_dir_close (dir);
 
-      /* Load the plugins */
+      /* Load the plugins descriptions */
       while (files)
         {
           gchar *full_file = files->data;
 
-          /* Try to load plugin */
-          mex_plugin_manager_load_plugin (manager, full_file);
+          mex_plugin_manager_open_plugin (manager, full_file);
           g_free (full_file);
 
           files = g_list_delete_link (files, files);
         }
+    }
+
+  /* in open_plugins() we inserted PluginDescriptions in prioriy order in
+   * priv->descriptions, time to load the plugins */
+  for (l = priv->descriptions; l; l = g_list_next (l))
+    {
+      MexPluginDescription *desc = l->data;
+      GType plugin_type;
+      GObject *plugin;
+
+      /* already loaded */
+      if (g_hash_table_lookup (priv->plugins, desc))
+        continue;
+
+      plugin_type = desc->get_type ();
+      plugin = g_object_new (plugin_type, NULL);
+      g_hash_table_insert (priv->plugins, desc, plugin);
+
+      g_signal_emit (manager, signals[PLUGIN_LOADED], 0, plugin);
     }
 }

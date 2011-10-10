@@ -522,4 +522,4 @@ MEX_DEFINE_PLUGIN ("Debug",
                    "Damien Lespiau <damien.lespiau@intel.com>",
 		   MEX_API_MAJOR, MEX_API_MINOR,
 		   mex_debug_get_type,
-		   MEX_PLUGIN_PRIORITY_NORMAL)
+		   MEX_PLUGIN_PRIORITY_DEBUG)

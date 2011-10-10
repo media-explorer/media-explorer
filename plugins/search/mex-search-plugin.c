@@ -848,4 +848,4 @@ MEX_DEFINE_PLUGIN ("Search",
                    "Chris Lord <chris@linux.intel.com>",
 		   MEX_API_MAJOR, MEX_API_MINOR,
 		   mex_search_get_type,
-		   MEX_PLUGIN_PRIORITY_NORMAL)
+		   MEX_PLUGIN_PRIORITY_CORE)
