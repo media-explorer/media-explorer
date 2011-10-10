@@ -63,7 +63,12 @@ struct _MexTorrentClass
 
 GType mex_torrent_get_type (void) G_GNUC_CONST;
 
-MexTorrent *mex_torrent_new (void);
+MexTorrent *  mex_torrent_new                 (void);
+gint64        mex_torrent_get_id              (MexTorrent *torrent);
+const gchar * mex_torrent_get_name            (MexTorrent *torrent);
+gdouble       mex_torrent_get_percent_done    (MexTorrent *torrent);
+void          mex_torrent_set_percent_done    (MexTorrent *torrent,
+                                               gdouble     percent_done);
 
 G_END_DECLS
 

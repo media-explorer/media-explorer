@@ -37,7 +37,8 @@ enum
 
   PROP_NAME,
   PROP_ID,
-  PROP_SIZE
+  PROP_SIZE,
+  PROP_PERCENT_DONE
 };
 
 struct _MexTorrentPrivate
@@ -45,6 +46,7 @@ struct _MexTorrentPrivate
   gint64 id;
   gchar *name;
   gint64 size;
+  gdouble percent_done;
 };
 
 /*
@@ -110,6 +112,9 @@ mex_torrent_get_property (GObject    *object,
     case PROP_SIZE:
       g_value_set_int64 (value, priv->size);
       break;
+    case PROP_PERCENT_DONE:
+      g_value_set_double (value, priv->percent_done);
+      break;
 
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -136,6 +141,9 @@ mex_torrent_set_property (GObject      *object,
       break;
     case PROP_SIZE:
       priv->size = g_value_get_int64 (value);
+      break;
+    case PROP_PERCENT_DONE:
+      priv->percent_done = g_value_get_double (value);
       break;
 
     default:
@@ -183,6 +191,14 @@ mex_torrent_class_init (MexTorrentClass *klass)
                               0,
                               G_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_SIZE, pspec);
+
+  pspec = g_param_spec_double ("percent-done",
+			       "Percent Done",
+			       "Percentage downloaded",
+			       0.0, 1.0,
+			       0.0,
+			       G_PARAM_READWRITE);
+  g_object_class_install_property (object_class, PROP_PERCENT_DONE, pspec);
 }
 
 static void
@@ -195,4 +211,38 @@ MexTorrent *
 mex_torrent_new (void)
 {
   return g_object_new (MEX_TYPE_TORRENT, NULL);
+}
+
+gint64
+mex_torrent_get_id (MexTorrent *torrent)
+{
+  g_return_val_if_fail (MEX_IS_TORRENT (torrent), 0);
+
+  return torrent->priv->id;
+}
+
+const gchar *
+mex_torrent_get_name (MexTorrent *torrent)
+{
+  g_return_val_if_fail (MEX_IS_TORRENT (torrent), NULL);
+
+  return torrent->priv->name;
+}
+
+gdouble
+mex_torrent_get_percent_done (MexTorrent *torrent)
+{
+  g_return_val_if_fail (MEX_IS_TORRENT (torrent), 0.0);
+
+  return torrent->priv->percent_done;
+}
+
+void
+mex_torrent_set_percent_done (MexTorrent *torrent,
+                              gdouble     percent_done)
+{
+  g_return_if_fail (MEX_IS_TORRENT (torrent));
+
+  torrent->priv->percent_done = percent_done;
+  g_object_notify (G_OBJECT (torrent), "percent-done");
 }
