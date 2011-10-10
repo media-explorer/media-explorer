@@ -82,6 +82,7 @@ struct _MexTelepathyPluginPrivate
   GList *models;
   GList *actions;
   GList *contacts;
+  GHashTable *contact_accounts;
 
   GList                      *channels;
   TpAccountManager           *account_manager;
@@ -130,6 +131,8 @@ mex_telepathy_plugin_dispose (GObject *gobject)
       priv->actions = g_list_delete_link (priv->actions, priv->actions);
     }
 
+  g_hash_table_remove_all (priv->contact_accounts);
+
   while (priv->contacts)
     {
       g_object_unref (priv->contacts->data);
@@ -150,6 +153,7 @@ mex_telepathy_plugin_dispose (GObject *gobject)
   g_object_unref (priv->approver);
   g_object_unref (priv->dispatch_operation);
   g_object_unref (priv->factory);
+  g_object_unref (priv->contact_accounts);
 
   if (priv->dialog)
     {
@@ -190,7 +194,8 @@ mex_telepathy_plugin_compare_mex_contact (gconstpointer a,
   TpContact *contact_b = TP_CONTACT (b);
   TpContact *contact_a = mex_contact_get_tp_contact (mex_contact);
 
-  return tp_strdiff (tp_contact_get_identifier (
+  return TP_IS_CONTACT(contact_a) && TP_IS_CONTACT(contact_b) &&
+         tp_strdiff (tp_contact_get_identifier (
                        contact_a), tp_contact_get_identifier (contact_b));
 }
 
@@ -452,6 +457,14 @@ mex_telepathy_plugin_add_contact (gpointer contact_ptr,
   MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
   MexTelepathyPluginPrivate *priv = self->priv;
   TpContact *contact = TP_CONTACT (contact_ptr);
+  TpConnection *connection;
+  TpAccount *account;
+
+  /* Get the connection and account so we can keep track of it */
+  connection = tp_contact_get_connection (contact);
+  account = tp_connection_get_account (connection);
+  g_hash_table_insert (priv->contact_accounts, contact, account);
+
   MexContact *mex_contact;
 
   MEX_DEBUG ("Adding %s", tp_contact_get_alias (contact));
@@ -506,6 +519,7 @@ mex_telepathy_plugin_remove_contact (gpointer contact_ptr,
 
   mex_model_remove_content(priv->model, MEX_CONTENT (found_element));
   priv->contacts = g_list_remove(priv->contacts, found_element);
+  g_hash_table_remove (priv->contact_accounts, contact);
 
   MEX_DEBUG ("Contact %s removed successfully.", tp_contact_get_identifier (
                mex_contact_get_tp_contact (found_element)));
@@ -529,36 +543,40 @@ mex_telepathy_plugin_on_contact_list_changed(TpConnection *connection G_GNUC_UNU
 }
 
 static void
-mex_telepathy_plugin_on_connection_ready (TpConnection *connection,
+mex_telepathy_plugin_on_connection_ready (TpAccount *account,
                                           GParamSpec *params,
                                           MexTelepathyPlugin *self)
 {
   MexTelepathyPluginPrivate *priv = self->priv;
+  TpConnection *connection = tp_account_get_connection (account);
   GPtrArray *contacts;
   guint i;
-  MEX_DEBUG ("Connection ready!");
+  MEX_DEBUG ("Connection ready! %p", connection);
 
-  if (tp_connection_get_contact_list_state (connection) == TP_CONTACT_LIST_STATE_SUCCESS)
+  if (connection)
     {
-      contacts = tp_connection_dup_contact_list (connection);
-
-      priv->building_contact_list = TRUE;
-
-      for (i = 0; i < contacts->len; i++)
+      if (tp_connection_get_contact_list_state (connection) == TP_CONTACT_LIST_STATE_SUCCESS)
         {
-          TpContact *contact = g_ptr_array_index (contacts, i);
-          mex_telepathy_plugin_add_contact (contact, self);
+          contacts = tp_connection_dup_contact_list (connection);
+
+          priv->building_contact_list = TRUE;
+
+          for (i = 0; i < contacts->len; i++)
+            {
+              TpContact *contact = g_ptr_array_index (contacts, i);
+              mex_telepathy_plugin_add_contact (contact, self);
+            }
+
+          priv->building_contact_list = FALSE;
+
+          g_ptr_array_unref (contacts);
         }
 
-      priv->building_contact_list = FALSE;
-
-      g_ptr_array_unref (contacts);
+      g_signal_connect(connection,
+                       "contact-list-changed",
+                       G_CALLBACK (mex_telepathy_plugin_on_contact_list_changed),
+                       self);
     }
-
-  g_signal_connect(connection,
-                   "contact-list-changed",
-                   G_CALLBACK (mex_telepathy_plugin_on_contact_list_changed),
-                   self);
 }
 
 static void
@@ -571,36 +589,34 @@ mex_telepathy_plugin_on_account_status_changed (TpAccount  *account,
                                                 gpointer    user_data)
 {
   MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+  guint i;
+  GPtrArray *removed = NULL;
+  MexContact *mex_contact;
+  TpContact *contact;
+  TpConnection *contact_connection;
+  TpAccount *contact_account;
 
-  switch (new_status)
+  if (old_status == TP_CONNECTION_STATUS_CONNECTED)
     {
-    case TP_CONNECTION_STATUS_CONNECTED:
-      if (old_status != TP_CONNECTION_STATUS_CONNECTED)
-        {
-          TpConnection *connection = tp_account_get_connection (account);
+      MEX_WARNING ("Account got disconnected! %s", dbus_error_name);
+      /* Remove contacts from this account */
 
-          MEX_DEBUG ("Account got connected!");
-
-          if (connection != NULL)
-            {
-              mex_telepathy_plugin_on_connection_ready (connection,
-                                                        NULL,
-                                                        self);
-            }
-          else
-            {
-              g_signal_connect (account, "notify::connection",
-                                G_CALLBACK (mex_telepathy_plugin_on_connection_ready),
-                                self);
-            }
-        }
-      break;
-    default:
-      if (old_status == TP_CONNECTION_STATUS_CONNECTED)
+      /* Iterate over priv->contacts getting their connection and account */
+      for (i = 0; i < g_list_length (self->priv->contacts); ++i)
         {
-          MEX_WARNING ("Account got disconnected! %s", dbus_error_name);
-          /* TODO: Maybe give more info? */
+          mex_contact = g_list_nth_data (self->priv->contacts, i);
+          contact = mex_contact_get_tp_contact (mex_contact);
+          MEX_DEBUG ("got contact %p", contact);
+          contact_account = TP_ACCOUNT (g_hash_table_lookup (self->priv->contact_accounts,
+                                                 contact));
+          MEX_DEBUG ("got telepathy account %p", contact_account);
+
+          /* Add matching contacts to list to remove */
+          if (contact_account == account)
+            removed = g_list_append (removed, contact);
         }
+      /* Remove matched contacts */
+      g_list_foreach (removed, mex_telepathy_plugin_remove_contact, self);
     }
 }
 
@@ -653,6 +669,10 @@ mex_telepathy_plugin_on_account_manager_ready (GObject      *source_object G_GNU
       TpAccount *account = accounts->data;
       TpConnection *connection = tp_account_get_connection (account);
 
+      g_signal_connect (account, "notify::connection",
+                        G_CALLBACK (mex_telepathy_plugin_on_connection_ready),
+                        self);
+
       if (connection == NULL)
         {
           /* Get the autopresence */
@@ -680,8 +700,7 @@ mex_telepathy_plugin_on_account_manager_ready (GObject      *source_object G_GNU
         }
       else
         {
-          connection = tp_account_get_connection (account);
-          mex_telepathy_plugin_on_connection_ready (connection, NULL, self);
+          mex_telepathy_plugin_on_connection_ready (account, NULL, self);
         }
 
       g_signal_connect(account,
@@ -1108,6 +1127,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   priv->contacts = NULL;
   priv->dialog = NULL;
   priv->prompt_label = NULL;
+  priv->contact_accounts = g_hash_table_new (g_direct_hash, g_direct_equal);
 
   /* log domain */
   MEX_LOG_DOMAIN_INIT (telepathy_log_domain, "telepathy");
