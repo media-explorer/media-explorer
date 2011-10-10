@@ -77,8 +77,8 @@ struct _MexToolProviderInterface
   const GList * (*get_tools)    (MexToolProvider *provider);
   const GList * (*get_bindings) (MexToolProvider *provider);
   void          (*set_tool_mode) (MexToolProvider *provider,
-                                 MexToolMode mode,
-                                 guint duration);
+                                  MexToolMode mode,
+                                  guint duration);
 
   /* signals */
   void (* present_actor)       (MexToolProvider *provider,
@@ -91,6 +91,9 @@ GType   mex_tool_provider_get_type       (void) G_GNUC_CONST;
 
 const GList * mex_tool_provider_get_tools    (MexToolProvider *provider);
 const GList * mex_tool_provider_get_bindings (MexToolProvider *provider);
+void  mex_tool_provider_set_tool_mode        (MexToolProvider *provider,
+                                              MexToolMode mode,
+                                              guint duration);
 
 void mex_tool_provider_present_actor (MexToolProvider *provider,
                                       ClutterActor    *actor);

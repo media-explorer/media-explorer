@@ -122,6 +122,21 @@ mex_tool_provider_get_bindings (MexToolProvider *provider)
 }
 
 void
+mex_tool_provider_set_tool_mode        (MexToolProvider *provider,
+                                        MexToolMode mode,
+                                        guint duration)
+{
+  MexToolProviderInterface *iface;
+
+  g_return_if_fail (MEX_IS_TOOL_PROVIDER (provider));
+
+  iface = MEX_TOOL_PROVIDER_GET_IFACE (provider);
+
+  if (G_LIKELY (iface->set_tool_mode))
+    iface->set_tool_mode (provider, mode, duration);
+}
+
+void
 mex_tool_provider_present_actor (MexToolProvider *provider,
                                  ClutterActor    *actor)
 {
