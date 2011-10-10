@@ -40,7 +40,7 @@ MEX_LOG_DOMAIN_STATIC (transmission_log_domain);
 
 #define RPC_URL                       "http://localhost:9091/transmission/rpc"
 #define TRANSMISSION_SESSION          "X-Transmission-Session-Id"
-#define TRANSMISSION_REFRESH_TIMEOUT  10000 /* in ms */
+#define TRANSMISSION_REFRESH_TIMEOUT  10 /* in seconds */
 
 G_DEFINE_TYPE (MexTransmissionPlugin, mex_transmission_plugin, G_TYPE_OBJECT)
 
@@ -49,17 +49,43 @@ G_DEFINE_TYPE (MexTransmissionPlugin, mex_transmission_plugin, G_TYPE_OBJECT)
                                 MEX_TYPE_TRANSMISSION_PLUGIN,   \
                                 MexTransmissionPluginPrivate))
 
-struct _MexTransmissionPluginPrivate {
+struct _MexTransmissionPluginPrivate
+{
   MexModel *transmission_model;
 
   SoupSession *session;
   gchar *session_id;
+
+  GHashTable *id_to_torrent;
 
   /* we cache the update request to avoid repeatedly building it every
    * TRANSMISSION_REFRESH_TIMEOUT */
   gchar* update_request_data;
   gsize  update_request_length;
 };
+
+static void
+free_int64 (gpointer data)
+{
+  g_slice_free (gint64, data);
+}
+
+static gboolean
+array_has_id (GArray *array,
+              gint64  id_to_check)
+{
+  guint i;
+
+  for (i = 0; i < array->len; i++)
+    {
+      gint64 id = g_array_index (array, gint64, i);
+
+      if (id == id_to_check)
+        return TRUE;
+    }
+
+  return FALSE;
+}
 
 static void
 decode_response (MexTransmissionPlugin *plugin,
@@ -70,7 +96,9 @@ decode_response (MexTransmissionPlugin *plugin,
   JsonReader *reader;
   JsonNode *root;
   gint nb_torrents, i;
+  guint u;
   GError *error = NULL;
+  GArray *ids;
 
   parser = json_parser_new ();
   json_parser_load_from_data (parser, data, -1, &error);
@@ -87,9 +115,15 @@ decode_response (MexTransmissionPlugin *plugin,
   json_reader_read_member (reader, "arguments");
   json_reader_read_member (reader, "torrents");
   nb_torrents = json_reader_count_elements (reader);
+
+  /* ids will collect the ids currently known by the daemon to be able to
+   * purge the torrents that have been removed from the server but that we
+   * still have in our model */
+  ids = g_array_sized_new (FALSE, FALSE, sizeof (gint64), nb_torrents);
+
   for (i = 0; i < nb_torrents; i++)
     {
-      gint64 id, total_size;
+      gint64 id, percent_done;
       const gchar *name;
       MexTorrent *torrent;
 
@@ -103,21 +137,68 @@ decode_response (MexTransmissionPlugin *plugin,
       name = json_reader_get_string_value (reader);
       json_reader_end_member (reader);
 
-      json_reader_read_member (reader, "totalSize");
-      total_size = json_reader_get_int_value (reader);
+      json_reader_read_member (reader, "percentDone");
+      percent_done = json_reader_get_int_value (reader);
       json_reader_end_member (reader);
 
       json_reader_end_element (reader);
 
-      torrent = g_object_new (MEX_TYPE_TORRENT,
-                              "id", id,
-                              "name", name,
-                              "size", total_size,
-                              NULL);
-      mex_model_add_content (priv->transmission_model, MEX_CONTENT (torrent));
+      g_array_append_val (ids, id);
+
+      torrent = g_hash_table_lookup (priv->id_to_torrent, &id);
+      if (torrent)
+        {
+          /* we already have a MxTorrent for that ID, we update its fields */
+          MEX_INFO ("(update) updating torrent %s", name);
+
+          mex_torrent_set_percent_done (torrent, percent_done);
+        }
+      else
+        {
+          /* no MxTorrent for this ID, time to create one */
+          gint64 *new_id;
+
+          MEX_INFO ("(update) adding torrent %s", name);
+
+          torrent = g_object_new (MEX_TYPE_TORRENT,
+                                  "id", id,
+                                  "name", name,
+                                  "percent-done", percent_done,
+                                  NULL);
+
+          new_id = g_slice_new (gint64);
+          *new_id = id;
+          g_hash_table_insert (priv->id_to_torrent, new_id, torrent);
+
+          mex_model_add_content (priv->transmission_model,
+                                 MEX_CONTENT (torrent));
+        }
     }
   json_reader_end_member (reader); /* torrents */
   json_reader_end_member (reader); /* arguments */
+
+  /* purge time, remove the torrents that have disappeared */
+  for (u = 0; u < mex_model_get_length (priv->transmission_model); u++)
+    {
+      MexTorrent *torrent;
+      gint64 id;
+
+      torrent = MEX_TORRENT (mex_model_get_content (priv->transmission_model,
+                                                    u));
+      id = mex_torrent_get_id (torrent);
+
+      if (!array_has_id (ids, id))
+        {
+          MEX_INFO ("(update) remove torrent %s",
+                    mex_torrent_get_name (torrent));
+
+          mex_model_remove_content (priv->transmission_model,
+                                    MEX_CONTENT (torrent));
+          g_hash_table_remove (priv->id_to_torrent, &id);
+        }
+    }
+
+  g_array_free (ids, TRUE);
 
   g_object_unref (reader);
 parser_error:
@@ -252,7 +333,7 @@ build_update_request (MexTransmissionPlugin *plugin)
   json_builder_begin_array (builder);
   json_builder_add_string_value (builder, "id");
   json_builder_add_string_value (builder, "name");
-  json_builder_add_string_value (builder, "totalSize");
+  json_builder_add_string_value (builder, "percentDone");
   json_builder_end_array (builder);
   json_builder_end_object (builder);
 
@@ -264,14 +345,17 @@ build_update_request (MexTransmissionPlugin *plugin)
                                                &priv->update_request_length);
 }
 
-static void
-mex_transmission_update_model (MexTransmissionPlugin *self)
+static gboolean
+mex_transmission_update_model (gpointer data)
 {
+  MexTransmissionPlugin *self = data;
   MexTransmissionPluginPrivate *priv = self->priv;
 
   mex_transmission_send_static_message (self,
                                         priv->update_request_data,
                                         priv->update_request_length);
+
+  return TRUE;
 }
 
 /*
@@ -283,6 +367,9 @@ mex_transmission_plugin_finalize (GObject *object)
 {
   MexTransmissionPlugin *plugin = MEX_TRANSMISSION_PLUGIN (object);
   MexTransmissionPluginPrivate *priv = plugin->priv;
+
+  if (priv->id_to_torrent)
+    g_hash_table_unref (priv->id_to_torrent);
 
   if (priv->session)
     g_object_unref (priv->session);
@@ -319,6 +406,8 @@ mex_transmission_plugin_init (MexTransmissionPlugin *self)
 
   MEX_LOG_DOMAIN_INIT (transmission_log_domain, "transmission");
 
+  priv->id_to_torrent = g_hash_table_new_full (g_int64_hash, g_int64_equal,
+                                               free_int64, NULL);
   priv->session = soup_session_async_new ();
 
   priv->transmission_model = mex_generic_model_new (_("Downloads"),
@@ -337,6 +426,8 @@ mex_transmission_plugin_init (MexTransmissionPlugin *self)
   build_update_request (self);
 
   mex_transmission_update_model (self);
+  g_timeout_add_seconds (TRANSMISSION_REFRESH_TIMEOUT,
+                         mex_transmission_update_model, self);
 }
 
 static GType
