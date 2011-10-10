@@ -280,13 +280,6 @@ mex_plugin_manager_get_default (void)
   return manager;
 }
 
-GList *
-mex_plugin_manager_get_plugins (MexPluginManager *manager)
-{
-  g_return_val_if_fail (MEX_IS_PLUGIN_MANAGER (manager), NULL);
-  return g_hash_table_get_values (manager->priv->plugins);
-}
-
 void
 mex_plugin_manager_refresh (MexPluginManager *manager)
 {

@@ -71,8 +71,6 @@ GType mex_plugin_manager_get_type (void) G_GNUC_CONST;
 
 MexPluginManager *mex_plugin_manager_get_default (void);
 
-GList *mex_plugin_manager_get_plugins (MexPluginManager *manager);
-
 void mex_plugin_manager_refresh (MexPluginManager *manager);
 
 G_END_DECLS
