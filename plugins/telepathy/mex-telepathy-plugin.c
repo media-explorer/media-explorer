@@ -759,6 +759,15 @@ mex_telepathy_plugin_on_hide_call (MexTelepathyChannel         *channel G_GNUC_U
 }
 
 static void
+mex_telepathy_plugin_hide_prompt_dialog (MexTelepathyPlugin *self)
+{
+  /* Hide the dialog. */
+  clutter_actor_destroy (self->priv->dialog);
+  g_object_unref (self->priv->dispatch_operation);
+  self->priv->dialog = NULL;
+}
+
+static void
 mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler         *handler G_GNUC_UNUSED,
                                           TpAccount               *account        G_GNUC_UNUSED,
                                           TpConnection            *connection,
@@ -772,6 +781,12 @@ mex_telepathy_plugin_on_new_call_channel (TpSimpleHandler         *handler G_GNU
   MexTelepathyPluginPrivate *priv = self->priv;
   TpChannel *proxy = channels->data;
   MexTelepathyChannel *channel;
+
+  /* Clean up the dialog if the action was approved elsewhere */
+  if (priv->dialog != NULL)
+    {
+      mex_telepathy_plugin_hide_prompt_dialog (self);
+    }
 
   tp_handle_channels_context_accept (handler_context);
 
@@ -836,14 +851,6 @@ mex_telepathy_plugin_on_claim (GObject           *source,
 
       tp_cli_channel_call_close (channel, -1, NULL, NULL, NULL, NULL);
     }
-}
-
-static void
-mex_telepathy_plugin_hide_prompt_dialog (MexTelepathyPlugin *self)
-{
-  /* Hide the dialog. */
-  clutter_actor_destroy (self->priv->dialog);
-  g_object_unref (self->priv->dispatch_operation);
 }
 
 static void
@@ -957,6 +964,21 @@ mex_telepathy_plugin_incoming_call_prompt (MexTelepathyPlugin *self,
 }
 
 static void
+mex_telepathy_plugin_on_incoming_call_invalidated (TpProxy *proxy,
+                                                   guint    domain,
+                                                   gint     code,
+                                                   gchar   *message,
+                                                   gpointer user_data)
+{
+  MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
+
+  if (self->priv->dialog != NULL)
+    {
+      mex_telepathy_plugin_hide_prompt_dialog (self);
+    }
+}
+
+static void
 mex_telepathy_plugin_add_dispatch_operation (TpSimpleApprover              *approver G_GNUC_UNUSED,
                                              TpAccount                     *account  G_GNUC_UNUSED,
                                              TpConnection                  *connection,
@@ -979,6 +1001,11 @@ mex_telepathy_plugin_add_dispatch_operation (TpSimpleApprover              *appr
     {
       TpChannel *channel = g_list_nth_data (channels, i);
       mex_telepathy_plugin_incoming_call_prompt (self, connection, channel);
+      g_signal_connect (channel,
+                        "invalidated",
+                        G_CALLBACK(
+                            mex_telepathy_plugin_on_incoming_call_invalidated),
+                        self);
     }
 }
 
