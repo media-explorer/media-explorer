@@ -225,6 +225,8 @@ on_response_received (SoupSession *session,
           return;
         }
 
+      if (priv->session_id)
+        g_free (priv->session_id);
       priv->session_id = g_strdup (session_id);
 
       MEX_INFO ("Session Id is %s", priv->session_id);
