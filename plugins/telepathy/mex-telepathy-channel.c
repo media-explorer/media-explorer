@@ -641,6 +641,9 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
   GstElement *element;
   GstStateChangeReturn ret;
 
+  /* Upon pad added, clear the "in progress" box+padding */
+  clutter_actor_hide (CLUTTER_ACTOR (priv->calling_frame));
+
   MEX_DEBUG ("New src pad: %s", cstr);
   g_object_get (content, "media-type", &mtype, NULL);
 
@@ -654,7 +657,6 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
     case FS_MEDIA_TYPE_VIDEO:
       element = self->priv->incoming_sink;
       clutter_actor_show (CLUTTER_ACTOR (priv->video_incoming_area) );
-      clutter_actor_hide (CLUTTER_ACTOR (priv->calling_frame) );
       break;
     default:
       MEX_WARNING ("Unknown media type");
