@@ -241,8 +241,13 @@ void
 mex_torrent_set_percent_done (MexTorrent *torrent,
                               gdouble     percent_done)
 {
+  MexTorrentPrivate *priv = torrent->priv;
+
   g_return_if_fail (MEX_IS_TORRENT (torrent));
 
-  torrent->priv->percent_done = percent_done;
+  if (priv->percent_done == percent_done)
+    return;
+
+  priv->percent_done = percent_done;
   g_object_notify (G_OBJECT (torrent), "percent-done");
 }
