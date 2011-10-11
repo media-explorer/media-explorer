@@ -316,6 +316,15 @@ mex_transmission_send_static_message (MexTransmissionPlugin *plugin,
 
   /* send the message */
   message = soup_message_new ("POST", RPC_URL);
+
+  /* reuse the session id if we already have one */
+  if (priv->session_id)
+    {
+      soup_message_headers_append (message->request_headers,
+                                   TRANSMISSION_SESSION,
+                                   priv->session_id);
+    }
+
   soup_message_set_request (message, "application/json", SOUP_MEMORY_STATIC,
                             data, length);
   soup_session_queue_message (priv->session, message,
