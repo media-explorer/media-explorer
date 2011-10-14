@@ -1,0 +1,5 @@
+mex-dvb-scanner is a daemon that scans for DVB services and report progress and
+results over D-Bus.
+
+mex-dvb-scanner is a derative work of w_scan (http://wirbel-htpc-forum.de) and
+is thus using the same GPLv2+ license.

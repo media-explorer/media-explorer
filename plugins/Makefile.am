@@ -2,6 +2,7 @@ plugin_datadir = $(pkgdatadir)/plugins
 pluginsdir = $(pkglibdir)/plugins
 plugins_LTLIBRARIES =
 
+libexec_PROGRAMS =
 EXTRA_DIST =
 CLEANFILES =
 
@@ -345,5 +346,50 @@ mex_dvb_la_CFLAGS = 			\
 	-DG_LOG_DOMAIN=\"Mex-DVB\"	\
 	-DMEX_DATA_PLUGIN_DIR=\"$(mex_dvbdir)\"
 mex_dvb_la_LIBADD = $(_libadd)
+
+# Scanning daemon
+libexec_PROGRAMS += mex-dvb-scanner
+
+mex_dvb_scanner_SOURCES = \
+	dvb/scanner/atsc_psip_section.c	\
+	dvb/scanner/atsc_psip_section.h	\
+	dvb/scanner/countries.c		\
+	dvb/scanner/countries.h		\
+	dvb/scanner/descriptors.c	\
+	dvb/scanner/descriptors.h	\
+	dvb/scanner/diseqc.c		\
+	dvb/scanner/diseqc.h		\
+	dvb/scanner/dump-dvbscan.c	\
+	dvb/scanner/dump-dvbscan.h	\
+	dvb/scanner/dump-kaffeine.c	\
+	dvb/scanner/dump-kaffeine.h	\
+	dvb/scanner/dump-vdr.c		\
+	dvb/scanner/dump-vdr.h		\
+	dvb/scanner/dump-xine.c		\
+	dvb/scanner/dump-xine.h		\
+	dvb/scanner/dump-mplayer.c	\
+	dvb/scanner/dump-mplayer.h	\
+	dvb/scanner/dump-vlc-m3u.c	\
+	dvb/scanner/dump-vlc-m3u.h	\
+	dvb/scanner/dvbscan.c		\
+	dvb/scanner/dvbscan.h		\
+	dvb/scanner/extended_frontend.h	\
+	dvb/scanner/list.h		\
+	dvb/scanner/lnb.c		\
+	dvb/scanner/lnb.h		\
+	dvb/scanner/parse-dvbscan.c	\
+	dvb/scanner/parse-dvbscan.h	\
+	dvb/scanner/satellites.c	\
+	dvb/scanner/satellites.h	\
+	dvb/scanner/scan.c		\
+	dvb/scanner/scan.h		\
+	dvb/scanner/section.c		\
+	dvb/scanner/section.h		\
+	dvb/scanner/version.h		\
+	dvb/scanner/iconv_codes.c	\
+	dvb/scanner/iconv_codes.h	\
+	dvb/scanner/char-coding.c	\
+	dvb/scanner/char-coding.h	\
+	$(NULL)
 
 endif
