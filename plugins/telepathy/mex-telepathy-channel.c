@@ -462,7 +462,7 @@ mex_telepathy_channel_create_busy_box (MexTelepathyChannel *self)
                                            "x-align",
                                            MX_ALIGN_START,
                                            "x-fill",
-                                           FALSE,
+                                           TRUE,
                                            NULL);
 
   mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
