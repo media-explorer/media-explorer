@@ -98,9 +98,6 @@ mex_content_box_set_content (MexContentView *view,
   mex_content_view_set_content (MEX_CONTENT_VIEW (priv->tile), content);
   mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel), content);
 
-  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list), content);
-
-  /* NA: https://github.com/media-explorer/media-explorer/issues/153 */
   /* setting the content on action_list is delayed until the box is opened to
    * ensure any additional actions registered after set_content is called are
    * available */
@@ -352,10 +349,8 @@ mex_content_box_toggle_open (MexContentBox *box)
       mx_stylable_set_style_class (MX_STYLABLE (box), "open");
 
       /* refresh the action list */
-      /* See https://github.com/media-explorer/media-explorer/issues/153
-       * mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list),
-       *                             priv->content);
-       */
+      mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list),
+                                    priv->content);
 
       priv->extras_visible = TRUE;
       if (close_notified)
@@ -692,11 +687,9 @@ mex_content_box_timeline_completed (ClutterTimeline *timeline,
       g_object_notify_by_pspec (G_OBJECT (box), properties[PROP_OPEN]);
     }
 
-  /* NA: https://github.com/media-explorer/media-explorer/issues/153
-   * if (!priv->is_open)
-   *  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list),
-   *                              NULL);
-   */
+  if (!priv->is_open)
+    mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list),
+                                  NULL);
 }
 
 static void
