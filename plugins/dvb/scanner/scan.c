@@ -2594,7 +2594,7 @@ void ext_help(void)
 
 #define cl(x)  if (x) { free(x); x=NULL; }  
 
-int main (int argc, char **argv)
+int w_scan_main (int argc, char **argv)
 {
         char frontend_devname [80];
         int adapter = 999, frontend = 0, demux = 0;

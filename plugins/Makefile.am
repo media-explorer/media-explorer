@@ -351,6 +351,7 @@ mex_dvb_la_LIBADD = $(_libadd)
 libexec_PROGRAMS += mex-dvb-scanner
 
 mex_dvb_scanner_SOURCES = \
+	dvb/scanner/mex-dvb-scanner.c	\
 	dvb/scanner/atsc_psip_section.c	\
 	dvb/scanner/atsc_psip_section.h	\
 	dvb/scanner/countries.c		\
@@ -392,4 +393,6 @@ mex_dvb_scanner_SOURCES = \
 	dvb/scanner/char-coding.h	\
 	$(NULL)
 
+mex_dvb_scanner_CPPFLAGS = $(MEX_DVB_SCANNER_CFLAGS)
+mex_dvb_scanner_LDADD    = $(MEX_DVB_SCANNER_LIBS)
 endif

@@ -499,8 +499,8 @@ AS_IF([test "x$mex_use_dvb_plugin" = "xyes"],
       [AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <linux/dvb/frontend.h>],
                                        [fe_delivery_system_t dummy;
                                         fe_caps_t c = FE_CAN_2G_MODULATION;])],
-                      [],
-		      [AC_MSG_ERROR([The dvb plugin needs recent linux DVB headers (API v5 and FE_CAN_2G_MODULATION)])])])
+                      [PKG_CHECK_MODULES(MEX_DVB_SCANNER, "gio-2.0")],
+                      [AC_MSG_ERROR([The dvb plugin needs recent linux DVB headers (API v5 and FE_CAN_2G_MODULATION)])])])
 
 AC_CONFIG_FILES([
   Makefile
