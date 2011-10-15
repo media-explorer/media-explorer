@@ -371,33 +371,20 @@ mex_telepathy_channel_create_toolbar (MexTelepathyChannel *self)
                                "ToolbarArea");
 }
 
-static void
-mex_telepathy_channel_create_preview (MexTelepathyChannel *self)
+ClutterActor *
+mex_telepathy_channel_create_static_image (void)
 {
-  MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
-
-  ClutterActor *video_preview_area;
-
-  ClutterActor *static_outgoing;
-  MexShadow *shadow;
-  ClutterColor shadow_color = {0, 0, 0, 64};
+  ClutterActor *actor;
 
   gchar *static_image_path;
   GError *error = NULL;
-
-  priv->video_outgoing = clutter_texture_new ();
-  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->video_outgoing),
-                                         TRUE);
-
-  priv->outgoing_sink =
-    clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->video_outgoing));
 
   static_image_path = g_build_filename (mex_get_data_dir (),
                                         "style",
                                         "thumb-call-pip-off.png",
                                         NULL);
 
-  static_outgoing = clutter_texture_new_from_file (static_image_path,
+  actor = clutter_texture_new_from_file (static_image_path,
                     &error);
   if (error)
   {
@@ -409,27 +396,53 @@ mex_telepathy_channel_create_preview (MexTelepathyChannel *self)
     g_free (static_image_path);
 
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE
-                                         (static_outgoing), TRUE);
+                                         (actor), TRUE);
+
+  return actor;
+}
+
+MexShadow *
+mex_telepathy_channel_create_shadow (void)
+{
+  ClutterColor shadow_color = {0, 0, 0, 64};
+
+  MexShadow *shadow = mex_shadow_new ();
+
+  mex_shadow_set_radius_x (shadow, 15);
+  mex_shadow_set_radius_y (shadow, 15);
+  mex_shadow_set_color (shadow, &shadow_color);
+
+  return shadow;
+}
+
+static void
+mex_telepathy_channel_create_preview (MexTelepathyChannel *self)
+{
+  MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
+
+  ClutterActor *video_preview_area;
+
+  priv->video_outgoing = clutter_texture_new ();
+  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->video_outgoing),
+                                         TRUE);
+
+  priv->outgoing_sink =
+    clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->video_outgoing));
 
   video_preview_area = mx_stack_new ();
 
   clutter_container_add (CLUTTER_CONTAINER (video_preview_area),
-                         static_outgoing,
+                         mex_telepathy_channel_create_static_image(),
                          priv->video_outgoing,
                          NULL);
 
   mx_stylable_set_style_class (MX_STYLABLE (video_preview_area),
                                "PreviewStack");
 
-  shadow = mex_shadow_new ();
-
-  mex_shadow_set_radius_x (shadow, 15);
-  mex_shadow_set_radius_y (shadow, 15);
-  mex_shadow_set_color (shadow, &shadow_color);
-
   clutter_actor_set_height (video_preview_area, 150.0);
   clutter_actor_add_effect (video_preview_area,
-                            CLUTTER_EFFECT (shadow));
+                            CLUTTER_EFFECT (
+                              mex_telepathy_channel_create_shadow ()));
 
   priv->preview_area = mx_frame_new ();
   mx_stylable_set_style_class (MX_STYLABLE (priv->preview_area),
@@ -494,19 +507,19 @@ mex_telepathy_channel_create_incoming_video (MexTelepathyChannel *self)
 {
   MexTelepathyChannelPrivate *priv = MEX_TELEPATHY_CHANNEL (self)->priv;
 
-  MexShadow *shadow;
-  ClutterColor shadow_color = {0, 0, 0, 64};
-
-  shadow = mex_shadow_new ();
-
-  mex_shadow_set_radius_x (shadow, 15);
-  mex_shadow_set_radius_y (shadow, 15);
-  mex_shadow_set_color (shadow, &shadow_color);
+  ClutterActor *video_incoming_area;
 
   /* Setup the incoming surface to draw to */
   priv->incoming_texture = clutter_texture_new ();
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->incoming_texture),
                                          TRUE);
+
+  video_incoming_area = mx_stack_new ();
+
+  clutter_container_add (CLUTTER_CONTAINER (video_incoming_area),
+                         mex_telepathy_channel_create_static_image(),
+                         priv->incoming_texture,
+                         NULL);
 
   /* Create a frame for it with a styled border */
   priv->full_frame = mx_frame_new();
@@ -517,9 +530,10 @@ mex_telepathy_channel_create_incoming_video (MexTelepathyChannel *self)
   mx_stylable_set_style_class (MX_STYLABLE (priv->full_frame),
                                "CallWindow");
   clutter_actor_add_effect (priv->full_frame,
-                            CLUTTER_EFFECT (shadow));
+                            CLUTTER_EFFECT (
+                              mex_telepathy_channel_create_shadow ()));
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->full_frame),
-                               priv->incoming_texture);
+                               video_incoming_area);
 
   priv->incoming_sink =
     clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->incoming_texture));
@@ -709,6 +723,7 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
 
   /* Upon pad added, clear the "in progress" box+padding */
   clutter_actor_hide (CLUTTER_ACTOR (priv->busy_box));
+  clutter_actor_show (CLUTTER_ACTOR (priv->full_frame) );
 
   MEX_DEBUG ("New src pad: %s", cstr);
   g_object_get (content, "media-type", &mtype, NULL);
@@ -722,7 +737,6 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
       break;
     case FS_MEDIA_TYPE_VIDEO:
       element = priv->incoming_sink;
-      clutter_actor_show (CLUTTER_ACTOR (priv->full_frame) );
       break;
     default:
       MEX_WARNING ("Unknown media type");
