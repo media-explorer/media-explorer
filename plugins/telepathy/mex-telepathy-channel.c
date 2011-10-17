@@ -62,6 +62,7 @@ struct _MexTelepathyChannelPrivate
 
   GstElement   *pipeline;
   guint         buswatch;
+  guint         pipeline_timer;
   TpConnection *connection;
   TpChannel    *channel;
   TfChannel    *tf_channel;
@@ -172,6 +173,7 @@ mex_telepathy_channel_finalize (GObject *gobject)
   MexTelepathyChannelPrivate *priv = self->priv;
 
   g_source_remove (priv->buswatch);
+  g_source_remove (priv->pipeline_timer);
   G_OBJECT_CLASS (mex_telepathy_channel_parent_class)->finalize (gobject);
 }
 
@@ -1001,7 +1003,9 @@ mex_telepathy_channel_new_tf_channel (GObject      *source,
     }
 
   MEX_DEBUG ("Adding timeout");
-  g_timeout_add_seconds (5, mex_telepathy_channel_dump_pipeline, self);
+  priv->pipeline_timer = g_timeout_add_seconds (5,
+                         mex_telepathy_channel_dump_pipeline,
+                         self);
 
   g_signal_connect (priv->tf_channel, "fs-conference-added",
                     G_CALLBACK (mex_telepathy_channel_conference_added), self);
