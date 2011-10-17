@@ -113,6 +113,12 @@ mex_telepathy_channel_dispose (GObject *gobject)
       priv->video_call_page = NULL;
     }
 
+  if (priv->busy_box)
+    {
+      clutter_actor_destroy (priv->busy_box);
+      priv->busy_box = NULL;
+    }
+
   if (priv->pipeline)
     {
       g_object_unref (priv->pipeline);
@@ -458,6 +464,7 @@ mex_telepathy_channel_create_busy_box (MexTelepathyChannel *self)
   ClutterActor *calling_padding;
   ClutterActor *calling_box;
   ClutterActor *spinner;
+  ClutterActor *stack;
 
   priv->busy_label = mx_label_new();
   mx_label_set_y_align (MX_LABEL (priv->busy_label), MX_ALIGN_MIDDLE);
@@ -500,6 +507,11 @@ mex_telepathy_channel_create_busy_box (MexTelepathyChannel *self)
   mx_bin_set_fill (MX_BIN (priv->busy_box), TRUE, TRUE);
   mx_bin_set_child (MX_BIN (calling_padding), calling_box);
   mx_bin_set_fill (MX_BIN (calling_padding), TRUE, TRUE);
+
+  stack = mx_window_get_child (mex_get_main_window ());
+  clutter_container_add (CLUTTER_CONTAINER (stack), priv->busy_box, NULL);
+  mx_stack_child_set_x_fill (MX_STACK (stack), priv->busy_box, FALSE);
+  mx_stack_child_set_y_fill (MX_STACK (stack), priv->busy_box, FALSE);
 }
 
 static void
@@ -555,7 +567,6 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
 
   clutter_container_add (CLUTTER_CONTAINER (priv->video_call_page),
                          priv->full_frame,
-                         priv->busy_box,
                          priv->preview_area,
                          priv->toolbar_area,
                          NULL);
@@ -584,15 +595,6 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
 
   mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
                              priv->full_frame,
-                             FALSE);
-
-  /* Arrange the busy box on the page */
-  mx_stack_child_set_x_fill (MX_STACK (priv->video_call_page),
-                             priv->busy_box,
-                             FALSE);
-
-  mx_stack_child_set_y_fill (MX_STACK (priv->video_call_page),
-                             priv->busy_box,
                              FALSE);
 
   /* Arrange the toolbar area on the page */
@@ -630,6 +632,8 @@ mex_telepathy_channel_create_video_page (MexTelepathyChannel *self)
                      mex_telepathy_channel_signals[SHOW_ACTOR],
                      0,
                      g_object_ref (priv->video_call_page));
+      clutter_actor_show (priv->busy_box);
+      clutter_actor_raise_top (priv->busy_box);
       priv->show_page = FALSE;
     }
 }
@@ -651,7 +655,6 @@ mex_telepathy_channel_set_tool_mode (MexTelepathyChannel *self,
       /* Hide the toolbar and preview areas */
       clutter_actor_hide (priv->toolbar_area);
       clutter_actor_hide (priv->preview_area);
-      clutter_actor_hide (priv->busy_box);
     }
   else if (mode == TOOL_MODE_FULL)
     {
@@ -663,7 +666,6 @@ mex_telepathy_channel_set_tool_mode (MexTelepathyChannel *self,
       /* Show the toolbar and preview areas */
       clutter_actor_show (priv->toolbar_area);
       clutter_actor_show (priv->preview_area);
-      //clutter_actor_show (priv->busy_box);
     }
   else if (mode == TOOL_MODE_SBS)
     {
@@ -675,7 +677,6 @@ mex_telepathy_channel_set_tool_mode (MexTelepathyChannel *self,
       /* Show the toolbar and preview areas */
       clutter_actor_hide (priv->toolbar_area);
       clutter_actor_hide (priv->preview_area);
-      clutter_actor_hide (priv->busy_box);
     }
 }
 
@@ -1032,10 +1033,14 @@ mex_telepathy_channel_conference_added (TfChannel  *channel,
   gst_element_set_state (conference, GST_STATE_PLAYING);
 
   if (CLUTTER_IS_ACTOR (priv->video_call_page))
-    g_signal_emit (self,
-                   mex_telepathy_channel_signals[SHOW_ACTOR],
-                   0,
-                   g_object_ref (priv->video_call_page));
+    {
+      g_signal_emit (self,
+                     mex_telepathy_channel_signals[SHOW_ACTOR],
+                     0,
+                     g_object_ref (priv->video_call_page));
+      clutter_actor_show (priv->busy_box);
+      clutter_actor_raise_top (priv->busy_box);
+    }
   else
     priv->show_page = TRUE;
 }
@@ -1139,6 +1144,7 @@ mex_telepathy_channel_on_proxy_invalidated (TpProxy *proxy,
                  mex_telepathy_channel_signals[HIDE_ACTOR],
                  0,
                  g_object_ref (priv->video_call_page));
+  clutter_actor_hide (CLUTTER_ACTOR (priv->busy_box));
 }
 
 static void
@@ -1392,6 +1398,7 @@ mex_telepathy_channel_init (MexTelepathyChannel *self)
   self->priv->tf_channel = NULL;
   self->priv->show_page = FALSE;
   self->priv->video_call_page = NULL;
+  self->priv->busy_box = NULL;
   mex_telepathy_channel_create_video_page (self);
 }
 
