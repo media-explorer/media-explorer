@@ -312,7 +312,7 @@ audio_combo_box_notify (MxComboBox   *box,
                         GParamSpec   *pspec,
                         MexInfoPanel *panel)
 {
-#if USE_PLAYER_CLUTTER_GST
+#ifdef USE_PLAYER_CLUTTER_GST
   MexInfoPanelPrivate *priv = panel->priv;
   GstTagList *tags;
   ClutterGstPlayer *player;
@@ -356,7 +356,7 @@ subtitle_combo_box_notify (MxComboBox   *box,
                            GParamSpec   *pspec,
                            MexInfoPanel *panel)
 {
-#if USE_PLAYER_CLUTTER_GST
+#ifdef USE_PLAYER_CLUTTER_GST
   MexInfoPanelPrivate *priv = panel->priv;
   ClutterGstPlayer *player;
   GList *list;
