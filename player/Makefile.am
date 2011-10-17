@@ -5,7 +5,8 @@ mex_media_player_CFLAGS = $(MEX_CFLAGS) \
 	$(MEX_DEBUG_CFLAGS) 		\
 	-I$(top_srcdir)			\
 	-I$(top_srcdir)/mex		\
-	-DG_LOG_DOMAIN=\"Mex-Player\"
+	-DG_LOG_DOMAIN=\"Mex-Player\"	\
+	-DMEX_PLAYER_PLUGIN_PATH=\"$(libdir)/media-explorer-player/plugins\"
 
 
 mex_media_player_LDADD =					\
