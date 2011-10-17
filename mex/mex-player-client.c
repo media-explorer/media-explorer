@@ -159,6 +159,9 @@ mex_player_client_set_uri (MexPlayerClient *client,
 
   priv->uri = g_strdup (uri);
 
+  if (!priv->proxy)
+    return;
+
   g_dbus_proxy_call (priv->proxy, "SetUri",
                      g_variant_new ("(s)", (uri) ? uri : ""),
                      G_DBUS_CALL_FLAGS_NONE, -1, NULL, _set_uri_call_cb,
@@ -173,6 +176,9 @@ mex_player_client_set_progress (MexPlayerClient *client,
 
   priv->progress = progress;
 
+  if (!priv->proxy)
+    return;
+
   g_dbus_proxy_call (priv->proxy, "SetProgress",
                      g_variant_new ("(d)", progress), G_DBUS_CALL_FLAGS_NONE,
                      -1, NULL, _generic_call_async_cb, client);
@@ -185,6 +191,9 @@ mex_player_client_set_audio_volume (MexPlayerClient *client,
   MexPlayerClientPrivate *priv = client->priv;
 
   priv->audio_volume = audio_volume;
+
+  if (!priv->proxy)
+    return;
 
   g_dbus_proxy_call (priv->proxy, "SetAudioVolume",
                      g_variant_new ("(d)", audio_volume),
@@ -199,6 +208,9 @@ mex_player_client_set_playing (MexPlayerClient *client,
   MexPlayerClientPrivate *priv = client->priv;
 
   priv->playing = playing;
+
+  if (!priv->proxy)
+    return;
 
   g_dbus_proxy_call (priv->proxy, "SetPlaying",
                      g_variant_new ("(b)", playing),
