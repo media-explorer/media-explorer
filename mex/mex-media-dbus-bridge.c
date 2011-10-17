@@ -17,15 +17,69 @@
  */
 
 #include "mex-media-dbus-bridge.h"
-#include "mex-media-player-ginterface.h"
-
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
-#include <dbus/dbus-glib-bindings.h>
 
 #include <mex/mex-player-common.h>
 #include <mex/mex-player.h>
 
+
+static const gchar introspection_xml[] =
+"<node>"
+"  <interface name='"MEX_PLAYER_INTERFACE_NAME"'>"
+"    <method name='SetAudioVolume'>"
+"      <arg name='volume' type='d' direction='in' />"
+"    </method>"
+"    <method name='GetAudioVolume'>"
+"      <arg name='volume' type='d' direction='out' />"
+"    </method>"
+"    <signal name='AudioVolumeChanged'>"
+"      <arg name='volume' type='d' direction='out' />"
+"    </signal>"
+"    <method name='SetUri'>"
+"      <arg name='uri' type='s' direction='in' />"
+"    </method>"
+"    <method name='GetUri'>"
+"      <arg name='uri' type='s' direction='out' />"
+"    </method>"
+"    <method name='SetPlaying'>"
+"      <arg name='playing' type='b' direction='in' />"
+"    </method>"
+"    <method name='GetPlaying'>"
+"      <arg name='playing' type='b' direction='out' />"
+"    </method>"
+"    <signal name='PlayingChanged'>"
+"      <arg name='playing' type='b' direction='out' />"
+"    </signal>"
+"    <method name='SetProgress'>"
+"      <arg name='progress' type='d' direction='in' />"
+"    </method>"
+"    <method name='GetProgress'>"
+"      <arg name='progress' type='d' direction='out' />"
+"    </method>"
+"    <signal name='ProgressChanged'>"
+"      <arg name='progress' type='d' />"
+"    </signal>"
+"    <method name='GetDuration'>"
+"      <arg name='duration' type='d' direction='out' />"
+"    </method>"
+"    <signal name='DurationChanged'>"
+"      <arg name='duration' type='d' />"
+"    </signal>"
+"    <method name='GetCanSeek'>"
+"      <arg name='seekable' type='b' direction='out'/>"
+"    </method>"
+"    <signal name='Error'>"
+"      <arg name='error' type='s' />"
+"    </signal>"
+"    <signal name='BufferFillChanged'>"
+"      <arg name='buffer' type='d' />"
+"    </signal>"
+"    <signal name='CanSeekChanged'>"
+"      <arg name='seekable' type='b' direction='out'/>"
+"    </signal>"
+"    <signal name='EOS'/>"
+"  </interface>"
+"</node>";
+;
 /* NOTE: The bridge currently takes the clutter media object which is common
  * to both mex media players; internal and external (see ../player/). We have
  * now reached a point where we may want to do player specific behaviour.
@@ -33,12 +87,7 @@
  * for control is used instead of directly accessing the clutter media object.
  */
 
-static void mex_media_player_iface_init (MexMediaPlayerIface *iface);
-G_DEFINE_TYPE_WITH_CODE (MexMediaDBUSBridge,
-                         mex_media_dbus_bridge,
-                         G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (MEX_TYPE_MEDIA_PLAYER_IFACE,
-                                                mex_media_player_iface_init))
+G_DEFINE_TYPE (MexMediaDBUSBridge, mex_media_dbus_bridge, G_TYPE_OBJECT)
 
 #define MEDIA_DBUS_BRIDGE_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_MEDIA_DBUS_BRIDGE, MexMediaDBUSBridgePrivate))
@@ -54,6 +103,9 @@ enum
 struct _MexMediaDBUSBridgePrivate
 {
   ClutterMedia *media;
+
+  GDBusNodeInfo *introspection_data;
+  GDBusConnection *connection;
 };
 
 static void
@@ -103,8 +155,15 @@ static void
 mex_media_dbus_bridge_dispose (GObject *object)
 {
   MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (object);
+  MexMediaDBUSBridgePrivate *priv = bridge->priv;
 
   mex_media_dbus_bridge_set_media (bridge, NULL);
+
+  if (priv->connection)
+    {
+      g_object_unref (priv->connection);
+      priv->connection = NULL;
+    }
 
   G_OBJECT_CLASS (mex_media_dbus_bridge_parent_class)->dispose (object);
 }
@@ -151,178 +210,17 @@ mex_media_dbus_bridge_new (ClutterMedia *media)
 }
 
 static void
-mex_media_dbus_bridge_set_uri (MexMediaPlayerIface   *player_iface,
-                               const gchar           *uri,
-                               DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-
-  if (uri && uri[0] != '\0')
-    clutter_media_set_uri (priv->media, uri);
-  else
-    clutter_media_set_uri (priv->media, NULL);
-
-  mex_media_player_iface_return_from_set_uri (context);
-}
-
-static void
-mex_media_dbus_bridge_set_playing (MexMediaPlayerIface   *player_iface,
-                                   gboolean               playing,
-                                   DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-
-  clutter_media_set_playing (priv->media, playing);
-
-  mex_media_player_iface_return_from_set_playing (context);
-}
-
-static void
-mex_media_dbus_bridge_set_progress (MexMediaPlayerIface   *player_iface,
-                                    gdouble                progress,
-                                    DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-
-  clutter_media_set_progress (priv->media, progress);
-
-  mex_media_player_iface_return_from_set_progress (context);
-}
-
-static void
-mex_media_dbus_bridge_set_audio_volume (MexMediaPlayerIface   *player_iface,
-                                        gdouble                audio_volume,
-                                        DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-
-  clutter_media_set_audio_volume (priv->media, audio_volume);
-
-  mex_media_player_iface_return_from_set_audio_volume (context);
-}
-
-static void
-mex_media_dbus_bridge_get_uri (MexMediaPlayerIface   *player_iface,
-                               DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-  const gchar *uri;
-
-  uri = clutter_media_get_uri (priv->media);
-
-  mex_media_player_iface_return_from_get_uri (context, uri);
-}
-
-static void
-mex_media_dbus_bridge_get_playing (MexMediaPlayerIface   *player_iface,
-                                   DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-  gboolean playing;
-
-  playing = clutter_media_get_playing (priv->media);
-
-  mex_media_player_iface_return_from_get_playing (context, playing);
-}
-
-static void
-mex_media_dbus_bridge_get_progress (MexMediaPlayerIface   *player_iface,
-                                    DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-  gdouble progress;
-
-  progress = clutter_media_get_progress (priv->media);
-
-  mex_media_player_iface_return_from_get_progress (context, progress);
-}
-
-static void
-mex_media_dbus_bridge_get_audio_volume (MexMediaPlayerIface   *player_iface,
-                                        DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-  gdouble audio_volume;
-
-  audio_volume = clutter_media_get_audio_volume (priv->media);
-
-  mex_media_player_iface_return_from_get_audio_volume (context, audio_volume);
-}
-
-static void
-mex_media_dbus_bridge_get_duration (MexMediaPlayerIface   *player_iface,
-                                    DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-  gdouble duration;
-
-  duration = clutter_media_get_duration (priv->media);
-
-  mex_media_player_iface_return_from_get_duration (context, duration);
-}
-
-
-static void
-mex_media_dbus_bridge_get_can_seek (MexMediaPlayerIface   *player_iface,
-                                    DBusGMethodInvocation *context)
-{
-  MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (player_iface);
-  MexMediaDBUSBridgePrivate *priv = bridge->priv;
-  gboolean can_seek;
-
-  can_seek = clutter_media_get_can_seek (priv->media);
-
-  mex_media_player_iface_return_from_get_can_seek (context, can_seek);
-}
-
-static void
-mex_media_player_iface_init (MexMediaPlayerIface *iface)
-{
-  MexMediaPlayerIfaceClass *klass = (MexMediaPlayerIfaceClass *)iface;
-
-  mex_media_player_iface_implement_set_uri (klass,
-                                            mex_media_dbus_bridge_set_uri);
-  mex_media_player_iface_implement_get_uri (klass,
-                                            mex_media_dbus_bridge_get_uri);
-
-  mex_media_player_iface_implement_set_playing (klass,
-                                                mex_media_dbus_bridge_set_playing);
-  mex_media_player_iface_implement_get_playing (klass,
-                                                mex_media_dbus_bridge_get_playing);
-
-  mex_media_player_iface_implement_set_audio_volume (klass,
-                                                mex_media_dbus_bridge_set_audio_volume);
-  mex_media_player_iface_implement_get_audio_volume (klass,
-                                                mex_media_dbus_bridge_get_audio_volume);
-
-  mex_media_player_iface_implement_set_progress (klass,
-                                                 mex_media_dbus_bridge_set_progress);
-  mex_media_player_iface_implement_get_progress (klass,
-                                                 mex_media_dbus_bridge_get_progress);
-
-  mex_media_player_iface_implement_get_duration (klass,
-                                                 mex_media_dbus_bridge_get_duration);
-
-  mex_media_player_iface_implement_get_can_seek (klass,
-                                                 mex_media_dbus_bridge_get_can_seek);
-}
-
-static void
 _media_notify_cb (ClutterMedia       *media,
                   GParamSpec         *pspec,
                   MexMediaDBUSBridge *bridge)
 
 {
   MexMediaDBUSBridgePrivate *priv = bridge->priv;
+  GVariant *parameters;
+  const gchar *signal_name;
+
+  if (!priv->connection)
+    return;
 
   if (g_str_equal (pspec->name, "playing"))
     {
@@ -330,8 +228,8 @@ _media_notify_cb (ClutterMedia       *media,
 
       playing = clutter_media_get_playing (priv->media);
 
-      mex_media_player_iface_emit_playing_changed (bridge,
-                                                   playing);
+      signal_name = "PlayingChanged";
+      parameters = g_variant_new ("(b)", playing);
     }
   else if (g_str_equal (pspec->name, "progress"))
     {
@@ -339,8 +237,8 @@ _media_notify_cb (ClutterMedia       *media,
 
       progress = clutter_media_get_progress (priv->media);
 
-      mex_media_player_iface_emit_progress_changed (bridge,
-                                                    progress);
+      signal_name = "ProgressChanged";
+      parameters = g_variant_new ("(d)", progress);
     }
   else if (g_str_equal (pspec->name, "duration"))
     {
@@ -348,33 +246,42 @@ _media_notify_cb (ClutterMedia       *media,
 
       duration = clutter_media_get_duration (priv->media);
 
-      mex_media_player_iface_emit_duration_changed (bridge,
-                                                    duration);
+      signal_name = "DurationChanged";
+      parameters = g_variant_new ("(d)", duration);
     }
   else if (g_str_equal (pspec->name, "buffer-fill"))
     {
       gdouble buffer_fill;
 
       buffer_fill = clutter_media_get_buffer_fill (priv->media);
-      mex_media_player_iface_emit_buffer_fill_changed (bridge,
-                                                       buffer_fill);
+
+      signal_name = "BufferFillChanged";
+      parameters = g_variant_new ("(d)", buffer_fill);
     }
   else if (g_str_equal (pspec->name, "can-seek"))
     {
       gboolean can_seek;
 
       can_seek = clutter_media_get_can_seek (priv->media);
-      mex_media_player_iface_emit_can_seek_changed (bridge,
-                                                    can_seek);
+
+      signal_name = "CanSeekChanged";
+      parameters = g_variant_new ("(b)", can_seek);
     }
   else if (g_str_equal (pspec->name, "audio-volume"))
     {
       gdouble audio_volume;
 
       audio_volume = clutter_media_get_audio_volume (priv->media);
-      mex_media_player_iface_emit_audio_volume_changed (bridge,
-                                                        audio_volume);
+
+      signal_name = "AudioVolumeChanged";
+      parameters = g_variant_new ("(d)", audio_volume);
     }
+  else
+    return;
+
+  g_dbus_connection_emit_signal (priv->connection, NULL, MEX_PLAYER_OBJECT_PATH,
+                                 MEX_PLAYER_INTERFACE_NAME, signal_name,
+                                 parameters, NULL);
 }
 
 static void
@@ -382,14 +289,19 @@ _media_error_cb (ClutterMedia       *media,
                  GError             *error,
                  MexMediaDBUSBridge *bridge)
 {
-  mex_media_player_iface_emit_error (bridge, error->message);
+  g_dbus_connection_emit_signal (bridge->priv->connection, NULL,
+                                 MEX_PLAYER_OBJECT_PATH,
+                                 MEX_PLAYER_INTERFACE_NAME, "Error",
+                                 g_variant_new ("(s)", error->message), NULL);
 }
 
 static void
 _media_eos_cb (ClutterMedia       *media,
                MexMediaDBUSBridge *bridge)
 {
-  mex_media_player_iface_emit_eos (bridge);
+  g_dbus_connection_emit_signal (bridge->priv->connection, NULL,
+                                 MEX_PLAYER_OBJECT_PATH,
+                                 MEX_PLAYER_INTERFACE_NAME, "EOS", NULL, NULL);
 }
 
 static void
@@ -444,37 +356,119 @@ mex_media_dbus_bridge_set_media (MexMediaDBUSBridge *bridge,
     }
 }
 
-static gboolean
-request_name (void)
-{
-  DBusGConnection *connection;
-  DBusGProxy *proxy;
-  guint32 request_status;
-  GError *error = NULL;
+/******************************************************************************/
 
-  connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-  if (connection == NULL)
+static void
+handle_method_call (GDBusConnection       *connection,
+                    const gchar           *sender,
+                    const gchar           *object_path,
+                    const gchar           *interface_name,
+                    const gchar           *method_name,
+                    GVariant              *parameters,
+                    GDBusMethodInvocation *invocation,
+                    gpointer               user_data)
+{
+  MexMediaDBUSBridgePrivate *priv = MEX_MEDIA_DBUS_BRIDGE (user_data)->priv;
+  const gchar *uri;
+  gdouble d;
+  gboolean b;
+  gchar *s;
+  GVariant *return_value = NULL;
+
+  g_return_if_fail (method_name != NULL);
+
+  if (g_str_equal (method_name, "SetAudioVolume"))
     {
-      g_printerr ("Failed to open connection to DBus: %s\n", error->message);
-      g_error_free (error);
-      return FALSE;
+      g_variant_get (parameters, "(d)", &d);
+      clutter_media_set_audio_volume (priv->media, d);
+    }
+  else if (g_str_equal (method_name, "GetAudioVolume"))
+    {
+      d = clutter_media_get_audio_volume (priv->media);
+      return_value = g_variant_new_double (d);
+    }
+  else if (g_str_equal (method_name, "SetUri"))
+    {
+      g_variant_get (parameters, "(s)", &s);
+      clutter_media_set_uri (priv->media, s);
+      g_free (s);
+    }
+  else if (g_str_equal (method_name, "GetUri"))
+    {
+      uri = clutter_media_get_uri (priv->media);
+      return_value = g_variant_new_string (uri);
+    }
+  else if (g_str_equal (method_name, "SetPlaying"))
+    {
+      g_variant_get (parameters, "(b)", &b);
+      clutter_media_set_playing (priv->media, b);
+    }
+  else if (g_str_equal (method_name, "GetPlaying"))
+    {
+      b = clutter_media_get_playing (priv->media);
+      return_value = g_variant_new_boolean (b);
+    }
+  else if (g_str_equal (method_name, "SetProgress"))
+    {
+      g_variant_get (parameters, "(d)", &d);
+      clutter_media_set_progress (priv->media, d);
+    }
+  else if (g_str_equal (method_name, "GetProgress"))
+    {
+      d = clutter_media_get_progress (priv->media);
+      return_value = g_variant_new_double (d);
+    }
+  else if (g_str_equal (method_name, "GetDuration"))
+    {
+      d = clutter_media_get_duration (priv->media);
+      return_value = g_variant_new_double (d);
+    }
+  else if (g_str_equal (method_name, "GetCanSeek"))
+    {
+      b = clutter_media_get_can_seek (priv->media);
+      return_value = g_variant_new_boolean (b);
     }
 
-  proxy = dbus_g_proxy_new_for_name (connection,
-                                     DBUS_SERVICE_DBUS,
-                                     DBUS_PATH_DBUS,
-                                     DBUS_INTERFACE_DBUS);
+  g_dbus_method_invocation_return_value (invocation, return_value);
+}
 
-  if (!org_freedesktop_DBus_request_name (proxy,
-                                          MEX_PLAYER_SERVICE_NAME,
-                                          DBUS_NAME_FLAG_DO_NOT_QUEUE, &request_status,
-                                          &error)) {
-    g_printerr ("Failed to request name: %s\n", error->message);
-    g_error_free (error);
-    return FALSE;
-  }
+static const GDBusInterfaceVTable interface_vtable =
+{
+  handle_method_call,
+  NULL,
+  NULL
+};
 
-  return request_status == DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER;
+static void
+on_bus_acquired (GDBusConnection *connection,
+                 const gchar     *name,
+                 gpointer         bridge)
+{
+  MexMediaDBUSBridgePrivate *priv = MEX_MEDIA_DBUS_BRIDGE (bridge)->priv;
+  guint registration_id;
+
+  priv->connection = g_object_ref (connection);
+
+  registration_id = g_dbus_connection_register_object (connection,
+                                                       MEX_PLAYER_OBJECT_PATH,
+                                                       priv->introspection_data->interfaces[0],
+                                                       &interface_vtable,
+                                                       bridge, bridge, NULL);
+}
+
+static void
+on_name_acquired (GDBusConnection *connection,
+                  const gchar     *name,
+                  gpointer         user_data)
+{
+}
+
+G_GNUC_NORETURN static void
+on_name_lost (GDBusConnection *connection,
+              const gchar     *name,
+              gpointer         user_data)
+{
+  g_error (G_STRLOC ": Player instance already running");
 }
 
 
@@ -482,24 +476,18 @@ gboolean
 mex_media_dbus_bridge_register (MexMediaDBUSBridge  *bridge,
                                 GError             **error_in)
 {
-  DBusGConnection *connection;
+  guint owner_id;
   GError *error = NULL;
 
-  connection = dbus_g_bus_get (DBUS_BUS_STARTER, &error);
-  if (connection == NULL)
-    {
-      g_propagate_error (error_in, error);
-      return FALSE;
-    }
+  bridge->priv->introspection_data =
+    g_dbus_node_info_new_for_xml (introspection_xml, &error);
 
-  dbus_g_connection_register_g_object (connection,
-                                       MEX_PLAYER_OBJECT_PATH,
-                                       G_OBJECT (bridge));
+  g_assert_no_error (error);
 
-  if (!request_name ())
-  {
-    g_warning (G_STRLOC ": Player instance already running");
-  }
+  owner_id = g_bus_own_name (G_BUS_TYPE_SESSION, MEX_PLAYER_SERVICE_NAME,
+                             G_BUS_NAME_OWNER_FLAGS_NONE, on_bus_acquired,
+                             on_name_acquired, on_name_lost, bridge, NULL);
+
 
   return TRUE;
 }

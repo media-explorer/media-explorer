@@ -1,4 +1,3 @@
-*-bindings.h
 *.exe
 *-ginterface.[ch]
 *.gir
