@@ -2620,7 +2620,9 @@ main (int argc, char **argv)
 
   g_object_unref (app);
 
+#ifdef USE_PLAYER_CLUTTER_GST
   gst_deinit ();
+#endif
   mex_lirc_deinit ();
   mex_deinit ();
 #endif
