@@ -1,3 +1,19 @@
+Mex 0.2.2                                                            2011-10-18
+===============================================================================
+
+  • List of changes since Mex 0.2.0
+
+    » Fixed a regression on the action lists, you can now actually use them
+
+    » Some fixes around establishing and terminating calls in the telepathy
+      plugin
+
+    » Fixed the 48x48 icon location
+
+Contributors to this release:
+
+  Jeremy Whiting, Dario Freddi, Michael Wood, Damien Lespiau, Thomas Wood
+
 Mex 0.2.0                                                            2011-09-30
 ===============================================================================
 
