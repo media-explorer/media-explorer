@@ -459,10 +459,7 @@ mex_player_client_proxy_ready_cb (GObject      *object,
 static void
 mex_player_client_init (MexPlayerClient *self)
 {
-  MexPlayerClientPrivate *priv;
-
   self->priv = GET_PRIVATE (self);
-  priv = self->priv;
 
   g_dbus_proxy_new_for_bus (G_BUS_TYPE_SESSION,
                             G_DBUS_PROXY_FLAGS_NONE, NULL,

@@ -449,11 +449,13 @@ on_bus_acquired (GDBusConnection *connection,
 
   priv->connection = g_object_ref (connection);
 
-  registration_id = g_dbus_connection_register_object (connection,
-                                                       MEX_PLAYER_OBJECT_PATH,
-                                                       priv->introspection_data->interfaces[0],
-                                                       &interface_vtable,
-                                                       bridge, bridge, NULL);
+  registration_id =
+    g_dbus_connection_register_object (connection,
+                                       MEX_PLAYER_OBJECT_PATH,
+                                       priv->introspection_data->interfaces[0],
+                                       &interface_vtable,
+                                       bridge, bridge, NULL);
+  g_assert (registration_id > 0);
 }
 
 static void
@@ -476,7 +478,6 @@ gboolean
 mex_media_dbus_bridge_register (MexMediaDBUSBridge  *bridge,
                                 GError             **error_in)
 {
-  guint owner_id;
   GError *error = NULL;
 
   bridge->priv->introspection_data =
@@ -484,10 +485,9 @@ mex_media_dbus_bridge_register (MexMediaDBUSBridge  *bridge,
 
   g_assert_no_error (error);
 
-  owner_id = g_bus_own_name (G_BUS_TYPE_SESSION, MEX_PLAYER_SERVICE_NAME,
-                             G_BUS_NAME_OWNER_FLAGS_NONE, on_bus_acquired,
-                             on_name_acquired, on_name_lost, bridge, NULL);
-
+  g_bus_own_name (G_BUS_TYPE_SESSION, MEX_PLAYER_SERVICE_NAME,
+                  G_BUS_NAME_OWNER_FLAGS_NONE, on_bus_acquired,
+                  on_name_acquired, on_name_lost, bridge, NULL);
 
   return TRUE;
 }

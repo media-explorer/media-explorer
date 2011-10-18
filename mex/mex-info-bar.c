@@ -443,7 +443,7 @@ _create_settings_dialog (MexInfoBar *self)
 
   ClutterActor *dialog, *network_graphic;
   ClutterActor *network_tile, *dialog_layout, *dialog_label;
-  ClutterActor *settings_button, *network_button;
+  ClutterActor *network_button;
 
   MxAction *close_dialog, *network_settings;
 
