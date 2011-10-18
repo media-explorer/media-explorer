@@ -1460,7 +1460,7 @@ mex_tool_remove_actor_cb (MexToolProvider *provider,
     mex_go_back (data);
 }
 
-void
+static void
 mex_tool_set_mode (ClutterActor *actor,
                    MexData *data,
                    MexToolMode mode,
@@ -1538,7 +1538,7 @@ mex_tool_present_actor_cb (MexToolProvider *provider,
     return;
 
   /* Check for existing visible tools or players */
-  if (data->current_tool && data->current_tool != actor
+  if ((data->current_tool && data->current_tool != actor)
      || clutter_media_get_playing (data->media) )
     {
       /* Hide the old other_tool if there is one */
@@ -1586,7 +1586,7 @@ mex_tool_present_actor_cb (MexToolProvider *provider,
     }
 }
 
-void
+static void
 mex_tool_toggle_mode (MexData *data,
                       MexToolProvider *provider,
                       ClutterActor *actor,
