@@ -458,20 +458,6 @@ mex_generic_model_class_init (MexGenericModelClass *klass)
                                G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
   g_object_class_install_property (o_class, PROP_PLACEHOLDER_TEXT, pspec);
 
-  pspec = g_param_spec_string ("icon-name",
-                               "icon-name",
-                               "The icon name of the feed",
-                               "",
-                               G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
-  g_object_class_install_property (o_class, PROP_ICON_NAME, pspec);
-
-  pspec = g_param_spec_int ("length",
-                            "length",
-                            "The number of items in the feed",
-                            0, G_MAXINT, 0,
-                            G_PARAM_STATIC_STRINGS | G_PARAM_READABLE);
-  g_object_class_install_property (o_class, PROP_LENGTH, pspec);
-
   pspec = g_param_spec_boolean ("display-item-count",
                                 "Display item count",
                                 "Whether to display the number of items",
@@ -490,6 +476,8 @@ mex_generic_model_class_init (MexGenericModelClass *klass)
   g_object_class_override_property (o_class, PROP_TITLE, "title");
   g_object_class_override_property (o_class, PROP_SORT_FUNC, "sort-function");
   g_object_class_override_property (o_class, PROP_SORT_DATA, "sort-data");
+  g_object_class_override_property (o_class, PROP_ICON_NAME, "icon-name");
+  g_object_class_override_property (o_class, PROP_LENGTH, "length");
 
   g_type_class_add_private (klass, sizeof (MexGenericModelPrivate));
 }

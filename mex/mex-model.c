@@ -66,6 +66,20 @@ mex_model_base_init (gpointer g_iface)
                                    G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
       g_object_interface_install_property (g_iface, pspec);
 
+      pspec = g_param_spec_string ("icon-name",
+                                   "icon-name",
+                                   "The icon name of the feed",
+                                   "",
+                                   G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+      g_object_interface_install_property (g_iface, pspec);
+
+      pspec = g_param_spec_int ("length",
+                                "length",
+                                "The number of items in the feed",
+                                0, G_MAXINT, 0,
+                                G_PARAM_STATIC_STRINGS | G_PARAM_READABLE);
+      g_object_interface_install_property (g_iface, pspec);
+
       initialised = TRUE;
     }
 }
