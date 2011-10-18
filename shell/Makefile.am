@@ -3,7 +3,6 @@ bin_PROGRAMS = media-explorer
 AM_CFLAGS =					\
 	-I$(top_srcdir)				\
 	-I$(top_srcdir)/mex			\
-	-I$(top_srcdir)/applets/rebinder	\
 	-I$(top_srcdir)/applets/webremote	\
 	$(MEX_CFLAGS)				\
 	$(MEX_DEBUG_CFLAGS)			\
@@ -37,9 +36,4 @@ media_explorer_SOURCES =	\
 media_explorer_LDADD =						\
 	$(top_builddir)/mex/libmex-@MEX_API_VERSION@.la		\
 	$(MEX_LIBS)						\
-	$(REBINDER_LIBS)					\
 	$(NULL)
-
-if ENABLE_REBINDER
-media_explorer_LDADD += $(top_builddir)/applets/rebinder/libmex-rebinder.la
-endif

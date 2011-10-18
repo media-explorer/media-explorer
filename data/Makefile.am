@@ -27,7 +27,6 @@ dist_style_DATA = \
 	style/folder-tile.png \
 	style/frame-bg.png \
 	style/graphic-network.png \
-	style/graphic-rebinder.png \
 	style/grid-content-bg.png \
 	style/harderror-bg.png \
 	style/header-vr.png \
@@ -183,18 +182,6 @@ dist_icon_26x26_DATA = \
 		 icons/icon-panelheader-videos.png \
 		 icons/icon-panelheader-videos-highlight.png
 
-if ENABLE_REBINDER
-rebinderdir = $(pkgdatadir)/rebinder
-dist_rebinder_DATA = 				\
-	rebinder/back.json			\
-	rebinder/home.json			\
-	rebinder/info.json			\
-	rebinder/done.json			\
-	rebinder/setup.json			\
-	rebinder/style.css			\
-	$(NULL)
-endif
-
 if ENABLE_NETWORKS
 networksdir = $(pkgdatadir)/networks
 dist_networks_DATA =				\
@@ -224,10 +211,6 @@ applicationsdir = $(datadir)/applications
 dist_applications_DATA =			\
 	media-explorer.desktop			\
 	$(NULL)
-
-if ENABLE_REBINDER
-dist_applications_DATA += mex-rebinder-config.desktop
-endif
 
 if ENABLE_NETWORKS
 dist_applications_DATA += mex-networks.desktop

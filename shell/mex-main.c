@@ -41,9 +41,6 @@
 #ifdef HAVE_CLUTTER_X11
 #include <clutter/x11/clutter-x11.h>
 #endif
-#ifdef HAVE_REBINDER
-#include "rebinder.h"
-#endif
 
 #ifdef HAVE_WEBREMOTE
 #include "webremote.h"
@@ -1724,30 +1721,6 @@ welcome_run (MexData *data)
                     "clicked", G_CALLBACK (close_welcome_cb), data);
 }
 
-#if defined (HAVE_REBINDER)
-static void
-rebinder_quit (void)
-{
-  GDBusProxy *proxy;
-
-  proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
-                                         G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
-                                         NULL, MEX_REBINDER_DBUS_SERVICE,
-                                         MEX_REBINDER_DBUS_PATH,
-                                         MEX_REBINDER_DBUS_INTERFACE, NULL,
-                                         NULL);
-  if (!proxy)
-    return;
-
-  /* call the Quit method synchronously to ensure it is completed before the
-   * application itself has quit. */
-  g_dbus_proxy_call_sync (proxy, "Quit", NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL,
-                          NULL);
-
-  g_object_unref (proxy);
-}
-#endif
-
 #if defined (HAVE_WEBREMOTE)
 static void
 webremote_quit (void)
@@ -1925,10 +1898,6 @@ mex_open_group_cb (MxAction *action,
 static void
 cleanup_before_exit (void)
 {
-#ifdef HAVE_REBINDER
-  rebinder_quit ();
-#endif
-
 #ifdef HAVE_WEBREMOTE
   webremote_quit ();
 #endif
@@ -2209,11 +2178,6 @@ main (int argc, char **argv)
       MEX_DEBUG ("No mex.conf found, loading default plugins");
       grilo_load_default_plugins (&data, registry);
     }
-
-  /* Auto start the rebinder */
-#if defined (HAVE_REBINDER)
-  auto_start_dbus_service (MEX_REBINDER_DBUS_INTERFACE);
-#endif /* HAVE_REBINDER */
 
   mex_style_load_default ();
 

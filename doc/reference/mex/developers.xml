@@ -202,7 +202,7 @@
         pressing the activate button.</para>
 
         <para>On a netbook, the inputs are mapped onto the keyboard
-        as follows (by default):</para>
+        as follows:</para>
 
         <itemizedlist>
           <listitem>
@@ -223,8 +223,6 @@
           </listitem>
         </itemizedlist>
 
-        <para>This configuration can be modified via the
-        <link linkend="developers-works-events">rebinder</link>.</para>
       </section>
 
       <section>
@@ -640,11 +638,6 @@ Press Ctrl+C to end follow of Tracker state
       <ulink url="http://download.intel.com/design/celect/downloads/ce3100-product-brief.pdf">Intel's
       CE3100</ulink>).</para>
 
-      <para>To this end, a small daemon called <emphasis>rebinder</emphasis>
-      was designed to enable keys from a variety of input devices
-      to be mapped consistently to the UX. The technical details of
-      how this works are outlined below.</para>
-
       <section>
         <title>Terminology and definitions</title>
 
@@ -769,188 +762,6 @@ Press Ctrl+C to end follow of Tracker state
 
             <para>In this case, these exotic keycodes need to be mapped
             onto keysyms which X does recognise.</para>
-          </listitem>
-        </itemizedlist>
-
-        <para>rebinder solves these issues by:</para>
-
-        <itemizedlist>
-          <listitem id="developers-works-events-natural-map">
-            <para>Ensuring that a key press on an "exotic" key produces
-            the same sort of event as its natural equivalent on a
-            standard keyboard (where a natural equivalent exists).
-            For example, rebinder makes a press on
-            an <guilabel>OK</guilabel> key on a remote control appear
-            to the application as a press on the Return key on
-            a standard keyboard; similarly, the up/down/left/right
-            keys on a remote are mapped to the keysyms for cursor keys on
-            a standard keyboard.</para>
-          </listitem>
-
-          <listitem>
-            <para>Providing a configuration tool for mapping keys on
-            an input device (keyboard, remote control) to actions
-            in the application (info, home, back), where those actions
-            don't have a "natural" key common to both remote controls and
-            standard keyboards.</para>
-          </listitem>
-        </itemizedlist>
-
-        <note>
-          <title>A "proper" fix may soon supersede rebinder</title>
-
-          <para>Redhat is working within the kernel/xorg-input-evdev/xorg to
-          solve the whole remote issue in a better way. See
-          <ulink url="https://bugzilla.redhat.com/show_bug.cgi?id=671574">this
-          bug</ulink> for details.</para>
-        </note>
-
-      </section>
-
-      <section>
-        <title>How rebinder works</title>
-
-        <para>rebinder opens the evdev devices and listens
-        directly to the kernel for events. Depending on the keycode
-        associated with an event, rebinder has two ways of
-        dealing with it:</para>
-
-        <orderedlist>
-          <listitem>
-            <para>Key events with a keycode &lt; 255 are passed through
-            to the standard X mechanism for handling.</para>
-          </listitem>
-
-          <listitem>
-            <para>For events with a keycode &gt; 255, a new keysym
-            for the event is determined by following one of two
-            branches:</para>
-
-            <orderedlist>
-              <listitem>
-                <para>If the key has a natural mapping to a standard
-                keyboard key (see
-                <link linkend="developers-works-events-natural-map">above</link>),
-                the keysym associated with that standard key is used.</para>
-
-                <para>For a list of these natural mappings, see
-                <filename>$SOURCE/applets/rebinder/rebinder-evdev-keymap.c</filename>
-                in the Media Explorer source.</para>
-              </listitem>
-
-              <listitem>
-                <para>If there is no natural mapping for the key,
-                a keysym to keycode binding from rebinder's configuration
-                file is used instead (see
-                <link linkend="developers-works-events-rebinder-configuration">below</link>).
-                </para>
-              </listitem>
-            </orderedlist>
-
-            <para>Note that the resulting keysym is actually a Clutter
-            keysym (though these are orthogonal to X keysyms): for
-            example, <constant>CLUTTER_KEY_Up</constant>.</para>
-
-            <para>Once a new "rebound" keysym has been determined, it is sent
-            to the X server via <command>Xtest</command>.</para>
-          </listitem>
-
-        </orderedlist>
-
-        <tip>
-          <para>To ensure consistency when working on the Media Explorer
-          code, use the <constant>MEX_KEY_*</constant> defines to
-          refer to the <link linkend="developers-ux-input">primary
-          navigation keys</link> (up/down/left/right/ok/back/info/home);
-          see <filename>mex-main.h</filename> for a full list of the
-          available defines. For all other keys, use
-          <constant>CLUTTER_KEY_*</constant> defines.</para>
-        </tip>
-
-      </section>
-
-      <section id="developers-works-events-rebinder-configuration">
-        <title>rebinder configuration</title>
-
-        <para>To launch the wizard to configure the
-        <guilabel>Back</guilabel>, <guilabel>Home</guilabel> and
-        <guilabel>Info</guilabel> buttons:</para>
-
-        <informalexample>
-          <screen>
-<prompt>$</prompt> <command>mex-rebinder --configure</command>
-          </screen>
-        </informalexample>
-
-        <para>The bindings configuration file
-        (<filename>$HOME/.config/mex/rebinder.conf</filename>) is
-        a list of <code>Keysym=Keycode</code> key-value pairs like
-        this:</para>
-
-        <informalexample>
-          <programlisting>
-[bindings]
-Escape=9
-Super_L=133
-Menu=105
-          </programlisting>
-        </informalexample>
-
-        <para>The configuration defines mappings from keycodes to
-        keysyms for back (<keysym>Escape</keysym>), home
-        (<keysym>Super_L</keysym>) and info (<keysym>Menu</keysym>).
-        So, in the example above, a press on the key with keycode
-        <keycode>9</keycode> will act like a press on the
-        <keycap>Esc</keycap> key, sending an <keysym>Escape</keysym>
-        keysym to X.</para>
-
-      </section>
-
-      <section>
-        <title>Debugging rebinder</title>
-
-        <para>The <command>mex-rebinder</command> daemon handles
-        some of the events that X does not. To show debug messages
-        for this daemon, set the <envar>REBINDER_DEBUG</envar>
-        environment variable to <literal>all</literal>. Note that
-        you should restart <command>mex-rebinder</command> after
-        changing this environment variable, as it is a single-instance
-        daemon.</para>
-
-        <para>When working with rebinder, you often also need to debug low-level
-        events. The following tools can help with this:</para>
-
-        <itemizedlist>
-          <listitem>
-            <formalpara>
-              <title><command>evtest</command></title>
-
-              <para>This outputs raw events from the evdev drivers,
-              which can be useful for working out if userland receives
-              events from the kernel.</para>
-            </formalpara>
-          </listitem>
-
-          <listitem>
-            <formalpara>
-              <title><command>dmesg</command></title>
-
-              <para>Use this to see if an LIRC remote has been detected
-              by the kernel. If it has, there should be new
-              <filename>/dev/input/event%d</filename> devices and
-              some new raw events visible via <command>evtest</command>.</para>
-            </formalpara>
-
-            <para>Note that it's likely that in-kernel LIRC devices aren't
-            supported on MeeGo (needs to be verified).</para>
-          </listitem>
-
-          <listitem>
-            <formalpara>
-              <title><command>xev</command></title>
-
-              <para>This can be used to watch events received by X.</para>
-            </formalpara>
           </listitem>
         </itemizedlist>
 

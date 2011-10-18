@@ -191,16 +191,6 @@ PKG_CHECK_EXISTS([gio-unix-2.0],
                  [have_gio_unix=no])
 AM_CONDITIONAL(HAVE_GIO_UNIX, [test x"$have_gio_unix" = x"yes"])
 
-PKG_CHECK_EXISTS([dbus-glib-1],
-                 [
-                   have_dbus_glib=yes
-                   AC_DEFINE([HAVE_DBUS_GLIB], [1],
-                             ["Defined if dbus-glib is available"])
-                   modules="$modules dbus-glib-1"
-                 ],
-                 [have_dbus_glib=no])
-AM_CONDITIONAL(HAVE_DBUS_GLIB, [test x"$have_dbus_glib" = x"yes"])
-
 PKG_CHECK_EXISTS(libsoup-gnome-2.4,
                  [modules="$modules libsoup-gnome-2.4"
                  AC_DEFINE([HAVE_LIBSOUP_GNOME], [1], ["Defined if libsoup-gnome is available"])],
@@ -415,19 +405,6 @@ AM_CONDITIONAL([BUILD_GTK_DOC], [test "x$enable_gtk_doc" = "xyes"])
 # Configuration applets
 #
 
-# Check the dependencies of rebinder
-AC_ARG_ENABLE([rebinder],
-              [AC_HELP_STRING([--enable-rebinder=@<:@yes/no@:>@],
-                              [Enable the keyboard rebinder utility @<:@default=no@:>@])],
-              [],
-              [enable_rebinder=no])
-
-AS_IF([test "x$enable_rebinder" = "xyes"],
-      [PKG_CHECK_MODULES(REBINDER, [mx-1.0 dbus-glib-1 glib-2.0 gio-2.0 gudev-1.0 x11 xtst])
-      AC_DEFINE(HAVE_REBINDER, [1], [Defined if the rebinder is available])],
-      [])
-AM_CONDITIONAL(ENABLE_REBINDER, test "x$enable_rebinder" = "xyes")
-
 # Check the dependencies of network configuration ui
 AC_ARG_ENABLE([networks],
               [AC_HELP_STRING([--enable-networks=@<:@yes/no@:>@],
@@ -547,7 +524,6 @@ AC_CONFIG_FILES([
   doc/reference/mex/mex-docs.xml
   applets/Makefile
   applets/displayconf/Makefile
-  applets/rebinder/Makefile
   applets/networks/Makefile
   applets/webremote/Makefile
   plugins/Makefile
@@ -586,7 +562,6 @@ echo " • Plugins: ${MEX_PLUGINS_SELECTED}"
 echo ""
 echo " • Applets:"
 echo "        Displayconf : ${enable_displayconf}"
-echo "        Rebinder    : ${enable_rebinder}"
 echo "        Networks    : ${enable_networks}"
 echo "        Webremote   : ${enable_webremote}"
 echo ""

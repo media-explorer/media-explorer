@@ -441,11 +441,11 @@ _create_settings_dialog (MexInfoBar *self)
 {
   MexInfoBarPrivate *priv = self->priv;
 
-  ClutterActor *dialog, *rebinder_graphic, *network_graphic;
-  ClutterActor *rebinder_tile, *network_tile, *dialog_layout, *dialog_label;
+  ClutterActor *dialog, *network_graphic;
+  ClutterActor *network_tile, *dialog_layout, *dialog_label;
   ClutterActor *settings_button, *network_button;
 
-  MxAction *close_dialog, *network_settings, *binding_settings;
+  MxAction *close_dialog, *network_settings;
 
   dialog = mx_dialog_new ();
   mx_stylable_set_style_class (MX_STYLABLE (dialog), "MexInfoBarDialog");
@@ -457,9 +457,6 @@ _create_settings_dialog (MexInfoBar *self)
   network_settings =
     _action_new_from_desktop_file ("mex-networks.desktop");
 
-  binding_settings =
-    _action_new_from_desktop_file ("mex-rebinder-config.desktop");
-
   close_dialog = mx_action_new_full ("close", _("Close"),
                                      G_CALLBACK (_close_dialog_cb), self);
 
@@ -469,34 +466,6 @@ _create_settings_dialog (MexInfoBar *self)
 
   mx_table_add_actor (MX_TABLE (dialog_layout),
                       CLUTTER_ACTOR (dialog_label), 0, 0);
-
-  if (binding_settings)
-    {
-      gchar *tmp;
-
-      rebinder_graphic = mx_image_new ();
-      mx_stylable_set_style_class (MX_STYLABLE (rebinder_graphic),
-                               "RebinderGraphic");
-
-      tmp = g_build_filename (mex_get_data_dir (), "style",
-                              "graphic-rebinder.png", NULL);
-      mx_image_set_from_file (MX_IMAGE (rebinder_graphic), tmp, NULL);
-      g_free (tmp);
-
-      rebinder_tile = mex_tile_new ();
-      mex_tile_set_label (MEX_TILE (rebinder_tile), _("Remote mapping"));
-      mex_tile_set_important (MEX_TILE (rebinder_tile), TRUE);
-
-      settings_button = mx_button_new ();
-
-      mx_button_set_action (MX_BUTTON (settings_button), binding_settings);
-
-      mx_bin_set_child (MX_BIN (rebinder_tile), settings_button);
-      mx_bin_set_child (MX_BIN (settings_button), rebinder_graphic);
-
-      mx_table_add_actor (MX_TABLE (dialog_layout),
-                          CLUTTER_ACTOR (rebinder_tile), 1, 0);
-    }
 
   if (network_settings)
     {
@@ -525,7 +494,7 @@ _create_settings_dialog (MexInfoBar *self)
                           CLUTTER_ACTOR (network_tile), 1, 1);
     }
 
-  if (!network_settings && !binding_settings)
+  if (!network_settings)
     {
       ClutterActor *no_settings;
       no_settings = mx_label_new_with_text (_("No settings helpers installed"));

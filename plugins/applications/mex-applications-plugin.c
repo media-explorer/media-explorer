@@ -163,11 +163,6 @@ _populate_model (MexApplicationsPlugin *self)
     mex_model_add_content (priv->applications_model,
                            MEX_CONTENT (application));
 
-  application = _application_new_from_desktop_file ("mex-rebinder-config.desktop");
-  if (application)
-    mex_model_add_content (priv->applications_model,
-                           MEX_CONTENT (application));
-
   application = _application_new_from_desktop_file ("gnome-terminal.desktop");
   if (application)
     mex_model_add_content (priv->applications_model,

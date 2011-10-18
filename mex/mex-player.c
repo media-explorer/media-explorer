@@ -846,8 +846,7 @@ mex_player_init (MexPlayer *self)
                     G_CALLBACK (media_uri_changed_cb),
                     self);
 
-#if defined (HAVE_DBUS_GLIB) && \
-    (defined(USE_PLAYER_SURFACE) || defined (USE_PLAYER_CLUTTER_GST))
+#if (defined(USE_PLAYER_SURFACE) || defined (USE_PLAYER_CLUTTER_GST))
   {
     GError *error = NULL;
     priv->bridge = mex_media_dbus_bridge_new (priv->media);
