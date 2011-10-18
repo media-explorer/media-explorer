@@ -21,6 +21,8 @@
 #include <gio/gio.h>
 #include "dbus-client.h"
 
+#include "mex/mex-player-common.h"
+
 static GDBusProxy *
 dbus_player_proxy_new (DBusClient *dbus_client)
 {
@@ -33,9 +35,9 @@ dbus_player_proxy_new (DBusClient *dbus_client)
   proxy = g_dbus_proxy_new_sync (dbus_client->connection,
                                  G_DBUS_PROXY_FLAGS_NONE,
                                  NULL,
-                                 "com.meego.mex.player",
-                                 "/com/meego/mex/player",
-                                 "com.meego.mex.MediaPlayer",
+                                 MEX_PLAYER_SERVICE_NAME,
+                                 MEX_PLAYER_OBJECT_PATH,
+                                 MEX_PLAYER_INTERFACE_NAME,
                                  NULL,
                                  &error);
   if (error)
