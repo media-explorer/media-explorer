@@ -1160,6 +1160,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   };
 
 
+  tp_debug_set_flags (g_getenv ("TP_DEBUG"));
   tf_init ();
   tpy_cli_init ();
 
