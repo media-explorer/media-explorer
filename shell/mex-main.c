@@ -2250,13 +2250,16 @@ main (int argc, char **argv)
       exit (EXIT_SUCCESS);
     }
 
+  g_bus_own_name (G_BUS_TYPE_SESSION, MEX_DBUS_NAME,
+                  G_BUS_NAME_OWNER_FLAGS_NONE, NULL, NULL, NULL, NULL, NULL);
+
+  /* Initialisation */
   if (!clutter_init (&argc, &argv))
     {
       g_warning ("Failed to initialize clutter");
       exit (1);
     }
 
-  /* Initialisation */
   mex_init (&argc, &argv);
 
   mex_lirc_init ();
@@ -2729,20 +2732,20 @@ main (int argc, char **argv)
        */
       if (error)
         {
-          auto_start_dbus_service (MEX_WEBREMOTE_DBUS_INTERFACE);
+          auto_start_dbus_service (MEX_WEBREMOTE_DBUS_SERVICE);
           g_error_free (error);
         }
       else
         {
           if (autostart)
-            auto_start_dbus_service (MEX_WEBREMOTE_DBUS_INTERFACE);
+            auto_start_dbus_service (MEX_WEBREMOTE_DBUS_SERVICE);
         }
       g_free (web_settings_loc);
       g_key_file_free (web_settings);
     }
   else
     {
-      auto_start_dbus_service (MEX_WEBREMOTE_DBUS_INTERFACE);
+      auto_start_dbus_service (MEX_WEBREMOTE_DBUS_SERVICE);
     }
 #endif
 

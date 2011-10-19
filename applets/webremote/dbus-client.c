@@ -60,9 +60,9 @@ dbus_input_proxy_new (DBusClient *dbus_client)
   proxy = g_dbus_proxy_new_sync (dbus_client->connection,
                                  G_DBUS_PROXY_FLAGS_NONE,
                                  NULL,
-                                 "com.meego.mex.Input",
-                                 "/com/meego/mex/Input",
-                                 "com.meego.mex.Input",
+                                 "org.media-explorer.MediaExplorer",
+                                 "/org/MediaExplorer/Input",
+                                 "org.MediaExplorer.Input",
                                  NULL,
                                  &error);
   if (error)

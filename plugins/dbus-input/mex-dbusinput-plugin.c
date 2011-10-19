@@ -31,7 +31,7 @@
 
 static const gchar introspection_xml[] =
 "<node>"
-"  <interface name='com.meego.mex.Input'>"
+"  <interface name='org.MediaExplorer.Input'>"
 "    <method name='ControlKey'>"
 "      <arg name='keyflag' direction='in' type='u'/>"
 "    </method>"
@@ -51,25 +51,20 @@ struct _MexDbusinputPluginPrivate
 {
   ClutterStage *stage;
 
-  guint owner_id;
-
+  GDBusConnection *connection;
   GDBusNodeInfo *introspection_data;
 };
 
 static void
-mex_dbusinput_plugin_dispose (GObject *object)
+mex_dbusinput_plugin_finalize (GObject *object)
 {
   MexDbusinputPluginPrivate *priv = MEX_DBUSINPUT_PLUGIN (object)->priv;
 
-  g_bus_unown_name (priv->owner_id);
+  if (priv->connection)
+    g_object_unref (priv->connection);
+
   g_dbus_node_info_unref (priv->introspection_data);
 
-  G_OBJECT_CLASS (mex_dbusinput_plugin_parent_class)->dispose (object);
-}
-
-static void
-mex_dbusinput_plugin_finalize (GObject *object)
-{
   G_OBJECT_CLASS (mex_dbusinput_plugin_parent_class)->finalize (object);
 }
 
@@ -80,7 +75,6 @@ mex_dbusinput_plugin_class_init (MexDbusinputPluginClass *klass)
 
   g_type_class_add_private (klass, sizeof (MexDbusinputPluginPrivate));
 
-  object_class->dispose = mex_dbusinput_plugin_dispose;
   object_class->finalize = mex_dbusinput_plugin_finalize;
 }
 
@@ -147,17 +141,25 @@ static const GDBusInterfaceVTable interface_table =
 };
 
 static void
-_bus_acquired (GDBusConnection *connection,
-               const gchar *name,
-               MexDbusinputPlugin *self)
+on_bus_acquired (GObject      *source_object,
+                 GAsyncResult *result,
+                 gpointer      user_data)
 {
+  MexDbusinputPlugin *self = user_data;
   MexDbusinputPluginPrivate *priv = MEX_DBUSINPUT_PLUGIN (self)->priv;
+  GError *error = NULL;
 
-  GError *error=NULL;
+  priv->connection = g_bus_get_finish (result, &error);
+  if (error)
+    {
+      g_warning ("Could not acquire bus connection: %s", error->message);
+      g_error_free (error);
+      return;
+    }
 
   /* Note: Dbus object and name subject to change */
-  g_dbus_connection_register_object (connection,
-                                     "/com/meego/mex/Input",
+  g_dbus_connection_register_object (priv->connection,
+                                     "/org/MediaExplorer/Input",
                                      priv->introspection_data->interfaces[0],
                                      &interface_table,
                                      self,
@@ -182,14 +184,7 @@ mex_dbusinput_plugin_init (MexDbusinputPlugin *self)
     g_dbus_node_info_new_for_xml (introspection_xml, NULL);
 
 
-  priv->owner_id = g_bus_own_name (G_BUS_TYPE_SESSION,
-                                   "com.meego.mex.Input",
-                                   G_BUS_NAME_OWNER_FLAGS_NONE,
-                                   (GBusAcquiredCallback) _bus_acquired,
-                                   NULL,
-                                   NULL,
-                                   self,
-                                   NULL);
+  g_bus_get (G_BUS_TYPE_SESSION, NULL, on_bus_acquired, self);
 }
 
 static GType

@@ -19,9 +19,9 @@
 #ifndef _MEX_PLAYER_COMMON_H
 #define _MEX_PLAYER_COMMON_H
 
-#define MEX_PLAYER_OBJECT_PATH "/com/meego/mex/player"
-#define MEX_PLAYER_SERVICE_NAME "com.meego.mex.player"
-#define MEX_PLAYER_INTERFACE_NAME "com.meego.mex.MediaPlayer"
+#define MEX_PLAYER_OBJECT_PATH "/org/MediaExplorer/Player"
+#define MEX_PLAYER_SERVICE_NAME "org.media-explorer.Player"
+#define MEX_PLAYER_INTERFACE_NAME "org.MediaExplorer.MediaPlayer"
 
 #endif /* _MEX_PLAYER_COMMON_H */
 

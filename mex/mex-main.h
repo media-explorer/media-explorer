@@ -67,6 +67,15 @@ G_BEGIN_DECLS
  */
 #define MEX_KEY_OK(x)    (x == CLUTTER_KEY_Return)
 
+/**
+ * MEX_DBUS_NAME:
+ *
+ * The main D-Bus name to access media explorer objects
+ *
+ * Since: 1.0
+ */
+#define MEX_DBUS_NAME   "org.media-explorer.MediaExplorer"
+
 gboolean        mex_init                    (int    *argc,
                                              char ***argv);
 

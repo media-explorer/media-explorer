@@ -16,7 +16,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#define MEX_WEBREMOTE_DBUS_SERVICE      "com.meego.mex.Webremote"
-#define MEX_WEBREMOTE_DBUS_PATH         "/com/meego/mex/Webremote"
-#define MEX_WEBREMOTE_DBUS_INTERFACE    "com.meego.mex.Webremote"
-
+#define MEX_WEBREMOTE_DBUS_SERVICE      "org.media-explorer.Webremote"
+#define MEX_WEBREMOTE_DBUS_PATH         "/org/MediaExplorer/Webremote"
+#define MEX_WEBREMOTE_DBUS_INTERFACE    "org.MediaExplorer.Webremote"

@@ -21,9 +21,10 @@ main (int argc, char **argv)
 
   proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
                                          G_DBUS_PROXY_FLAGS_NONE,
-                                         NULL, "com.meego.mex.Input",
-                                         "/com/meego/mex/Input",
-                                         "com.meego.mex.Input",
+                                         NULL,
+                                         MEX_DBUS_NAME,
+                                         "/org/MediaExplorer/Input",
+                                         "org.MediaExplorer.Input",
                                          NULL, &err);
   if (err)
     g_error ("%s", err->message);
