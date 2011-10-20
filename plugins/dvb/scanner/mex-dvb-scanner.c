@@ -43,8 +43,8 @@ do_scan (void)
 /* Introspection data for the service we are exporting */
 static const gchar introspection_xml[] =
   "<node>"
-  "  <interface name='tv.sofatron.DVB.Scanner'>"
-  "    <method name='Scan' />"
+  "  <interface name='org.MediaExplorer.DVB.Scanner'>"
+  "    <method name='StartScan' />"
   "  </interface>"
   "</node>";
 
@@ -111,7 +111,7 @@ on_bus_acquired (GDBusConnection *connection,
   scanner_interface = scanner->introspection_data->interfaces[0];
   registration_id =
     g_dbus_connection_register_object (connection,
-				       "/tv/sofatron/DVB/Scanner",
+				       "/org/MediaExplorer/DVB/Scanner",
 				       scanner_interface,
 				       &interface_vtable,
 				       NULL,  /* user_data */
@@ -150,7 +150,7 @@ main (int argc, char *argv[])
   g_assert (scanner.introspection_data != NULL);
 
   owner_id = g_bus_own_name (G_BUS_TYPE_SESSION,
-                             "tv.sofatron.DVB.Scanner",
+                             "org.media-explorer.DVB.Scanner",
                              G_BUS_NAME_OWNER_FLAGS_NONE,
                              on_bus_acquired,
                              on_name_acquired,
