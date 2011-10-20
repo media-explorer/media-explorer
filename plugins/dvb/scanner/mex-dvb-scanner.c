@@ -28,12 +28,29 @@ typedef struct
   GDBusNodeInfo *introspection_data;
 } Scanner;
 
-static void
-do_scan (void)
+static gpointer
+scanning_thread_main (gpointer data)
 {
+ // Scanner *scanner = data;
+
   gchar *argv[] = { "w_scan" };
 
   w_scan_main (1, argv);
+}
+
+static void
+do_start_scan (Scanner *scanner)
+{
+  GThread *thread;
+  GError *error = NULL;
+
+  thread = g_thread_create (scanning_thread_main, scanner, FALSE, &error);
+  if (error)
+    {
+      g_warning ("Could not create scanning thread: %s", error->message);
+      g_error_free (error);
+      return;
+    }
 }
 
 /*
@@ -58,10 +75,16 @@ handle_method_call (GDBusConnection       *connection,
                     GDBusMethodInvocation *invocation,
                     gpointer               user_data)
 {
-  if (g_strcmp0 (method_name, "Scan") == 0)
+  Scanner *scanner = user_data;
+
+  if (g_strcmp0 (method_name, "StartScan") == 0)
     {
-      do_scan();
+      do_start_scan (scanner);
       g_dbus_method_invocation_return_value (invocation, NULL);
+    }
+  else
+    {
+      g_assert_not_reached ();
     }
 }
 
@@ -142,6 +165,7 @@ main (int argc, char *argv[])
   GMainLoop *loop;
 
   g_type_init ();
+  g_thread_init (NULL);
 
   memset (&scanner, 0, sizeof (Scanner));
 
