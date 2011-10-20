@@ -80,6 +80,8 @@ struct _MexTelepathyChannelPrivate
   guint width;
   guint height;
   guint framerate;
+  gfloat scene_width;
+  gfloat scene_height;
 };
 
 enum
@@ -536,8 +538,6 @@ mex_telepathy_channel_create_incoming_video (MexTelepathyChannel *self)
   /* Create a frame for it with a styled border */
   priv->full_frame = mx_frame_new();
   clutter_actor_set_name (priv->full_frame, "Incoming Frame");
-  clutter_actor_set_width (priv->full_frame, 768.0);
-  clutter_actor_set_height (priv->full_frame, 576.0);
   mx_bin_set_fill (MX_BIN (priv->full_frame), TRUE, TRUE);
   mx_stylable_set_style_class (MX_STYLABLE (priv->full_frame),
                                "CallWindow");
@@ -645,39 +645,51 @@ mex_telepathy_channel_set_tool_mode (MexTelepathyChannel *self,
 {
   MexTelepathyChannelPrivate *priv = self->priv;
 
+  gfloat height;
+  gfloat width;
+  gfloat pref_height;
+  gfloat pref_width;
+
+  /* Get natural width and height to calculate aspect ratio */
+  clutter_actor_get_preferred_height (priv->full_frame,
+                                      -1,
+                                      NULL,
+                                      &pref_height);
+  clutter_actor_get_preferred_width (priv->full_frame,
+                                     -1,
+                                     NULL,
+                                     &pref_width);
+
   if (mode == TOOL_MODE_PIP)
     {
-      clutter_actor_animate (priv->full_frame, CLUTTER_EASE_IN_CUBIC,
-                             duration,
-                             "width", 320.0,
-                             "height", 240.0,
-                             NULL);
+      width = priv->scene_width * 0.25;
+      height = width * (pref_height / pref_width);
       /* Hide the toolbar and preview areas */
       clutter_actor_hide (priv->toolbar_area);
       clutter_actor_hide (priv->preview_area);
     }
   else if (mode == TOOL_MODE_FULL)
     {
-      clutter_actor_animate (priv->full_frame, CLUTTER_EASE_IN_CUBIC,
-                             duration,
-                             "width", 768.0,
-                             "height", 576.0,
-                             NULL);
+      height = priv->scene_height * 0.90;
+      width = height * (pref_width / pref_height);
       /* Show the toolbar and preview areas */
       clutter_actor_show (priv->toolbar_area);
       clutter_actor_show (priv->preview_area);
     }
   else if (mode == TOOL_MODE_SBS)
     {
-      clutter_actor_animate (priv->full_frame, CLUTTER_EASE_IN_CUBIC,
-                             duration,
-                             "width", 640.0,
-                             "height", 480.0,
-                             NULL);
+      width = priv->scene_width * 0.50;
+      height = width * (pref_height / pref_width);
       /* Show the toolbar and preview areas */
       clutter_actor_hide (priv->toolbar_area);
       clutter_actor_hide (priv->preview_area);
     }
+
+  clutter_actor_animate (priv->full_frame, CLUTTER_EASE_IN_CUBIC,
+                         duration,
+                         "width", width,
+                         "height", height,
+                         NULL);
 }
 
 static gboolean
@@ -765,6 +777,9 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
     }
 
   g_object_unref (sinkpad);
+
+  /* Start in FULL mode */
+  mex_telepathy_channel_set_tool_mode (self, TOOL_MODE_FULL, 100);
 }
 
 static void
@@ -1400,6 +1415,10 @@ mex_telepathy_channel_init (MexTelepathyChannel *self)
   self->priv->video_call_page = NULL;
   self->priv->busy_box = NULL;
   mex_telepathy_channel_create_video_page (self);
+
+  ClutterActor *stage = mx_window_get_child (mex_get_main_window ());
+  self->priv->scene_width = clutter_actor_get_width (stage);
+  self->priv->scene_height = clutter_actor_get_height (stage);
 }
 
 MexTelepathyChannel *
