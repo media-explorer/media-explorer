@@ -16,6 +16,9 @@ AM_CPPFLAGS =					\
 AM_LDFLAGS  = -no-undefined -module -avoid-version
 _libadd     = $(MEX_LIBS) $(top_builddir)/mex/libmex-@MEX_API_VERSION@.la
 
+servicedir = $(datadir)/dbus-1/services/
+service_DATA =
+
 if USE_PLUGIN_LIBRARY
 plugins_LTLIBRARIES += mex-library.la
 
@@ -395,4 +398,11 @@ mex_dvb_scanner_SOURCES = \
 
 mex_dvb_scanner_CPPFLAGS = $(MEX_DVB_SCANNER_CFLAGS)
 mex_dvb_scanner_LDADD    = $(MEX_DVB_SCANNER_LIBS)
+
+dvb/scanner/%.service: $(srcdir)/dvb/scanner/%.service.in $(top_builddir)/config.log
+	$(AM_V_GEN)sed -e "s|\@dir\@|$(bindir)|" $< > $@
+
+service_DATA += dvb/scanner/mex-dvb-scanner.service
+EXTRA_DIST += dvb/scanner/mex-dvb-scanner.service.in
+
 endif

@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.media-explorer.DVB.Scanner
+Exec=@dir@/mex-dvb-scanner
