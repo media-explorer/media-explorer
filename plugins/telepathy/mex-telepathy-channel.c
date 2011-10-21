@@ -1176,46 +1176,49 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
 
   int i = 0;
 
-  for (i = 0; i < n_contacts; ++i)
+  if (self->priv->channel)
     {
-      gchar *text;
-      const gchar *alias;
-      TpContact *current;
-      GFile *file;
-
-      // Get the contacts.
-      current = contacts[i];
-
-      // Connect to alias change signal.
-      // Add the alias to the label.
-      alias = tp_contact_get_alias (current);
-      mx_label_set_text (MX_LABEL (self->priv->title_label),
-                         alias);
-
-      if (tp_channel_get_requested(self->priv->channel))
-        text = g_strdup_printf ("Calling %s", alias);
-      else
-        text = g_strdup_printf ("Setting up call with %s", alias);
-      mx_label_set_text (MX_LABEL (self->priv->busy_label), text);
-      g_free (text);
-
-      file = tp_contact_get_avatar_file (current);
-      if (file)
+      for (i = 0; i < n_contacts; ++i)
         {
-          gchar *filename = g_file_get_path (file);
-          GError *error = NULL;
-          MEX_DEBUG ("setting new avatar filename to %s", filename);
-          mx_image_set_from_file (MX_IMAGE(self->priv->avatar_image),
-                                  filename,
-                                  &error);
-          if (error)
+          gchar *text;
+          const gchar *alias;
+          TpContact *current;
+          GFile *file;
+
+          // Get the contacts.
+          current = contacts[i];
+
+          // Connect to alias change signal.
+          // Add the alias to the label.
+          alias = tp_contact_get_alias (current);
+          mx_label_set_text (MX_LABEL (self->priv->title_label),
+                             alias);
+
+          if (tp_channel_get_requested(self->priv->channel))
+            text = g_strdup_printf ("Calling %s", alias);
+          else
+            text = g_strdup_printf ("Setting up call with %s", alias);
+          mx_label_set_text (MX_LABEL (self->priv->busy_label), text);
+          g_free (text);
+
+          file = tp_contact_get_avatar_file (current);
+          if (file)
             {
-              MEX_ERROR ("ERROR %s loading avatar from file %s\n",
-                         error->message, filename);
-              g_clear_error (&error);
+              gchar *filename = g_file_get_path (file);
+              GError *error = NULL;
+              MEX_DEBUG ("setting new avatar filename to %s", filename);
+              mx_image_set_from_file (MX_IMAGE(self->priv->avatar_image),
+                                      filename,
+                                      &error);
+              if (error)
+                {
+                  MEX_ERROR ("ERROR %s loading avatar from file %s\n",
+                             error->message, filename);
+                  g_clear_error (&error);
+                }
+              if (filename)
+                g_free (filename);
             }
-          if (filename)
-            g_free (filename);
         }
     }
 }
