@@ -47,7 +47,6 @@ G_DEFINE_TYPE_WITH_CODE (MexSearchPlugin, mex_search_plugin, G_TYPE_OBJECT,
 struct _MexSearchPluginPrivate
 {
   GList        *models;
-  MexModelInfo *model_info;
 
   MexFeed      *history_model;
   MexFeed      *suggest_model;
@@ -78,12 +77,6 @@ mex_search_plugin_dispose (GObject *object)
 
   mex_model_manager_remove_category (mex_model_manager_get_default (),
                                      "search");
-
-  if (priv->model_info)
-    {
-      mex_model_info_free (priv->model_info);
-      priv->model_info = NULL;
-    }
 
   if (priv->history_model)
     {
@@ -400,7 +393,6 @@ mex_search_plugin_search (MexSearchPlugin *self,
       if ((supported & GRL_OP_SEARCH) || (supported & GRL_OP_QUERY))
         {
           MexFeed *feed;
-          MexModelInfo *info;
           GController *controller;
 
           if (g_str_equal (source_id, "grl-tracker"))
@@ -413,12 +405,12 @@ mex_search_plugin_search (MexSearchPlugin *self,
                                    mex_model_sort_time_cb,
                                    GINT_TO_POINTER (TRUE));
 
-          info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
-                                                     "search-results", 0);
-          mex_model_manager_add_model (manager, info);
+          g_object_set (G_OBJECT (feed),
+                        "category", "search-results",
+                        "placeholder-text", _("No videos found"),
+                        NULL);
+          mex_model_manager_add_model (manager, MEX_MODEL (feed));
 
-          g_object_set (G_OBJECT (feed), "placeholder-text",
-                        _("No videos found"), NULL);
           controller = mex_model_get_controller (MEX_MODEL (feed));
 
           /* Attach to the changed signal so that we can alter the
@@ -434,7 +426,6 @@ mex_search_plugin_search (MexSearchPlugin *self,
           /* FIXME: Arbitrary 50 item limit... */
           mex_grilo_feed_search (MEX_GRILO_FEED (feed), search, 0, 50);
 
-          mex_model_info_free (info);
           g_object_unref (G_OBJECT (feed));
         }
     }
@@ -444,7 +435,6 @@ mex_search_plugin_search (MexSearchPlugin *self,
 static void
 mex_search_plugin_search_cb (MexSearchPlugin *self)
 {
-  MexModelInfo *info;
   MexSearchPluginPrivate *priv = self->priv;
 
   const gchar *search = mx_entry_get_text (MX_ENTRY (priv->search_entry));
@@ -463,10 +453,8 @@ mex_search_plugin_search_cb (MexSearchPlugin *self)
   mex_search_plugin_update_history (self, search);
 
   /* Present the search model */
-  info = mex_model_info_new_with_sort_funcs (priv->search_model,
-                                             "search", 0);
-  mex_model_provider_present_model (MEX_MODEL_PROVIDER (self), info);
-  mex_model_info_free (info);
+  mex_model_provider_present_model (MEX_MODEL_PROVIDER (self),
+                                    priv->search_model);
 
   /* Hide the search page, if it was visible */
   if (CLUTTER_ACTOR_IS_VISIBLE (priv->search_page))
@@ -721,11 +709,9 @@ mex_search_plugin_init (MexSearchPlugin *self)
 
   /* Create the history model and models list */
   priv->history_model = mex_feed_new (_("Search"), _("Search"));
+  g_object_set (G_OBJECT (priv->history_model), "category", "search", NULL);
 
-  priv->model_info =
-    mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->history_model),
-                                        "search", 0);
-  priv->models = g_list_append (NULL, priv->model_info);
+  priv->models = g_list_append (NULL, priv->history_model);
 
   /* Create the actions list */
   memset (&priv->action_info, 0, sizeof (MexActionInfo));

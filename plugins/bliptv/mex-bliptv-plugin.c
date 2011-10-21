@@ -93,7 +93,6 @@ add_model (MexBliptvPlugin *self,
 {
   MexFeed *feed;
   GrlMedia *box;
-  MexModelInfo *info;
 
   box = grl_media_video_new ();
 
@@ -103,14 +102,13 @@ add_model (MexBliptvPlugin *self,
                              self->priv->video_keys, box);
   g_object_set (feed, "icon-name", "icon-panelheader-computer",
                 "placeholder-text", "No videos found",
+                "category", "videos",
                 NULL);
   mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, 100);
 
   g_hash_table_insert (self->priv->video_models, plugin, feed);
 
-  info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed), "videos", 0);
-  mex_model_manager_add_model (self->priv->manager, info);
-  mex_model_info_free (info);
+  mex_model_manager_add_model (self->priv->manager, MEX_MODEL (feed));
 }
 
 static void

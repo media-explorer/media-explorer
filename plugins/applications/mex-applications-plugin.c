@@ -61,7 +61,7 @@ mex_applications_plugin_dispose (GObject *object)
 
   while (priv->models)
     {
-      mex_model_info_free (priv->models->data);
+      g_object_unref (priv->models->data);
       priv->models = g_list_delete_link (priv->models, priv->models);
     }
 
@@ -174,12 +174,12 @@ mex_applications_plugin_init (MexApplicationsPlugin *self)
 {
   MexApplicationsPluginPrivate *priv;
   MexActionInfo *action_info;
-  MexModelInfo *model_info;
 
   priv = self->priv = GET_PRIVATE (self);
 
   priv->applications_model = mex_generic_model_new (_("Applications"),
                                                     "icon-applications");
+  g_object_set (priv->applications_model, "category", "applications", NULL);
 
   _populate_model (self);
 
@@ -193,11 +193,7 @@ mex_applications_plugin_init (MexApplicationsPlugin *self)
   action_info->priority = 100;
   priv->actions = g_list_append (priv->actions, action_info);
 
-  model_info = mex_model_info_new_with_sort_funcs (priv->applications_model,
-                                                   "applications", 0);
-  g_object_unref (priv->applications_model);
-
-  priv->models = g_list_append (priv->models, model_info);
+  priv->models = g_list_append (priv->models, priv->applications_model);
 }
 
 static const GList *

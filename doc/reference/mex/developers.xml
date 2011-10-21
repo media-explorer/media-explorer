@@ -376,9 +376,9 @@
           <para>Model: Media Explorer has a single <emphasis>root model</emphasis>
           (an instance of <type>MexAggregateModel</type>). A plugin loaded
           by Media Explorer's plugin manager can push models, each associated
-          with a category (via <type>MexModelInfo</type>), into the root
-          model. A model pushed by a plugin can be a simple
-          <type>MexModel</type> or another <type>MexAggregateModel</type>.</para>
+          with a category, into the root model. A model pushed by a plugin can
+          be a simple <type>MexModel</type> or another <type>MexAggregateModel
+          </type>.</para>
         </listitem>
 
         <listitem>

@@ -59,18 +59,11 @@ typedef struct
   gpointer          userdata;
 } MexModelSortFuncInfo;
 
-typedef struct
-{
-  MexModel *model;
-  gchar    *category;
-  gint      priority;
-  GList    *sort_infos;
-  gint      default_sort_index;
-  MexModel *alt_model;
-  gchar    *alt_model_string;
-  guint     alt_model_active;
-  gpointer  userdata;
-} MexModelInfo;
+void mex_model_sort_func_info_free (MexModelSortFuncInfo *sort_info);
+MexModelSortFuncInfo * mex_model_sort_func_info_new (const gchar      *name,
+                                                     const gchar      *display_name,
+                                                     MexModelSortFunc  func,
+                                                     gpointer          user_data);
 
 typedef struct
 {
@@ -96,11 +89,9 @@ struct _MexModelManagerClass
 {
   GObjectClass parent_class;
 
-  void (* model_added)   (MexModelManager    *manager,
-                          const MexModelInfo *info);
+  void (* model_added)   (MexModelManager    *manager);
   void (* model_removed) (MexModelManager *manager,
-                          MexModel        *model,
-                          const gchar     *category);
+                          MexModel        *model);
 
   void (* categories_changed) (MexModelManager *manager);
 };
@@ -114,13 +105,10 @@ GList *mex_model_manager_get_models (MexModelManager *manager);
 GList *mex_model_manager_get_models_for_category (MexModelManager *manager,
                                                   const gchar     *category);
 
-void mex_model_manager_add_model    (MexModelManager    *manager,
-                                     const MexModelInfo *info);
+void mex_model_manager_add_model    (MexModelManager *manager,
+                                     MexModel        *model);
 void mex_model_manager_remove_model (MexModelManager *manager,
                                      MexModel        *model);
-
-const MexModelInfo *mex_model_manager_get_model_info (MexModelManager *manager,
-                                                      MexModel        *model);
 
 void mex_model_manager_add_category (MexModelManager            *manager,
                                      const MexModelCategoryInfo *info);
@@ -132,16 +120,6 @@ GList *mex_model_manager_get_categories (MexModelManager *manager);
 
 const MexModelCategoryInfo *mex_model_manager_get_category_info (MexModelManager *manager,
                                                                  const gchar     *name);
-
-MexModelInfo *mex_model_info_new (MexModel         *model,
-                                  const gchar      *category,
-                                  gint              priority,
-                                  const gchar      *first_sort_func_name,
-                                  ...);
-
-MexModelInfo *mex_model_info_copy (const MexModelInfo *info);
-
-void mex_model_info_free (MexModelInfo *info);
 
 G_END_DECLS
 

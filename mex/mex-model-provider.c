@@ -68,7 +68,7 @@ mex_model_provider_default_init (MexModelProviderInterface *klass)
  * @provider: a #MexModelProvider
  *
  * Retrieves the list of models from a #MexModelProvider. This is a list of
- * #MexModelInfo##s.
+ * #MexModel##s.
  *
  * Return value: The models of @provider
  *
@@ -107,10 +107,10 @@ mex_model_provider_model_activated (MexModelProvider *provider,
 
 void
 mex_model_provider_present_model (MexModelProvider *provider,
-                                  MexModelInfo     *model_info)
+                                  MexModel         *model)
 {
   g_return_if_fail (MEX_IS_MODEL_PROVIDER (provider));
-  g_return_if_fail (model_info != NULL);
+  g_return_if_fail (model != NULL);
 
-  g_signal_emit (provider, signals[PRESENT_MODEL], 0, model_info);
+  g_signal_emit (provider, signals[PRESENT_MODEL], 0, model);
 }

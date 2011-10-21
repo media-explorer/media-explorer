@@ -53,8 +53,7 @@ mex_gnome_dvb_plugin_dispose (GObject *object)
 
   while (priv->models)
     {
-      MexModelInfo *info = priv->models->data;
-      mex_model_info_free (info);
+      g_object_unref (priv->models->data);
       priv->models = g_list_delete_link (priv->models, priv->models);
     }
 
@@ -199,8 +198,7 @@ get_channel_infos_ready_cb (GObject      *proxy,
 
   for (l = list; l; l = g_list_next (l))
     {
-      mex_model_add_content (((MexModelInfo*) priv->models->data)->model,
-                             l->data);
+      mex_model_add_content (priv->models->data, l->data);
     }
   g_list_free (list);
 }
@@ -332,15 +330,13 @@ mex_gnome_dvb_plugin_init (MexGnomeDvbPlugin *self)
 {
   MexGnomeDvbPluginPrivate *priv = self->priv = DVB_PLUGIN_PRIVATE (self);
   MexModel *feed;
-  MexModelInfo *info;
 
   MEX_LOG_DOMAIN_INIT (gnome_dvb_log_domain, "gnome-dvb-plugin");
 
   feed = mex_generic_model_new (_("TV"), "icon-panelheader-tv");
+  g_object_set (G_OBJECT (feed), "category", "live", NULL);
 
-  info = mex_model_info_new_with_sort_funcs (feed, "live", 0);
-
-  priv->models = g_list_append (priv->models, info);
+  priv->models = g_list_append (priv->models, feed);
 
 
   g_dbus_proxy_new_for_bus (G_BUS_TYPE_SESSION,

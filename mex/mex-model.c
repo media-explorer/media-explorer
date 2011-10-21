@@ -80,6 +80,49 @@ mex_model_base_init (gpointer g_iface)
                                 G_PARAM_STATIC_STRINGS | G_PARAM_READABLE);
       g_object_interface_install_property (g_iface, pspec);
 
+      pspec = g_param_spec_string ("category",
+                                   "Category",
+                                   "The name of the category this model belongs"
+                                   " to",
+                                   "",
+                                   G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+      g_object_interface_install_property (g_iface, pspec);
+
+      pspec = g_param_spec_int ("priority",
+                                "Priority",
+                                "The priority of the model",
+                                G_MININT, G_MAXINT, 0,
+                                G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+      g_object_interface_install_property (g_iface, pspec);
+
+      pspec = g_param_spec_boxed ("sort-functions",
+                                  "Sort Functions",
+                                  "The sort functions available for this model",
+                                  G_TYPE_PTR_ARRAY,
+                                  G_PARAM_STATIC_STRINGS | G_PARAM_READABLE);
+      g_object_interface_install_property (g_iface, pspec);
+
+      pspec = g_param_spec_object ("alt-model",
+                                   "Alt Model",
+                                   "Alternative Model",
+                                   G_TYPE_OBJECT, /* MEX_TYPE_MODEL */
+                                   G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+      g_object_interface_install_property (g_iface, pspec);
+
+      pspec = g_param_spec_string ("alt-model-string",
+                                   "Alt Model String",
+                                   "Alternative Model String",
+                                   "",
+                                   G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+      g_object_interface_install_property (g_iface, pspec);
+
+      pspec = g_param_spec_boolean ("alt-model-active",
+                                    "Alt Model Active",
+                                    "Whether the alternative model is active",
+                                    FALSE,
+                                    G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+      g_object_interface_install_property (g_iface, pspec);
+
       initialised = TRUE;
     }
 }

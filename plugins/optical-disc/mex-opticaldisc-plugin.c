@@ -99,7 +99,7 @@ mex_optical_disc_manager_dispose (GObject *object)
 
   while (priv->models)
     {
-      mex_model_info_free (priv->models->data);
+      g_object_unref (priv->models->data);
       priv->models = g_list_delete_link (priv->models, priv->models);
     }
 
@@ -264,7 +264,6 @@ static void
 mex_optical_disc_manager_init (MexOpticalDiscManager *self)
 {
   MexOpticalDiscManagerPrivate *priv;
-  MexModelInfo *model_info;
   MexActionInfo *eject_action;
 
   GList *mounts = NULL;
@@ -285,10 +284,12 @@ mex_optical_disc_manager_init (MexOpticalDiscManager *self)
 
   priv->optical_discs_model = mex_generic_model_new (_("Optical Discs"),
                                                      "icon-panelheader-videos");
-  model_info =
-    mex_model_info_new_with_sort_funcs (MEX_MODEL (priv->optical_discs_model),
-                                        "videos", 100);
-  priv->models = g_list_append (priv->models, model_info);
+  g_object_set (G_OBJECT (priv->optical_discs_model),
+                "category", "videos",
+                "priority", 100,
+                NULL);
+
+  priv->models = g_list_append (priv->models, priv->optical_discs_model);
 
   mounts = g_volume_monitor_get_mounts (priv->volume_monitor);
 

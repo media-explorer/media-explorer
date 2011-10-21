@@ -117,7 +117,7 @@ mex_telepathy_plugin_dispose (GObject *gobject)
 
   while (priv->models)
     {
-      mex_model_info_free (priv->models->data);
+      g_object_unref (priv->models->data);
       priv->models = g_list_delete_link (priv->models, priv->models);
     }
 
@@ -1135,7 +1135,6 @@ mex_telepathy_plugin_create_handler (MexTelepathyPlugin *self)
 static void
 mex_telepathy_plugin_init (MexTelepathyPlugin *self)
 {
-  MexModelInfo *info;
   MexTelepathyPluginPrivate *priv;
   TpDBusDaemon *tp_daemon;
   MexModelCategoryInfo contacts = { "contacts", _("Contacts"), "contact", 10,
@@ -1207,9 +1206,9 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
                                    100,
                                    self);
 
-  info = mex_model_info_new_with_sort_funcs (priv->model, "contacts", 0);
+  g_object_set (G_OBJECT (priv->model), "category", "contacts", NULL);
 
-  priv->models = g_list_append (priv->models, info);
+  priv->models = g_list_append (priv->models, priv->model);
 
   priv->info_bar = MEX_INFO_BAR (mex_info_bar_get_default ());
 

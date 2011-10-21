@@ -38,7 +38,7 @@ G_DEFINE_TYPE_WITH_CODE (MexRecommendedPlugin, mex_recommended_plugin,
 struct _MexRecommendedPluginPrivate
 {
   GList *models;
-  MexModelInfo info;
+  MexModel *model;
 };
 
 
@@ -47,10 +47,10 @@ mex_recommended_plugin_dispose (GObject *object)
 {
   MexRecommendedPluginPrivate *priv = MEX_RECOMMENDED_PLUGIN (object)->priv;
 
-  if (priv->info.model)
+  if (priv->model)
     {
-      g_object_unref (priv->info.model);
-      priv->info.model = NULL;
+      g_object_unref (priv->model);
+      priv->model = NULL;
     }
 
   G_OBJECT_CLASS (mex_recommended_plugin_parent_class)->dispose (object);
@@ -163,16 +163,16 @@ mex_recommended_plugin_init (MexRecommendedPlugin *self)
     {
       MexFeed *feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin), NULL, NULL, NULL);
       GController *controller = mex_model_get_controller (MEX_MODEL (feed));
-      g_object_set (feed, "icon-name", "icon-recommended", NULL);
+      g_object_set (feed, "icon-name", "icon-recommended", "category",
+                    "Recommended", NULL);
 
       g_signal_connect (controller, "changed",
                         G_CALLBACK (mex_recommended_plugin_model_changed_cb),
                         feed);
 
       mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, 50);
-      priv->info.model = MEX_MODEL (feed);
-      priv->info.category = "Recommended";
-      priv->models = g_list_append (NULL, &priv->info);
+      priv->model = MEX_MODEL (feed);
+      priv->models = g_list_append (NULL, &priv->model);
     }
   else
     g_warning ("Apple trailers plugin not found");

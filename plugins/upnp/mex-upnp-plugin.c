@@ -112,7 +112,6 @@ add_model (MexUpnpPlugin *self,
   GList *metadata_keys;
   MexFeed *feed;
   GrlMedia *box;
-  MexModelInfo *info;
   char *query, *cat_name, *placeholder;
   GHashTable *models;
 
@@ -145,14 +144,13 @@ add_model (MexUpnpPlugin *self,
                            GINT_TO_POINTER (TRUE));
   g_object_set (feed, "icon-name", "icon-panelheader-computer",
                 "placeholder-text", placeholder,
+                "category", cat_name,
                 NULL);
   mex_grilo_feed_query (MEX_GRILO_FEED (feed), query, 0, G_MAXINT);
 
   g_hash_table_insert (models, plugin, feed);
 
-  info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed), cat_name, 0);
-  mex_model_manager_add_model (self->priv->manager, info);
-  mex_model_info_free (info);
+  mex_model_manager_add_model (self->priv->manager, MEX_MODEL (feed));
 }
 
 static void

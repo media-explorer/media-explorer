@@ -53,7 +53,7 @@ mex_queue_plugin_dispose (GObject *object)
 
   while (priv->models)
     {
-      mex_model_info_free (priv->models->data);
+      g_object_unref (priv->models->data);
       priv->models = g_list_delete_link (priv->models, priv->models);
     }
 
@@ -96,14 +96,16 @@ mex_queue_plugin_init (MexQueuePlugin *self)
 {
   MexQueuePluginPrivate *priv;
   MexActionInfo *action_info;
-  MexModelInfo *model_info;
   MexModel *queue_model;
 
   priv = self->priv = GET_PRIVATE (self);
 
   queue_model = mex_queue_model_dup_singleton ();
 
-  g_object_set (queue_model, "icon-name", "icon-panelheader-queue", NULL);
+  g_object_set (queue_model,
+                "icon-name", "icon-panelheader-queue",
+                "category", "queue",
+                NULL);
 
   /*
    * Attention! Fake action .. this then causes MexContentBox to put an
@@ -119,9 +121,7 @@ mex_queue_plugin_init (MexQueuePlugin *self)
 
   priv->actions = g_list_append (priv->actions, action_info);
 
-  model_info = mex_model_info_new (queue_model, "queue", 0, NULL);
-
-  priv->models = g_list_append (priv->models, model_info);
+  priv->models = g_list_append (priv->models, queue_model);
 }
 
 static const GList *

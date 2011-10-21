@@ -43,31 +43,29 @@ struct _MexModelManagerPrivate
 static guint signals[LAST_SIGNAL] = { 0, };
 
 void
-mex_model_info_free (MexModelInfo *info)
+mex_model_sort_func_info_free (MexModelSortFuncInfo *sort_info)
 {
-  while (info->sort_infos)
-    {
-      MexModelSortFuncInfo *sort_info = info->sort_infos->data;
+  g_free (sort_info->name);
+  g_free (sort_info->display_name);
+  g_slice_free (MexModelSortFuncInfo, sort_info);
+}
 
-      g_free (sort_info->name);
-      g_free (sort_info->display_name);
-      g_slice_free (MexModelSortFuncInfo, sort_info);
+MexModelSortFuncInfo *
+mex_model_sort_func_info_new (const gchar      *name,
+                              const gchar      *display_name,
+                              MexModelSortFunc  func,
+                              gpointer          user_data)
+{
+  MexModelSortFuncInfo *info;
 
-      info->sort_infos = g_list_delete_link (info->sort_infos,
-                                             info->sort_infos);
-    }
+  info = g_slice_new (MexModelSortFuncInfo);
 
-  if (info->model)
-    g_object_unref (info->model);
+  info->name = g_strdup (name);
+  info->display_name = g_strdup (display_name);
+  info->sort_func = func;
+  info->userdata = user_data;
 
-  if (info->alt_model)
-    g_object_unref (info->alt_model);
-
-  g_free (info->alt_model_string);
-
-  g_free (info->category);
-
-  g_slice_free (MexModelInfo, info);
+  return info;
 }
 
 static void
@@ -85,7 +83,7 @@ mex_model_manager_dispose (GObject *object)
 
   while (priv->models)
     {
-      mex_model_info_free (priv->models->data);
+      g_object_unref (priv->models->data);
       priv->models = g_list_delete_link (priv->models, priv->models);
     }
 
@@ -209,10 +207,12 @@ static gint
 mex_model_manager_simple_sort_cb (gconstpointer a,
                                   gconstpointer b)
 {
-  const MexModelInfo *info_a = a;
-  const MexModelInfo *info_b = b;
+  gint priority_a, priority_b;
 
-  return info_b->priority - info_a->priority;
+  g_object_get (G_OBJECT (a), "priority", &priority_a, NULL);
+  g_object_get (G_OBJECT (b), "priority", &priority_b, NULL);
+
+  return priority_b - priority_a;
 }
 
 static gint
@@ -220,21 +220,23 @@ mex_model_manager_sort_cb (gconstpointer a,
                            gconstpointer b,
                            gpointer      userdata)
 {
-  const MexModelInfo *info_a = a;
-  const MexModelInfo *info_b = b;
+  MexModel *model_a = MEX_MODEL (a);
+  MexModel *model_b = MEX_MODEL (b);
   MexModelManager *manager = userdata;
   MexModelManagerPrivate *priv = manager->priv;
-  MexModelCategoryInfo *category_a, *category_b;
+  MexModelCategoryInfo *category_a = NULL, *category_b = NULL;
+  gchar *category;
+  gint priority_a, priority_b;
 
-  if (info_a->category)
-    category_a = g_hash_table_lookup (priv->categories, info_a->category);
-  else
-    category_a = NULL;
+  g_object_get (model_a, "category", &category, "priority", &priority_a, NULL);
+  if (category)
+    category_a = g_hash_table_lookup (priv->categories, category);
+  g_free (category);
 
-  if (info_b->category)
-    category_b = g_hash_table_lookup (priv->categories, info_b->category);
-  else
-    category_b = NULL;
+  g_object_get (model_b, "category", &category, "priority", &priority_b, NULL);
+  if (category)
+    category_b = g_hash_table_lookup (priv->categories, category);
+  g_free (category);
 
   if (category_a)
     {
@@ -250,39 +252,13 @@ mex_model_manager_sort_cb (gconstpointer a,
   else if (category_b)
     return 1;
 
-  return info_b->priority - info_a->priority;
-}
-
-static gint
-mex_model_manager_find_cb (gconstpointer a,
-                           gconstpointer b)
-{
-  const MexModelInfo *info_a = a;
-  const MexModel *model = b;
-
-  if (info_a->model == model)
-    return 0;
-  else
-    return -1;
-}
-
-static gint
-mex_model_manager_find_alt_cb (gconstpointer a,
-                               gconstpointer b)
-{
-  const MexModelInfo *info_a = a;
-  const MexModel *model = b;
-
-  if (info_a->alt_model == model)
-    return 0;
-  else
-    return -1;
+  return priority_b - priority_a;
 }
 
 GList *
 mex_model_manager_get_models (MexModelManager *manager)
 {
-  GList *i, *models;
+  GList *models;
   MexModelManagerPrivate *priv;
 
   g_return_val_if_fail (MEX_IS_MODEL_MANAGER (manager), NULL);
@@ -290,8 +266,6 @@ mex_model_manager_get_models (MexModelManager *manager)
   priv = manager->priv;
 
   models = g_list_copy (priv->models);
-  for (i = models; i; i = i->next)
-    i->data = ((MexModelInfo *)i->data)->model;
 
   return models;
 }
@@ -310,90 +284,57 @@ mex_model_manager_get_models_for_category (MexModelManager *manager,
 
   for (i = priv->models; i; i = i->next)
     {
-      MexModelInfo *info = i->data;
+      MexModel *model = i->data;
+      gchar *c;
 
-      if (!category && info->category)
-        continue;
+      g_object_get (model, "category", &c, NULL);
 
-      if ((category == info->category) ||
-          (g_strcmp0 (category, info->category) == 0))
-        models = g_list_prepend (models, info);
+      if (g_strcmp0 (category, c) == 0)
+        models = g_list_prepend (models, model);
     }
 
   models = g_list_sort (models, mex_model_manager_simple_sort_cb);
-  for (i = models; i; i = i->next)
-    i->data = ((MexModelInfo *)i->data)->model;
 
   return models;
 }
 
 void
-mex_model_manager_add_model (MexModelManager    *manager,
-                             const MexModelInfo *info)
+mex_model_manager_add_model (MexModelManager *manager,
+                             MexModel        *model)
 {
-  MexModelInfo *info_copy;
   MexModelManagerPrivate *priv;
 
   g_return_if_fail (MEX_IS_MODEL_MANAGER (manager));
 
   priv = manager->priv;
 
-  info_copy = mex_model_info_copy (info);
-
   priv->models = g_list_insert_sorted_with_data (priv->models,
-                                                 info_copy,
+                                                 g_object_ref (model),
                                                  mex_model_manager_sort_cb,
                                                  manager);
 
-  g_signal_emit (manager, signals[MODEL_ADDED], 0, info_copy);
+  g_signal_emit (manager, signals[MODEL_ADDED], 0, model);
 }
 
 void
 mex_model_manager_remove_model (MexModelManager *manager,
                                 MexModel        *model)
 {
-  GList *i;
-  MexModelInfo *info;
+  gchar *category;
   MexModelManagerPrivate *priv;
 
   g_return_if_fail (MEX_IS_MODEL_MANAGER (manager));
 
   priv = manager->priv;
 
-  i = g_list_find_custom (priv->models, model, mex_model_manager_find_cb);
-  if (!i)
-    {
-      g_warning (G_STRLOC ": Model is unrecognised");
-      return;
-    }
+  priv->models = g_list_remove (priv->models, model);
 
-  info = i->data;
-  priv->models = g_list_delete_link (priv->models, i);
+  g_object_get (model, "category", &category, NULL);
 
-  g_signal_emit (manager, signals[MODEL_REMOVED], 0, model, info->category);
+  g_signal_emit (manager, signals[MODEL_REMOVED], 0, model, category);
 
-  mex_model_info_free (info);
-}
-
-const MexModelInfo *
-mex_model_manager_get_model_info (MexModelManager *manager,
-                                  MexModel        *model)
-{
-  GList *model_link;
-  MexModelManagerPrivate *priv;
-
-  g_return_val_if_fail (MEX_IS_MODEL_MANAGER (manager), NULL);
-  g_return_val_if_fail (MEX_IS_MODEL (model), NULL);
-
-  priv = manager->priv;
-
-  model_link = g_list_find_custom (priv->models, model,
-                                   mex_model_manager_find_cb);
-  if (!model_link)
-    model_link = g_list_find_custom (priv->models, model,
-                                     mex_model_manager_find_alt_cb);
-
-  return model_link ? model_link->data : NULL;
+  g_object_unref (model);
+  g_free (category);
 }
 
 void
@@ -471,92 +412,3 @@ mex_model_manager_get_category_info (MexModelManager *manager,
   priv = manager->priv;
   return g_hash_table_lookup (priv->categories, name);
 }
-
-/**
- * mex_model_info_new: (skip)
- *
- * Since: 0.2
- */
-MexModelInfo *
-mex_model_info_new (MexModel         *model,
-                    const gchar      *category,
-                    gint              priority,
-                    const gchar      *first_sort_func_name,
-                    ...)
-{
-  va_list args;
-  GList *sort_infos;
-  MexModelInfo *info;
-
-  g_return_val_if_fail (MEX_IS_MODEL (model), NULL);
-
-  info = g_slice_new0 (MexModelInfo);
-  info->model = g_object_ref_sink (model);
-  info->category = g_strdup (category);
-  info->priority = priority;
-
-  sort_infos = NULL;
-  if (first_sort_func_name)
-    {
-      const gchar *sort_name = first_sort_func_name;
-
-      va_start (args, first_sort_func_name);
-      while (sort_name)
-        {
-          MexModelSortFuncInfo *sort_info = g_slice_new0 (MexModelSortFuncInfo);
-          sort_info->name = g_strdup (sort_name);
-          sort_info->display_name = g_strdup (va_arg (args, gchar *));
-          sort_info->sort_func = va_arg (args, MexModelSortFunc);
-          sort_info->userdata = va_arg (args, gpointer);
-
-          sort_infos = g_list_prepend (sort_infos, sort_info);
-
-          sort_name = va_arg (args, gchar *);
-        }
-      va_end (args);
-
-      sort_infos = g_list_reverse (sort_infos);
-    }
-
-  info->sort_infos = sort_infos;
-
-  return info;
-}
-
-/**
- * mex_model_info_copy: (skip)
- * @info: the #MexModelInfo to copy
- *
- * Returns: a new #MexModelInfo, copy of @info
- */
-MexModelInfo *
-mex_model_info_copy (const MexModelInfo *info)
-{
-  GList *i;
-  MexModelInfo *info_copy;
-
-  g_return_val_if_fail (info != NULL, NULL);
-
-  info_copy = g_slice_dup (MexModelInfo, info);
-  info_copy->model = g_object_ref_sink (info->model);
-  if (info->alt_model)
-    info_copy->alt_model = g_object_ref_sink (info->alt_model);
-  if (info->alt_model_string)
-    info_copy->alt_model_string = g_strdup (info->alt_model_string);
-  info_copy->alt_model_active = info->alt_model_active;
-  info_copy->category = g_strdup (info->category);
-  info_copy->sort_infos = g_list_copy (info->sort_infos);
-
-  for (i = info_copy->sort_infos; i; i = i->next)
-    {
-      MexModelSortFuncInfo *sort_info;
-
-      i->data = g_slice_dup (MexModelSortFuncInfo, i->data);
-      sort_info = i->data;
-      sort_info->name = g_strdup (sort_info->name);
-      sort_info->display_name = g_strdup (sort_info->display_name);
-    }
-
-  return info_copy;
-}
-

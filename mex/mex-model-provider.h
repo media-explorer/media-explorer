@@ -63,7 +63,7 @@ struct _MexModelProviderInterface
 
   /* signals */
   void (* present_model)        (MexModelProvider *provider,
-                                 MexModelInfo     *model_info);
+                                 MexModel         *model);
 };
 
 GType   mex_model_provider_get_type       (void) G_GNUC_CONST;
@@ -74,7 +74,7 @@ gboolean mex_model_provider_model_activated (MexModelProvider *provider,
                                              MexModel         *model);
 
 void mex_model_provider_present_model (MexModelProvider *provider,
-                                       MexModelInfo     *model_info);
+                                       MexModel         *model);
 
 G_END_DECLS
 

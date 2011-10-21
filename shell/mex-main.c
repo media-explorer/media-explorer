@@ -477,46 +477,33 @@ mex_grilo_open_folder_cb (MxAction *action,
   MexFeed *feed;
   GrlMediaSource *source = NULL;
   gchar *filter = NULL;
-  MexModelInfo *model_info;
-  const MexModelInfo *parent_model_info;
+  MexModel *parent_model;
+  MexModel *parent_alt_model;
   MexModelManager *manager;
+  gchar *category;
 
   MexProgram *program = MEX_PROGRAM (mex_action_get_content (action));
 
-  feed = mex_program_get_feed (program);
+  parent_model = (MexModel*) mex_program_get_feed (program);
 
-  if (mex_is_toplevel_plugin_model (data, MEX_MODEL (feed)))
+  if (mex_is_toplevel_plugin_model (data, MEX_MODEL (parent_model)))
     {
-      data->toplevel_plugin_model = mex_model_get_model (MEX_MODEL (feed));
+      data->toplevel_plugin_model = mex_model_get_model (parent_model);
       data->toplevel_plugin_model_depth =
         mex_explorer_get_depth (MEX_EXPLORER (data->explorer));
     }
 
-  g_object_get (G_OBJECT (feed), "grilo-source", &source, NULL);
+  g_object_get (G_OBJECT (parent_model), "grilo-source", &source, "alt-model",
+                &parent_alt_model, "category", &category, NULL);
 
-  if (MEX_IS_GRILO_TRACKER_FEED (feed))
-      g_object_get (G_OBJECT (feed), "tracker-filter", &filter, NULL);
+  if (MEX_IS_GRILO_TRACKER_FEED (parent_model))
+      g_object_get (G_OBJECT (parent_model), "tracker-filter", &filter, NULL);
 
   media = mex_grilo_program_get_grilo_media (MEX_GRILO_PROGRAM (program));
 
-  /* copy the "parent" model's info */
-  manager = mex_model_manager_get_default ();
-  parent_model_info = mex_model_manager_get_model_info (manager, MEX_MODEL (feed));
-  model_info = mex_model_info_copy (parent_model_info);
-
-  /* check if the model was the alt_model, and set alt_model of the new model
-   * accordingly */
-  if (parent_model_info->alt_model == MEX_MODEL (feed))
-    {
-      model_info->alt_model = parent_model_info->model;
-      model_info->alt_model_active = TRUE;
-    }
-
-  /* FIXME: if only we had g_object_clone().. */
-
   if (filter)
     {
-      feed = g_object_new (G_OBJECT_TYPE (feed),
+      feed = g_object_new (G_OBJECT_TYPE (parent_model),
                          "grilo-source", source,
                          "grilo-box", media,
                          "tracker-filter", filter,
@@ -525,7 +512,7 @@ mex_grilo_open_folder_cb (MxAction *action,
     }
   else
     {
-      feed = g_object_new (G_OBJECT_TYPE (feed),
+      feed = g_object_new (G_OBJECT_TYPE (parent_model),
                          "grilo-source", source,
                          "grilo-box", media,
                          NULL);
@@ -537,12 +524,16 @@ mex_grilo_open_folder_cb (MxAction *action,
    * but because this sets up the alt model as the parent folder model the
    * button will be displayed. This just stops the button being blank for now.
    */
-  if (!model_info->alt_model_string)
-    model_info->alt_model_string = g_strdup (_("Show Folders"));
+  g_object_set (feed,
+                "alt-model-string", _("Show Folders"),
+                "alt-model", parent_model,
+                "alt-model-active", ((MexModel*) feed == parent_alt_model),
+                "category", category,
+                NULL);
+  g_object_unref (parent_alt_model);
 
-  model_info->alt_model = MEX_MODEL (feed);
-  mex_model_manager_add_model (manager, model_info);
-  mex_model_info_free (model_info);
+  manager = mex_model_manager_get_default ();
+  mex_model_manager_add_model (manager, MEX_MODEL (feed));
 
   if (source)
     g_object_unref (source);
@@ -552,6 +543,8 @@ mex_grilo_open_folder_cb (MxAction *action,
   mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
   mex_header_activated_cb (MEX_EXPLORER (data->explorer),
                            MEX_MODEL (feed), data);
+
+  g_free (category);
 }
 
 static void
@@ -1199,18 +1192,18 @@ mex_remove_model_provider_cb (MexData *data,
 
 static void
 mex_plugin_present_model_cb (GObject      *plugin,
-                             MexModelInfo *info,
+                             MexModel     *model,
                              MexData      *data)
 {
   MexExplorer *explorer = MEX_EXPLORER (data->explorer);
 
   /* Activate the model */
-  if (MEX_IS_AGGREGATE_MODEL (info->model))
+  if (MEX_IS_AGGREGATE_MODEL (model))
     {
       GList *models = (GList *)
-        mex_aggregate_model_get_models (MEX_AGGREGATE_MODEL (info->model));
+        mex_aggregate_model_get_models (MEX_AGGREGATE_MODEL (model));
       if (g_list_length (models) > 1)
-        mex_explorer_push_model (explorer, g_object_ref (info->model));
+        mex_explorer_push_model (explorer, g_object_ref (model));
       else
         {
           MexModel *new_model = mex_proxy_model_new ();
@@ -1222,7 +1215,7 @@ mex_plugin_present_model_cb (GObject      *plugin,
   else
     {
       MexModel *new_model = mex_proxy_model_new ();
-      mex_proxy_model_set_model (MEX_PROXY_MODEL (new_model), info->model);
+      mex_proxy_model_set_model (MEX_PROXY_MODEL (new_model), model);
       mex_explorer_push_model (explorer, new_model);
     }
 
@@ -1299,27 +1292,22 @@ mex_refresh_root_model (MexData *data)
 }
 
 static void
-mex_model_added_cb (MexModelManager    *manager,
-                    const MexModelInfo *info,
-                    MexData            *data)
+mex_model_added_cb (MexModelManager *manager,
+                    MexModel        *model,
+                    MexData         *data)
 {
+  gchar *category;
+  MexModel *aggregate;
+
+  g_object_get (G_OBJECT (model), "category", &category, NULL);
+
   /* FIXME: We don't yet support re-ordering in MexAggregateModel */
-  MexModel *aggregate = g_hash_table_lookup (data->model_from_category,
-                                             info->category);
+  aggregate = g_hash_table_lookup (data->model_from_category, category);
 
   if (aggregate)
     {
       mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (aggregate),
-                                     info->model);
-
-      if (MEX_IS_MODEL_PROVIDER (info->userdata))
-        {
-          /* Add a mapping from the model back to the provider */
-          g_hash_table_insert (data->model_to_provider, info->model, info->userdata);
-          g_object_weak_ref (G_OBJECT (info->model),
-                             (GWeakNotify)mex_remove_model_provider_cb,
-                             data);
-        }
+                                     model);
     }
 }
 
@@ -1666,12 +1654,12 @@ mex_plugin_loaded_cb (MexPluginManager *plugin_manager,
 
       for (m = (GList *)models; m; m = m->next)
         {
-          MexModelInfo *info = m->data;
-          mex_model_manager_add_model (manager, info);
+          MexModel *model = m->data;
+          mex_model_manager_add_model (manager, model);
 
           /* Add a mapping from the model back to the provider */
-          g_hash_table_insert (data->model_to_provider, info->model, plugin);
-          g_object_weak_ref (G_OBJECT (info->model),
+          g_hash_table_insert (data->model_to_provider, model, plugin);
+          g_object_weak_ref (G_OBJECT (model),
                              (GWeakNotify)mex_remove_model_provider_cb,
                              data);
         }

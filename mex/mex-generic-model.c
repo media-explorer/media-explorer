@@ -20,6 +20,9 @@
 
 #include <mex/mex-model.h>
 #include <mex/mex-generic-model.h>
+#include <mex/mex-model-manager.h>
+#include <mex/mex-utils.h>
+#include <glib/gi18n.h>
 
 enum {
   PROP_TITLE = 1,
@@ -29,7 +32,13 @@ enum {
   PROP_DISPLAY_ITEM_COUNT,
   PROP_SORT_FUNC,
   PROP_SORT_DATA,
-  PROP_ALWAYS_VISIBLE
+  PROP_ALWAYS_VISIBLE,
+  PROP_CATEGORY,
+  PROP_PRIORITY,
+  PROP_SORT_FUNCTIONS,
+  PROP_ALT_MODEL,
+  PROP_ALT_MODEL_STRING,
+  PROP_ALT_MODEL_ACTIVE
 };
 
 struct _MexGenericModelPrivate {
@@ -42,6 +51,15 @@ struct _MexGenericModelPrivate {
   gchar *title;
   gchar *icon_name;
   gchar *placeholder_text;
+
+  gchar     *category;
+  GPtrArray *sort_functions;
+
+  gint priority;
+
+  MexModel *alt_model;
+  gchar    *alt_model_string;
+  guint     alt_model_active : 1;
 
   guint  display_item_count : 1;
   guint  always_visible     : 1;
@@ -390,6 +408,35 @@ mex_generic_model_set_property (GObject      *object,
     priv->always_visible = g_value_get_boolean (value);
     break;
 
+  case PROP_CATEGORY:
+    g_free (priv->category);
+    priv->category = g_value_dup_string (value);
+    g_object_notify (object, "category");
+    break;
+
+  case PROP_PRIORITY:
+    priv->priority = g_value_get_int (value);
+    g_object_notify (object, "priority");
+    break;
+
+  case PROP_ALT_MODEL:
+    if (priv->alt_model)
+      g_object_unref (priv->alt_model);
+    priv->alt_model = g_value_dup_object (value);
+    g_object_notify (object, "alt-model");
+    break;
+
+  case PROP_ALT_MODEL_STRING:
+    g_free (priv->alt_model_string);
+    priv->alt_model_string = g_value_dup_string (value);
+    g_object_notify (object, "alt-model-string");
+    break;
+
+  case PROP_ALT_MODEL_ACTIVE:
+    priv->alt_model_active = g_value_get_boolean (value);
+    g_object_notify (object, "alt-model-active");
+    break;
+
   default:
     break;
   }
@@ -437,6 +484,30 @@ mex_generic_model_get_property (GObject    *object,
     g_value_set_boolean (value, priv->always_visible);
     break;
 
+  case PROP_CATEGORY:
+    g_value_set_string (value, priv->category);
+    break;
+
+  case PROP_PRIORITY:
+    g_value_set_int (value, priv->priority);
+    break;
+
+  case PROP_ALT_MODEL:
+    g_value_set_object (value, priv->alt_model);
+    break;
+
+  case PROP_ALT_MODEL_STRING:
+    g_value_set_string (value, priv->alt_model_string);
+    break;
+
+  case PROP_ALT_MODEL_ACTIVE:
+    g_value_set_boolean (value, priv->alt_model_active);
+    break;
+
+  case PROP_SORT_FUNCTIONS:
+    g_value_set_boxed (value, priv->sort_functions);
+    break;
+
   default:
     break;
   }
@@ -479,6 +550,17 @@ mex_generic_model_class_init (MexGenericModelClass *klass)
   g_object_class_override_property (o_class, PROP_ICON_NAME, "icon-name");
   g_object_class_override_property (o_class, PROP_LENGTH, "length");
 
+  g_object_class_override_property (o_class, PROP_CATEGORY, "category");
+  g_object_class_override_property (o_class, PROP_PRIORITY, "priority");
+  g_object_class_override_property (o_class, PROP_SORT_FUNCTIONS,
+                                    "sort-functions");
+  g_object_class_override_property (o_class, PROP_ALT_MODEL, "alt-model");
+  g_object_class_override_property (o_class, PROP_ALT_MODEL_STRING,
+                                    "alt-model-string");
+  g_object_class_override_property (o_class, PROP_ALT_MODEL_ACTIVE,
+                                    "alt-model-active");
+
+
   g_type_class_add_private (klass, sizeof (MexGenericModelPrivate));
 }
 
@@ -496,6 +578,40 @@ mex_generic_model_init (MexGenericModel *self)
   priv->placeholder_text = g_strdup ("");
 
   priv->display_item_count = TRUE;
+
+  /* add default sort functions */
+  priv->sort_functions = g_ptr_array_sized_new (5);
+
+  g_ptr_array_add (priv->sort_functions,
+                   mex_model_sort_func_info_new ("smart",
+                                                 _("Unseen"),
+                                                 mex_model_sort_smart_cb,
+                                                 GINT_TO_POINTER (FALSE)));
+
+  g_ptr_array_add (priv->sort_functions,
+                   mex_model_sort_func_info_new ("atoz",
+                                                 _("A to Z"),
+                                                 mex_model_sort_alpha_cb,
+                                                 GINT_TO_POINTER (FALSE)));
+
+
+  g_ptr_array_add (priv->sort_functions,
+                   mex_model_sort_func_info_new ("ztoa",
+                                                 _("Z to A"),
+                                                 mex_model_sort_alpha_cb,
+                                                 GINT_TO_POINTER (TRUE)));
+
+  g_ptr_array_add (priv->sort_functions,
+                   mex_model_sort_func_info_new ("newest",
+                                                 _("Newest"),
+                                                 mex_model_sort_time_cb,
+                                                 GINT_TO_POINTER (TRUE)));
+
+  g_ptr_array_add (priv->sort_functions,
+                   mex_model_sort_func_info_new ("oldest",
+                                                 _("Oldest"),
+                                                 mex_model_sort_time_cb,
+                                                 GINT_TO_POINTER (FALSE)));
 }
 
 /**

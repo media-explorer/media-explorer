@@ -283,6 +283,28 @@ mex_proxy_model_set_model (MexProxyModel *proxy,
         g_object_bind_property (priv->model, "always-visible",
                                 proxy, "always-visible",
                                 G_BINDING_SYNC_CREATE));
+      priv->bindings = g_list_prepend (priv->bindings,
+        g_object_bind_property (priv->model, "category",
+                                proxy, "category",
+                                G_BINDING_SYNC_CREATE));
+      priv->bindings = g_list_prepend (priv->bindings,
+        g_object_bind_property (priv->model, "priority",
+                                proxy, "priority",
+                                G_BINDING_SYNC_CREATE));
+      priv->bindings = g_list_prepend (priv->bindings,
+        g_object_bind_property (priv->model, "alt-model",
+                                proxy, "alt-model",
+                                G_BINDING_SYNC_CREATE));
+      priv->bindings = g_list_prepend (priv->bindings,
+        g_object_bind_property (priv->model, "alt-model-string",
+                                proxy, "alt-model-string",
+                                G_BINDING_SYNC_CREATE));
+      priv->bindings = g_list_prepend (priv->bindings,
+        g_object_bind_property (priv->model, "alt-model-active",
+                                proxy, "alt-model-active",
+                                G_BINDING_SYNC_CREATE));
+
+     /* XXX: sort functions are not synced */
 
       /* Synthesise a 'replace' signal to populate existing items */
       mex_proxy_model_controller_changed_cb (controller,

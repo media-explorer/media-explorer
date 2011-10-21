@@ -48,8 +48,7 @@ mex_library_plugin_dispose (GObject *object)
 
   while (priv->models)
     {
-      MexModelInfo *info = priv->models->data;
-      mex_model_info_free (info);
+      g_object_unref (priv->models->data);
       priv->models = g_list_delete_link (priv->models, priv->models);
     }
 
@@ -137,7 +136,6 @@ mex_library_plugin_init (MexLibraryPlugin *self)
       MexFeed *feed;
       GrlMedia *box;
       gchar **paths;
-      MexModelInfo *video_info, *photo_info, *music_info;
       GKeyFile *mex_settings_key;
       gint i;
       gsize paths_len;
@@ -189,17 +187,12 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                              query_keys, metadata_keys, box);
 
                   g_object_set (feed, "icon-name", "icon-library",
-                                "placeholder-text", "No videos found", NULL);
+                                "placeholder-text", "No videos found",
+                                "category", "videos", NULL);
 
                   mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
 
-                  video_info =
-                    mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
-                                                        "videos",
-                                                        i*-1);
-
-                  priv->models = g_list_append (priv->models, video_info);
-                  g_object_unref (feed);
+                  priv->models = g_list_append (priv->models, feed);
                 }
             }
         }
@@ -245,15 +238,12 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                   feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
                                              query_keys, metadata_keys, box);
                   g_object_set (feed, "icon-name", "icon-library",
-                                "placeholder-text", "No pictures found", NULL);
+                                "placeholder-text", "No pictures found",
+                                "category", "pictures", NULL);
 
                   mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
 
-                  photo_info =
-                    mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
-                                                        "pictures", 0);
-                  priv->models = g_list_append (priv->models, photo_info);
-                  g_object_unref (feed);
+                  priv->models = g_list_append (priv->models, feed);
                 }
             }
         }
@@ -300,15 +290,12 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                   feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
                                              query_keys, metadata_keys, box);
                   g_object_set (feed, "icon-name", "icon-library",
-                                "placeholder-text", "No Music found", NULL);
+                                "placeholder-text", "No Music found",
+                                "category", "music", NULL);
 
                   mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, G_MAXINT);
 
-                  music_info =
-                    mex_model_info_new_with_sort_funcs (MEX_MODEL (feed),
-                                                        "music", 0);
-                  priv->models = g_list_append (priv->models, music_info);
-                  g_object_unref (feed);
+                  priv->models = g_list_append (priv->models, feed);
                 }
             }
         }

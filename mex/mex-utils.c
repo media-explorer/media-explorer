@@ -553,43 +553,6 @@ mex_date_to_string (GDateTime *date)
   return g_date_time_format (date, "%d/%m/%y %H:%M");
 }
 
-/**
- * mex_model_info_new_with_sort_funcs: (skip)
- * @model: A #MexModel
- * @category: A category name
- * @priority: The model priority
- *
- * Creates a new #MexModelInfo structure with the given category and priority,
- * with the default sort functions, in this order:
- * A to Z, Z to A, Newest, Oldest
- *
- * Returns: A newly allocated #MexModelInfo, to be freed with
- *   mex_model_info_free ()
- */
-MexModelInfo *
-mex_model_info_new_with_sort_funcs (MexModel    *model,
-                                    const gchar *category,
-                                    gint         priority)
-{
-  return mex_model_info_new (model, category, priority,
-                             "smart", _("Unseen"),
-                               mex_model_sort_smart_cb,
-                               GINT_TO_POINTER (FALSE),
-                             "atoz", _("A to Z"),
-                               mex_model_sort_alpha_cb,
-                               GINT_TO_POINTER (FALSE),
-                             "ztoa", _("Z to A"),
-                               mex_model_sort_alpha_cb,
-                               GINT_TO_POINTER (TRUE),
-                             "newest", _("Newest"),
-                               mex_model_sort_time_cb,
-                               GINT_TO_POINTER (TRUE),
-                             "oldest", _("Oldest"),
-                               mex_model_sort_time_cb,
-                               GINT_TO_POINTER (FALSE),
-                             NULL);
-}
-
 GQuark
 mex_tile_shadow_quark (void)
 {

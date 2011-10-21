@@ -145,7 +145,6 @@ add_model (MexTrackerPlugin *self,
   GList *metadata_keys, *query_keys;
   MexFeed *feed, *dir_feed;
   GrlMedia *box;
-  MexModelInfo *info;
   gchar *query, *cat_name;
   GHashTable *models;
   const gchar *source_name = grl_metadata_source_get_name (GRL_METADATA_SOURCE (plugin));
@@ -205,13 +204,6 @@ add_model (MexTrackerPlugin *self,
   else
     priority = 0;
 
-  info = mex_model_info_new_with_sort_funcs (MEX_MODEL (feed), cat_name,
-                                             priority);
-  info->userdata = plugin;
-
-  /* Set 'Newest' as the default sort function */
-  info->default_sort_index = 2;
-
   dir_feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (plugin),
                                          query_keys,
                                          metadata_keys,
@@ -220,11 +212,15 @@ add_model (MexTrackerPlugin *self,
                            mex_model_sort_alpha_cb,
                            GINT_TO_POINTER (FALSE));
   mex_grilo_feed_browse (MEX_GRILO_FEED (dir_feed), 0, G_MAXINT);
-  info->alt_model = MEX_MODEL (dir_feed);
-  info->alt_model_string = g_strdup (_("Show Folders"));
 
-  mex_model_manager_add_model (self->priv->manager, info);
-  mex_model_info_free (info);
+  g_object_set (G_OBJECT (feed),
+                "category", cat_name,
+                "priority", priority,
+                "alt-model", dir_feed,
+                "alt-model-string", _("Show Folders"),
+                NULL);
+
+  mex_model_manager_add_model (self->priv->manager, MEX_MODEL (feed));
 }
 
 static void

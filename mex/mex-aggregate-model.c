@@ -229,18 +229,12 @@ static gint
 mex_aggregate_model_sort_func (MexModel *a,
                                MexModel *b)
 {
-  MexModelManager *manager;
-  const MexModelInfo *info_a, *info_b;
+  gint priority_a, priority_b;
 
-  manager = mex_model_manager_get_default ();
+  g_object_get (a, "priority", &priority_a, NULL);
+  g_object_get (b, "priority", &priority_b, NULL);
 
-  info_a = mex_model_manager_get_model_info (manager, a);
-  info_b = mex_model_manager_get_model_info (manager, b);
-
-  if (info_a && info_b)
-    return info_a->priority - info_b->priority;
-  else
-    return 0;
+  return priority_a - priority_b;
 }
 
 void
