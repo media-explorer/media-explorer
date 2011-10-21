@@ -1,5 +1,6 @@
 applets/networks/mtn-app.c
 mex/mex-content.c
+mex/mex-generic-model.c
 mex/mex-gio-notification-source.c
 mex/mex-grid-view.c
 mex/mex-info-bar.c
