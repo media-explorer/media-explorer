@@ -17,24 +17,28 @@
 -->
 <html>
 <head>
-<title>Media explorer 5-way</title>
-<script src="jquery-1.6.1.min.js" type="text/javascript"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, target-densitydpi=device-dpi" />
+<title>Media explorer remote</title>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<script src="./js/jquery-1.6.1.min.js" type="text/javascript"></script>
+<script src="./js/jquery.mobile-1.0rc2.min.js"></script>
+<script src="./js/hover.js" type="text/javascript"></script>
 <!-- JS version of clutter key value mappings clutter/clutter-keysyms.h -->
-<script src="clutter-keysyms.js" type="text/javascript"></script>
+<script src="./js/clutter-keysyms.js" type="text/javascript"></script>
 
 <!-- Media explorer mappings mex/mex-main.h -->
 <script type="text/javascript">
+
 var MEX_KEY_BACK = CLUTTER_KEY_Escape;
 var MEX_KEY_HOME = CLUTTER_KEY_Super_L;
 var MEX_KEY_INFO = CLUTTER_KEY_Menu;
 
 var current;
 var playing = new String;
+var info_timer;
 
 function media_player_get (thingtoget)
 {
-  var result;
-
   $.ajax ({
           url: "/",
           type: "POST",
@@ -49,6 +53,51 @@ function media_player_get (thingtoget)
    });
 }
 
+function current_playing_info ()
+{
+
+
+var response =  $.ajax ({
+          url: "/",
+          type: "POST",
+          dataType: "text",
+          timeout: 5000,
+          data: 'playinginfo=current',
+          success: function (data)
+          {
+           var results = $.parseJSON (data);
+           var result = results[0];
+           var title = result.filename;
+           var artist = "";
+           var duration = 0;
+           var album = "";
+
+            if (result.title)
+              title = result.title;
+            if (result.artist)
+              artist = result.artist;
+            if (result.duration)
+              duration = Math.round (result.duration/60);
+            if (result.album)
+              album = "- " + result.album + " -";
+
+            $("#title").html (title);
+            $("#more-info").html (artist + " " + album +" " + title + "<br />" + duration + " mins");
+
+            if (result.mime.match ("audio"))
+                $("#thumb").attr ("src", "./DATADIR/style/thumb-music.png");
+            else if (result.mime.match ("video"))
+                $("#thumb").attr ("src", "/DATADIR/style/thumb-video.png");
+          }
+   });
+
+    /* Make sure we cancel any existing timers */
+    clearTimeout (info_timer)
+    info_timer = setTimeout ("current_playing_info ()", 8000);
+}
+
+
+
 function open_div (div)
 {
   if (current)
@@ -56,18 +105,9 @@ function open_div (div)
       $(current).hide ('slow');
     }
 
-  if (div == "#mediaplayer")
+  if (div == "#remote")
     {
-      if (playing.length > 0)
-        {
-          $("#currentplaying").html (playing);
-          playing = "";
-        }
-      else
-        {
-          /* fallback to the uri as the "current playing" */
-          media_player_get ("uri");
-        }
+      current_playing_info ();
     }
 
   $(div).show('slow');
@@ -95,8 +135,6 @@ function clear_search_results ()
   $("#results > br").each (function (i) {
                            $(this).remove();
                            });
-
-  $("#clearbutton").attr ("style", "display: none");
 }
 
 
@@ -111,13 +149,13 @@ function add_result_to_page (element)
     playing = element.title;
     media_player_set_uri (element.url);
 
-    open_div ("#mediaplayer");
+    open_div ("#remote");
+    current_playing_info ();
   }
   }).appendTo("#results");
 
   $("#results").append ("<br />");
-
-  }
+}
 
 
 function run_search ()
@@ -129,7 +167,7 @@ function run_search ()
 
   searchterm = $("#searchwords").val();
 
-  $("#results").append ('<span id="spinner">Searching... <img src="./mex-spinner.gif" alt="searching.." /></span>');
+  $("#results").append ('<span id="spinner">Searching...</span>');
 
 
   $.ajax ({
@@ -154,137 +192,101 @@ function run_search ()
   /* Add a button to clear the results */
 
   $("#clearbutton").attr ("style", "display: inline");
-
 }
+
 </script>
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=2, maximum-scale=1, user-scalable=no">
-<style type="text/css">
-
-body
-{
-  margin: 0 auto;
-  color: #ffffff;
-  background-color: #000000;
-}
-
-
-button,
-input
-{
-  color: #ffffff;
-  background: url("/DATADIR/style/panel-header-bg.png");
-  background-repeat: repeat-x;
-  border: none;
-  padding: 1.2em;
-}
-
-.remote-button
-{
-  width: 5em;
-}
-
-.result
-{
-  width: 100%;
-  margin: 0 0 0.5em 0;
-}
-
-button:hover,
-input:hover
-{
-  color: #000000;
-  background: url("/DATADIR/style/highlight-bg.png");
-  background-repeat: repeat-x;
-}
-
-#remote,
-#search,
-#mediaplayer
-{
-  display: none;
-}
-
-a
-{
-  color: #ffffff;
-}
-
-#mediaplayer > button
-{
-  padding: 0 0 1em 0;
-}
-
-#menu
-{
-  background: url("/DATADIR/style/item-title-bg.png");
-  background-repeat: repeat-x;
-  padding: 1em;
-}
-
-</style>
 </head>
 
 <body OnLoad="open_div ('#remote');" >
-<div id="menu">
-<a href="#" OnClick="open_div ('#remote');">5-Way remote</a>
-  <a href="#" OnClick="open_div ('#search');">Search</a>
-  <a href="#" OnClick="open_div ('#mediaplayer');">Media Player</a>
-</div>
-<hr />
 
 <div id="remote">
-<center>
-<form method="POST" action="">
-<table>
-<tr>
-<td></td>
-<!-- uses the names from clutter-keysyms.h -->
-<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Up})" value="Up" /></td>
-<td><td>
-</tr>
-<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Left})" value="Left" /></td>
-<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Return})" value="Enter" /></td>
-<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Right})" value="Right" /></td>
-<tr>
-<td></td>
-<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Down})" value="Down" /></td>
-<td><td>
-</tr>
-</table>
-<br />
-<table>
-<tr>
-<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_INFO})" value="Info" /></td>
-<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_BACK})" value="Back" /></td>
-<td><input name="keyvalue" class="remote-button" type="button" onClick="$.post('/', { keyvalue: MEX_KEY_HOME})" value="Home" /></td>
-</tr>
-</table>
-</center>
-</form>
+
+<div id="preload">
+  <img src="./images/remote-button-background-down-selected.png" />
+  <img src="./images/remote-button-background-left-selected.png" />
+  <img src="./images/remote-button-background.png" />
+  <img src="./images/remote-button-background-right-selected.png" />
+  <img src="./images/remote-button-background-up-selected.png" />
+  <img src="./images/toolbar-background.png" />
 </div>
 
-<div id="search">
-<img src="/DATADIR/style/icons/mex/26x26/icon-panelheader-search.png" alt="search icon" />
-<input type="text" name="trackersearch" id="searchwords" style="width: 10em" />
-<button onClick="run_search ();" >Search</button>
-<button id="clearbutton" style="display: none;" onClick="clear_search_results ();">Clear</button>
-<br />
-<br />
-<div id="results">
-</div>
+  <a href="#"><img id="nav-button" class="back-button" src="./images/remote-button-back.png" onClick="$.post('/', { keyvalue: MEX_KEY_BACK})" alt="Back" /></a>
+  <a href="#"><img id="nav-button" class="home-button" src="./images/remote-button-home.png" onClick="$.post('/', { keyvalue: MEX_KEY_HOME})" alt="Home" /></a>
 
-</div>
+  <table class="fiveway">
+  <tr>
+    <td></td>
+    <!-- uses the names from clutter-keysyms.h -->
+    <td align="center"><a href="#"><img class="button-up" src="./images/remote-button-up.png" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Up})" alt="UP" /></a></td>
+    <td><td>
+  </tr>
+  <td><a href="#"><img id="nav-button" class="button-left" src="./images/remote-button-left.png" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Left})" alt="Left" /></a></td>
+  <td><a href="#"><img id="nav-button" class="button-enter" src="./images/remote-button-enter.png" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Return})" alt="Enter" /></a></td>
+  <td><a href="#"><img id="nav-button" class="button-right" src="./images/remote-button-right.png" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Right})" alt="Right" onMouseOver /></a></td>
+  <tr>
+  <td></td>
+  <td align="center"><a href="#"><img id="nav-button" class="button-down" src="./images/remote-button-down.png" onClick="$.post('/', { keyvalue: CLUTTER_KEY_Down})" alt="Down" /></a></td>
+  <td><td>
+  </tr>
+  </table>
+
+  <a href="#"><img class="info-button" src="./images/remote-button-info.png"  onClick="$.post('/', { keyvalue: MEX_KEY_INFO})" alt="Info"  /></a>
+
+
+<div id="infoarea">
+
 
 <div id="mediaplayer">
-
-<p id="currentplaying"></p>
-<input type="button" value="Back" OnClick="media_player_action ('seekbk');" />
-
-<input type="button" value="Play/Pause" OnClick="media_player_action ('playpause');" />
-<input type="button" value="Fwd" OnClick="media_player_action ('seekfwd');" />
-<br />
-<br />
+   <table>
+     <tr>
+       <td class="now-playing" colspan="2">NOW PLAYING: <span id="title"></span></td>
+      <td></td>
+     </tr>
+     <tr>
+       <td><img src="/DATADIR/style/thumb-no-content.png" id="thumb" class="small-thumb" alt="thumb" /></td>
+       <td width="100%"><span id="more-info"></span></td>
+     </tr>
+   </table>
 </div>
+
+
+</div> <!-- end infoarea -->
+
+
+</div> <!-- end remote -->
+
+<div id="search">
+  <div id="searchbar">
+  <table width="100%">
+    <tr>
+      <td width="100%">
+        <input type="text" name="trackersearch" id="searchwords" onkeydown="if (event.keyCode == 13) { run_search (); }" />
+      </td>
+      <td>
+      <a href="#"><img class="clear-button" src="./images/search-icon-delete.png" onClick="clear_search_results ();" alt="Clear" /></a>
+      </td>
+      <td class="search-input">
+        <a href="#"><img onClick="run_search ();" class="search-button" src="./images/search-button-go.png" alt="search" /></a>
+        </td>
+    </tr>
+  </table>
+  </div> <!-- end search bar -->
+  <br />
+  <br />
+  <!-- Search results -->
+  <div id="results"></div>
+</div> <!-- end search -->
+
+<div id="menu">
+  <table>
+    <tr>
+      <td align="center"><a href="#" id="remote-button"  OnClick="open_div ('#remote');">Remote</a></td>
+      <td align="center"><a href="#" id="search-button" OnClick="open_div ('#search');">Search</a></td>
+    </tr>
+  <table>
+</div>
+
+
 
 
 </body>

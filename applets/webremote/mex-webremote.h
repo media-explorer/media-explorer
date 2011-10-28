@@ -47,6 +47,8 @@ struct _MexWebRemote
   gboolean successful_auth;
   GList *clients;
 
+  gchar **current_playing_info;
+
   gchar *data;
 };
 

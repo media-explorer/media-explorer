@@ -31,6 +31,8 @@ struct _DBusClient
   GDBusConnection *connection;
   GDBusProxy *mex_input;
   GDBusProxy *mex_player;
+
+  gchar *current_playing_uri;
 };
 
 DBusClient *dbus_client_new (void);

@@ -74,10 +74,10 @@ tracker_interface_query (TrackerInterface *tracker_interface,
 
   json_builder_begin_array (json_builder);
 
+
   while (tracker_sparql_cursor_next (cursor, NULL, &error))
     {
       json_builder_begin_object (json_builder);
-
       for (i=0; i < cols; i++)
         {
           const gchar *value;
@@ -94,6 +94,12 @@ tracker_interface_query (TrackerInterface *tracker_interface,
       json_builder_end_object (json_builder);
     }
 
+  if (error)
+    {
+      g_warning ("tracker cursor error %s", error->message);
+    }
+
+
   json_builder_end_array (json_builder);
 
   json_generator = json_generator_new ();
@@ -106,8 +112,12 @@ tracker_interface_query (TrackerInterface *tracker_interface,
   g_object_unref (json_builder);
   g_object_unref (json_generator);
 
-  if (!final_result)
-    final_result = g_strdup ("{}");
+
+  if (g_strcmp0 (final_result, "[]") == 0)
+    {
+      g_free (final_result);
+      final_result = g_strdup ("[{ \"title\" : \"Unknown\"}]");
+    }
 
   return final_result;
 }

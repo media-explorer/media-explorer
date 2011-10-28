@@ -282,8 +282,10 @@ _media_notify_cb (ClutterMedia       *media,
   else if (g_str_equal (pspec->name, "uri"))
     {
       gchar *uri;
-
       uri = clutter_media_get_uri (priv->media);
+
+      if (!uri)
+        uri = g_strdup ("");
 
       signal_name = "UriChanged";
       parameters = g_variant_new ("(s)", uri);

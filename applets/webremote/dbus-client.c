@@ -23,6 +23,24 @@
 
 #include "mex/mex-player-common.h"
 
+static void
+dbus_client_player_uri_changed_cb (GDBusConnection *connection,
+                                   const gchar     *sender_name,
+                                   const gchar     *object_path,
+                                   const gchar     *interface_name,
+                                   const gchar     *signal_name,
+                                   GVariant        *parameters,
+                                   DBusClient      *dbus_client)
+{
+  if (dbus_client->current_playing_uri)
+    {
+      g_free (dbus_client->current_playing_uri);
+      dbus_client->current_playing_uri = NULL;
+    }
+
+  g_variant_get (parameters, "(s)", &dbus_client->current_playing_uri);
+}
+
 static GDBusProxy *
 dbus_player_proxy_new (DBusClient *dbus_client)
 {
@@ -40,6 +58,20 @@ dbus_player_proxy_new (DBusClient *dbus_client)
                                  MEX_PLAYER_INTERFACE_NAME,
                                  NULL,
                                  &error);
+
+  /* Connect to the uri changed signal */
+  g_dbus_connection_signal_subscribe (dbus_client->connection,
+                                      MEX_PLAYER_SERVICE_NAME,
+                                      MEX_PLAYER_INTERFACE_NAME,
+                                      "UriChanged",
+                                      MEX_PLAYER_OBJECT_PATH,
+                                      NULL,
+                                      G_DBUS_SIGNAL_FLAGS_NONE,
+                                      (GDBusSignalCallback)
+                                      dbus_client_player_uri_changed_cb,
+                                      dbus_client,
+                                      NULL);
+
   if (error)
     {
       g_warning ("Could not create media player proxy: %s", error->message);
@@ -190,10 +222,20 @@ dbus_client_player_get (DBusClient *dbus_client, const gchar *get)
 
   if (g_strcmp0 (get, "uri") == 0)
     {
-      result = g_dbus_proxy_call_sync (dbus_client->mex_player,
-                                       "GetUri", NULL, 0, -1, NULL,
-                                       &error);
+      /* we expect our returned string to be freed */
+      if (dbus_client->current_playing_uri)
+        {
+          string = g_strdup (dbus_client->current_playing_uri);
+          return string;
+        }
+      else
+        {
+          result = g_dbus_proxy_call_sync (dbus_client->mex_player,
+                                         "GetUri", NULL, 0, -1, NULL,
+                                         &error);
 
+          g_variant_get (result, "(s)", &dbus_client->current_playing_uri);
+        }
     }
   else if (g_strcmp0 (get, "duration") == 0)
     {
@@ -216,8 +258,12 @@ dbus_client_player_get (DBusClient *dbus_client, const gchar *get)
       return NULL;
     }
 
-  g_variant_get (result, "(s)", &string);
-  g_variant_unref (result);
+
+  if (result)
+    {
+      g_variant_get (result, "(s)", &string);
+      g_variant_unref (result);
+    }
 
   return string;
 }
@@ -331,5 +377,6 @@ void dbus_client_free (DBusClient *dbus_client)
   g_object_unref (dbus_client->connection);
   g_object_unref (dbus_client->mex_input);
   g_object_unref (dbus_client->mex_player);
+  g_free (dbus_client->current_playing_uri);
   g_free (dbus_client);
 }

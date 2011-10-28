@@ -58,6 +58,9 @@ send_response (SoupServer   *server,
   /* Normal request or Unspecified */
   if (response_type == NORMAL || !response_type)
     {
+      /* TODO: return style dir not datadir where you can request all kinds of
+       * things
+       */
       gchar *uri;
       char token[sizeof ("/DATADIR")+1];
 
@@ -67,7 +70,7 @@ send_response (SoupServer   *server,
       g_utf8_strncpy (token, path, 8);
 
       if (g_strcmp0 (token, "/DATADIR") == 0)
-          uri = g_strconcat (self->mex_data_dir, "/common/",
+          uri = g_strconcat (self->mex_data_dir, "/",
                              (path + sizeof ("DATADIR/")), NULL);
       else
         uri = g_strconcat (self->mex_data_dir, "/webremote/", path, NULL);
@@ -181,13 +184,75 @@ http_post (SoupServer   *server,
       /* We either failed to query or something went wrong with the json
        * generation so return a empty json set (will be freed by libsoup).
        */
-      if (!result)
-        result = g_strdup ("{}");
-
       self->data = result;
 
       if (self->opt_debug)
         g_debug ("Search result\n%s", result);
+
+      send_response (server, msg, path, self, CUSTOM);
+      return;
+    }
+  else if (g_str_has_prefix (post_request, "playinginfo"))
+    {
+      if (self->dbus_client->current_playing_uri &&
+          self->current_playing_info[0] &&
+          g_strcmp0 (self->dbus_client->current_playing_uri,
+                     self->current_playing_info[0]) == 0)
+        {
+          g_debug ("using cache: %s %s", self->dbus_client->current_playing_uri, self->current_playing_info[0]);
+          self->data = g_strdup (self->current_playing_info[1]);
+        }
+      else
+        {
+          gchar *sparql_request;
+          gchar *result;
+
+          if (self->current_playing_info)
+            {
+              g_free (self->current_playing_info[0]);
+              g_free (self->current_playing_info[1]);
+            }
+
+          self->current_playing_info[0] =
+            dbus_client_player_get (self->dbus_client, "uri");
+
+          sparql_request =
+            g_strdup_printf ("SELECT "
+                             "?title ?mime ?duration ?filename ?album ?artist "
+                             "WHERE { "
+                             "?urn nie:url '%s' . "
+                             "?urn nfo:fileName ?filename . "
+                             "OPTIONAL { ?urn nie:title ?title . } "
+                             "?urn nie:mimeType ?mime . "
+                             "OPTIONAL { ?urn nfo:duration ?duration . } "
+                             "OPTIONAL { ?urn nmm:musicAlbum "
+                             " [ nie:title ?album ] . } "
+                             "OPTIONAL { ?urn nmm:performer "
+                             "[ nmm:artistName ?artist ] . } "
+                             " }",
+                             self->current_playing_info[0]);
+
+          if (self->opt_debug)
+            g_debug ("query: %s", sparql_request);
+
+          result = tracker_interface_query (self->tracker_interface,
+                                            sparql_request);
+          g_free (sparql_request);
+
+          /* We either failed to query or something went wrong with the json
+           * generation so return a empty json set (will be freed by libsoup).
+           */
+          if (!result)
+            result = g_strdup ("{}");
+
+          self->current_playing_info[1] = g_strdup (result);
+
+          self->data = result;
+        }
+
+
+      if (self->opt_debug)
+        g_debug ("Search result\n%s", self->data);
 
       send_response (server, msg, path, self, CUSTOM);
       return;
@@ -346,13 +411,18 @@ new_connection_cb (SoupSocket *sock, SoupSocket *new, MexWebRemote *webremote)
 {
   SoupAddress *client_address;
   guint ipaddresshash;
+  const gchar *client_address_str;
 
-
-  /* create hash table of connected clients to see if they have connected
-     before if they haven't then */
+  /* create glist of connected clients to see if they have connected
+   * before if they haven't then notify the username and password.
+   */
   client_address = soup_socket_get_remote_address (new);
+  if (client_address)
+    client_address_str = soup_address_get_physical (client_address);
+  else
+    return;
 
-  ipaddresshash = g_str_hash (soup_address_get_physical (client_address));
+  ipaddresshash = g_str_hash (client_address_str);
 
   if (g_list_find (webremote->clients, GUINT_TO_POINTER (ipaddresshash)))
     return;
@@ -364,7 +434,7 @@ new_connection_cb (SoupSocket *sock, SoupSocket *new, MexWebRemote *webremote)
   remind_user_pass (webremote);
 
   if (webremote->opt_debug)
-    g_debug ("New connection %s", soup_address_get_physical (client_address));
+    g_debug ("New connection %s", client_address_str);
 }
 
 void
@@ -413,6 +483,9 @@ int main (int argc, char **argv)
         { NULL }
     };
 
+  /* Use the bus backend for tracker - the default one is flakey.. */
+  g_setenv ("TRACKER_SPARQL_BACKEND", "bus", TRUE);
+
   g_type_init ();
 
   context = g_option_context_new ("- Media explorer web remote");
@@ -438,6 +511,12 @@ int main (int argc, char **argv)
   webremote.dbus_client = dbus_client_new ();
   webremote.tracker_interface = tracker_interface_new ();
   webremote.mdns_service = mdns_service_info_new ();
+
+  /* Allocate our playing info cache:
+   * 0 - uri
+   * 1 - json info on uri
+   */
+  webremote.current_playing_info = g_malloc0 (2 * sizeof (gchar *));
 
   /* Start the our own dbus service for the Quit method and auto activation */
   dbus_service_id = dbus_service_start ();
@@ -583,6 +662,9 @@ clean_up:
 
   if (webremote.mdns_service)
     mdns_service_info_free (webremote.mdns_service);
+
+  if (webremote.current_playing_info)
+    g_strfreev (webremote.current_playing_info);
 
   if (context)
     g_option_context_free (context);

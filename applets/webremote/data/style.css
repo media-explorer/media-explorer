@@ -1,0 +1,196 @@
+*
+{
+  margin: 0px;
+  padding: 0px;
+}
+
+body
+{
+  background-color: #424041;
+  color: #ffffff;
+  font-family: Droid, Sans;
+}
+
+td
+{
+  vertical-align: middle;
+/*  border: 2px solid red; */
+}
+
+table.fiveway
+{
+  margin-top: 70px;
+  margin-bottom: -70px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 50px;
+  background-image: url("images/remote-button-background.png");
+  background-repeat:  no-repeat;
+  background-position: center;
+}
+
+img.button-left
+{
+  margin-right: 20px;
+}
+
+img.button-right
+{
+  margin-left: 20px;
+}
+
+img.button-up
+{
+  margin-bottom: 20px;
+}
+
+img.button-down
+{
+  margin-top: 20px;
+}
+
+img.small-thumb
+{
+ height: 80px;
+ padding: 10px;
+}
+
+td.now-playing
+{
+  color: white;
+  border-bottom: 1px solid #656565;
+  padding: 5px 0 5px 20px;
+}
+
+#preload
+{
+  display: none;
+}
+
+#infoarea
+{
+  height: 100%;
+  background-color: #323232;
+}
+
+#mediaplayer table
+{
+  width: 100%;
+  color: #bfbfbf;
+  border-top: 1px solid #656565;
+}
+
+#remote,
+#search
+{
+  display: none;
+}
+
+#menu
+{
+  margin: 0 auto;
+  position: fixed;
+  height: 67px;
+  width: 100%;
+  z-index: 100;
+  bottom: 0px;
+}
+
+#menu a
+{
+ font-size: 20pt;
+ text-decoration: none;
+ color: #d3d3d3;
+}
+
+#menu a:hover
+{
+  color: #d4b63b;
+}
+
+#menu table
+{
+  width: 100%
+}
+
+#menu td
+{
+ height: 67px;
+ background: url("images/toolbar-background.png") repeat-x;
+}
+
+img.back-button
+{
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+img.home-button
+{
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+img.info-button
+{
+  top: -300;
+  bottom: -200;
+  left: 0;
+}
+
+#searchbar
+{
+  width: 100%;
+  background-color: #9f9f9f;
+  height: 62px;
+}
+
+#searchbar table
+{
+  background-color: #9f9f9f;
+}
+
+#searchbar img.search-button
+{
+  padding: 8px;
+}
+
+#searchbar input
+{
+  background-color: #ffffff;
+  border: none;
+  padding: 15px;
+  width: 100%;
+  color: #45444b;
+  font-size: 20pt;
+  margin-left: 8px;
+}
+
+#searchbar img.clear-button
+{
+  background-color: #ffffff;
+  vertical-align: middle;
+  padding: 21px;
+}
+
+#results
+{
+  background-color: #424041;
+  padding-bottom: 70px;
+}
+
+#results button.result
+{
+  width: 100%;
+  height: 75px;
+  padding: 10px;
+  border: none;
+  background-color: #333333;
+  border-bottom: 1px solid #585858;
+  text-decoration: none;
+  color: #d3d3d3;
+  font-size: 20pt;
+  text-align: left;
+}
