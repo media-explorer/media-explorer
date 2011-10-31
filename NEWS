@@ -1,3 +1,24 @@
+Mex 0.3.2                                                            2011-10-31
+===============================================================================
+
+  • List of changes since media-explorer 0.2.0
+
+    » Renamed the autoconf package to media-explorer,
+
+    » The telepathy plugin has gained PiP (Picture in Picture) support and had
+      various bug fixes,
+
+    » Renamed the various D-Bus name interfaces we export to be more coherent
+
+    » Big code cleanups: removal of the tumbler support, some changes in how
+      plugins are defined, port to GDBus, fix build with out of process D-Bus
+      player, removed the hacky rebinder,
+
+Contributors to this release:
+
+  Damien Lespiau, Jeremy Whiting, Thomas Wood, Lionel Landwerlin, Michael Wood,
+  Dario Freddi, Sjoerd Simons, Nick Richard
+
 Mex 0.2.0                                                            2011-09-30
 ===============================================================================
 
