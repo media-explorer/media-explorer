@@ -14,7 +14,7 @@ RELEASE_URL      = http://media-explorer.github.com/releases
 
 RELEASE_ANNOUNCE_LIST = mex-list@clutter-project.org (Cc: gnome-announce-list@gnome.org)
 
-tar_file = $(distdir).tar.bz2
+tar_file = $(distdir).tar.xz
 sha256_file = $(distdir).sha256sum
 
 $(sha256_file): $(tar_file)
@@ -78,7 +78,6 @@ release-message: $(sha256_file)
 	@echo "  • grilo-0.1 ≥ $(GRILO_REQ_VERSION)"
 	@echo "  • gstreamer-0.10 ≥ $(GSTREAMER_REQ_VERSION)"
 	@echo "  • LIRC (optional but recommended)"
-	@echo "  • dbus-glib-1 (optional but recommended)"
 	@echo ""
 	@echo "The webremote applet (used by the android application) is enabled by default"
 	@echo "and requires:"

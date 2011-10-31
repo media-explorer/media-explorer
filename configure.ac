@@ -55,7 +55,7 @@ AC_SUBST(MEX_LT_LDFLAGS)
 # release status (development snapshot or stable release)
 m4_define([mex_release_status],
           [m4_if(m4_eval(mex_micro % 2), [1], [git],
-                 [m4_if(m4_eval(mex_minor % 2), [1], [snapshot],
+                 [m4_if(m4_eval(mex_minor % 2), [1], [development snapshot],
                        [release])])])
 AC_SUBST([MEX_RELEASE_STATUS], [mex_release_status])
 
