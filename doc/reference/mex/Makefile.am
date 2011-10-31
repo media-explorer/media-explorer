@@ -25,7 +25,7 @@ SCANGOBJ_OPTIONS=--type-init-func="g_type_init()"
 
 # Extra options to supply to gtkdoc-scan.
 # e.g. SCAN_OPTIONS=--deprecated-guards="GTK_DISABLE_DEPRECATED"
-SCAN_OPTIONS=--deprecated-guards="MEX_DISABLE_DEPRECATED"
+SCAN_OPTIONS=
 
 # Extra options to supply to gtkdoc-mkdb.
 # e.g. MKDB_OPTIONS=--sgml-mode --output-format=xml

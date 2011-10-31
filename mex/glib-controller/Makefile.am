@@ -46,7 +46,6 @@ libglib_controller_1_0_la_CPPFLAGS =	\
 	-I$(top_builddir)		\
 	-I$(top_srcdir)/mex/		\
 	-DG_LOG_DOMAIN=\"GController\"	\
-	-DG_DISABLE_DEPRECATED		\
 	-DG_DISABLE_SINGLE_INCLUDES	\
 	-DGLIB_CONTROLLER_COMPILATION	\
 	$(AM_CPPFLAGS)			\
@@ -74,7 +73,7 @@ GController-1.0.gir: $(INTROSPECTION_SCANNER) libglib-controller-1.0.la
 
 GController_1_0_gir_SCANNERFLAGS = --identifier-prefix=G --warn-all
 GController_1_0_gir_INCLUDES = GObject-2.0
-GController_1_0_gir_CFLAGS = $(GCONTROLLER_CFLAGS) -I$(top_srcdir)/mex -I$(top_srcdir)/mex/glib-controller -I$(top_builddir) -DG_DISABLE_DEPRECATED -DGLIB_CONTROLLER_COMPILATION
+GController_1_0_gir_CFLAGS = $(GCONTROLLER_CFLAGS) -I$(top_srcdir)/mex -I$(top_srcdir)/mex/glib-controller -I$(top_builddir) -DGLIB_CONTROLLER_COMPILATION
 GController_1_0_gir_LIBS = libglib-controller-1.0.la
 GController_1_0_gir_FILES = $(source_h) $(source_c)
 
