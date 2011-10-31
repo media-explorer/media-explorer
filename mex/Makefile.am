@@ -329,7 +329,7 @@ Mex_0_2_gir_SCANNERFLAGS = 				\
 	--symbol-prefix=mex				\
 	--add-include-path=$(builddir)/glib-controller	\
 	$(NULL)
-Mex_0_2_gir_CFLAGS = $(common_includes) $(MEX_CFLAGS)
+Mex_0_2_gir_CFLAGS = $(common_includes) $(MEX_CFLAGS) -I$(top_srcdir)/mex
 Mex_0_2_gir_INCLUDES =	\
 	GObject-2.0	\
 	Clutter-1.0	\
