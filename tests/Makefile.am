@@ -1,6 +1,7 @@
 include $(top_srcdir)/build/Makefile.am.gtester
 
 NULL =
+EXTRA_DIST =
 
 noinst_PROGRAMS = $(TEST_PROGS) test-config test-keys
 
@@ -29,10 +30,12 @@ test_core_LDADD    = $(progs_ldadd)
 TEST_PROGS           += test-channel
 test_channel_SOURCES  = test-channel.c
 test_channel_LDADD    = $(progs_ldadd)
+EXTRA_DIST           += channels-uri.conf
 
 TEST_PROGS       += test-epg
 test_epg_SOURCES  = test-epg.c
 test_epg_LDADD    = $(progs_ldadd)
+EXTRA_DIST       += channels-epg.conf channels.dat 1961.dat 94.dat
 
 test_config_SOURCES = test-config.c
 test_config_LDADD   = $(progs_ldadd)
