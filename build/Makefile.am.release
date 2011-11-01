@@ -10,7 +10,7 @@ RELEASE_UPLOAD_HOST = clutter-project.org
 RELEASE_UPLOAD_USER = clutter
 RELEASE_UPLOAD_DIR  = $(RELEASE_UPLOAD_USER)@$(RELEASE_UPLOAD_HOST):upload-source
 
-RELEASE_URL      = http://media-explorer.github.com/releases
+RELEASE_URL      = http://github.com/downloads/media-explorer/media-explorer
 
 RELEASE_ANNOUNCE_LIST = mex-list@clutter-project.org (Cc: gnome-announce-list@gnome.org)
 
