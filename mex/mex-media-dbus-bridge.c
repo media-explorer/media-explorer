@@ -385,7 +385,7 @@ handle_method_call (GDBusConnection       *connection,
   else if (g_str_equal (method_name, "GetAudioVolume"))
     {
       d = clutter_media_get_audio_volume (priv->media);
-      return_value = g_variant_new_double (d);
+      return_value = g_variant_new ("(d)", d);
     }
   else if (g_str_equal (method_name, "SetUri"))
     {
@@ -396,7 +396,7 @@ handle_method_call (GDBusConnection       *connection,
   else if (g_str_equal (method_name, "GetUri"))
     {
       uri = clutter_media_get_uri (priv->media);
-      return_value = g_variant_new_string (uri);
+      return_value = g_variant_new ("(s)", uri ? uri : "");
     }
   else if (g_str_equal (method_name, "SetPlaying"))
     {
@@ -406,7 +406,7 @@ handle_method_call (GDBusConnection       *connection,
   else if (g_str_equal (method_name, "GetPlaying"))
     {
       b = clutter_media_get_playing (priv->media);
-      return_value = g_variant_new_boolean (b);
+      return_value = g_variant_new ("(b)", b);
     }
   else if (g_str_equal (method_name, "SetProgress"))
     {
@@ -416,17 +416,17 @@ handle_method_call (GDBusConnection       *connection,
   else if (g_str_equal (method_name, "GetProgress"))
     {
       d = clutter_media_get_progress (priv->media);
-      return_value = g_variant_new_double (d);
+      return_value = g_variant_new ("(d)", d);
     }
   else if (g_str_equal (method_name, "GetDuration"))
     {
       d = clutter_media_get_duration (priv->media);
-      return_value = g_variant_new_double (d);
+      return_value = g_variant_new ("(d)", d);
     }
   else if (g_str_equal (method_name, "GetCanSeek"))
     {
       b = clutter_media_get_can_seek (priv->media);
-      return_value = g_variant_new_boolean (b);
+      return_value = g_variant_new ("(b)", b);
     }
 
   g_dbus_method_invocation_return_value (invocation, return_value);
