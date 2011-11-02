@@ -1100,10 +1100,6 @@ mex_captured_event_cb (ClutterActor *actor,
     case CLUTTER_KEY_F11 :
       mex_toggle_fullscreen ();
       return TRUE;
-
-    case CLUTTER_KEY_p :
-      mex_toggle_pip(data);
-      return TRUE;
     }
 
   /* Handle the rest of the shortcuts/bindings */
@@ -1133,6 +1129,9 @@ mex_event_cb (ClutterActor *actor,
       mex_toggle_fullscreen ();
       return TRUE;
 
+    case CLUTTER_KEY_p :
+      mex_toggle_pip (data);
+      return TRUE;
     }
 
   if (MEX_KEY_BACK (key_event->keyval))
