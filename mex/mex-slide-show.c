@@ -665,6 +665,12 @@ captured_event_cb (ClutterActor *actor,
       return TRUE;
     }
 
+  if (MEX_KEY_BACK (event->key.keyval))
+    {
+      stop_action_cb (NULL, MEX_SLIDE_SHOW (actor));
+      return TRUE;
+    }
+
   /* if the controls are visible, reset the time out */
   if (priv->controls_timeout)
     {
