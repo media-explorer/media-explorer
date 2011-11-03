@@ -32,6 +32,10 @@ G_DEFINE_TYPE (MexTrackerPlugin, mex_tracker_plugin, G_TYPE_OBJECT)
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_TRACKER_PLUGIN, MexTrackerPluginPrivate))
 
+#define MEX_LOG_DOMAIN_DEFAULT  tracker_log_domain
+MEX_LOG_DOMAIN_STATIC(tracker_log_domain);
+
+
 struct _MexTrackerPluginPrivate {
   MexModelManager *manager;
   GHashTable *video_models;
@@ -373,6 +377,9 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                 NULL);
 
   priv->manager = mex_model_manager_get_default ();
+
+  /* log domain */
+  MEX_LOG_DOMAIN_INIT (tracker_log_domain, "tracker");
 
   registry = grl_plugin_registry_get_default ();
   plugins = grl_plugin_registry_get_sources (registry, FALSE);
