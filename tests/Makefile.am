@@ -42,3 +42,7 @@ test_config_LDADD   = $(progs_ldadd)
 
 test_keys_SOURCES  = test-keys.c
 test_keys_LDADD    = $(progs_ldadd)
+
+TEST_PROGS        += test-view
+test_view_SOURCES  = test-view.c
+test_view_LDADD    = $(progs_ldadd)
