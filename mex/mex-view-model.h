@@ -65,21 +65,22 @@ GType mex_view_model_get_type (void) G_GNUC_CONST;
 
 MexModel *mex_view_model_new (MexModel *model);
 
-void mex_view_model_start_at_content (MexViewModel *self,
-                                      MexContent   *start_at_content,
-                                      gboolean      loop);
-
-void mex_view_model_start_at_offset (MexViewModel *self, guint offset);
-
-void mex_view_model_start (MexViewModel *self);
-
-void mex_view_model_stop (MexViewModel *self);
-
 void mex_view_model_set_limit (MexViewModel *self, guint limit);
 
 void mex_view_model_set_offset (MexViewModel *self, guint offset);
 
-void mex_view_model_set_content (MexViewModel *self, MexContent *content);
+void mex_view_model_set_start_content (MexViewModel *self, MexContent *content);
+void mex_view_model_set_loop (MexViewModel *self, gboolean loop);
+
+void mex_view_model_set_filter_by (MexViewModel       *model,
+                                   MexContentMetadata  metadata_key,
+                                   const gchar        *value);
+void mex_view_model_set_group_by (MexViewModel        *model,
+                                  MexContentMetadata  metadata_key);
+void mex_view_model_set_order_by (MexViewModel       *model,
+                                  MexContentMetadata  metadata_key,
+                                  gboolean            descending);
+
 
 G_END_DECLS
 

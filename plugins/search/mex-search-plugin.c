@@ -816,9 +816,6 @@ mex_search_plugin_init (MexSearchPlugin *self)
 
   /* Update the history list */
   mex_search_plugin_update_history (self, NULL);
-
-  /* Start the history list and suggestions proxy */
-  mex_view_model_start (MEX_VIEW_MODEL (view_model));
 }
 
 static GType

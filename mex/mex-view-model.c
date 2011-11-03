@@ -18,9 +18,11 @@
 
 #include "mex-view-model.h"
 
+#include "mex-generic-content.h"
+
 static void mex_model_iface_init (MexModelIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (MexViewModel, mex_view_model, MEX_TYPE_GENERIC_MODEL,
+G_DEFINE_TYPE_WITH_CODE (MexViewModel, mex_view_model, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_MODEL,
                                                 mex_model_iface_init))
 
@@ -37,6 +39,17 @@ enum
   PROP_MODEL,
   PROP_OFFSET,
   PROP_LIMIT,
+  PROP_TITLE,
+  PROP_SORT_FUNC,
+  PROP_SORT_DATA,
+  PROP_ICON_NAME,
+  PROP_LENGTH,
+  PROP_CATEGORY,
+  PROP_PRIORITY,
+  PROP_SORT_FUNCTIONS,
+  PROP_ALT_MODEL,
+  PROP_ALT_MODEL_STRING,
+  PROP_ALT_MODEL_ACTIVE
 };
 
 struct _MexViewModelPrivate
@@ -47,36 +60,60 @@ struct _MexViewModelPrivate
   guint       limit;
   guint       offset;
 
-  gboolean started : 1;
-  gboolean looped  : 1;
+  guint looped  : 1;
+
+  GPtrArray *external_items;
+  GPtrArray *internal_items;
+
+  MexContentMetadata  filter_by_key;
+  gchar              *filter_by_value;
+
+  MexContentMetadata order_by_key;
+  gboolean           order_by_descending;
+
+  MexContentMetadata group_by_key;
+
+  GController *controller;
 };
+
+static void mex_view_model_controller_changed_cb (GController          *controller,
+                                                  GControllerAction     action,
+                                                  GControllerReference *ref,
+                                                  MexViewModel         *self);
+
+static void mex_view_model_refresh_external_items (MexViewModel *model);
 
 static void
 mex_view_model_set_model (MexViewModel *self,
                           MexModel     *model)
 {
   MexViewModelPrivate *priv = self->priv;
-  gboolean is_started = priv->started;
 
   if (model == priv->model)
     return;
 
-  if (priv->model)
-    {
-      if (is_started)
-        mex_view_model_stop (self);
-
-      g_object_unref (priv->model);
-      priv->model = NULL;
-    }
-
   if (model)
     {
+      MexContent *content;
+      GController *controller;
+      gint i = 0;
+
       priv->model = g_object_ref_sink (model);
-      if (is_started)
-        mex_view_model_start (self);
+
+      controller = mex_model_get_controller (model);
+      g_signal_connect (controller, "changed",
+                        G_CALLBACK (mex_view_model_controller_changed_cb),
+                        self);
+
+      /* copy initial items across */
+      g_ptr_array_set_size (priv->internal_items,
+                            mex_model_get_length (priv->model));
+
+      while ((content = mex_model_get_content (priv->model, i)))
+        priv->internal_items->pdata[i++] = content;
     }
 
+  mex_view_model_refresh_external_items (self);
 }
 
 static void
@@ -121,10 +158,6 @@ mex_view_model_set_property (GObject      *object,
       mex_view_model_set_model (self, g_value_get_object (value));
       break;
 
-    case PROP_OFFSET:
-      mex_view_model_set_offset (self, g_value_get_uint (value));
-      break;
-
     case PROP_LIMIT:
       mex_view_model_set_limit (self, g_value_get_uint (value));
       break;
@@ -139,11 +172,14 @@ mex_view_model_dispose (GObject *object)
 {
   MexViewModelPrivate *priv = VIEW_MODEL_PRIVATE (object);
 
-  mex_view_model_stop (MEX_VIEW_MODEL (object));
-
   if (priv->model)
     {
+      g_signal_handlers_disconnect_by_func (mex_model_get_controller (priv->model),
+                                            mex_view_model_controller_changed_cb,
+                                            object);
+
       g_object_unref (priv->model);
+
       priv->model = NULL;
     }
 
@@ -153,12 +189,36 @@ mex_view_model_dispose (GObject *object)
       priv->start_content = NULL;
     }
 
+  if (priv->controller)
+    {
+      g_object_unref (priv->controller);
+      priv->controller = NULL;
+    }
+
   G_OBJECT_CLASS (mex_view_model_parent_class)->dispose (object);
 }
 
 static void
 mex_view_model_finalize (GObject *object)
 {
+  MexViewModelPrivate *priv = MEX_VIEW_MODEL (object)->priv;
+  gint i;
+
+  if (priv->external_items)
+    {
+      for (i = 0; i < priv->external_items->len; i++)
+        g_object_unref (g_ptr_array_index (priv->external_items, i));
+
+      g_ptr_array_free (priv->external_items, TRUE);
+      priv->external_items = NULL;
+    }
+
+  if (priv->internal_items)
+    {
+      g_ptr_array_free (priv->internal_items, TRUE);
+      priv->external_items = NULL;
+    }
+
   G_OBJECT_CLASS (mex_view_model_parent_class)->finalize (object);
 }
 
@@ -170,9 +230,122 @@ mex_view_model_get_model (MexModel *model)
   return priv->model;
 }
 
+static MexContent *
+mex_view_model_get_content (MexModel *model, guint idx)
+{
+  MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+  gint start = 0;
+
+  if (idx >= priv->external_items->len)
+    return NULL;
+
+  if (idx > priv->limit - 1)
+    return NULL;
+
+  if (priv->start_content)
+    {
+      gboolean found = FALSE;
+
+      for (; start < priv->external_items->len; start++)
+        if (g_ptr_array_index (priv->external_items, start) == priv->start_content)
+          {
+            found = TRUE;
+            break;
+          }
+
+      /* start at was not found */
+      if (!found)
+        {
+          g_critical (G_STRLOC ": start_at content is invalid in MexModelView");
+          return NULL;
+        }
+    }
+
+  if (start + idx >= priv->external_items->len)
+    start = start - priv->external_items->len;
+
+  return g_ptr_array_index (priv->external_items, start + idx);
+}
+
+static GController *
+mex_view_model_get_controller (MexModel *model)
+{
+  return MEX_VIEW_MODEL (model)->priv->controller;
+}
+
+static guint
+mex_view_model_get_length (MexModel *model)
+{
+  MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+
+  if (priv->limit)
+    return priv->limit;
+  else
+    return priv->external_items->len;
+}
+
+static gint
+mex_view_model_index (MexModel *model, MexContent *content)
+{
+  MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+  gint start = 0, index = 0;
+  gboolean found;
+
+  /* find the start content's index */
+  if (priv->start_content)
+    {
+      found = FALSE;
+
+      for (; start < priv->external_items->len; start++)
+        if (g_ptr_array_index (priv->external_items, start) == priv->start_content)
+          {
+            found = TRUE;
+            break;
+          }
+
+      if (!found)
+        {
+          g_critical (G_STRLOC ": start_at content is invalid in MexModelView");
+          return -1;
+        }
+    }
+
+  /* find the search item's index */
+  found = FALSE;
+  while (index < priv->external_items->len)
+    {
+      if (g_ptr_array_index (priv->external_items, index) == content)
+        {
+          found = TRUE;
+          break;
+        }
+      index++;
+    }
+
+  if (!found)
+    return -1;
+
+  if (priv->start_content)
+    return (priv->external_items->len - start) + index;
+  else
+    return index;
+}
+
 static void
 mex_model_iface_init (MexModelIface *iface)
 {
+  /* view model is read only, so these functions do nothing*/
+  iface->add_content = NULL;
+  iface->get_model = NULL;
+  iface->set_sort_func = NULL;
+  iface->clear = NULL;
+
+  iface->get_content = mex_view_model_get_content;
+  iface->get_controller = mex_view_model_get_controller;
+  iface->get_length = mex_view_model_get_length;
+  iface->index = mex_view_model_index;
+
+  /* TODO: this should not be part of the MexModel interface */
   iface->get_model = mex_view_model_get_model;
 }
 
@@ -210,6 +383,21 @@ mex_view_model_class_init (MexViewModelClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LIMIT, pspec);
 
+  g_object_class_override_property (object_class, PROP_TITLE, "title");
+  g_object_class_override_property (object_class, PROP_SORT_FUNC, "sort-function");
+  g_object_class_override_property (object_class, PROP_SORT_DATA, "sort-data");
+  g_object_class_override_property (object_class, PROP_ICON_NAME, "icon-name");
+  g_object_class_override_property (object_class, PROP_LENGTH, "length");
+
+  g_object_class_override_property (object_class, PROP_CATEGORY, "category");
+  g_object_class_override_property (object_class, PROP_PRIORITY, "priority");
+  g_object_class_override_property (object_class, PROP_SORT_FUNCTIONS,
+                                    "sort-functions");
+  g_object_class_override_property (object_class, PROP_ALT_MODEL, "alt-model");
+  g_object_class_override_property (object_class, PROP_ALT_MODEL_STRING,
+                                    "alt-model-string");
+  g_object_class_override_property (object_class, PROP_ALT_MODEL_ACTIVE,
+                                    "alt-model-active");
 }
 
 static void
@@ -219,6 +407,11 @@ mex_view_model_init (MexViewModel *self)
 
   priv = VIEW_MODEL_PRIVATE (self);
   self->priv = priv;
+
+  priv->external_items = g_ptr_array_new ();
+  priv->internal_items = g_ptr_array_new ();
+
+  priv->controller = g_ptr_array_controller_new (priv->external_items);
 }
 
 MexModel *
@@ -227,13 +420,133 @@ mex_view_model_new (MexModel *model)
   return g_object_new (MEX_TYPE_VIEW_MODEL, "model", model, NULL);
 }
 
-static gint
-_insert_position (gconstpointer a,
-                  gconstpointer b,
-                  gpointer user_data)
+typedef struct
 {
-  return GPOINTER_TO_INT (a) < GPOINTER_TO_INT (b);
+  MexContentMetadata key;
+  gboolean descending;
+} SortFuncInfo;
+
+static gint
+order_by_func (gconstpointer a,
+               gconstpointer b,
+               gpointer      user_data)
+{
+  MexContent **content_a = (MexContent **) a;
+  MexContent **content_b = (MexContent **) b;
+  SortFuncInfo *info = user_data;
+  const gchar *value_a, *value_b;
+
+  value_a = mex_content_get_metadata (*content_a, info->key);
+  value_b = mex_content_get_metadata (*content_b, info->key);
+
+  if (info->descending)
+    return g_strcmp0 (value_b, value_a);
+  else
+    return g_strcmp0 (value_a, value_b);
+
 }
+
+static void
+mex_view_model_refresh_external_items (MexViewModel *model)
+{
+  MexViewModelPrivate *priv = model->priv;
+  gint i, count;
+  GHashTable *groups = NULL;
+
+  /* clear the references from the external items */
+  for (i = 0; i < priv->external_items->len; i++)
+    g_object_unref (g_ptr_array_index (priv->external_items, i));
+
+  /* allocate the full array to start with */
+  g_ptr_array_set_size (priv->external_items, priv->internal_items->len);
+
+  if (priv->group_by_key)
+    {
+      groups = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
+                                      NULL);
+    }
+
+  /* add the items to the external list */
+  for (i = 0, count = 0; i < priv->internal_items->len; i++)
+    {
+      MexContent *content;
+
+      content = g_ptr_array_index (priv->internal_items, i);
+
+      /* check the item matches the filter */
+      if (priv->filter_by_key)
+        {
+          const gchar *v;
+
+          v = mex_content_get_metadata (content, priv->filter_by_key);
+
+          /* skip this item if it does not match the filter */
+          if (g_strcmp0 (v, priv->filter_by_value))
+            continue;
+        }
+
+      /* create a group item if necessary */
+      if (priv->group_by_key)
+        {
+          const gchar* g;
+
+          g = mex_content_get_metadata (content, priv->group_by_key);
+
+          if (!g)
+            g = "Other";
+
+          /* build up the group list */
+          if (!g_hash_table_lookup (groups, g))
+            {
+              content = g_object_new (MEX_TYPE_GENERIC_CONTENT,
+                                      "title", g,
+                                      NULL);
+              g_hash_table_insert (groups, g_strdup (g), content);
+            }
+          else
+            continue;
+        }
+
+      /* add the item to the external list */
+      g_object_ref_sink (content);
+      priv->external_items->pdata[count] = content;
+      count++;
+    }
+
+  /* set the final size */
+  if (count < priv->external_items->len)
+    g_ptr_array_set_size (priv->external_items, count);
+
+  /* this should not happen */
+  if (count > priv->external_items->len)
+    g_error (G_STRLOC "More items added to view model than in original model");
+
+  /* destroy the groups hash table */
+  if (groups)
+    {
+      g_hash_table_destroy (groups);
+      groups = NULL;
+    }
+
+  /* sort the items */
+  if (priv->order_by_key)
+    {
+      SortFuncInfo info = { priv->order_by_key, priv->order_by_descending };
+
+      g_ptr_array_sort_with_data (priv->external_items, order_by_func, &info);
+    }
+
+  if (priv->controller)
+    {
+      GControllerReference *ref;
+
+      ref = g_controller_create_reference (priv->controller,
+                                           G_CONTROLLER_REPLACE,
+                                           G_TYPE_NONE, 0);
+      g_controller_emit_changed (priv->controller, ref);
+    }
+}
+
 
 static void
 mex_view_model_controller_changed_cb (GController          *controller,
@@ -241,105 +554,47 @@ mex_view_model_controller_changed_cb (GController          *controller,
                                       GControllerReference *ref,
                                       MexViewModel         *self)
 {
-  gint i, n_indices;
-  guint offset, view_length, model_length;
-  MexContent *content;
+  gint n_indices, i;
 
   MexViewModelPrivate *priv = self->priv;
 
   n_indices = g_controller_reference_get_n_indices (ref);
 
-  view_length = mex_model_get_length (MEX_MODEL (self));
-  model_length = mex_model_get_length (priv->model);
-
   switch (action)
     {
     case G_CONTROLLER_ADD:
       {
-        GPtrArray *to_remove = g_ptr_array_new ();
-        GPtrArray *to_add = g_ptr_array_new ();
+        guint view_length;
 
-        for (i = 0; i < view_length; i++)
-          g_ptr_array_add (to_remove,
-                           mex_model_get_content (MEX_MODEL (self), i));
+        /* increase the internal items array by the number of new items */
+        view_length = mex_model_get_length (MEX_MODEL (self));
+        g_ptr_array_set_size (priv->internal_items, view_length + n_indices);
 
-        if (priv->start_content)
-          offset = mex_model_index (priv->model, priv->start_content);
-        else
-          offset = priv->offset;
-
-        for (i = 0; i < VIEW_MODEL_LIMIT (priv); i++)
+        /* set the new items */
+        while (n_indices-- > 0)
           {
-            content = mex_model_get_content (priv->model, offset + i);
+            guint idx;
 
-            /* No more content in the underlaying model */
-            if (!content)
-              break;
-
-            /* Check whether it's already here */
-            if (mex_model_index (MEX_MODEL (self), content) < 0)
-              g_ptr_array_add (to_add, content);
-            else
-              g_ptr_array_remove (to_remove, content);
+            idx = g_controller_reference_get_index_uint (ref, n_indices);
+            priv->internal_items->pdata[view_length + n_indices] =
+              mex_model_get_content (priv->model, idx);
           }
-
-        for (i = 0; i < to_remove->len; i++)
-          mex_model_remove_content (MEX_MODEL (self),
-                                    g_ptr_array_index (to_remove, i));
-        for (i = 0; i < to_add->len; i++) {
-          mex_model_add_content (MEX_MODEL (self),
-                                 g_ptr_array_index (to_add, i));
-        }
-
-        g_ptr_array_unref (to_add);
-        g_ptr_array_unref (to_remove);
       }
       break;
 
     case G_CONTROLLER_REMOVE:
       {
-        gint fillin = 0, start_fillin;
-        GList *positions = NULL, *position;
-
-        for (i = 0; i < n_indices; i++)
+        while (n_indices-- > 0)
           {
-            gint content_index = g_controller_reference_get_index_uint (ref, i);
-            if (content_index >= VIEW_MODEL_LIMIT (priv))
-              positions =
-                g_list_insert_sorted_with_data (positions,
-                                                GINT_TO_POINTER (content_index),
-                                                _insert_position,
-                                                NULL);
-            else
-              fillin++;
-            content = mex_model_get_content (priv->model, content_index);
-            mex_model_remove_content (MEX_MODEL (self), content);
-          }
+            MexContent *content;
+            gint idx;
 
-        position = positions;
-        start_fillin = priv->limit;
-        for (i = 0;
-             i < MIN (fillin, (model_length - (gint) priv->limit));
-             i++)
-          {
-            if ((position != NULL) &&
-                (start_fillin == GPOINTER_TO_INT (position->data)))
-              {
-                while ((position != NULL) &&
-                       (start_fillin == GPOINTER_TO_INT (position->data)))
-                  {
-                    start_fillin++;
-                    if (start_fillin > GPOINTER_TO_INT (position->data))
-                      position = position->next;
-                  }
-              }
-            content = mex_model_get_content (priv->model, start_fillin);
-            if (!content)
-              break;
-            mex_model_add_content (MEX_MODEL (self), content);
-            start_fillin++;
+            idx = g_controller_reference_get_index_int (ref, n_indices);
+
+            content = mex_model_get_content (priv->model, idx);
+
+            g_ptr_array_remove_fast (priv->internal_items, content);
           }
-        g_list_free (positions);
       }
       break;
 
@@ -348,12 +603,15 @@ mex_view_model_controller_changed_cb (GController          *controller,
       break;
 
     case G_CONTROLLER_CLEAR:
-      mex_model_clear (MEX_MODEL (self));
+      for (i = 0; i < priv->external_items->len; i++)
+        g_object_unref (g_ptr_array_index (priv->external_items, i));
+      g_ptr_array_set_size (priv->external_items, 0);
+
+      g_ptr_array_set_size (priv->internal_items, 0);
       break;
 
     case G_CONTROLLER_REPLACE:
-      mex_view_model_stop (self);
-      mex_view_model_start (self);
+      g_warning (G_STRLOC ": G_CONTROLLER_REPLACE not implemented by MexViewModel");
       break;
 
     case G_CONTROLLER_INVALID_ACTION:
@@ -364,206 +622,13 @@ mex_view_model_controller_changed_cb (GController          *controller,
       g_warning (G_STRLOC ": Unhandled action");
       break;
     }
-}
 
-/**
- * mex_view_model_start_at_content:
- * @self: View model to add content to
- * @start_at_content: First content item in the model to add to
- * the view model
- * @loop: Whether to loop back to the beginning of the
- * associated #MexModel's content items once the last item is reached;
- * if %TRUE, content items before the @start_at_content will be
- * added once the last of the model's content items is reached;
- * if %FALSE, only content items from @start_at_content to the last of
- * the model's content items are added
- *
- * Add content from a model to a view model.
- */
-void
-mex_view_model_start_at_content (MexViewModel *self,
-                                 MexContent   *start_at_content,
-                                 gboolean      loop)
-{
-  gint i, start_at;
-  gboolean looped = FALSE;
-  MexContent *content;
-  MexViewModelPrivate *priv;
-  GController *controller;
-
-  g_return_if_fail (MEX_IS_VIEW_MODEL (self));
-
-  priv = self->priv;
-
-  if (priv->started)
-    {
-      g_warning (G_STRLOC ": Trying to start an already started view-model");
-      return;
-    }
-
-  if (!priv->model)
-    return;
-
-  start_at = mex_model_index (priv->model, start_at_content);
-
-  if (start_at == -1)
-    {
-      g_critical (G_STRLOC ": Content %p not found in %p model",
-                  start_at_content, priv->model);
-      return;
-    }
-
-  mex_model_clear (MEX_MODEL (self));
-  priv->started = TRUE;
-  priv->looped = loop;
-  priv->offset = start_at;
-  if (priv->start_content)
-      g_object_unref (priv->start_content);
-  priv->start_content = g_object_ref (start_at_content);
-
-  for (i = priv->offset;
-       mex_model_get_length (MEX_MODEL (self)) < VIEW_MODEL_LIMIT (priv);
-       i++)
-    {
-      /* break out if looped and back around to start_at */
-      if (loop && looped && i == priv->offset)
-        break;
-
-      if ((content = mex_model_get_content (priv->model, i)))
-        {
-          mex_model_add_content (MEX_MODEL (self), content);
-        }
-      else
-        {
-          if (loop)
-            {
-              looped = TRUE;
-              i = -1;
-            }
-          else
-            break;
-        }
-    }
-
-  controller = mex_model_get_controller (priv->model);
-  g_signal_connect_after (controller, "changed",
-                          G_CALLBACK (mex_view_model_controller_changed_cb),
-                          self);
-}
-
-/**
- * mex_view_model_start_at_offset:
- * @self: View model to add content to
- * @offset: Offset where to add content to, from the underlaying model
- *
- * Add content from a model to a view model.
- */
-void
-mex_view_model_start_at_offset (MexViewModel *self, guint offset)
-{
-  guint i, model_size;
-  MexContent *content;
-  MexViewModelPrivate *priv;
-  GController *controller;
-
-  g_return_if_fail (MEX_IS_VIEW_MODEL (self));
-
-  priv = self->priv;
-
-  if (priv->started)
-    {
-      g_warning (G_STRLOC ": Trying to start an already started view-model");
-      return;
-    }
-
-  if (!priv->model)
-    {
-      g_warning (G_STRLOC
-                 ": Trying to start a view-model without underlaying model");
-      return;
-    }
-
-  mex_model_clear (MEX_MODEL (self));
-  model_size = mex_model_get_length (priv->model);
-
-  priv->offset = offset;
-  if (priv->start_content)
-    {
-      g_object_unref (priv->start_content);
-      priv->start_content = NULL;
-    }
-  priv->started = TRUE;
-
-  for (i = 0; i < MIN (VIEW_MODEL_LIMIT (priv), model_size); i++)
-    {
-      content = mex_model_get_content (priv->model, i + priv->offset);
-      if (!content)
-        return;
-      mex_model_add_content (MEX_MODEL (self), content);
-    }
-
-  controller = mex_model_get_controller (priv->model);
-  g_signal_connect_after (controller, "changed",
-                          G_CALLBACK (mex_view_model_controller_changed_cb),
-                          self);
-}
-
-/**
- * mex_view_model_start:
- * @self: View-model to add content to
- *
- * Add all content items to a view-model from its associated model; see
- * also mex_view_model_start_at_content() and
- * mex_view_model_start_at_offset().
- */
-void
-mex_view_model_start (MexViewModel *self)
-{
-  MexViewModelPrivate *priv;
-
-  g_return_if_fail (MEX_IS_VIEW_MODEL (self));
-
-  priv = self->priv;
-
-  if (priv->start_content)
-    mex_view_model_start_at_content (self, priv->start_content, priv->looped);
-  else
-    mex_view_model_start_at_offset (self, priv->offset);
-}
-
-void
-mex_view_model_stop (MexViewModel *self)
-{
-  MexViewModelPrivate *priv;
-  GController *controller;
-
-  g_return_if_fail (MEX_IS_VIEW_MODEL (self));
-
-  priv = self->priv;
-
-  /* There's nothing to do if there's no model set */
-  if (!priv->model)
-    {
-      priv->started = FALSE;
-      return;
-    }
-
-  if (!priv->started)
-    return;
-
-  controller = mex_model_get_controller (priv->model);
-  g_signal_handlers_disconnect_by_func (controller,
-                                        mex_view_model_controller_changed_cb,
-                                        self);
-
-  priv->started = FALSE;
+  mex_view_model_refresh_external_items (self);
 }
 
 void
 mex_view_model_set_limit (MexViewModel *self, guint limit)
 {
-  guint i, length;
-  MexContent *content;
   MexViewModelPrivate *priv;
 
   g_return_if_fail (MEX_IS_VIEW_MODEL (self));
@@ -573,167 +638,18 @@ mex_view_model_set_limit (MexViewModel *self, guint limit)
   if (limit == priv->limit)
     return;
 
-  if (!priv->started)
-    {
-      priv->limit = limit;
-      return;
-    }
-
-  if (limit == 0)
-    {
-      /* No limit */
-      length = mex_model_get_length (priv->model);
-      for (i = mex_model_get_length (MEX_MODEL (self));
-           i < length;
-           i++)
-        {
-          content = mex_model_get_content (priv->model, i);
-          mex_model_add_content (MEX_MODEL (self), content);
-        }
-    }
-  else if (limit < priv->limit)
-    {
-      /* Lowering the limit => items to remove */
-      length = mex_model_get_length (MEX_MODEL (self));
-      for (i = MIN (priv->limit - 1, length - 1);
-           i >= limit;
-           i--)
-        {
-          content = mex_model_get_content (MEX_MODEL (self), i);
-          mex_model_remove_content (MEX_MODEL (self), content);
-        }
-    }
-  else
-    {
-      /* Raising the limit => items to add */
-      length = mex_model_get_length (priv->model);
-      for (i = mex_model_get_length (MEX_MODEL (self));
-           i < MIN (limit, length);
-           i++)
-        {
-          content = mex_model_get_content (priv->model, i);
-          mex_model_add_content (MEX_MODEL (self), content);
-        }
-    }
-
   priv->limit = limit;
+
+  mex_view_model_refresh_external_items (self);
 }
 
 void
-mex_view_model_set_offset (MexViewModel *self, guint offset)
+mex_view_model_set_start_content (MexViewModel *self, MexContent *content)
 {
-  gboolean inc;
-  guint i, diff;
-  MexContent *content;
   MexViewModelPrivate *priv;
 
   g_return_if_fail (MEX_IS_VIEW_MODEL (self));
-
-  priv = self->priv;
-
-  if (offset == priv->offset)
-    return;
-
-  if (!priv->started)
-    {
-      priv->offset = offset;
-      return;
-    }
-
-  if (offset > priv->offset)
-    {
-      inc = TRUE;
-      diff = offset - priv->offset;
-    }
-  else
-    {
-      inc = FALSE;
-      diff = priv->offset - offset;
-    }
-
-  /* If we can keep some elements in the model, then take care of
-     removing/adding only necessary items. */
-  if (priv->limit == 0 || diff < priv->limit)
-    {
-      if (inc)
-        {
-          g_print ("INC from %u to %u\n", priv->offset, offset);
-          /* Remove elements from the top */
-          for (i = 0; i < diff; i++)
-            {
-              content = mex_model_get_content (priv->model,
-                                               priv->offset + i);
-              g_print ("\tremoving %i\n", priv->offset + i);
-              if (content)
-                mex_model_remove_content (MEX_MODEL (self), content);
-            }
-
-          /* Add following contents */
-          for (i = 0; i < diff; i++)
-            {
-              content = mex_model_get_content (priv->model,
-                                               offset + priv->limit - diff + i);
-              g_print ("\tadding %i\n", offset + priv->limit - diff + i);
-              if (!content)
-                break;
-              mex_model_add_content (MEX_MODEL (self), content);
-            }
-        }
-      else
-        {
-          g_print ("DEC from %u to %u\n", priv->offset, offset);
-          /* Remove elements from the bottom */
-          for (i = 0; i < diff; i--)
-            {
-              content = mex_model_get_content (priv->model,
-                                               priv->offset + priv->limit - diff + i);
-              g_print ("\tremoving %i\n", priv->offset + priv->limit - diff + i);
-              if (content)
-                mex_model_remove_content (MEX_MODEL (self), content);
-            }
-
-          /* Add previous elements */
-          for (i = 0; i < diff; i++)
-            {
-              content = mex_model_get_content (priv->model, i);
-              g_print ("\tadding %i\n", i);
-              if (!content)
-                break;
-              mex_model_add_content (MEX_MODEL (self), content);
-            }
-        }
-
-      /* loop if needed */
-      if (priv->looped)
-        {
-          /* How much can we loop? */
-          diff = priv->limit - mex_model_get_length (MEX_MODEL (self));
-          for (i = 0; i < diff && i < offset; i++)
-            {
-              g_print ("\tadding %i\n", i);
-              content = mex_model_get_content (priv->model, i);
-              mex_model_add_content (MEX_MODEL (self), content);
-            }
-        }
-    }
-  else
-    {
-      /* Nothing to preserve => reset the model */
-      mex_view_model_stop (self);
-      mex_view_model_start (self);
-    }
-
-  priv->offset = offset;
-}
-
-void
-mex_view_model_set_content (MexViewModel *self, MexContent *content)
-{
-  gint index;
-  MexViewModelPrivate *priv;
-
-  g_return_if_fail (MEX_IS_VIEW_MODEL (self));
-  g_return_if_fail (MEX_IS_CONTENT (content));
+  g_return_if_fail (!content || MEX_IS_CONTENT (content));
 
   priv = self->priv;
 
@@ -743,11 +659,58 @@ mex_view_model_set_content (MexViewModel *self, MexContent *content)
       priv->start_content = NULL;
     }
 
-  priv->start_content = g_object_ref (content);
+  if (content)
+    priv->start_content = g_object_ref (content);
+  else
+    priv->start_content = NULL;
 
-  index = mex_model_index (priv->model, priv->start_content);
+  mex_view_model_refresh_external_items (self);
+}
 
-  g_return_if_fail (index >= 0);
+void
+mex_view_model_set_loop (MexViewModel *self,
+                         gboolean      loop)
+{
+  self->priv->looped = loop;
 
-  mex_view_model_set_offset (self, index);
+  mex_view_model_refresh_external_items (self);
+}
+
+void
+mex_view_model_set_filter_by (MexViewModel       *model,
+                              MexContentMetadata  metadata_key,
+                              const gchar        *value)
+{
+  MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+
+  priv->filter_by_key = metadata_key;
+
+  g_free (priv->filter_by_value);
+  priv->filter_by_value = g_strdup (value);
+
+  mex_view_model_refresh_external_items (model);
+}
+
+void
+mex_view_model_set_group_by (MexViewModel       *model,
+                             MexContentMetadata  metadata_key)
+{
+  MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+
+  priv->group_by_key = metadata_key;
+
+  mex_view_model_refresh_external_items (model);
+}
+
+void
+mex_view_model_set_order_by (MexViewModel       *model,
+                             MexContentMetadata  metadata_key,
+                             gboolean            descending)
+{
+  MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+
+  priv->order_by_key = metadata_key;
+  priv->order_by_descending = descending;
+
+  mex_view_model_refresh_external_items (model);
 }

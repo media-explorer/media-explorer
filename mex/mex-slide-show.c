@@ -1104,9 +1104,8 @@ mex_slide_show_set_content (MexContentView *view,
   mex_slide_show_real_set_content (show, content);
 
   /* ensure the new content is highlighted in the photo strip */
-  mex_view_model_stop (MEX_VIEW_MODEL (priv->model));
-  mex_view_model_start_at_content (MEX_VIEW_MODEL (priv->model),
-                                   content, FALSE);
+  mex_view_model_set_start_content (MEX_VIEW_MODEL (priv->model), content);
+  mex_view_model_set_loop (MEX_VIEW_MODEL (priv->model), FALSE);
   mex_slide_show_move (show, 0);
 
   clutter_state_set_state (show->priv->state, "controls");

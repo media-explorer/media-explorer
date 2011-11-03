@@ -692,9 +692,6 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
 
   g_object_weak_ref (G_OBJECT (column_view), mex_explorer_unset_container_cb, model);
 
-  /* Start the proxy */
-  mex_view_model_start (MEX_VIEW_MODEL (view_model));
-
   g_object_unref (view_model);
 }
 

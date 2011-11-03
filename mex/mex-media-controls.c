@@ -1077,13 +1077,11 @@ mex_media_controls_set_content (MexMediaControls *self,
     {
       MexModel *orig_model;
 
-      /* update the related strip */
-      mex_view_model_stop (priv->proxy_model);
-
       orig_model = mex_model_get_model (context);
       g_object_set (G_OBJECT (priv->proxy_model), "model", orig_model, NULL);
 
-      mex_view_model_start_at_content (priv->proxy_model, priv->content, TRUE);
+      mex_view_model_set_start_content (priv->proxy_model, priv->content);
+      mex_view_model_set_loop (priv->proxy_model, TRUE);
 
       /* Work out if the context was a queue FIXME unreliable */
       /* From coloumn context = MexViewModel MexAggregateModel MexQueueModel */
