@@ -24,6 +24,7 @@
 #include <clutter/clutter.h>
 #include <mx/mx.h>
 #include <mex/mex-mmkeys.h>
+#include <mex/mex-model.h>
 
 G_BEGIN_DECLS
 
@@ -94,6 +95,8 @@ void            mex_set_fullscreen          (gboolean fullscreen);
 gboolean        mex_get_fullscreen          (void);
 void            mex_toggle_fullscreen       (void);
 ClutterActor *  mex_get_stage               (void);
+
+MexModel*       mex_get_root_model          (void);
 
 G_END_DECLS
 

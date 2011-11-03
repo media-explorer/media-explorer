@@ -85,7 +85,6 @@ typedef struct
   ClutterActor *current_applet;
   ClutterActor *last_applet;
 
-  GHashTable         *model_from_category;
   GHashTable         *model_to_provider;
   MexModel           *toplevel_model;
   MexModel           *toplevel_plugin_model;
@@ -749,8 +748,6 @@ mex_hide_actor (MexData      *data,
 static void
 mex_show_home_screen (MexData *data)
 {
-  MexModel *model;
-
   /* hide the slide show */
   mex_hide_actor (data, data->slide_show);
 
@@ -770,13 +767,6 @@ mex_show_home_screen (MexData *data)
 
   /* go back to the root model */
   mex_explorer_pop_to_root (MEX_EXPLORER (data->explorer));
-
-  model = g_hash_table_lookup (data->model_from_category, "videos");
-
-  if (!model)
-    g_warning ("Could not find videos model");
-
-  mex_explorer_set_focused_model (MEX_EXPLORER (data->explorer), model);
 }
 
 static void
@@ -1221,114 +1211,6 @@ mex_plugin_present_model_cb (GObject      *plugin,
   mex_show_actor (data, data->explorer);
 }
 
-static void
-mex_refresh_root_model (MexData *data)
-{
-  MexModel *root;
-  GList *c, *categories;
-  MexModelManager *manager;
-
-  root = mex_explorer_get_root_model (MEX_EXPLORER (data->explorer));
-  mex_aggregate_model_clear (MEX_AGGREGATE_MODEL (root));
-  g_hash_table_remove_all (data->model_from_category);
-
-  manager = mex_model_manager_get_default ();
-
-  categories = mex_model_manager_get_categories (manager);
-  for (c = categories; c; c = c->next)
-    {
-      GList *m, *models;
-      MexModel *aggregate;
-      MexModelCategoryInfo *c_info = c->data;
-
-      /* categories with priority of -1 should not be shown on the home view */
-      if (c_info->priority == -1)
-        continue;
-
-      /* Create a new aggregate model for this category */
-      aggregate = mex_aggregate_model_new ();
-
-      if (c_info->sort_func)
-        mex_model_set_sort_func (MEX_MODEL (aggregate),
-                                 c_info->sort_func,
-                                 c_info->userdata);
-      else
-        mex_model_set_sort_func (MEX_MODEL (aggregate),
-                                 mex_model_sort_smart_cb,
-                                 GINT_TO_POINTER (FALSE));
-
-      /* prevent the length display in the search column */
-      if (!g_strcmp0 (c_info->name, "search"))
-        {
-          g_object_set (aggregate,
-                        "display-item-count", FALSE,
-                        "always-visible", TRUE,
-                        NULL);
-        }
-
-      g_object_set (G_OBJECT (aggregate),
-                    "title", c_info->display_name,
-                    "icon-name", c_info->icon_name,
-                    "placeholder-text", c_info->placeholder_text, NULL);
-      g_hash_table_insert (data->model_from_category,
-                           g_strdup (c_info->name), aggregate);
-      mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (root), aggregate);
-
-      /* Add appropriate models to this category */
-      models = mex_model_manager_get_models_for_category (manager,
-                                                          c_info->name);
-
-
-      for (m = models; m; m = m->next)
-        {
-          mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (aggregate),
-                                         m->data);
-        }
-
-      g_list_free (models);
-    }
-  g_list_free (categories);
-}
-
-static void
-mex_model_added_cb (MexModelManager *manager,
-                    MexModel        *model,
-                    MexData         *data)
-{
-  gchar *category;
-  MexModel *aggregate;
-
-  g_object_get (G_OBJECT (model), "category", &category, NULL);
-
-  /* FIXME: We don't yet support re-ordering in MexAggregateModel */
-  aggregate = g_hash_table_lookup (data->model_from_category, category);
-
-  if (aggregate)
-    {
-      mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (aggregate),
-                                     model);
-    }
-}
-
-static void
-mex_model_removed_cb (MexModelManager *manager,
-                      MexModel        *model,
-                      const gchar     *category,
-                      MexData         *data)
-{
-  MexModel *aggregate = g_hash_table_lookup (data->model_from_category,
-                                             category);
-
-  if (aggregate)
-    mex_aggregate_model_remove_model (MEX_AGGREGATE_MODEL (aggregate), model);
-}
-
-static void
-mex_categories_changed_cb (MexModelManager *manager,
-                           MexData         *data)
-{
-  mex_refresh_root_model (data);
-}
 
 static void
 mex_dialog_hidden_cb (ClutterActor *dialog,
@@ -2021,25 +1903,6 @@ check_resolution (MexData *data)
 }
 
 static void
-grilo_load_default_plugins (MexData *data, GrlPluginRegistry *registry)
-{
-  /* Tracker is our first choice of plugin */
-  if (!grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL))
-    {
-      /* try and load the upnp and filesystem plugins instead */
-      if (!grl_plugin_registry_load_by_id (registry, "grl-upnp", NULL) &&
-          !grl_plugin_registry_load_by_id (registry, "grl-filesystem", NULL))
-        {
-          g_warning ("Could not load fallback plugins\n \
-                        please check that grilo-plugins has been correctly \
-                        installed");
-        }
-    }
-
-  grl_plugin_registry_load_by_id (registry, "grl-lastfm-albumart", NULL);
-}
-
-static void
 mex_go_back_cb (MxAction *action,
                 MexData  *data)
 {
@@ -2106,13 +1969,7 @@ static GOptionEntry entries[] =
   { NULL }
 };
 
-static const gchar *play_action_mimetypes[] = { "video/", "x-mex/media", "x-mex/tv", NULL };
-static const gchar *listen_action_mimetypes[] = { "audio/", NULL };
-static const gchar *resume_action_mimetypes[] = { "video/", "audio/", "x-mex/media", NULL };
-static const gchar *folder_action_mimetypes[] = { "x-grl/box", NULL };
-static const gchar *show_action_mimetypes[] = { "image/", NULL };
-static const gchar *back_action_mimetypes[] = { "x-mex/back", NULL };
-static const gchar *group_action_mimetypes[] = { "x-mex/group", NULL };
+
 
 static void
 mex_open_files_action (MxAction *action,
@@ -2161,48 +2018,161 @@ mex_open_files_action (MxAction *action,
   mex_player_content_set_externally_cb (data);
 }
 
+/* Default Actions */
+static MexActionInfo play;
+static MexActionInfo play_from_last;
+static MexActionInfo play_from_begin;
+static MexActionInfo listen_from_begin;
+static MexActionInfo listen;
+static MexActionInfo open_folder;
+static MexActionInfo show;
+static MexActionInfo back;
+static MexActionInfo group;
+
+/* Default Action Mime Types */
+static const gchar *play_action_mimetypes[] = {
+    "video/", "x-mex/media", "x-mex/tv", NULL
+};
+static const gchar *listen_action_mimetypes[] = {
+    "audio/", NULL
+};
+static const gchar *resume_action_mimetypes[] = {
+    "video/", "audio/", "x-mex/media", NULL
+};
+static const gchar *folder_action_mimetypes[] = {
+    "x-grl/box", NULL
+};
+static const gchar *show_action_mimetypes[] = {
+    "image/", NULL
+};
+static const gchar *back_action_mimetypes[] = {
+    "x-mex/back", NULL
+};
+static const gchar *group_action_mimetypes[] = {
+    "x-mex/group", NULL
+};
+
+
+static void
+mex_init_default_actions (MexData *data)
+{
+  MexActionManager *amanager;
+
+
+  /* Play actions */
+  play_from_last.action =
+    mx_action_new_full ("play-from-last", _("Resume"),
+                        G_CALLBACK (mex_play_from_last_cb), &data);
+  mx_action_set_icon (play_from_last.action, "media-watch-mex");
+  play_from_last.mime_types = (gchar **)resume_action_mimetypes;
+
+  /* This is the default action for this mime-type, so it should have the
+   * highest priority. Play from beginning / Watch have slightly lower
+   * priority.
+   */
+  play_from_last.priority = G_MAXINT;
+
+  play.action =
+    mx_action_new_full ("play", _("Watch"),
+                        G_CALLBACK (mex_play_from_begin_cb), &data);
+  mx_action_set_icon (play.action, "media-watch-mex");
+  play.mime_types = (gchar **)play_action_mimetypes;
+  play.priority = G_MAXINT - 1;
+
+  play_from_begin.action =
+    mx_action_new_full ("play-from-begin", _("Watch from start"),
+                        G_CALLBACK (mex_play_from_begin_cb), &data);
+  mx_action_set_icon (play_from_begin.action, "media-watch-from-beginning-mex");
+  play_from_begin.mime_types = (gchar **)play_action_mimetypes;
+  play_from_begin.priority = G_MAXINT - 1;
+
+  /* View action (for pictures) */
+  show.action = mx_action_new_full ("show", _("View"),
+                                    G_CALLBACK (mex_show_cb), &data);
+  mx_action_set_icon (show.action, "media-watch-mex");
+  show.mime_types = (gchar **)show_action_mimetypes;
+  show.priority = G_MAXINT;
+
+  /* Open folder action */
+  open_folder.action =
+    mx_action_new_full ("open-grilo-folder", _("Open folder"),
+                        G_CALLBACK (mex_grilo_open_folder_cb), &data);
+  mx_action_set_icon (open_folder.action, "user-home-highlight-mex");
+  open_folder.mime_types = (gchar **)folder_action_mimetypes;
+  open_folder.priority = G_MAXINT;
+
+  /* Listen action (for audio) */
+  listen.action =
+    mx_action_new_full ("listen", _("Listen"),
+                        G_CALLBACK (mex_play_from_begin_cb), &data);
+  mx_action_set_icon (listen.action, "media-watch-mex");
+  listen.mime_types = (gchar **)listen_action_mimetypes;
+  listen.priority = G_MAXINT;
+
+  listen_from_begin.action =
+    mx_action_new_full ("listen-from-begin", _("Listen from start"),
+                        G_CALLBACK (mex_play_from_begin_cb), &data);
+  mx_action_set_icon (listen_from_begin.action,
+                      "media-watch-from-beginning-mex");
+  listen_from_begin.mime_types = (gchar **)listen_action_mimetypes;
+  listen_from_begin.priority = G_MAXINT - 1;
+
+  /* View action (for pictures) */
+  show.action = mx_action_new_full ("show", _("View"),
+                                    G_CALLBACK (mex_show_cb), &data);
+  mx_action_set_icon (show.action, "media-watch-mex");
+  show.mime_types = (gchar **)show_action_mimetypes;
+  show.priority = G_MAXINT;
+
+  /* Go back action */
+  back.action =
+    mx_action_new_full ("go-back", _("Go back"),
+                        G_CALLBACK (mex_go_back_cb), &data);
+  back.mime_types = (gchar **)back_action_mimetypes;
+  back.priority = G_MAXINT;
+
+  group.action =
+    mx_action_new_full ("play-group", _("Play"),
+                        G_CALLBACK (mex_open_group_cb), &data);
+  mx_action_set_icon (group.action, "media-watch-mex");
+  group.mime_types = (gchar **)group_action_mimetypes;
+  group.priority = G_MAXINT;
+
+
+  amanager = mex_action_manager_get_default ();
+  mex_action_manager_add_action (amanager, &play_from_last);
+  mex_action_manager_add_action (amanager, &play_from_begin);
+  mex_action_manager_add_action (amanager, &play);
+  mex_action_manager_add_action (amanager, &show);
+  mex_action_manager_add_action (amanager, &open_folder);
+  mex_action_manager_add_action (amanager, &back);
+  mex_action_manager_add_action (amanager, &listen);
+  mex_action_manager_add_action (amanager, &listen_from_begin);
+  mex_action_manager_add_action (amanager, &group);
+}
+
+
+
 int
 main (int argc, char **argv)
 {
-  gchar *settings;
   gchar *web_settings_loc;
   MxWindow *window;
   MxApplication *app;
   MxAction *open_files_action;
-  MexModel *root_model;
   GOptionContext *context;
-  MexModelManager *mmanager;
   MexPluginManager *pmanager;
-  MexActionManager *amanager;
   MexBackgroundManager *bmanager;
-  GrlPluginRegistry *registry;
   gchar *tmp;
 
   GError *error = NULL;
   MexData data = { 0, };
-
-  MexActionInfo play = { 0, };
-  MexActionInfo play_from_last = { 0, };
-  MexActionInfo play_from_begin = { 0, };
-  MexActionInfo listen_from_begin = { 0, };
-  MexActionInfo listen = { 0, };
-  MexActionInfo open_folder = { 0, };
-  MexActionInfo show = { 0, };
-  MexActionInfo back = { 0, };
-  MexActionInfo group = { 0, };
 
 #ifdef HAVE_CLUTTER_CEX100
   const ClutterColor black = { 0x00, 0x00, 0x00, 0x00 };
 #else
   const ClutterColor black = { 0x00, 0x00, 0x00, 0xff };
 #endif /* HAVE_CLUTTER_CEX100 */
-
-  /* FIXME: Replace this with a configuration file */
-  MexModelCategoryInfo videos = { "videos", _("Videos"), "icon-panelheader-videos", 20, _("Connect an external drive or update your network settings to see Videos here.") };
-  MexModelCategoryInfo live = { "live", _("Live TV"), "icon-panelheader-tv", 25, "" };
-  MexModelCategoryInfo pictures = { "pictures", _("Photos"), "icon-panelheader-photos", 30, _("Connect an external drive or update your network settings to see Photos here.") };
-  MexModelCategoryInfo music = { "music", _("Music"), "icon-panelheader-music", 40, _("Connect an external drive or update your network settings to see Music here.") };
-  MexModelCategoryInfo queue = { "queue", _("Queue"), "icon-panelheader-queue", 50, _("This is your custom playlist.  Select Add to queue from the info menu on any video file to add it here.") };
 
   /* initialise translations */
   setlocale (LC_ALL, "");
@@ -2240,20 +2210,15 @@ main (int argc, char **argv)
   g_bus_own_name (G_BUS_TYPE_SESSION, MEX_DBUS_NAME,
                   G_BUS_NAME_OWNER_FLAGS_NONE, NULL, NULL, NULL, NULL, NULL);
 
-  /* Initialisation */
-  if (!clutter_init (&argc, &argv))
-    {
-      g_warning ("Failed to initialize clutter");
-      exit (1);
-    }
 
+  /* log domain */
+  MEX_LOG_DOMAIN_INIT (main_log_domain, "main");
+
+  /* initialise mex */
   mex_init (&argc, &argv);
+  mex_init_default_actions (&data);
 
   mex_lirc_init ();
-
-#ifdef USE_PLAYER_CLUTTER_GST
-  clutter_gst_init (&argc, &argv);
-#endif
 
   /* Create application */
   app = mx_application_new (&argc, &argv, "Media Explorer",
@@ -2283,82 +2248,6 @@ main (int argc, char **argv)
 
 
   clutter_set_font_flags (clutter_get_font_flags () & ~CLUTTER_FONT_MIPMAPPING);
-
-  /* log domain */
-  MEX_LOG_DOMAIN_INIT (main_log_domain, "main");
-
-  /* grilo */
-  mex_grilo_init (&argc, &argv);
-
-  registry = grl_plugin_registry_get_default ();
-
-  settings = mex_settings_find_config_file (mex_settings_get_default (),
-                                            "grilo-system.conf");
-  if (settings)
-    grl_plugin_registry_add_config_from_file (registry, settings, NULL);
-  g_free (settings);
-
-
-  settings = mex_settings_find_config_file (mex_settings_get_default (),
-                                            "mex.conf");
-  /* Load plugins */
-
-  if (settings)
-    {
-      GKeyFile *mex_conf;
-      gchar **enabled_plugins;
-
-      mex_conf = g_key_file_new ();
-
-      g_key_file_load_from_file (mex_conf,
-                                 settings,
-                                 G_KEY_FILE_NONE,
-                                 NULL);
-
-      enabled_plugins = g_key_file_get_string_list (mex_conf,
-                                                    "grilo-plugins",
-                                                    "enabled",
-                                                    NULL,
-                                                    NULL);
-      g_key_file_free (mex_conf);
-
-      if (enabled_plugins)
-        {
-          gint i;
-
-          for (i=0; enabled_plugins[i]; i++)
-            {
-              if (!grl_plugin_registry_load_by_id (registry,
-                                                   enabled_plugins[i],
-                                                   &error))
-                {
-                  g_warning ("Tried to load specified grilo plugin: %s but failed: %s",
-                             enabled_plugins[i],
-                             (error) ? error->message : "");
-
-                  if (error)
-                    g_clear_error (&error);
-                }
-              else
-                {
-                  MEX_DEBUG ("Loaded grilo plugin: %s plugin",
-                             enabled_plugins[i]);
-                }
-            }
-          g_strfreev (enabled_plugins);
-        }
-      else
-        {
-          MEX_DEBUG ("No enabled plugins in mex.conf, loading default plugins");
-          grilo_load_default_plugins (&data, registry);
-        }
-      g_free (settings);
-    }
-  else
-    {
-      MEX_DEBUG ("No mex.conf found, loading default plugins");
-      grilo_load_default_plugins (&data, registry);
-    }
 
   mex_style_load_default ();
 
@@ -2538,16 +2427,6 @@ main (int argc, char **argv)
   g_signal_connect (data.stage, "event",
                     G_CALLBACK (mex_event_cb), &data);
 
-  /* Create root model */
-  root_model = mex_aggregate_model_new ();
-  mex_model_set_sort_func (MEX_MODEL (root_model),
-                           mex_model_sort_smart_cb,
-                           GINT_TO_POINTER (FALSE));
-  mex_explorer_set_root_model (MEX_EXPLORER (data.explorer), root_model);
-
-  /* Create top-level model hash-table */
-  data.model_from_category = g_hash_table_new_full (g_str_hash, g_str_equal,
-                                                    g_free, g_object_unref);
 
   /* Create model->provider mapping hash-table */
   data.model_to_provider = g_hash_table_new (NULL, NULL);
@@ -2568,105 +2447,6 @@ main (int argc, char **argv)
                             MEX_CONTENT_METADATA_STILL, tmp);
   g_free (tmp);
 
-  /* Add the actions */
-
-  /* Play actions */
-  play_from_last.action =
-    mx_action_new_full ("play-from-last", _("Resume"),
-                        G_CALLBACK (mex_play_from_last_cb), &data);
-  mx_action_set_icon (play_from_last.action, "media-watch-mex");
-  play_from_last.mime_types = (gchar **)resume_action_mimetypes;
-
-  /* This is the default action for this mime-type, so it should have the
-   * highest priority. Play from beginning / Watch have slightly lower
-   * priority.
-   */
-  play_from_last.priority = G_MAXINT;
-
-  play.action =
-    mx_action_new_full ("play", _("Watch"),
-                        G_CALLBACK (mex_play_from_begin_cb), &data);
-  mx_action_set_icon (play.action, "media-watch-mex");
-  play.mime_types = (gchar **)play_action_mimetypes;
-  play.priority = G_MAXINT - 1;
-
-  play_from_begin.action =
-    mx_action_new_full ("play-from-begin", _("Watch from start"),
-                        G_CALLBACK (mex_play_from_begin_cb), &data);
-  mx_action_set_icon (play_from_begin.action, "media-watch-from-beginning-mex");
-  play_from_begin.mime_types = (gchar **)play_action_mimetypes;
-  play_from_begin.priority = G_MAXINT - 1;
-
-  /* View action (for pictures) */
-  show.action = mx_action_new_full ("show", _("View"),
-                                    G_CALLBACK (mex_show_cb), &data);
-  mx_action_set_icon (show.action, "media-watch-mex");
-  show.mime_types = (gchar **)show_action_mimetypes;
-  show.priority = G_MAXINT;
-
-  /* Open folder action */
-  open_folder.action =
-    mx_action_new_full ("open-grilo-folder", _("Open folder"),
-                        G_CALLBACK (mex_grilo_open_folder_cb), &data);
-  mx_action_set_icon (open_folder.action, "user-home-highlight-mex");
-  open_folder.mime_types = (gchar **)folder_action_mimetypes;
-  open_folder.priority = G_MAXINT;
-
-  /* Listen action (for audio) */
-  listen.action =
-    mx_action_new_full ("listen", _("Listen"),
-                        G_CALLBACK (mex_play_from_begin_cb), &data);
-  mx_action_set_icon (listen.action, "media-watch-mex");
-  listen.mime_types = (gchar **)listen_action_mimetypes;
-  listen.priority = G_MAXINT;
-
-  listen_from_begin.action =
-    mx_action_new_full ("listen-from-begin", _("Listen from start"),
-                        G_CALLBACK (mex_play_from_begin_cb), &data);
-  mx_action_set_icon (listen_from_begin.action,
-                      "media-watch-from-beginning-mex");
-  listen_from_begin.mime_types = (gchar **)listen_action_mimetypes;
-  listen_from_begin.priority = G_MAXINT - 1;
-
-  /* View action (for pictures) */
-  show.action = mx_action_new_full ("show", _("View"),
-                                    G_CALLBACK (mex_show_cb), &data);
-  mx_action_set_icon (show.action, "media-watch-mex");
-  show.mime_types = (gchar **)show_action_mimetypes;
-  show.priority = G_MAXINT;
-
-  /* Go back action */
-  back.action =
-    mx_action_new_full ("go-back", _("Go back"),
-                        G_CALLBACK (mex_go_back_cb), &data);
-  back.mime_types = (gchar **)back_action_mimetypes;
-  back.priority = G_MAXINT;
-
-  group.action =
-    mx_action_new_full ("play-group", _("Play"),
-                        G_CALLBACK (mex_open_group_cb), &data);
-  mx_action_set_icon (group.action, "media-watch-mex");
-  group.mime_types = (gchar **)group_action_mimetypes;
-  group.priority = G_MAXINT;
-
-  amanager = mex_action_manager_get_default ();
-  mex_action_manager_add_action (amanager, &play_from_last);
-  mex_action_manager_add_action (amanager, &play_from_begin);
-  mex_action_manager_add_action (amanager, &play);
-  mex_action_manager_add_action (amanager, &show);
-  mex_action_manager_add_action (amanager, &open_folder);
-  mex_action_manager_add_action (amanager, &back);
-  mex_action_manager_add_action (amanager, &listen);
-  mex_action_manager_add_action (amanager, &listen_from_begin);
-  mex_action_manager_add_action (amanager, &group);
-
-  /* Add the default categories to the model manager */
-  mmanager = mex_model_manager_get_default ();
-  mex_model_manager_add_category (mmanager, &live);
-  mex_model_manager_add_category (mmanager, &videos);
-  mex_model_manager_add_category (mmanager, &music);
-  mex_model_manager_add_category (mmanager, &pictures);
-  mex_model_manager_add_category (mmanager, &queue);
 
   /* Background manager */
   bmanager = mex_background_manager_get_default ();
@@ -2679,14 +2459,11 @@ main (int argc, char **argv)
                     G_CALLBACK (mex_plugin_loaded_cb), &data);
   mex_plugin_manager_refresh (pmanager);
 
-  /* Hook onto the model manager signals and refresh */
-  g_signal_connect (mmanager, "model-added",
-                    G_CALLBACK (mex_model_added_cb), &data);
-  g_signal_connect (mmanager, "model-removed",
-                    G_CALLBACK (mex_model_removed_cb), &data);
-  g_signal_connect (mmanager, "categories-changed",
-                    G_CALLBACK (mex_categories_changed_cb), &data);
-  mex_refresh_root_model (&data);
+
+  /* set the root model on the explorer */
+  mex_explorer_set_root_model (MEX_EXPLORER (data.explorer),
+                               mex_get_root_model ());
+
 
   /* Present interface */
   mex_show_home_screen (&data);
@@ -2763,8 +2540,6 @@ main (int argc, char **argv)
    * remove everything to make valgrind and our debug plugin more useful */
   if (error)
     g_error_free (error);
-
-  g_object_unref (amanager);
 
   g_object_unref (app);
 
