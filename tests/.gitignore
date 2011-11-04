@@ -1,6 +1,7 @@
 test-channel
 test-config
 test-core
+test-dvb-scanner
 test-epg
 test-keys
 test-view

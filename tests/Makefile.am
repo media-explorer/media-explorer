@@ -3,7 +3,7 @@ include $(top_srcdir)/build/Makefile.am.gtester
 NULL =
 EXTRA_DIST =
 
-noinst_PROGRAMS = $(TEST_PROGS) test-config test-keys test-view
+noinst_PROGRAMS = $(TEST_PROGS) test-config test-keys test-view test-dvb-scanner
 
 progs_ldadd =						\
 	$(top_builddir)/mex/libmex-@MEX_API_VERSION@.la	\
@@ -41,6 +41,9 @@ test_config_LDADD   = $(progs_ldadd)
 
 test_keys_SOURCES  = test-keys.c
 test_keys_LDADD    = $(progs_ldadd)
+
+test_dvb_scanner_SOURCES  = test-dvb-scanner.c
+test_dvb_scanner_LDADD    = $(progs_ldadd)
 
 test_view_SOURCES  = test-view.c
 test_view_LDADD    = $(progs_ldadd)
