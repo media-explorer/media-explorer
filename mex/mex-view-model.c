@@ -279,7 +279,7 @@ mex_view_model_get_length (MexModel *model)
   MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
 
   if (priv->limit)
-    return priv->limit;
+    return MIN (priv->limit, priv->external_items->len);
   else
     return priv->external_items->len;
 }
