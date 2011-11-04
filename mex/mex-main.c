@@ -425,11 +425,11 @@ mex_base_init (int *argc, char ***argv)
       _mex_log_init_core_domains ();
 
       /* initialise Clutter */
-      if (!clutter_init (&argc, &argv))
+      if (!clutter_init (argc, argv))
         g_error ("Failed to initialize clutter");
 
 #ifdef USE_PLAYER_CLUTTER_GST
-      clutter_gst_init (&argc, &argv);
+      clutter_gst_init (argc, argv);
 #endif
 
       mex_init_default_categories ();
