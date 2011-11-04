@@ -400,7 +400,7 @@ mex_dvb_scanner_CPPFLAGS = $(MEX_DVB_SCANNER_CFLAGS)
 mex_dvb_scanner_LDADD    = $(MEX_DVB_SCANNER_LIBS)
 
 dvb/scanner/%.service: $(srcdir)/dvb/scanner/%.service.in $(top_builddir)/config.log
-	$(AM_V_GEN)sed -e "s|\@dir\@|$(bindir)|" $< > $@
+	$(AM_V_GEN)sed -e "s|\@dir\@|$(libexecdir)|" $< > $@
 
 service_DATA += dvb/scanner/mex-dvb-scanner.service
 EXTRA_DIST += dvb/scanner/mex-dvb-scanner.service.in
