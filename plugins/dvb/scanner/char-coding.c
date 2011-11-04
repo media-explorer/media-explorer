@@ -43,7 +43,10 @@
 #include "char-coding.h"
 #include "iconv_codes.h"
 
+#ifndef MIN
 #define MIN(X,Y) (X < Y ? X : Y)
+#endif
+
 #define IsCharacterCodingCode(C) (C < 0x20)
 
 /*

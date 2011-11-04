@@ -35,7 +35,7 @@
 #include "list.h"
 #include "descriptors.h"
 
-
+#include "mex-dvb-scanner.h"
 
 /******************************************************************************
  * internal definitions.
@@ -137,7 +137,7 @@ void hexdump(const char * intro, const unsigned char * buf, int len);
 #define dpprintf(level, fmt, args...) \
 	dprintf(level, "%s:%d: " fmt, __FUNCTION__, __LINE__ , ##args)
 
-#define fatal(fmt, args...) do { dpprintf(-1, "FATAL: " fmt , ##args); exit(1); } while(0)
+#define fatal(fmt, args...) do { mex_dvb_scanner_report_error (fmt, ##args); } while(0)
 #define error(msg...) dprintf(0, "\nERROR: " msg)
 #define errorn(msg) dprintf(0, "%s:%d: ERROR: " msg ": %d %s\n", __FUNCTION__, __LINE__, errno, strerror(errno))
 #define warning(msg...) dprintf(1, "WARNING: " msg)

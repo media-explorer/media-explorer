@@ -849,7 +849,9 @@ int country_count() {
   return COUNTRY_COUNT(country_list);
 }
 
+#ifndef MIN
 #define MIN(X,Y) (X < Y ? X : Y)
+#endif
 
 int get_user_country(void) {
   const int cats[] = { LC_CTYPE, LC_COLLATE, LC_MESSAGES };
