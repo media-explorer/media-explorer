@@ -54,6 +54,34 @@ on_dbus_signal_received (GDBusProxy     *proxy,
 }
 
 static void
+on_do_set_country_reply (GObject      *source_object,
+                         GAsyncResult *result,
+                         gpointer      user_data)
+{
+  g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), result, NULL);
+}
+
+static void
+do_set_country (TestDvbScanner *scanner,
+                const gchar    *country)
+{
+  GError *error = NULL;
+
+  g_message ("Setting country to %s", country);
+
+  g_dbus_proxy_call (scanner->proxy,
+                     "SetCountry",
+                     g_variant_new ("(s)", country),
+                     G_DBUS_CALL_FLAGS_NONE,
+                     -1,
+                     NULL,
+                     on_do_set_country_reply,
+                     scanner);
+  if (error)
+    g_warning ("Could not call StartScan(): %s", error->message);
+}
+
+static void
 do_start_scan (TestDvbScanner *scanner)
 {
   GError *error = NULL;
@@ -80,6 +108,9 @@ handle_key (TestDvbScanner *scanner,
       break;
     case 's':
       do_start_scan (scanner);
+      break;
+    case 'c':
+      do_set_country (scanner, "GB");
       break;
     }
 }

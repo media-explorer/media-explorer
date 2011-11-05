@@ -42,6 +42,8 @@ typedef struct
   GDBusConnection *dbus_connection;
   GDBusNodeInfo *introspection_data;
 
+  guint scan_in_progress : 1;
+  gchar *country;
   gchar *error_message;
 
 } Scanner;
@@ -96,6 +98,8 @@ mex_dvb_scanner_report_error (const gchar *fmt,
   scanner->error_message = g_strdup_vprintf (fmt, args);
   va_end (args);
 
+  scanner->scan_in_progress = FALSE;
+
   g_idle_add (report_error_main_context, scanner);
 
   g_mutex_unlock (scanner->lock);
@@ -106,17 +110,26 @@ mex_dvb_scanner_report_error (const gchar *fmt,
 static gpointer
 scanning_thread_main (gpointer data)
 {
- // Scanner *scanner = data;
+  Scanner *scanner = data;
+  gchar *argv[] = { "w_scan", NULL, NULL};
+  gint argc = 1;
 
-  gchar *argv[] = { "w_scan" };
+  if (scanner->country)
+    {
+      argv[1] = "-c";
+      argv[2] = scanner->country;
+      argc += 2;
+    }
 
-  w_scan_main (1, argv);
+  w_scan_main (argc, argv);
 }
 
 static void
 do_start_scan (Scanner *scanner)
 {
   GError *error = NULL;
+
+  scanner->scan_in_progress = TRUE;
 
   scanner->w_scan_thread = g_thread_create (scanning_thread_main,
                                             scanner,
@@ -130,6 +143,24 @@ do_start_scan (Scanner *scanner)
     }
 }
 
+static void
+do_set_country (Scanner     *scanner,
+                const gchar *country)
+{
+  g_mutex_lock (scanner->lock);
+  if (scanner->scan_in_progress)
+    {
+      g_warning ("Called SetCountry() while a scan was in progress");
+      goto out;
+    }
+
+  g_free (scanner->country);
+  scanner->country = g_strdup (country);
+
+out:
+  g_mutex_unlock (scanner->lock);
+}
+
 /*
  * D-Bus
  */
@@ -139,6 +170,9 @@ static const gchar introspection_xml[] =
   "<node>"
   "  <interface name='org.MediaExplorer.DVB.Scanner'>"
   "    <method name='StartScan' />"
+  "    <method name='SetCountry'>"
+  "      <arg name='country' type='s' />"
+  "    </method>"
   "    <signal name='Error'>"
   "      <arg name='message' type='s' />"
   "    </signal>"
@@ -160,6 +194,19 @@ handle_method_call (GDBusConnection       *connection,
   if (g_strcmp0 (method_name, "StartScan") == 0)
     {
       do_start_scan (scanner);
+      g_dbus_method_invocation_return_value (invocation, NULL);
+    }
+  else if (g_strcmp0 (method_name, "SetCountry") == 0)
+    {
+      GVariant *arg;
+      const gchar *country;
+
+      arg = g_variant_get_child_value (parameters, 0);
+      country = g_variant_get_string (arg, NULL);
+
+      do_set_country (scanner, country);
+
+      g_variant_unref (arg);
       g_dbus_method_invocation_return_value (invocation, NULL);
     }
   else
