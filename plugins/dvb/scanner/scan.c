@@ -2326,8 +2326,7 @@ static void scan_tp(void)
 
 static void network_scan (int frontend_fd, int tuning_data) {
         if (initial_tune (frontend_fd, tuning_data) < 0) {
-                error("Sorry - i couldn't get any working frequency/transponder\n Nothing to scan!!\n");
-                exit(1);
+                fatal("Sorry - i couldn't get any working frequency/transponder\n Nothing to scan!!\n");
                 }
         do {
                 scan_tp();
