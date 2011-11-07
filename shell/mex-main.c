@@ -2062,7 +2062,7 @@ mex_init_default_actions (MexData *data)
   /* Play actions */
   play_from_last.action =
     mx_action_new_full ("play-from-last", _("Resume"),
-                        G_CALLBACK (mex_play_from_last_cb), &data);
+                        G_CALLBACK (mex_play_from_last_cb), data);
   mx_action_set_icon (play_from_last.action, "media-watch-mex");
   play_from_last.mime_types = (gchar **)resume_action_mimetypes;
 
@@ -2074,21 +2074,21 @@ mex_init_default_actions (MexData *data)
 
   play.action =
     mx_action_new_full ("play", _("Watch"),
-                        G_CALLBACK (mex_play_from_begin_cb), &data);
+                        G_CALLBACK (mex_play_from_begin_cb), data);
   mx_action_set_icon (play.action, "media-watch-mex");
   play.mime_types = (gchar **)play_action_mimetypes;
   play.priority = G_MAXINT - 1;
 
   play_from_begin.action =
     mx_action_new_full ("play-from-begin", _("Watch from start"),
-                        G_CALLBACK (mex_play_from_begin_cb), &data);
+                        G_CALLBACK (mex_play_from_begin_cb), data);
   mx_action_set_icon (play_from_begin.action, "media-watch-from-beginning-mex");
   play_from_begin.mime_types = (gchar **)play_action_mimetypes;
   play_from_begin.priority = G_MAXINT - 1;
 
   /* View action (for pictures) */
   show.action = mx_action_new_full ("show", _("View"),
-                                    G_CALLBACK (mex_show_cb), &data);
+                                    G_CALLBACK (mex_show_cb), data);
   mx_action_set_icon (show.action, "media-watch-mex");
   show.mime_types = (gchar **)show_action_mimetypes;
   show.priority = G_MAXINT;
@@ -2096,7 +2096,7 @@ mex_init_default_actions (MexData *data)
   /* Open folder action */
   open_folder.action =
     mx_action_new_full ("open-grilo-folder", _("Open folder"),
-                        G_CALLBACK (mex_grilo_open_folder_cb), &data);
+                        G_CALLBACK (mex_grilo_open_folder_cb), data);
   mx_action_set_icon (open_folder.action, "user-home-highlight-mex");
   open_folder.mime_types = (gchar **)folder_action_mimetypes;
   open_folder.priority = G_MAXINT;
@@ -2104,14 +2104,14 @@ mex_init_default_actions (MexData *data)
   /* Listen action (for audio) */
   listen.action =
     mx_action_new_full ("listen", _("Listen"),
-                        G_CALLBACK (mex_play_from_begin_cb), &data);
+                        G_CALLBACK (mex_play_from_begin_cb), data);
   mx_action_set_icon (listen.action, "media-watch-mex");
   listen.mime_types = (gchar **)listen_action_mimetypes;
   listen.priority = G_MAXINT;
 
   listen_from_begin.action =
     mx_action_new_full ("listen-from-begin", _("Listen from start"),
-                        G_CALLBACK (mex_play_from_begin_cb), &data);
+                        G_CALLBACK (mex_play_from_begin_cb), data);
   mx_action_set_icon (listen_from_begin.action,
                       "media-watch-from-beginning-mex");
   listen_from_begin.mime_types = (gchar **)listen_action_mimetypes;
@@ -2119,7 +2119,7 @@ mex_init_default_actions (MexData *data)
 
   /* View action (for pictures) */
   show.action = mx_action_new_full ("show", _("View"),
-                                    G_CALLBACK (mex_show_cb), &data);
+                                    G_CALLBACK (mex_show_cb), data);
   mx_action_set_icon (show.action, "media-watch-mex");
   show.mime_types = (gchar **)show_action_mimetypes;
   show.priority = G_MAXINT;
@@ -2127,13 +2127,13 @@ mex_init_default_actions (MexData *data)
   /* Go back action */
   back.action =
     mx_action_new_full ("go-back", _("Go back"),
-                        G_CALLBACK (mex_go_back_cb), &data);
+                        G_CALLBACK (mex_go_back_cb), data);
   back.mime_types = (gchar **)back_action_mimetypes;
   back.priority = G_MAXINT;
 
   group.action =
     mx_action_new_full ("play-group", _("Play"),
-                        G_CALLBACK (mex_open_group_cb), &data);
+                        G_CALLBACK (mex_open_group_cb), data);
   mx_action_set_icon (group.action, "media-watch-mex");
   group.mime_types = (gchar **)group_action_mimetypes;
   group.priority = G_MAXINT;
