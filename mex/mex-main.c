@@ -230,6 +230,20 @@ mex_get_root_model (void)
 }
 
 /**
+ * mex_get_model_for_category:
+ * @category: A category
+ *
+ * Get the aggregate model containing the models with the specified category.
+ *
+ * Returns: an #MexAggregateModel
+ */
+MexModel*
+mex_get_model_for_category (const gchar *category)
+{
+  return g_hash_table_lookup (aggregate_models, category);
+}
+
+/**
  * mex_init_default_categories:
  *
  * Add the default categories to the model manager
