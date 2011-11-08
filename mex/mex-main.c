@@ -224,7 +224,7 @@ mex_init_model_manager (void)
 MexModel *
 mex_get_root_model (void)
 {
-  mex_refresh_root_model ();
+  g_assert (root_model);
 
   return root_model;
 }
