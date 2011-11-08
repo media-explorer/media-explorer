@@ -76,6 +76,9 @@ static const gchar introspection_xml[] =
 "    <signal name='CanSeekChanged'>"
 "      <arg name='seekable' type='b' direction='out'/>"
 "    </signal>"
+"    <signal name='UriChanged'>"
+"      <arg name='uri' type='s' direction='out'/>"
+"    </signal>"
 "    <signal name='EOS'/>"
 "  </interface>"
 "</node>";
@@ -275,6 +278,16 @@ _media_notify_cb (ClutterMedia       *media,
 
       signal_name = "AudioVolumeChanged";
       parameters = g_variant_new ("(d)", audio_volume);
+    }
+  else if (g_str_equal (pspec->name, "uri"))
+    {
+      gchar *uri;
+
+      uri = clutter_media_get_uri (priv->media);
+
+      signal_name = "UriChanged";
+      parameters = g_variant_new ("(s)", uri);
+      g_free (uri);
     }
   else
     return;
