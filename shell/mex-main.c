@@ -2464,6 +2464,9 @@ main (int argc, char **argv)
   mex_explorer_set_root_model (MEX_EXPLORER (data.explorer),
                                mex_get_root_model ());
 
+  /* select the videos column */
+  mex_explorer_set_focused_model (MEX_EXPLORER (data.explorer),
+                                  mex_get_model_for_category ("videos"));
 
   /* Present interface */
   mex_show_home_screen (&data);
