@@ -148,7 +148,8 @@ mex_refresh_root_model (void)
                     "title", gettext (c_info->display_name),
                     "icon-name", c_info->icon_name,
                     "placeholder-text", c_info->placeholder_text,
-                    "category", c_info->name, NULL);
+                    "category", c_info->name,
+                    "priority", c_info->priority, NULL);
       g_hash_table_insert (aggregate_models, g_strdup (c_info->name),
                            aggregate);
       mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (root_model),
