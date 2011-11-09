@@ -121,6 +121,10 @@ GList *mex_model_manager_get_categories (MexModelManager *manager);
 const MexModelCategoryInfo *mex_model_manager_get_category_info (MexModelManager *manager,
                                                                  const gchar     *name);
 
+MexModel* mex_model_manager_get_root_model (MexModelManager *manager);
+MexModel* mex_model_manager_get_model_for_category (MexModelManager *manager,
+                                                    const gchar     *category);
+
 G_END_DECLS
 
 #endif /* _MEX_MODEL_MANAGER_H */

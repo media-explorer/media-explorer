@@ -19,6 +19,9 @@
 
 #include "mex-model-manager.h"
 #include "mex-marshal.h"
+#include "mex-aggregate-model.h"
+#include "mex-utils.h"
+#include <libintl.h>
 
 G_DEFINE_TYPE (MexModelManager, mex_model_manager, G_TYPE_OBJECT)
 
@@ -38,6 +41,9 @@ struct _MexModelManagerPrivate
 {
   GList      *models;
   GHashTable *categories;
+
+  GHashTable *aggregate_models;
+  MexModel *root_model;
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -77,6 +83,60 @@ mex_model_manager_free_category (MexModelCategoryInfo *info)
 }
 
 static void
+mex_model_manager_add_model_for_category (MexModelManager *manager,
+                                          MexModelCategoryInfo *c_info)
+{
+  MexModelManagerPrivate *priv = manager->priv;
+  GList *m, *models;
+  MexModel *aggregate;
+
+  /* check the aggregate doesn't already exist */
+  if (g_hash_table_lookup (priv->aggregate_models, c_info->name))
+    return;
+
+  /* categories with priority of -1 are ignored */
+  if (c_info->priority == -1)
+    return;
+
+  /* Create a new aggregate model for this category */
+  aggregate = mex_aggregate_model_new ();
+
+  if (c_info->sort_func)
+    mex_model_set_sort_func (MEX_MODEL (aggregate),
+                             c_info->sort_func,
+                             c_info->userdata);
+  else
+    mex_model_set_sort_func (MEX_MODEL (aggregate),
+                             mex_model_sort_smart_cb,
+                             GINT_TO_POINTER (FALSE));
+
+  /* prevent the length display in the search column */
+  if (!g_strcmp0 (c_info->name, "search"))
+    {
+      g_object_set (aggregate,
+                    "display-item-count", FALSE,
+                    "always-visible", TRUE,
+                    NULL);
+    }
+
+  g_object_set (G_OBJECT (aggregate),
+                "title", gettext (c_info->display_name),
+                "icon-name", c_info->icon_name,
+                "placeholder-text", c_info->placeholder_text,
+                "category", c_info->name,
+                "priority", c_info->priority, NULL);
+  g_hash_table_insert (priv->aggregate_models, g_strdup (c_info->name),
+                       aggregate);
+  mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (priv->root_model), aggregate);
+
+  /* Add appropriate models to this category */
+  models = mex_model_manager_get_models_for_category (manager, c_info->name);
+  for (m = models; m; m = m->next)
+    mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (aggregate), m->data);
+  g_list_free (models);
+}
+
+static void
 mex_model_manager_dispose (GObject *object)
 {
   MexModelManagerPrivate *priv = MEX_MODEL_MANAGER (object)->priv;
@@ -91,6 +151,18 @@ mex_model_manager_dispose (GObject *object)
     {
       g_hash_table_unref (priv->categories);
       priv->categories = NULL;
+    }
+
+  if (priv->root_model)
+    {
+      g_object_unref (priv->root_model);
+      priv->root_model = NULL;
+    }
+
+  if (priv->aggregate_models)
+    {
+      g_hash_table_destroy (priv->aggregate_models);
+      priv->aggregate_models = NULL;
     }
 
   G_OBJECT_CLASS (mex_model_manager_parent_class)->dispose (object);
@@ -180,6 +252,18 @@ mex_model_manager_init (MexModelManager *self)
                                             NULL,
                                             (GDestroyNotify)
                                             mex_model_manager_free_category);
+
+
+  /* initialise the category to aggregate model hash table */
+  priv->aggregate_models = g_hash_table_new_full (g_str_hash, g_str_equal,
+                                                  g_free, g_object_unref);
+
+  /* initialise the root model that contains an aggregate model for each
+   * category */
+  priv->root_model = mex_aggregate_model_new ();
+  mex_model_set_sort_func (MEX_MODEL (priv->root_model),
+                           mex_model_sort_smart_cb,
+                           GINT_TO_POINTER (FALSE));
 }
 
 MexModelManager *
@@ -303,6 +387,8 @@ mex_model_manager_add_model (MexModelManager *manager,
                              MexModel        *model)
 {
   MexModelManagerPrivate *priv;
+  MexModel *aggregate;
+  gchar *category;
 
   g_return_if_fail (MEX_IS_MODEL_MANAGER (manager));
 
@@ -313,6 +399,17 @@ mex_model_manager_add_model (MexModelManager *manager,
                                                  mex_model_manager_sort_cb,
                                                  manager);
 
+  /* add the new model to the category aggregate model */
+  g_object_get (G_OBJECT (model), "category", &category, NULL);
+
+  aggregate = g_hash_table_lookup (priv->aggregate_models, category);
+  if (aggregate)
+    mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (aggregate), model);
+
+  g_free (category);
+
+
+  /* emit the model-added signal */
   g_signal_emit (manager, signals[MODEL_ADDED], 0, model);
 }
 
@@ -322,6 +419,8 @@ mex_model_manager_remove_model (MexModelManager *manager,
 {
   gchar *category;
   MexModelManagerPrivate *priv;
+  MexModel *aggregate;
+
 
   g_return_if_fail (MEX_IS_MODEL_MANAGER (manager));
 
@@ -331,7 +430,16 @@ mex_model_manager_remove_model (MexModelManager *manager,
 
   g_object_get (model, "category", &category, NULL);
 
+
+  /* emiti the model-removed signal */
   g_signal_emit (manager, signals[MODEL_REMOVED], 0, model, category);
+
+
+  /* remove the model from the aggregate */
+  aggregate = g_hash_table_lookup (priv->aggregate_models, category);
+  if (aggregate)
+    mex_aggregate_model_remove_model (MEX_AGGREGATE_MODEL (aggregate), model);
+
 
   g_object_unref (model);
   g_free (category);
@@ -363,6 +471,8 @@ mex_model_manager_add_category (MexModelManager            *manager,
   priv->models = g_list_sort_with_data (priv->models,
                                         mex_model_manager_sort_cb, manager);
 
+  mex_model_manager_add_model_for_category (manager, info_copy);
+
   g_signal_emit (manager, signals[CATEGORIES_CHANGED], 0);
 }
 
@@ -371,6 +481,7 @@ mex_model_manager_remove_category (MexModelManager *manager,
                                    const gchar     *name)
 {
   MexModelManagerPrivate *priv;
+  MexModel *aggregate;
 
   g_return_if_fail (MEX_IS_MODEL_MANAGER (manager));
 
@@ -383,6 +494,18 @@ mex_model_manager_remove_category (MexModelManager *manager,
 
   priv->models = g_list_sort_with_data (priv->models,
                                         mex_model_manager_sort_cb, manager);
+
+  /* remove the aggregate model for this category */
+  aggregate = g_hash_table_lookup (priv->aggregate_models, name);
+  if (aggregate)
+    {
+      /* remove from the root model */
+      mex_aggregate_model_remove_model (MEX_AGGREGATE_MODEL (priv->root_model),
+                                        aggregate);
+
+      /* remove from the aggregate model hash table */
+      g_hash_table_remove (priv->aggregate_models, name);
+    }
 
   g_signal_emit (manager, signals[CATEGORIES_CHANGED], 0);
 }
@@ -411,4 +534,21 @@ mex_model_manager_get_category_info (MexModelManager *manager,
 
   priv = manager->priv;
   return g_hash_table_lookup (priv->categories, name);
+}
+
+MexModel*
+mex_model_manager_get_root_model (MexModelManager *manager)
+{
+  g_return_val_if_fail (MEX_IS_MODEL_MANAGER (manager), NULL);
+
+  return manager->priv->root_model;
+}
+
+MexModel*
+mex_model_manager_get_model_for_category (MexModelManager *manager,
+                                          const gchar     *category)
+{
+  g_return_val_if_fail (MEX_IS_MODEL_MANAGER (manager), NULL);
+
+  return g_hash_table_lookup (manager->priv->aggregate_models, category);
 }
