@@ -103,7 +103,7 @@ main (int argc, char ** argv)
 
   mex_init (&argc, &argv);
 
-  root = mex_get_root_model ();
+  root = mex_model_manager_get_root_model (mex_model_manager_get_default ());
 
   /* load plugins */
   pmanager = mex_plugin_manager_get_default ();

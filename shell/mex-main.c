@@ -2163,6 +2163,7 @@ main (int argc, char **argv)
   GOptionContext *context;
   MexPluginManager *pmanager;
   MexBackgroundManager *bmanager;
+  MexModelManager *mmanager;
   gchar *tmp;
 
   GError *error = NULL;
@@ -2461,12 +2462,14 @@ main (int argc, char **argv)
 
 
   /* set the root model on the explorer */
+  mmanager = mex_model_manager_get_default ();
   mex_explorer_set_root_model (MEX_EXPLORER (data.explorer),
-                               mex_get_root_model ());
+                               mex_model_manager_get_root_model (mmanager));
 
   /* select the videos column */
   mex_explorer_set_focused_model (MEX_EXPLORER (data.explorer),
-                                  mex_get_model_for_category ("videos"));
+                                  mex_model_manager_get_model_for_category (mmanager,
+                                                                            "videos"));
 
   /* Present interface */
   mex_show_home_screen (&data);
