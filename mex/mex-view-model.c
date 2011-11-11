@@ -139,6 +139,23 @@ mex_view_model_get_property (GObject    *object,
       g_value_set_uint (value, priv->limit);
       break;
 
+    case PROP_LENGTH:
+      g_value_set_uint (value, priv->external_items->len);
+      break;
+
+    case PROP_TITLE:
+    case PROP_SORT_FUNC:
+    case PROP_SORT_DATA:
+    case PROP_ICON_NAME:
+    case PROP_CATEGORY:
+    case PROP_PRIORITY:
+    case PROP_SORT_FUNCTIONS:
+    case PROP_ALT_MODEL:
+    case PROP_ALT_MODEL_STRING:
+    case PROP_ALT_MODEL_ACTIVE:
+      g_object_get_property (G_OBJECT (self->priv->model), pspec->name, value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -160,6 +177,19 @@ mex_view_model_set_property (GObject      *object,
 
     case PROP_LIMIT:
       mex_view_model_set_limit (self, g_value_get_uint (value));
+      break;
+
+    case PROP_TITLE:
+    case PROP_SORT_FUNC:
+    case PROP_SORT_DATA:
+    case PROP_ICON_NAME:
+    case PROP_CATEGORY:
+    case PROP_PRIORITY:
+    case PROP_SORT_FUNCTIONS:
+    case PROP_ALT_MODEL:
+    case PROP_ALT_MODEL_STRING:
+    case PROP_ALT_MODEL_ACTIVE:
+      g_object_set_property (G_OBJECT (self->priv->model), pspec->name, value);
       break;
 
     default:
