@@ -585,6 +585,29 @@ mex_view_model_refresh_external_items (MexViewModel *model)
     }
 }
 
+static void
+content_notify_cb (GObject      *content,
+                   GParamSpec   *pspec,
+                   MexViewModel *view)
+{
+  MexViewModelPrivate *priv = view->priv;
+  const gchar *filter_key;
+  const gchar *group_key;
+  const gchar *order_by_key;
+
+  group_key = mex_content_metadata_key_to_string (priv->group_by_key);
+  order_by_key = mex_content_metadata_key_to_string (priv->order_by_key);
+  filter_key = mex_content_metadata_key_to_string (priv->filter_by_key);
+
+  /* refresh the external list when one of the keys has changed */
+  if (g_str_equal (pspec->name, group_key)
+      || g_str_equal (pspec->name, order_by_key)
+      || g_str_equal (pspec->name, filter_key))
+    {
+      /* TODO: update only the items which have changed */
+      mex_view_model_refresh_external_items (view);
+    }
+}
 
 static void
 mex_view_model_controller_changed_cb (GController          *controller,
@@ -611,11 +634,17 @@ mex_view_model_controller_changed_cb (GController          *controller,
         /* set the new items */
         while (n_indices-- > 0)
           {
+            MexContent *content;
             guint idx;
 
             idx = g_controller_reference_get_index_uint (ref, n_indices);
-            priv->internal_items->pdata[view_length + n_indices] =
-              mex_model_get_content (priv->model, idx);
+
+            content = mex_model_get_content (priv->model, idx);
+
+            g_signal_connect (content, "notify", G_CALLBACK (content_notify_cb),
+                              self);
+
+            priv->internal_items->pdata[view_length + n_indices] = content;
           }
       }
       break;
@@ -631,6 +660,10 @@ mex_view_model_controller_changed_cb (GController          *controller,
 
             content = mex_model_get_content (priv->model, idx);
 
+            g_signal_handlers_disconnect_by_func (content,
+                                                  G_CALLBACK (content_notify_cb),
+                                                  self);
+
             g_ptr_array_remove_fast (priv->internal_items, content);
           }
       }
@@ -645,6 +678,10 @@ mex_view_model_controller_changed_cb (GController          *controller,
         g_object_unref (g_ptr_array_index (priv->external_items, i));
       g_ptr_array_set_size (priv->external_items, 0);
 
+      for (i = 0; i < priv->external_items->len; i++)
+        g_signal_handlers_disconnect_by_func (g_ptr_array_index (priv->external_items, i),
+                                              G_CALLBACK (content_notify_cb),
+                                              self);
       g_ptr_array_set_size (priv->internal_items, 0);
       break;
 
