@@ -429,6 +429,12 @@ mex_column_view_allocate (ClutterActor          *actor,
   /* Allocate placeholder/column actor */
   child_box.y1 = padding.top + header_pref_height;
 
+  /* scroll view */
+  child_box.y2 = box->y2 - box->y1 - padding.bottom;
+  clutter_actor_allocate (priv->scroll, &child_box, flags);
+
+
+  /* placeholder */
   if (mex_column_is_empty (MEX_COLUMN (priv->column)) &&
       priv->placeholder_actor)
     {
@@ -439,11 +445,6 @@ mex_column_view_allocate (ClutterActor          *actor,
       child_box.y2 = child_box.y1 + pref_h;
 
       clutter_actor_allocate (priv->placeholder_actor, &child_box, flags);
-    }
-  else
-    {
-      child_box.y2 = box->y2 - box->y1 - padding.bottom;
-      clutter_actor_allocate (priv->scroll, &child_box, flags);
     }
 }
 
