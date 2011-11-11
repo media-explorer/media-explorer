@@ -32,6 +32,8 @@
 
 #include "mex-scene.h"
 
+#include "mex-model-manager.h"
+
 #define ANIMATION_DURATION 150
 
 static void model_length_changed_cb (MexModel   *model,
@@ -579,6 +581,8 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   gboolean display_item_count, always_visible;
   gchar *title;
   MexColumn *column;
+  const MexModelCategoryInfo *c_info;
+  gchar *category;
 
   MexExplorerPrivate *priv = explorer->priv;
 
@@ -586,6 +590,18 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   if (priv->n_preview_items >= 0)
     mex_view_model_set_limit (MEX_VIEW_MODEL (view_model),
                               priv->n_preview_items);
+
+  /* get the category information for this model */
+  g_object_get (model, "category", &category, NULL);
+  c_info = mex_model_manager_get_category_info (mex_model_manager_get_default (),
+                                                category);
+  g_free (category);
+
+  /* group using the primary group key */
+  if (c_info->primary_group_by_key)
+    mex_view_model_set_group_by (MEX_VIEW_MODEL (view_model),
+                                 c_info->primary_group_by_key);
+
 
   container = g_object_get_qdata (G_OBJECT (aggregate),
                                   mex_explorer_container_quark);
