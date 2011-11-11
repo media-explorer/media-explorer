@@ -148,6 +148,8 @@ set_metadata_from_media (MexContent          *content,
               replacement = g_strdup (cstring);
 
             mex_content_set_metadata (content, mex_key, replacement);
+            mex_content_set_metadata (content, MEX_CONTENT_METADATA_SERIES_NAME,
+                                      showname);
 
             g_free (replacement);
           }
