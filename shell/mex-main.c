@@ -1914,26 +1914,25 @@ mex_open_group_cb (MxAction *action,
                    MexData  *data)
 {
   MexContent *content;
-  MexModel *model;
+  MexModel *model, *source_model;
+  gint filter_key;
+  gchar *filter_value;
+  gint i = 0;
 
   content = mex_action_get_content (action);
 
-  model = (MexModel*) mex_program_get_feed (MEX_PROGRAM (content));
+  source_model = g_object_get_data (G_OBJECT (content), "source-model");
+  source_model = mex_model_get_model (source_model);
+  model = mex_view_model_new (source_model);
 
-  if (!model)
-    return;
+  filter_key = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (content),
+                                                   "filter-key"));
+  filter_value = g_object_get_data (G_OBJECT (content), "filter-value");
 
-  g_object_set (content, "last-position-start", FALSE, NULL);
-  mex_content_view_set_context (MEX_CONTENT_VIEW (data->player), model);
+  mex_view_model_set_filter_by (MEX_VIEW_MODEL (model), filter_key,
+                                filter_value);
 
-  content = mex_model_get_content (model, 0);
-  mex_content_view_set_content (MEX_CONTENT_VIEW (data->player), content);
-
-  /* hide other actors */
-  mex_hide_actor (data, data->slide_show);
-
-  /* show the video player */
-  run_play_transition (data, content, data->player, TRUE);
+  mex_explorer_push_model (MEX_EXPLORER (data->explorer), model);
 }
 
 static void
