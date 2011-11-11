@@ -22,6 +22,7 @@
 #endif
 
 #include "mex-main.h"
+#include "mex-content.h"
 
 #include <clutter/clutter.h>
 #include <glib/gi18n.h>
@@ -37,20 +38,21 @@
 static const MexModelCategoryInfo videos = {
     "videos", N_("Videos"), "icon-panelheader-videos", 20,
     N_("Connect an external drive or update your network settings to see Videos"
-      " here.")
+       " here."), MEX_CONTENT_METADATA_SERIES_NAME,
+    MEX_CONTENT_METADATA_SEASON
 };
 static const MexModelCategoryInfo live = {
     "live", N_("Live TV"), "icon-panelheader-tv", 25, ""
 };
 static const MexModelCategoryInfo pictures = {
     "pictures", N_("Photos"), "icon-panelheader-photos", 30,
-    N_("Connect an external drie or update your network settings to see Photos"
+    N_("Connect an external drive or update your network settings to see Photos"
       " here.")
 };
 static const MexModelCategoryInfo music = {
     "music", N_("Music"), "icon-panelheader-music", 40,
     N_("Connect an external drive or upate your network settings to see Music"
-      " here.")
+       " here."), MEX_CONTENT_METADATA_ALBUM
 };
 static const MexModelCategoryInfo queue = {
     "queue", N_("Queue"), "icon-panelheader-queue", 50,

@@ -72,6 +72,9 @@ typedef struct
   gchar            *icon_name;
   gint              priority;
   gchar            *placeholder_text;
+  gint              primary_group_by_key;
+  gint              secondary_group_by_key;
+
   gboolean          show_length;
 
   MexModelSortFunc  sort_func;
