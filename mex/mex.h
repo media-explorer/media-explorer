@@ -95,6 +95,7 @@
 #include <mex/mex-uri-channel-provider.h>
 #include <mex/mex-utils.h>
 #include <mex/mex-volume-control.h>
+#include <mex/mex-view-model.h>
 
 #include <mex/mex-enum-types.h>
 
