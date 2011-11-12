@@ -220,13 +220,14 @@ scanning_thread_main (gpointer data)
   Scanner *scanner = data;
   gchar *argv[] = { "w_scan",
                      "-G",
+                     "-N", "0",   /* no scrambled channels */
                      NULL, NULL}; /* country */
-  gint argc = 2;
+  gint argc = 4;
 
   if (scanner->country)
     {
-      argv[2] = "-c";
-      argv[3] = scanner->country;
+      argv[4] = "-c";
+      argv[5] = scanner->country;
       argc += 2;
     }
 
