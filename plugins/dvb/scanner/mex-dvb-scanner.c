@@ -232,6 +232,10 @@ scanning_thread_main (gpointer data)
     }
 
   w_scan_main (argc, argv);
+
+  g_main_loop_quit (scanner->loop);
+
+  g_thread_exit (NULL);
 }
 
 static void
