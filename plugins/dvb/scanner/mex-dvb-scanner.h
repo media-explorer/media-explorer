@@ -24,5 +24,9 @@
 
 void mex_dvb_scanner_report_error (const gchar   *fmt,
                                    ...);
+void mex_dvb_scanner_set_n_frequencies (int n_frequencies);
+void mex_dvb_scanner_next_frequency (void);
+void mex_dvb_scanner_set_n_transponders (int n_transponders);
+void mex_dvb_scanner_next_transponder (void);
 
 #endif /* __MEX_DVB_SCANNER_H__ */

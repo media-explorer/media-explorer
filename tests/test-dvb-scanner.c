@@ -54,6 +54,39 @@ on_dbus_signal_received (GDBusProxy     *proxy,
 }
 
 static void
+on_progress_changed (TestDvbScanner *scanner,
+                     gdouble         progress)
+{
+  g_message ("progress: %lf", progress);
+}
+
+static void
+on_dbus_properties_changed (GDBusProxy     *proxy,
+                            GVariant       *changed_properties,
+                            GStrv           invalidated_properties,
+                            TestDvbScanner *scanner)
+{
+  if (g_variant_n_children (changed_properties) > 0)
+    {
+      GVariantIter *iter;
+      const gchar *key;
+      GVariant *value;
+
+      g_variant_get (changed_properties, "a{sv}", &iter);
+      while (g_variant_iter_loop (iter, "{&sv}", &key, &value))
+        {
+          if (g_strcmp0 (key, "progress") == 0)
+            {
+              gdouble progress = g_variant_get_double (value);
+
+              on_progress_changed (scanner, progress);
+            }
+        }
+      g_variant_iter_free (iter);
+    }
+}
+
+static void
 on_do_set_country_reply (GObject      *source_object,
                          GAsyncResult *result,
                          gpointer      user_data)
@@ -166,6 +199,8 @@ main (int argc, char **argv)
 
   g_signal_connect (scanner.proxy, "g-signal",
                     G_CALLBACK (on_dbus_signal_received), &scanner);
+  g_signal_connect (scanner.proxy, "g-properties-changed",
+                    G_CALLBACK (on_dbus_properties_changed), &scanner);
 
   scanner.loop = g_main_loop_new (NULL, FALSE);
 

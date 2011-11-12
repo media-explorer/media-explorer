@@ -211,6 +211,7 @@ struct section_buf {
 
 static LIST_HEAD(scanned_transponders);
 static LIST_HEAD(new_transponders);
+static int n_transponders = 0;
 static struct transponder *current_tp;
 
 static void setup_filter (struct section_buf* s, const char *dmx_devname,
@@ -237,6 +238,8 @@ struct transponder *alloc_transponder(uint32_t frequency)
         INIT_LIST_HEAD(&tp->list);
         INIT_LIST_HEAD(&tp->services);
         list_add_tail(&tp->list, &new_transponders);
+
+        n_transponders++;
         return tp;
 }
 
@@ -1968,7 +1971,7 @@ static void scan_for_other_transponders (void) {
 
 static int initial_tune (int frontend_fd, int tuning_data)
 {
-uint32_t f = 0, channel, cnt, ret = 0, mod_parm, sr_parm, this_sr=0, offs;
+uint32_t f = 0, channel, cnt, ret = 0, mod_parm, sr_parm, this_sr=0, offs, n_loops;
 uint16_t channel_max = 133;
 struct transponder *t = NULL, *ptest;
 struct transponder test;
@@ -2039,10 +2042,17 @@ switch (fe_info.type) {
  * and inside satellites.c for DVB-S(2)
  */
 
+n_loops = (modulation_max - modulation_min + 1) *
+          (channel_max + 1) *
+          (freq_offset_max - freq_offset_min + 1) *
+          (dvbc_symbolrate_max - dvbc_symbolrate_min + 1);
+mex_dvb_scanner_set_n_frequencies(n_loops);
+
 for (mod_parm = modulation_min; mod_parm <= modulation_max; mod_parm++) {
    for (channel=0; channel <= channel_max; channel++) {
       for (offs = freq_offset_min; offs <= freq_offset_max; offs++)
             for (sr_parm = dvbc_symbolrate_min; sr_parm <= dvbc_symbolrate_max; sr_parm++) {                
+                mex_dvb_scanner_next_frequency();
                 test.type = fe_info.type;
                 switch (test.type) {
                         case FE_OFDM:
@@ -2328,8 +2338,10 @@ static void network_scan (int frontend_fd, int tuning_data) {
         if (initial_tune (frontend_fd, tuning_data) < 0) {
                 fatal("Sorry - i couldn't get any working frequency/transponder\n Nothing to scan!!\n");
                 }
+        mex_dvb_scanner_set_n_transponders (n_transponders);
         do {
                 scan_tp();
+                mex_dvb_scanner_next_transponder ();
         } while (tune_to_next_transponder(frontend_fd) == 0);
 }
 

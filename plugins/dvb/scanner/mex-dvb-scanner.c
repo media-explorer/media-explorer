@@ -24,6 +24,7 @@
 #include <glib.h>
 #include <gio/gio.h>
 
+#include "countries.h"
 #include "mex-dvb-scanner.h"
 
 #define MEX_DVB_SCANNER_INTERFACE_NAME  "org.MediaExplorer.DVB.Scanner"
@@ -43,9 +44,12 @@ typedef struct
   GDBusNodeInfo *introspection_data;
 
   guint scan_in_progress : 1;
+  gint n_transponders, transponder;
+  gint n_frequencies, frequency;
   gchar *country;
   gchar *error_message;
 
+  guint progress_idle;
 } Scanner;
 
 static Scanner mex_dvb_scanner;
@@ -53,6 +57,109 @@ static Scanner mex_dvb_scanner;
 /*
  * methods called from the w_scan thread
  */
+
+/* to call with the scanner lock held */
+static double
+get_progress (Scanner *scanner)
+{
+  /* 2nd phase, where we have the number of transponders to scan for further
+   * information */
+  if (scanner->n_transponders)
+    return (double) (scanner->transponder - 1) / (scanner->n_transponders - 1);
+  else if (scanner->n_frequencies)
+    return (double) (scanner->frequency - 1) / (scanner->n_frequencies - 1);
+  else
+    return 0.0;
+}
+
+static gboolean
+report_progress_main_context (gpointer data)
+{
+  Scanner *scanner = data;
+  GError *local_error = NULL;
+  GVariantBuilder *builder, *invalidated_builder;
+  double progress;
+
+  g_mutex_lock (scanner->lock);
+  progress = get_progress (scanner);
+  g_mutex_unlock (scanner->lock);
+
+  builder = g_variant_builder_new (G_VARIANT_TYPE_ARRAY);
+  invalidated_builder = g_variant_builder_new (G_VARIANT_TYPE ("as"));
+  g_variant_builder_add (builder,
+                         "{sv}",
+                         "progress",
+                         g_variant_new_double (progress));
+  g_dbus_connection_emit_signal (scanner->dbus_connection,
+                                 NULL,
+                                 MEX_DVB_SCANNER_OBJECT_PATH,
+                                 "org.freedesktop.DBus.Properties",
+                                 "PropertiesChanged",
+                                 g_variant_new ("(sa{sv}as)",
+                                                MEX_DVB_SCANNER_INTERFACE_NAME,
+                                                builder,
+                                                invalidated_builder),
+                                 &local_error);
+  if (local_error)
+    {
+      g_warning ("Could not send error signal: %s", local_error->message);
+      g_error_free (local_error);
+    }
+
+  g_mutex_lock (scanner->lock);
+  scanner->progress_idle = 0;
+  g_mutex_unlock (scanner->lock);
+  return FALSE;
+}
+
+void
+mex_dvb_scanner_set_n_transponders (n_transponders)
+{
+  Scanner *scanner = &mex_dvb_scanner;
+
+  g_mutex_lock (scanner->lock);
+  scanner->n_transponders = n_transponders;
+  scanner->transponder = 0 ;
+  g_mutex_unlock (scanner->lock);
+}
+
+void
+mex_dvb_scanner_next_transponder (void)
+{
+  Scanner *scanner = &mex_dvb_scanner;
+
+  g_mutex_lock (scanner->lock);
+  scanner->transponder++;
+  /* compress progress DBus signals */
+  if (scanner->progress_idle == 0)
+    scanner->progress_idle = g_idle_add (report_progress_main_context, scanner);
+  g_mutex_unlock (scanner->lock);
+}
+
+void
+mex_dvb_scanner_next_frequency (void)
+{
+  Scanner *scanner = &mex_dvb_scanner;
+
+  g_mutex_lock (scanner->lock);
+  scanner->frequency++;
+  /* compress progress DBus signals */
+  if (scanner->progress_idle == 0)
+    scanner->progress_idle = g_idle_add (report_progress_main_context, scanner);
+  g_mutex_unlock (scanner->lock);
+}
+
+void
+mex_dvb_scanner_set_n_frequencies (int n_frequencies)
+{
+  Scanner *scanner = &mex_dvb_scanner;
+
+  g_mutex_lock (scanner->lock);
+  scanner->n_frequencies = n_frequencies;
+  scanner->frequency = 0 ;
+  g_mutex_unlock (scanner->lock);
+}
+
 static gboolean
 report_error_main_context (gpointer data)
 {
@@ -173,6 +280,7 @@ static const gchar introspection_xml[] =
   "    <method name='SetCountry'>"
   "      <arg name='country' type='s' />"
   "    </method>"
+  "    <property type='d' name='progress' access='read' />"
   "    <signal name='Error'>"
   "      <arg name='message' type='s' />"
   "    </signal>"
@@ -224,7 +332,17 @@ handle_get_property (GDBusConnection  *connection,
                      GError          **error,
                      gpointer          user_data)
 {
-  return NULL;
+  Scanner *scanner = user_data;
+  GVariant *ret = NULL;
+
+  if (g_strcmp0 (property_name, "progress") == 0)
+    {
+      g_mutex_lock (scanner->lock);
+      ret = g_variant_new_double (get_progress (scanner));
+      g_mutex_unlock (scanner->lock);
+    }
+
+  return ret;
 }
 
 static gboolean
