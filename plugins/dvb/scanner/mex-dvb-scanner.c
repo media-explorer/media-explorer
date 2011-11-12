@@ -218,13 +218,15 @@ static gpointer
 scanning_thread_main (gpointer data)
 {
   Scanner *scanner = data;
-  gchar *argv[] = { "w_scan", NULL, NULL};
-  gint argc = 1;
+  gchar *argv[] = { "w_scan",
+                     "-G",
+                     NULL, NULL}; /* country */
+  gint argc = 2;
 
   if (scanner->country)
     {
-      argv[1] = "-c";
-      argv[2] = scanner->country;
+      argv[2] = "-c";
+      argv[3] = scanner->country;
       argc += 2;
     }
 
