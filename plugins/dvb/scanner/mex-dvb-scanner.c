@@ -72,17 +72,12 @@ get_progress (Scanner *scanner)
     return 0.0;
 }
 
-static gboolean
-report_progress_main_context (gpointer data)
+static void
+signal_progress (Scanner *scanner,
+                 double   progress)
 {
-  Scanner *scanner = data;
-  GError *local_error = NULL;
   GVariantBuilder *builder, *invalidated_builder;
-  double progress;
-
-  g_mutex_lock (scanner->lock);
-  progress = get_progress (scanner);
-  g_mutex_unlock (scanner->lock);
+  GError *local_error = NULL;
 
   builder = g_variant_builder_new (G_VARIANT_TYPE_ARRAY);
   invalidated_builder = g_variant_builder_new (G_VARIANT_TYPE ("as"));
@@ -105,10 +100,32 @@ report_progress_main_context (gpointer data)
       g_warning ("Could not send error signal: %s", local_error->message);
       g_error_free (local_error);
     }
+}
+
+static gboolean
+report_progress_main_context (gpointer data)
+{
+  Scanner *scanner = data;
+  double progress;
+
+  g_mutex_lock (scanner->lock);
+  progress = get_progress (scanner);
+  g_mutex_unlock (scanner->lock);
+
+  signal_progress (scanner, progress);
 
   g_mutex_lock (scanner->lock);
   scanner->progress_idle = 0;
   g_mutex_unlock (scanner->lock);
+  return FALSE;
+}
+
+static gboolean
+reset_progress_main_context (gpointer data)
+{
+  Scanner *scanner = data;
+
+  signal_progress (scanner, 0.0);
   return FALSE;
 }
 
@@ -120,6 +137,7 @@ mex_dvb_scanner_set_n_transponders (n_transponders)
   g_mutex_lock (scanner->lock);
   scanner->n_transponders = n_transponders;
   scanner->transponder = 0 ;
+  g_idle_add (reset_progress_main_context, scanner);
   g_mutex_unlock (scanner->lock);
 }
 
