@@ -246,6 +246,16 @@ get_config_dir (void)
   return config_dir;
 }
 
+static gboolean
+exit_daemon (gpointer data)
+{
+  Scanner *scanner = data;
+
+  g_main_loop_quit (scanner->loop);
+
+  return FALSE;
+}
+
 static gpointer
 scanning_thread_main (gpointer data)
 {
@@ -270,7 +280,7 @@ scanning_thread_main (gpointer data)
 
   g_free (argv[5]);
 
-  g_main_loop_quit (scanner->loop);
+  g_timeout_add_seconds (10, exit_daemon, scanner);
 
   g_thread_exit (NULL);
 }
