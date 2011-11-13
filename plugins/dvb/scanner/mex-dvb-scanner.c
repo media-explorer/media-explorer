@@ -214,24 +214,61 @@ mex_dvb_scanner_report_error (const gchar *fmt,
   g_thread_exit (NULL);
 }
 
+static const gchar *
+get_config_dir (void)
+{
+  GFile *config_dir_file;
+  GError *error = NULL;
+  static gchar *config_dir = NULL;
+
+  if (config_dir)
+    return config_dir;
+
+  config_dir = g_build_filename (g_get_user_config_dir (), "mex", "dvb", NULL);
+
+  /* create the configuration directory if needed */
+  config_dir_file = g_file_new_for_path (config_dir);
+  g_file_make_directory_with_parents (config_dir_file, NULL, &error);
+  g_object_unref (config_dir_file);
+  if (error && error->code != G_IO_ERROR_EXISTS)
+    {
+      g_critical ("Could not create config directory %s: %s",
+                  config_dir, error->message);
+      g_clear_error (&error);
+      return NULL;
+    }
+  else
+    {
+      /* directory already exists */
+      g_clear_error (&error);
+    }
+
+  return config_dir;
+}
+
 static gpointer
 scanning_thread_main (gpointer data)
 {
   Scanner *scanner = data;
+  gchar *output;
   gchar *argv[] = { "w_scan",
                      "-G",
-                     "-N", "0",   /* no scrambled channels */
-                     NULL, NULL}; /* country */
-  gint argc = 4;
+                     "-E", "0",           /* no scrambled channels */
+                     "-w", NULL,          /* output file */
+                     NULL, NULL};         /* country */
+  gint argc = 6;
+
+  argv[5] = g_build_filename (get_config_dir (), "channels.conf", NULL);
 
   if (scanner->country)
     {
-      argv[4] = "-c";
-      argv[5] = scanner->country;
-      argc += 2;
+      argv[argc++] = "-c";
+      argv[argc++] = scanner->country;
     }
 
   w_scan_main (argc, argv);
+
+  g_free (argv[5]);
 
   g_main_loop_quit (scanner->loop);
 

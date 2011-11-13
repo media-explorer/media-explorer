@@ -2373,7 +2373,7 @@ int get_api_version(int frontend_fd, struct w_scan_flags * flags) {
 }
 
 
-static void dump_lists (int adapter, int frontend)
+static void dump_lists (FILE *output, int adapter, int frontend)
 {
         struct list_head *p1, *p2;
         struct transponder *t;
@@ -2400,7 +2400,7 @@ static void dump_lists (int adapter, int frontend)
 
         switch (output_format) {
                 case OUTPUT_VLC_M3U:
-                        vlc_xspf_prolog(stdout, adapter, frontend, &flags, &this_lnb);
+                        vlc_xspf_prolog(output, adapter, frontend, &flags, &this_lnb);
                         break;
                 default:;
                 }
@@ -2408,7 +2408,7 @@ static void dump_lists (int adapter, int frontend)
         list_for_each(p1, &scanned_transponders) {
                 t = list_entry(p1, struct transponder, list);
                 if (output_format == OUTPUT_DVBSCAN_TUNING_DATA) {
-                        dvbscan_dump_tuningdata (stdout, &t->param, index++, t->network_name, &flags);
+                        dvbscan_dump_tuningdata (output, &t->param, index++, t->network_name, &flags);
                         continue;
                         }                        
                 list_for_each(p2, &t->services) {
@@ -2437,19 +2437,19 @@ static void dump_lists (int adapter, int frontend)
                                 continue; /* FTA only */
                         switch (output_format) {
                           case OUTPUT_VDR:
-                                vdr_dump_service_parameter_set(stdout, s, t, &flags);
+                                vdr_dump_service_parameter_set(output, s, t, &flags);
                                 break;
                           case OUTPUT_KAFFEINE:
-                                kaffeine_dump_service_parameter_set(stdout, s, t, &flags);
+                                kaffeine_dump_service_parameter_set(output, s, t, &flags);
                                 break;
                           case OUTPUT_XINE:
-                                xine_dump_service_parameter_set(stdout, s, t, &flags);
+                                xine_dump_service_parameter_set(output, s, t, &flags);
                                 break;
                           case OUTPUT_MPLAYER:
-                                mplayer_dump_service_parameter_set(stdout, s, t, &flags);
+                                mplayer_dump_service_parameter_set(output, s, t, &flags);
                                 break;
                           case OUTPUT_VLC_M3U:
-                                vlc_dump_service_parameter_set_as_xspf(stdout, s, t, &flags, &this_lnb);
+                                vlc_dump_service_parameter_set_as_xspf(output, s, t, &flags, &this_lnb);
                                 break;
                           default:
                                 break;
@@ -2458,7 +2458,7 @@ static void dump_lists (int adapter, int frontend)
         }
         switch (output_format) {
                 case OUTPUT_VLC_M3U:
-                        vlc_xspf_epilog(stdout);
+                        vlc_xspf_epilog(output);
                         break;
                 default:;
                 }
@@ -2468,7 +2468,7 @@ static void dump_lists (int adapter, int frontend)
 static void handle_sigint(int sig)
 {
         error("interrupted by SIGINT, dumping partial result...\n");
-        dump_lists(-1, -1);
+        dump_lists(stdout, -1, -1);
         exit(2);
 }
 
@@ -2492,6 +2492,7 @@ static const char *usage = "\n"
         "                       S19E2, S13E0, S15W0, ..\n"
         "                       ? for list\n"
         "               ---output switches---\n"
+        "       -w file write the output in file\n"
         "       -G      generate channels.conf for dvbsrc plugin\n"
         "       -k      generate channels.dvb for kaffeine\n"
         "       -L      generate VLC xspf playlist (experimental)\n"
@@ -2631,6 +2632,7 @@ int w_scan_main (int argc, char **argv)
         char * initdata = NULL;
         char * positionfile = NULL;
         char sw_type = 0;
+        FILE *output = stdout;
 
         #define cleanup() cl(country); cl(satellite); cl(initdata); cl(positionfile); cl(codepage);
 
@@ -2642,7 +2644,7 @@ int w_scan_main (int argc, char **argv)
         flags.version = version;
         start_time = time(NULL);
 
-        while ((opt = getopt(argc, argv, "a:c:e:f:hi:kl:o:p:qr:s:t:vxA:C:D:E:FGHI:LMO:PQ:R:S:T:VX")) != -1) {
+        while ((opt = getopt(argc, argv, "a:c:e:f:hi:kl:o:p:qr:s:t:vw:xA:C:D:E:FGHI:LMO:PQ:R:S:T:VX")) != -1) {
                 switch (opt) {
                 case 'a': //adapter
                         if (sscanf(optarg, "%d", &adapter) < 1)
@@ -2740,6 +2742,11 @@ int w_scan_main (int argc, char **argv)
                         break;
                 case 'v': //verbose
                         verbosity++;
+                        break;
+                case 'w': //write to file
+                        output = fopen (optarg, "w+");
+                        if (output == NULL)
+                          fatal("could not open %s: %s", optarg, strerror);
                         break;
                 case 'x': //dvbscan output
                         output_format = OUTPUT_DVBSCAN_TUNING_DATA;
@@ -3292,7 +3299,7 @@ int w_scan_main (int argc, char **argv)
 
         close (frontend_fd);
 
-        dump_lists (adapter, frontend);
+        dump_lists (output, adapter, frontend);
 
         cleanup();
 
