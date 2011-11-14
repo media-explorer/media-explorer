@@ -67,10 +67,10 @@ mex_dvb_get_type (void)
 }
 
 MEX_DEFINE_PLUGIN ("DVB",
-		   "linux-dvb integration",
-		   PACKAGE_VERSION,
-		   "LGPLv2.1+",
-                   "Damien Lespiau <damien.lespiau@intel.com",
-		   MEX_API_MAJOR, MEX_API_MINOR,
-		   mex_dvb_get_type,
-		   MEX_PLUGIN_PRIORITY_NORMAL)
+                   "linux-dvb integration",
+                   PACKAGE_VERSION,
+                   "LGPLv2.1+",
+                   "Damien Lespiau <damien.lespiau@intel.com>",
+                   MEX_API_MAJOR, MEX_API_MINOR,
+                   mex_dvb_get_type,
+                   MEX_PLUGIN_PRIORITY_NORMAL)
