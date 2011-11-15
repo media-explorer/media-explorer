@@ -82,6 +82,7 @@ static void mex_view_model_controller_changed_cb (GController          *controll
                                                   MexViewModel         *self);
 
 static void mex_view_model_refresh_external_items (MexViewModel *model);
+static void content_notify_cb (GObject *content, GParamSpec *pspec, MexViewModel *view);
 
 static void
 mex_view_model_set_model (MexViewModel *self,
@@ -110,7 +111,12 @@ mex_view_model_set_model (MexViewModel *self,
                             mex_model_get_length (priv->model));
 
       while ((content = mex_model_get_content (priv->model, i)))
-        priv->internal_items->pdata[i++] = content;
+        {
+          priv->internal_items->pdata[i++] = content;
+
+          g_signal_connect (content, "notify", G_CALLBACK (content_notify_cb),
+                            self);
+        }
     }
 
   mex_view_model_refresh_external_items (self);
@@ -245,6 +251,17 @@ mex_view_model_finalize (GObject *object)
 
   if (priv->internal_items)
     {
+      for (i = 0; i < priv->internal_items->len; i++)
+        {
+          GObject *o;
+
+          o = g_ptr_array_index (priv->internal_items, i);
+
+          g_signal_handlers_disconnect_by_func (o,
+                                                G_CALLBACK (content_notify_cb),
+                                                object);
+          g_object_unref (o);
+        }
       g_ptr_array_free (priv->internal_items, TRUE);
       priv->external_items = NULL;
     }
