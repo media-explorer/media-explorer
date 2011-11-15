@@ -111,7 +111,7 @@ set_metadata_from_media (MexContent          *content,
       {
         if (mex_key == MEX_CONTENT_METADATA_TITLE)
           {
-            gchar *showname = NULL, *title;
+            gchar *showname = NULL, *title, *season_str;
             gint season, episode;
             gchar *replacement;
             const gchar *mimetype;
@@ -150,6 +150,10 @@ set_metadata_from_media (MexContent          *content,
             mex_content_set_metadata (content, mex_key, replacement);
             mex_content_set_metadata (content, MEX_CONTENT_METADATA_SERIES_NAME,
                                       showname);
+            season_str = g_strdup_printf ("%d", season);
+            mex_content_set_metadata (content, MEX_CONTENT_METADATA_SEASON,
+                                      season_str);
+            g_free (season_str);
 
             g_free (replacement);
           }
