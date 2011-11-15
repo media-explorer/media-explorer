@@ -619,17 +619,42 @@ mex_header_activated_cb (MexExplorer *explorer,
         }
 
       if (models)
-        mex_explorer_push_model (explorer, g_object_ref (model));
+        {
+          MexModel *view;
+          const MexModelCategoryInfo *c_info;
+          gchar *category;
+
+          g_object_get (model, "category", &category, NULL);
+
+          c_info = mex_model_manager_get_category_info (mex_model_manager_get_default (),
+                                                        category);
+          g_free (category);
+
+          view = mex_view_model_new (model);
+          mex_view_model_set_group_by (MEX_VIEW_MODEL (view),
+                                       c_info->primary_group_by_key);
+          mex_explorer_push_model (explorer, view);
+        }
     }
   else
     {
-      /* For non-aggregate models, you get a grid representation, which we
-       * pack sorting chrome around. Use a proxy model so that when we change
-       * the sort function of the model, we don't affect views on other pages.
-       */
-      MexModel *new_model = mex_proxy_model_new ();
-      mex_proxy_model_set_model (MEX_PROXY_MODEL (new_model), model);
-      mex_explorer_push_model (explorer, new_model);
+      MexModel *view;
+      const MexModelCategoryInfo *c_info;
+      gchar *category;
+
+      g_object_get (model, "category", &category, NULL);
+
+      c_info = mex_model_manager_get_category_info (mex_model_manager_get_default (),
+                                                    category);
+      g_free (category);
+
+      if (MEX_IS_VIEW_MODEL (model))
+        model = mex_model_get_model (model);
+
+      view = mex_view_model_new (model);
+      mex_view_model_set_group_by (MEX_VIEW_MODEL (view),
+                                   c_info->primary_group_by_key);
+      mex_explorer_push_model (explorer, view);
     }
 }
 
