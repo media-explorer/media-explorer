@@ -1942,6 +1942,7 @@ mex_open_group_cb (MxAction *action,
   MexModel *model, *source_model;
   gint filter_key;
   gchar *filter_value;
+  gint group_key;
   gint i = 0;
 
   content = mex_action_get_content (action);
@@ -1953,6 +1954,11 @@ mex_open_group_cb (MxAction *action,
   filter_key = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (content),
                                                    "filter-key"));
   filter_value = g_object_get_data (G_OBJECT (content), "filter-value");
+
+  group_key = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (content),
+                                                  "group-key"));
+
+  mex_view_model_set_group_by (MEX_VIEW_MODEL (model), group_key);
 
   mex_view_model_set_filter_by (MEX_VIEW_MODEL (model), filter_key,
                                 filter_value);
