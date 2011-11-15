@@ -19,6 +19,7 @@
 #include "mex-view-model.h"
 
 #include "mex-generic-content.h"
+#include "mex-model-manager.h"
 
 static void mex_model_iface_init (MexModelIface *iface);
 
@@ -537,6 +538,15 @@ mex_view_model_refresh_external_items (MexViewModel *model)
         {
           const gchar *g;
           gchar *strlower;
+          gchar *category = NULL;
+          const MexModelCategoryInfo *c_info;
+
+          g_object_get (G_OBJECT (model), "category", &category, NULL);
+
+          c_info = mex_model_manager_get_category_info (mex_model_manager_get_default (),
+                                                        category);
+          g_free (category);
+
 
           g = mex_content_get_metadata (content, priv->group_by_key);
 
@@ -558,6 +568,13 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                                           g_strdup (g), g_free);
                   g_object_set_data_full (G_OBJECT (content), "source-model",
                                           g_object_ref (model), g_object_unref);
+
+                  /* set the group by key to the secondary group by key for
+                   * this category if the primary group by key was used for this
+                   * model */
+                  if (c_info->primary_group_by_key == priv->group_by_key)
+                    g_object_set_data (G_OBJECT (content), "group-key",
+                                       GINT_TO_POINTER (c_info->secondary_group_by_key));
                 }
               else
                 {
