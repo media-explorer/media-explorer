@@ -156,22 +156,15 @@ mex_channel_manager_get_channels (MexChannelManager *manager)
   return manager->priv->channels;
 }
 
-void
-mex_channel_manager_add_provider (MexChannelManager  *manager,
-                                  MexChannelProvider *provider)
+static void
+add_channels_from_ptr_array (MexChannelManager *manager,
+                             const GPtrArray   *channels)
 {
-  MexChannelManagerPrivate *priv;
-  const GPtrArray *channels;
+  MexChannelManagerPrivate *priv = manager->priv;
   guint previous_len;
   guint i;
 
-  g_return_if_fail (MEX_IS_CHANNEL_MANAGER (manager));
-  g_return_if_fail (MEX_IS_CHANNEL_PROVIDER (provider));
-  priv = manager->priv;
-
-  channels = mex_channel_provider_get_channels (provider);
   previous_len = priv->channels->len;
-
   g_ptr_array_set_size (priv->channels, previous_len + channels->len);
 
   for (i = 0; i < channels->len; i++)
@@ -180,6 +173,32 @@ mex_channel_manager_add_provider (MexChannelManager  *manager,
 
       priv->channels->pdata[previous_len + i] = g_object_ref (channel);
     }
+}
+
+void
+mex_channel_manager_add_provider (MexChannelManager  *manager,
+                                  MexChannelProvider *provider)
+{
+  const GPtrArray *channels;
+
+  g_return_if_fail (MEX_IS_CHANNEL_MANAGER (manager));
+  g_return_if_fail (MEX_IS_CHANNEL_PROVIDER (provider));
+
+  channels = mex_channel_provider_get_channels (provider);
+
+  add_channels_from_ptr_array (manager, channels);
+
+  ensure_logos (manager);
+}
+
+void
+mex_channel_manager_add_channels (MexChannelManager *manager,
+                                  const GPtrArray   *channels)
+{
+  g_return_if_fail (MEX_IS_CHANNEL_MANAGER (manager));
+  g_return_if_fail (channels != NULL);
+
+  add_channels_from_ptr_array (manager, channels);
 
   ensure_logos (manager);
 }

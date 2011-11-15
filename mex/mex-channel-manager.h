@@ -71,6 +71,8 @@ GType mex_channel_manager_get_type (void) G_GNUC_CONST;
 MexChannelManager * mex_channel_manager_get_default           (void);
 
 const GPtrArray *   mex_channel_manager_get_channels          (MexChannelManager *manager);
+void                mex_channel_manager_add_channels          (MexChannelManager *manager,
+                                                               const GPtrArray   *channels);
 void                mex_channel_manager_add_provider          (MexChannelManager  *manager,
                                                                MexChannelProvider *provider);
 void                mex_channel_manager_add_logo_provider     (MexChannelManager *manager,
