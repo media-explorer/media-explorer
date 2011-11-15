@@ -518,20 +518,22 @@ mex_view_model_refresh_external_items (MexViewModel *model)
       /* create a group item if necessary */
       if (priv->group_by_key)
         {
-          const gchar* g;
+          const gchar *g;
+          gchar *strlower;
 
           g = mex_content_get_metadata (content, priv->group_by_key);
 
           if (g)
             {
               /* build up the group list */
-              if (!g_hash_table_lookup (groups, g))
+              strlower = g_utf8_strdown (g, -1);
+              if (!g_hash_table_lookup (groups, strlower))
                 {
                   content = g_object_new (MEX_TYPE_GENERIC_CONTENT,
                                           "title", g,
                                           "mimetype", "x-mex/group",
                                           NULL);
-                  g_hash_table_insert (groups, g_strdup (g), content);
+                  g_hash_table_insert (groups, strlower, content);
 
                   g_object_set_data (G_OBJECT (content), "filter-key",
                                      GINT_TO_POINTER (priv->group_by_key));
@@ -541,7 +543,10 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                                           g_object_ref (model), g_object_unref);
                 }
               else
-                continue;
+                {
+                  g_free (strlower);
+                  continue;
+                }
             }
         }
 
