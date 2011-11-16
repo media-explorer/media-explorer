@@ -598,6 +598,21 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                                      GINT_TO_POINTER (priv->group_by_key));
                   g_object_set_data_full (G_OBJECT (content), "filter-value",
                                           g_strdup (g), g_free);
+
+                  if (priv->filter_by)
+                    {
+                      FilterKeyValue *filter = priv->filter_by->data;
+
+                      g_object_set_data (G_OBJECT (content),
+                                         "second-filter-key",
+                                         GINT_TO_POINTER (filter->key));
+
+                      g_object_set_data_full (G_OBJECT (content),
+                                              "second-filter-value",
+                                              g_strdup (filter->value), g_free);
+                    }
+
+
                   g_object_set_data_full (G_OBJECT (content), "source-model",
                                           g_object_ref (model), g_object_unref);
 

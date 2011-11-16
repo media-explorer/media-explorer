@@ -1940,8 +1940,8 @@ mex_open_group_cb (MxAction *action,
 {
   MexContent *content;
   MexModel *model, *source_model;
-  gint filter_key;
-  gchar *filter_value;
+  gint filter_key, second_filter_key;
+  gchar *filter_value, *second_filter_value;
   gint group_key;
   gint i = 0;
 
@@ -1955,13 +1955,23 @@ mex_open_group_cb (MxAction *action,
                                                    "filter-key"));
   filter_value = g_object_get_data (G_OBJECT (content), "filter-value");
 
+
+  second_filter_key =
+    GPOINTER_TO_INT (g_object_get_data (G_OBJECT (content),
+                                        "second-filter-key"));
+
+  second_filter_value =
+    g_object_get_data (G_OBJECT (content), "second-filter-value");
+
   group_key = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (content),
                                                   "group-key"));
 
   mex_view_model_set_group_by (MEX_VIEW_MODEL (model), group_key);
 
+
   mex_view_model_set_filter_by (MEX_VIEW_MODEL (model),
                                 filter_key, filter_value,
+                                second_filter_key, second_filter_value,
                                 MEX_CONTENT_METADATA_NONE);
 
   mex_explorer_push_model (MEX_EXPLORER (data->explorer), model);
