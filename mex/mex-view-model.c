@@ -20,6 +20,7 @@
 
 #include "mex-generic-content.h"
 #include "mex-model-manager.h"
+#include "mex-program.h"
 
 static void mex_model_iface_init (MexModelIface *iface);
 
@@ -117,6 +118,11 @@ mex_view_model_set_model (MexViewModel *self,
 
           g_signal_connect (content, "notify", G_CALLBACK (content_notify_cb),
                             self);
+
+          /* any MexProgram objects must have all their data resolved to be
+           * useful in the view model */
+          if (MEX_IS_PROGRAM (content))
+            _mex_program_complete (MEX_PROGRAM (content));
         }
     }
 
@@ -684,6 +690,12 @@ mex_view_model_controller_changed_cb (GController          *controller,
                               self);
 
             priv->internal_items->pdata[view_length + n_indices] = content;
+
+
+            /* any MexProgram objects must have all their data resolved to be
+             * useful in the view model */
+            if (MEX_IS_PROGRAM (content))
+              _mex_program_complete (MEX_PROGRAM (content));
           }
       }
       break;
