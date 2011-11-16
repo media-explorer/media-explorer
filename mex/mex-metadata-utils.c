@@ -29,7 +29,7 @@
 
 #include "mex-metadata-utils.h"
 
-#define TV_REGEX "(?<showname>.*)\\.(?<season>(?:\\d{1,2})|(?:[sS]\\K\\d{1,2}))(?<episode>(?:\\d{2}[^px0-9])|(?:[eE]\\K\\d{1,2}))\\.?(?<name>.*)?"
+#define TV_REGEX "(?<showname>.*)\\.(?<season>(?:\\d{1,2})|(?:[sS]\\K\\d{1,2}))(?<episode>(?:x?\\d{2}[^px0-9])|(?:[eE]\\K\\d{1,2}))\\.?(?<name>.*)?"
 #define MOVIE_REGEX "(?<name>.*)\\.?[\\(\\[](?<year>[12][90]\\d{2})[\\)\\]]"
 
 const gchar *blacklisted_prefix[] = {
