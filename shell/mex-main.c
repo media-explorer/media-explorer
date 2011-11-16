@@ -1974,6 +1974,8 @@ mex_open_group_cb (MxAction *action,
                                 second_filter_key, second_filter_value,
                                 MEX_CONTENT_METADATA_NONE);
 
+  g_object_set (model, "title", filter_value, NULL);
+
   mex_explorer_push_model (MEX_EXPLORER (data->explorer), model);
 }
 
