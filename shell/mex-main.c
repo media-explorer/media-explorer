@@ -1960,8 +1960,9 @@ mex_open_group_cb (MxAction *action,
 
   mex_view_model_set_group_by (MEX_VIEW_MODEL (model), group_key);
 
-  mex_view_model_set_filter_by (MEX_VIEW_MODEL (model), filter_key,
-                                filter_value);
+  mex_view_model_set_filter_by (MEX_VIEW_MODEL (model),
+                                filter_key, filter_value,
+                                MEX_CONTENT_METADATA_NONE);
 
   mex_explorer_push_model (MEX_EXPLORER (data->explorer), model);
 }

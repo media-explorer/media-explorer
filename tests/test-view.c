@@ -26,7 +26,7 @@ print_titles (MexModel *model)
   g_printf ("\n");
 }
 
-static void
+static gboolean
 test_view (MexViewModel *view)
 {
   MexContent *start_at;
@@ -58,8 +58,15 @@ test_view (MexViewModel *view)
   mex_view_model_set_limit (view, 0);
   mex_view_model_set_start_content (view, NULL);
   mex_view_model_set_order_by (view, MEX_CONTENT_METADATA_TITLE, FALSE);
-  mex_view_model_set_filter_by (view, MEX_CONTENT_METADATA_MIMETYPE, "video/ogg");
+  mex_view_model_set_filter_by (view,
+                                MEX_CONTENT_METADATA_MIMETYPE, "video/ogg",
+                                MEX_CONTENT_METADATA_NONE);
+
   print_titles (MEX_MODEL (view));
+
+  g_main_loop_quit (mainloop);
+
+  return FALSE;
 }
 
 static gboolean
@@ -88,9 +95,10 @@ start (gpointer model)
 
   g_debug ("Testing Videos View");
   g_printf ("\n");
-  test_view (MEX_VIEW_MODEL (mex_view_model_new (videos_model)));
 
-  g_main_loop_quit (mainloop);
+  /* wait a few seconds to allow content to be fully resolved */
+  g_timeout_add_seconds (2, (GSourceFunc) test_view,
+                         mex_view_model_new (videos_model));
 
   return FALSE;
 }

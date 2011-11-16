@@ -74,7 +74,8 @@ void mex_view_model_set_loop (MexViewModel *self, gboolean loop);
 
 void mex_view_model_set_filter_by (MexViewModel       *model,
                                    MexContentMetadata  metadata_key,
-                                   const gchar        *value);
+                                   const gchar        *value,
+                                   ...);
 void mex_view_model_set_group_by (MexViewModel        *model,
                                   MexContentMetadata  metadata_key);
 void mex_view_model_set_order_by (MexViewModel       *model,

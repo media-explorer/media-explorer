@@ -22,6 +22,9 @@
 #include "mex-model-manager.h"
 #include "mex-program.h"
 
+#include <stdarg.h>
+
+
 static void mex_model_iface_init (MexModelIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexViewModel, mex_view_model, G_TYPE_OBJECT,
@@ -54,6 +57,12 @@ enum
   PROP_ALT_MODEL_ACTIVE
 };
 
+typedef struct
+{
+  MexContentMetadata key;
+  gchar *value;
+} FilterKeyValue;
+
 struct _MexViewModelPrivate
 {
   MexModel *model;
@@ -67,8 +76,7 @@ struct _MexViewModelPrivate
   GPtrArray *external_items;
   GPtrArray *internal_items;
 
-  MexContentMetadata  filter_by_key;
-  gchar              *filter_by_value;
+  GList *filter_by;
 
   MexContentMetadata order_by_key;
   gboolean           order_by_descending;
@@ -272,6 +280,10 @@ mex_view_model_finalize (GObject *object)
       g_ptr_array_free (priv->internal_items, TRUE);
       priv->external_items = NULL;
     }
+
+  /* clear the filter list */
+  mex_view_model_set_filter_by (MEX_VIEW_MODEL (object),
+                                MEX_CONTENT_METADATA_NONE, NULL);
 
   G_OBJECT_CLASS (mex_view_model_parent_class)->finalize (object);
 }
@@ -528,14 +540,28 @@ mex_view_model_refresh_external_items (MexViewModel *model)
       content = g_ptr_array_index (priv->internal_items, i);
 
       /* check the item matches the filter */
-      if (priv->filter_by_key)
+      if (priv->filter_by)
         {
+          GList *list;
           const gchar *v;
+          FilterKeyValue *filter;
+          gboolean skip = FALSE;
 
-          v = mex_content_get_metadata (content, priv->filter_by_key);
+          for (list = priv->filter_by; list; list = g_list_next (list))
+            {
+              filter = list->data;
 
-          /* skip this item if it does not match the filter */
-          if (g_strcmp0 (v, priv->filter_by_value))
+              v = mex_content_get_metadata (content, filter->key);
+
+              /* skip this item if it does not match the filter */
+              if (g_strcmp0 (v, filter->value))
+                {
+                  skip = TRUE;
+                  break;
+                }
+            }
+
+          if (skip)
             continue;
         }
 
@@ -636,21 +662,35 @@ content_notify_cb (GObject      *content,
                    MexViewModel *view)
 {
   MexViewModelPrivate *priv = view->priv;
-  const gchar *filter_key;
   const gchar *group_key;
   const gchar *order_by_key;
+  GList *list;
 
   group_key = mex_content_metadata_key_to_string (priv->group_by_key);
   order_by_key = mex_content_metadata_key_to_string (priv->order_by_key);
-  filter_key = mex_content_metadata_key_to_string (priv->filter_by_key);
 
   /* refresh the external list when one of the keys has changed */
   if (g_str_equal (pspec->name, group_key)
-      || g_str_equal (pspec->name, order_by_key)
-      || g_str_equal (pspec->name, filter_key))
+      || g_str_equal (pspec->name, order_by_key))
     {
       /* TODO: update only the items which have changed */
       mex_view_model_refresh_external_items (view);
+
+      return;
+    }
+
+  /* check for one of the filter keys */
+  for (list = priv->filter_by; list; list = g_list_next (list))
+    {
+      FilterKeyValue *filter = list->data;
+
+      if (g_str_equal (pspec->name,
+                       mex_content_metadata_key_to_string (filter->key)))
+        {
+          mex_view_model_refresh_external_items (view);
+
+          return;
+        }
     }
 }
 
@@ -805,15 +845,63 @@ mex_view_model_set_loop (MexViewModel *self,
 void
 mex_view_model_set_filter_by (MexViewModel       *model,
                               MexContentMetadata  metadata_key,
-                              const gchar        *value)
+                              const gchar        *value,
+                              ...)
 {
+  va_list args;
+
   MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+  FilterKeyValue *filter;
+  GList *list;
 
-  priv->filter_by_key = metadata_key;
+  /* clear the old filter by list */
+  for (list = priv->filter_by; list; list = g_list_next (list))
+    {
+      filter = list->data;
 
-  g_free (priv->filter_by_value);
-  priv->filter_by_value = g_strdup (value);
+      g_free (filter->value);
 
+      g_slice_free (FilterKeyValue, filter);
+    }
+  g_list_free (priv->filter_by);
+  priv->filter_by = NULL;
+
+  /* start the new filter by list */
+
+  if (metadata_key == MEX_CONTENT_METADATA_NONE)
+    return;
+
+  filter = g_slice_new (FilterKeyValue);
+  filter->key = metadata_key;
+  filter->value = g_strdup (value);
+
+  priv->filter_by = g_list_prepend (priv->filter_by, filter);
+
+  /* add any extra filters to the list */
+
+  va_start (args, value);
+
+  while (TRUE)
+    {
+      filter = g_slice_new (FilterKeyValue);
+
+      filter->key = va_arg (args, int);
+      if (filter->key == MEX_CONTENT_METADATA_NONE)
+        {
+          g_slice_free (FilterKeyValue, filter);
+          filter = NULL;
+          break;
+        }
+
+      filter->value = g_strdup (va_arg (args, char*));
+
+      priv->filter_by = g_list_prepend (priv->filter_by, filter);
+    }
+
+  va_end (args);
+
+
+  /* refresh the external items */
   mex_view_model_refresh_external_items (model);
 }
 
