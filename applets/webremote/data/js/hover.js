@@ -5,8 +5,11 @@ $(document).ready (function () {
 
 $("#remote img, #search img").bind ("vmousedown", function (){
         /* Switch the image src to the selected version */
-        var new_src;
-        new_src = $(this).attr ('src').replace (".png", "") + selected_postfix;
+        var new_src = $(this).attr ('src');
+        if (new_src.match (selected_postfix))
+          return;
+
+        new_src = new_src.replace (".png", "") + selected_postfix;
         $(this).attr ("src", new_src);
 
         /* If we're pressing the buttons change the background of the fiveway
