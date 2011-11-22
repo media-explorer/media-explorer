@@ -439,6 +439,10 @@ mex_search_plugin_search_cb (MexSearchPlugin *self)
 
   const gchar *search = mx_entry_get_text (MX_ENTRY (priv->search_entry));
 
+  /* don't run a search if the search entry was empty */
+  if (!search || search[0] == '\0')
+    return;
+
   /* Stop the suggestions search */
   if (priv->suggest_timeout)
     {
