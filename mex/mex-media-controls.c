@@ -1087,16 +1087,7 @@ mex_media_controls_set_content (MexMediaControls *self,
       /* From coloumn context = MexViewModel MexAggregateModel MexQueueModel */
       /* From grid  context = MexProxyModel MexProxyModel MexQueueModel */
 
-      if (MEX_IS_PROXY_MODEL (context))
-        {
-         MexModel *model_from_proxy;
-          model_from_proxy =
-            mex_proxy_model_get_model (MEX_PROXY_MODEL (orig_model));
-
-          if (MEX_IS_QUEUE_MODEL (model_from_proxy))
-            priv->is_queue_model = TRUE;
-        }
-      else if (MEX_IS_AGGREGATE_MODEL (orig_model))
+      if (MEX_IS_AGGREGATE_MODEL (orig_model))
         {
           MexModel *real_model;
           real_model =

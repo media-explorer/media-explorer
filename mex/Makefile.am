@@ -96,7 +96,6 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-plugin-manager.h			\
 	$(top_srcdir)/mex/mex-program.h				\
 	$(top_srcdir)/mex/mex-proxy.h				\
-	$(top_srcdir)/mex/mex-proxy-model.h			\
 	$(top_srcdir)/mex/mex-queue-model.h			\
 	$(top_srcdir)/mex/mex-queue-button.h			\
 	$(top_srcdir)/mex/mex-resizing-hbox.h			\
@@ -200,7 +199,6 @@ mex_sources =					\
 	mex-private.c				\
 	mex-program.c				\
 	mex-proxy.c				\
-	mex-proxy-model.c			\
 	mex-queue-model.c			\
 	mex-queue-button.c			\
 	mex-resizing-hbox.c			\

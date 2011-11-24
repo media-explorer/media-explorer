@@ -1219,9 +1219,7 @@ mex_plugin_present_model_cb (GObject      *plugin,
 
       if (g_list_length (models) == 1)
         {
-          MexModel *new_model = mex_proxy_model_new ();
-          mex_proxy_model_set_model (MEX_PROXY_MODEL (new_model),
-                                     MEX_MODEL (models->data));
+          MexModel *new_model = mex_view_model_new (models->data);
           mex_explorer_push_model (explorer, new_model);
         }
       else
@@ -1229,8 +1227,7 @@ mex_plugin_present_model_cb (GObject      *plugin,
     }
   else
     {
-      MexModel *new_model = mex_proxy_model_new ();
-      mex_proxy_model_set_model (MEX_PROXY_MODEL (new_model), model);
+      MexModel *new_model = mex_view_model_new (model);
       mex_explorer_push_model (explorer, new_model);
     }
 
@@ -1944,7 +1941,6 @@ mex_open_group_cb (MxAction *action,
   gint filter_key, second_filter_key;
   gchar *filter_value, *second_filter_value;
   gint group_key;
-  gint i = 0;
 
   content = mex_action_get_content (action);
 

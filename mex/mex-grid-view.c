@@ -588,10 +588,7 @@ mex_order_menu_cb (MxAction    *action,
   if (priv->order_by_layout)
     return;
 
-  if (MEX_IS_PROXY_MODEL (priv->model))
-    model = mex_proxy_model_get_model (MEX_PROXY_MODEL (priv->model));
-  else
-    model = priv->model;
+  model = priv->model;
 
   mex_menu_push (MEX_MENU (priv->menu_layout));
 
@@ -635,17 +632,6 @@ mex_alt_model_cb (MxAction    *action,
   mex_menu_action_set_toggled (MEX_MENU (priv->menu_layout), "alt-model",
                                !mex_menu_action_get_toggled (MEX_MENU (priv->menu_layout),
                                                              "alt-model"));
-  if (MEX_IS_PROXY_MODEL (priv->model))
-    {
-      MexModel *old_model;
-
-      old_model = mex_proxy_get_model (priv->proxy);
-
-      mex_proxy_set_model (priv->proxy, priv->alt_model);
-
-      priv->alt_model = old_model;
-    }
-
 }
 
 static void

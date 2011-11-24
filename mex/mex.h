@@ -79,7 +79,6 @@
 #include <mex/mex-plugin-manager.h>
 #include <mex/mex-program.h>
 #include <mex/mex-proxy.h>
-#include <mex/mex-proxy-model.h>
 #include <mex/mex-resizing-hbox.h>
 #include <mex/mex-resizing-hbox-child.h>
 #include <mex/mex-scroll-indicator.h>
