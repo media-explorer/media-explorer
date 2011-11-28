@@ -773,7 +773,7 @@ mex_view_model_controller_changed_cb (GController          *controller,
             MexContent *content;
             gint idx;
 
-            idx = g_controller_reference_get_index_int (ref, n_indices);
+            idx = g_controller_reference_get_index_uint (ref, n_indices);
 
             content = mex_model_get_content (priv->model, idx);
 
