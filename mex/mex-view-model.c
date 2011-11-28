@@ -84,6 +84,8 @@ struct _MexViewModelPrivate
   MexContentMetadata group_by_key;
 
   GController *controller;
+
+  gchar *title;
 };
 
 static void mex_view_model_controller_changed_cb (GController          *controller,
@@ -165,6 +167,9 @@ mex_view_model_get_property (GObject    *object,
       break;
 
     case PROP_TITLE:
+      g_value_set_string (value, priv->title);
+      break;
+
     case PROP_SORT_FUNC:
     case PROP_SORT_DATA:
     case PROP_ICON_NAME:
@@ -201,6 +206,10 @@ mex_view_model_set_property (GObject      *object,
       break;
 
     case PROP_TITLE:
+      g_free (self->priv->title);
+      self->priv->title = g_value_dup_string (value);
+      break;
+
     case PROP_SORT_FUNC:
     case PROP_SORT_DATA:
     case PROP_ICON_NAME:
@@ -280,6 +289,8 @@ mex_view_model_finalize (GObject *object)
       g_ptr_array_free (priv->internal_items, TRUE);
       priv->external_items = NULL;
     }
+
+  g_free (priv->title);
 
   /* clear the filter list */
   mex_view_model_set_filter_by (MEX_VIEW_MODEL (object),
