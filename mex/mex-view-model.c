@@ -82,6 +82,7 @@ struct _MexViewModelPrivate
   gboolean           order_by_descending;
 
   MexContentMetadata group_by_key;
+  GHashTable *group_items;
 
   GController *controller;
 
@@ -119,12 +120,11 @@ mex_view_model_set_model (MexViewModel *self,
                         self);
 
       /* copy initial items across */
-      g_ptr_array_set_size (priv->internal_items,
-                            mex_model_get_length (priv->model));
+      g_ptr_array_set_size (priv->internal_items, 0);
 
-      while ((content = mex_model_get_content (priv->model, i)))
+      while ((content = mex_model_get_content (priv->model, i++)))
         {
-          priv->internal_items->pdata[i++] = content;
+          g_ptr_array_add (priv->internal_items, g_object_ref (content));
 
           g_signal_connect (content, "notify", G_CALLBACK (content_notify_cb),
                             self);
@@ -266,9 +266,6 @@ mex_view_model_finalize (GObject *object)
 
   if (priv->external_items)
     {
-      for (i = 0; i < priv->external_items->len; i++)
-        g_object_unref (g_ptr_array_index (priv->external_items, i));
-
       g_ptr_array_free (priv->external_items, TRUE);
       priv->external_items = NULL;
     }
@@ -288,6 +285,12 @@ mex_view_model_finalize (GObject *object)
         }
       g_ptr_array_free (priv->internal_items, TRUE);
       priv->external_items = NULL;
+    }
+
+  if (priv->group_items)
+    {
+      g_hash_table_destroy (priv->group_items);
+      priv->group_items = NULL;
     }
 
   g_free (priv->title);
@@ -485,8 +488,8 @@ mex_view_model_init (MexViewModel *self)
   priv = VIEW_MODEL_PRIVATE (self);
   self->priv = priv;
 
-  priv->external_items = g_ptr_array_new ();
-  priv->internal_items = g_ptr_array_new ();
+  priv->external_items = g_ptr_array_new_with_free_func (g_object_unref);
+  priv->internal_items = g_ptr_array_new_with_free_func (g_object_unref);
 
   priv->controller = g_ptr_array_controller_new (priv->external_items);
 }
@@ -523,28 +526,43 @@ order_by_func (gconstpointer a,
 
 }
 
+static gboolean
+_g_ptr_array_contains (GPtrArray *haystack, gpointer needle)
+{
+  gint i;
+
+  for (i = 0; i < haystack->len; i++)
+    {
+      if (haystack->pdata[i] == needle)
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
 static void
 mex_view_model_refresh_external_items (MexViewModel *model)
 {
   MexViewModelPrivate *priv = model->priv;
-  gint i, count;
+  gint i;
+  GPtrArray *new_items;
   GHashTable *groups = NULL;
-
-  /* clear the references from the external items */
-  for (i = 0; i < priv->external_items->len; i++)
-    g_object_unref (g_ptr_array_index (priv->external_items, i));
+  GControllerReference *ref;
 
   /* allocate the full array to start with */
-  g_ptr_array_set_size (priv->external_items, priv->internal_items->len);
+  new_items = g_ptr_array_new_full (priv->internal_items->len, g_object_unref);
 
   if (priv->group_by_key)
     {
-      groups = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
-                                      NULL);
+      groups = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+
+      if (!priv->group_items)
+        priv->group_items = g_hash_table_new_full (g_str_hash, g_str_equal,
+                                                   g_free, NULL);
     }
 
-  /* add the items to the external list */
-  for (i = 0, count = 0; i < priv->internal_items->len; i++)
+  /* add the items to the new list */
+  for (i = 0; i < priv->internal_items->len; i++)
     {
       MexContent *content;
 
@@ -599,40 +617,50 @@ mex_view_model_refresh_external_items (MexViewModel *model)
               strlower = g_utf8_strdown (g, -1);
               if (!g_hash_table_lookup (groups, strlower))
                 {
-                  content = g_object_new (MEX_TYPE_GENERIC_CONTENT,
-                                          "title", g,
-                                          "mimetype", "x-mex/group",
-                                          NULL);
-                  g_hash_table_insert (groups, strlower, content);
+                  content = g_hash_table_lookup (priv->group_items, strlower);
 
-                  g_object_set_data (G_OBJECT (content), "filter-key",
-                                     GINT_TO_POINTER (priv->group_by_key));
-                  g_object_set_data_full (G_OBJECT (content), "filter-value",
-                                          g_strdup (g), g_free);
-
-                  if (priv->filter_by)
+                  if (!content)
                     {
-                      FilterKeyValue *filter = priv->filter_by->data;
+                      content = g_object_new (MEX_TYPE_GENERIC_CONTENT,
+                                              "title", g,
+                                              "mimetype", "x-mex/group",
+                                              NULL);
+                      g_hash_table_insert (groups, strlower, content);
 
-                      g_object_set_data (G_OBJECT (content),
-                                         "second-filter-key",
-                                         GINT_TO_POINTER (filter->key));
+                      g_object_set_data (G_OBJECT (content), "filter-key",
+                                         GINT_TO_POINTER (priv->group_by_key));
+                      g_object_set_data_full (G_OBJECT (content), "filter-value",
+                                              g_strdup (g), g_free);
 
-                      g_object_set_data_full (G_OBJECT (content),
-                                              "second-filter-value",
-                                              g_strdup (filter->value), g_free);
+                      if (priv->filter_by)
+                        {
+                          FilterKeyValue *filter = priv->filter_by->data;
+
+                          g_object_set_data (G_OBJECT (content),
+                                             "second-filter-key",
+                                             GINT_TO_POINTER (filter->key));
+
+                          g_object_set_data_full (G_OBJECT (content),
+                                                  "second-filter-value",
+                                                  g_strdup (filter->value), g_free);
+                        }
+
+
+                      g_object_set_data_full (G_OBJECT (content), "source-model",
+                                              g_object_ref (model), g_object_unref);
+
+                      /* set the group by key to the secondary group by key for
+                       * this category if the primary group by key was used for this
+                       * model */
+                      if (c_info->primary_group_by_key == priv->group_by_key)
+                        g_object_set_data (G_OBJECT (content), "group-key",
+                                           GINT_TO_POINTER (c_info->secondary_group_by_key));
+
+                      /* add this item to the group items cache */
+                      g_hash_table_insert (priv->group_items,
+                                           g_strdup (strlower), content);
+                      g_object_ref_sink (content);
                     }
-
-
-                  g_object_set_data_full (G_OBJECT (content), "source-model",
-                                          g_object_ref (model), g_object_unref);
-
-                  /* set the group by key to the secondary group by key for
-                   * this category if the primary group by key was used for this
-                   * model */
-                  if (c_info->primary_group_by_key == priv->group_by_key)
-                    g_object_set_data (G_OBJECT (content), "group-key",
-                                       GINT_TO_POINTER (c_info->secondary_group_by_key));
                 }
               else
                 {
@@ -642,26 +670,82 @@ mex_view_model_refresh_external_items (MexViewModel *model)
             }
         }
 
-      /* add the item to the external list */
-      g_object_ref_sink (content);
-      priv->external_items->pdata[count] = content;
-      count++;
+      /* add the item to the list */
+      g_ptr_array_add (new_items, g_object_ref (content));
     }
 
-  /* set the final size */
-  if (count < priv->external_items->len)
-    g_ptr_array_set_size (priv->external_items, count);
-
-  /* this should not happen */
-  if (count > priv->external_items->len)
-    g_error (G_STRLOC "More items added to view model than in original model");
-
-  /* destroy the groups hash table */
   if (groups)
     {
       g_hash_table_destroy (groups);
       groups = NULL;
     }
+
+
+  /* compare new_items and external_items */
+
+
+  /* Remove items first, so that the items added later can be added at the
+   * correct positions with respect to any limit value */
+
+  /* find items to remove from external_items */
+  for (i = 0; i < priv->external_items->len; i++)
+    {
+      if (!_g_ptr_array_contains (new_items, priv->external_items->pdata[i]))
+        {
+          /* emit the removed signal */
+          if (i < priv->limit)
+            {
+              ref = g_controller_create_reference (priv->controller,
+                                                   G_CONTROLLER_REMOVE,
+                                                   G_TYPE_UINT, 1, i);
+              g_controller_emit_changed (priv->controller, ref);
+            }
+
+          /* remove the item */
+          g_ptr_array_remove_index_fast (priv->external_items, i);
+
+          /* check if a previously hidden item is now visible */
+          if (priv->limit && i < priv->limit)
+            {
+              /* emit the added signal for the item that is now visible */
+
+              ref = g_controller_create_reference (priv->controller,
+                                                   G_CONTROLLER_ADD,
+                                                   G_TYPE_UINT, 1,
+                                                   i);
+              g_controller_emit_changed (priv->controller, ref);
+            }
+
+          i--;
+        }
+    }
+
+
+
+  /* find items to add to external_items */
+  for (i = 0; i < new_items->len; i++)
+    {
+      if (!_g_ptr_array_contains (priv->external_items, new_items->pdata[i]))
+        {
+          /* add the item */
+          g_ptr_array_add (priv->external_items,
+                           g_object_ref (new_items->pdata[i]));
+
+          /* emit the added signal, if there is no limit or the new index is
+           * less than the limit */
+          if (!priv->limit || priv->external_items->len - 1 < priv->limit)
+            {
+              ref = g_controller_create_reference (priv->controller,
+                                                   G_CONTROLLER_ADD,
+                                                   G_TYPE_UINT, 1,
+                                                   priv->external_items->len - 1);
+              g_controller_emit_changed (priv->controller, ref);
+            }
+        }
+    }
+
+  /* destroy the new_items list */
+  g_ptr_array_free (new_items, TRUE);
 
   /* sort the items */
   if (priv->order_by_key)
@@ -669,16 +753,6 @@ mex_view_model_refresh_external_items (MexViewModel *model)
       SortFuncInfo info = { priv->order_by_key, priv->order_by_descending };
 
       g_ptr_array_sort_with_data (priv->external_items, order_by_func, &info);
-    }
-
-  if (priv->controller)
-    {
-      GControllerReference *ref;
-
-      ref = g_controller_create_reference (priv->controller,
-                                           G_CONTROLLER_REPLACE,
-                                           G_TYPE_NONE, 0);
-      g_controller_emit_changed (priv->controller, ref);
     }
 }
 
@@ -736,13 +810,7 @@ mex_view_model_controller_changed_cb (GController          *controller,
     {
     case G_CONTROLLER_ADD:
       {
-        guint view_length;
-
-        /* increase the internal items array by the number of new items */
-        view_length = mex_model_get_length (MEX_MODEL (self));
-        g_ptr_array_set_size (priv->internal_items, view_length + n_indices);
-
-        /* set the new items */
+        /* add the new items */
         while (n_indices-- > 0)
           {
             MexContent *content;
@@ -755,7 +823,7 @@ mex_view_model_controller_changed_cb (GController          *controller,
             g_signal_connect (content, "notify", G_CALLBACK (content_notify_cb),
                               self);
 
-            priv->internal_items->pdata[view_length + n_indices] = content;
+            g_ptr_array_add (priv->internal_items, g_object_ref (content));
 
 
             /* any MexProgram objects must have all their data resolved to be
@@ -791,8 +859,6 @@ mex_view_model_controller_changed_cb (GController          *controller,
       break;
 
     case G_CONTROLLER_CLEAR:
-      for (i = 0; i < priv->external_items->len; i++)
-        g_object_unref (g_ptr_array_index (priv->external_items, i));
       g_ptr_array_set_size (priv->external_items, 0);
 
       for (i = 0; i < priv->external_items->len; i++)
