@@ -139,18 +139,6 @@ download_queue_completed (MexDownloadQueue *queue,
 }
 
 static void
-_update_title (MexContentTile *tile)
-{
-  MexContentTilePrivate *priv = tile->priv;
-  const gchar *title;
-
-  /* set title */
-  title = mex_content_get_metadata (priv->content, MEX_CONTENT_METADATA_TITLE);
-
-  mex_tile_set_label (MEX_TILE (tile), title);
-}
-
-static void
 _update_thumbnail_from_image (MexContentTile *tile,
                               const gchar    *file)
 {
@@ -347,22 +335,16 @@ _content_notify (MexContent     *content,
                  MexContentTile *tile)
 {
   MexContentTilePrivate *priv = tile->priv;
-  const gchar *still_prop_name, *title_prop_name, *logo_prop_name;
+  const gchar *still_prop_name, *logo_prop_name;
 
   still_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
                                                    MEX_CONTENT_METADATA_STILL);
-  title_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
-                                                   MEX_CONTENT_METADATA_TITLE);
   logo_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
                                                   MEX_CONTENT_METADATA_STATION_LOGO);
 
   if (!g_strcmp0 (pspec->name, still_prop_name))
     {
       _reset_thumbnail (tile);
-    }
-  else if (!g_strcmp0 (pspec->name, title_prop_name))
-    {
-      _update_title (tile);
     }
   else if (!g_strcmp0 (pspec->name, logo_prop_name))
     {
@@ -399,7 +381,19 @@ mex_content_tile_set_content (MexContentView *view,
   priv->content = g_object_ref_sink (content);
 
   /* Update title/thumbnail display */
-  _update_title (tile);
+  const gchar *label_prop_name, *secondary_label_prop_name;
+
+  label_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
+                                                   MEX_CONTENT_METADATA_ARTIST);
+  secondary_label_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
+                                                   MEX_CONTENT_METADATA_TITLE);
+  g_object_bind_property (content, label_prop_name, tile, "secondary-label",
+                          G_BINDING_SYNC_CREATE);
+  g_object_bind_property (content, secondary_label_prop_name, tile, "label",
+                          G_BINDING_SYNC_CREATE);
+
+
+
   _update_logo (tile);
   _reset_thumbnail (tile);
 
