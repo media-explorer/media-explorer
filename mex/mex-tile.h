@@ -83,6 +83,10 @@ void     mex_tile_set_header_visible (MexTile *tile, gboolean header_visible);
 gboolean mex_tile_get_important (MexTile *tile);
 void     mex_tile_set_important (MexTile *tile, gboolean important);
 
+
+const gchar * mex_tile_get_secondary_label (MexTile *tile);
+void          mex_tile_set_secondary_label (MexTile *tile, const gchar *label);
+
 G_END_DECLS
 
 #endif /* _MEX_TILE_H */

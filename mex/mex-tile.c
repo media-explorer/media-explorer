@@ -40,6 +40,7 @@ enum
   PROP_PRIMARY_ICON,
   PROP_SECONDARY_ICON,
   PROP_LABEL,
+  PROP_SECONDARY_LABEL,
   PROP_HEADER_VISIBLE,
   PROP_IMPORTANT
 };
@@ -53,6 +54,9 @@ struct _MexTilePrivate
   ClutterActor    *icon1;
   ClutterActor    *icon2;
   ClutterActor    *label;
+  ClutterActor    *secondary_label;
+
+  ClutterActor    *box_layout;
 
   ClutterTimeline *timeline;
   ClutterAlpha    *important_alpha;
@@ -115,6 +119,10 @@ mex_tile_get_property (GObject    *object,
       g_value_set_string (value, mex_tile_get_label (self));
       break;
 
+    case PROP_SECONDARY_LABEL:
+      g_value_set_string (value, mex_tile_get_secondary_label (self));
+      break;
+
     case PROP_HEADER_VISIBLE:
       g_value_set_boolean (value, mex_tile_get_header_visible (self));
       break;
@@ -150,6 +158,10 @@ mex_tile_set_property (GObject      *object,
       mex_tile_set_label (self, g_value_get_string (value));
       break;
 
+    case PROP_SECONDARY_LABEL:
+      mex_tile_set_secondary_label (self, g_value_get_string (value));
+      break;
+
     case PROP_HEADER_VISIBLE:
       mex_tile_set_header_visible (self, g_value_get_boolean (value));
       break;
@@ -173,10 +185,14 @@ mex_tile_dispose (GObject *object)
   mex_tile_set_primary_icon (self, NULL);
   mex_tile_set_secondary_icon (self, NULL);
 
-  if (priv->label)
+  if (priv->box_layout)
     {
-      clutter_actor_destroy (priv->label);
+      clutter_actor_destroy (priv->box_layout);
+      priv->box_layout = NULL;
+
+      /* box_layout contains label and secondary_label */
       priv->label = NULL;
+      priv->secondary_label = NULL;
     }
 
   if (priv->header_padding)
@@ -231,7 +247,7 @@ mex_tile_get_preferred_height (ClutterActor *actor,
   for_width -= padding.left + padding.right;
 
   /* Header */
-  clutter_actor_get_preferred_height (priv->label, for_width, NULL, &label_h);
+  clutter_actor_get_preferred_height (priv->box_layout, for_width, NULL, &label_h);
 
   if (priv->icon1)
     clutter_actor_get_preferred_height (priv->icon1, for_width, NULL, &icon1_h);
@@ -355,7 +371,7 @@ mex_tile_allocate (ClutterActor           *actor,
           padding.left += priv->header_padding->left;
         }
 
-      clutter_actor_get_preferred_size (priv->label, NULL, NULL, &label_w,
+      clutter_actor_get_preferred_size (priv->box_layout, NULL, NULL, &label_w,
                                         &label_h);
 
       if (priv->icon1)
@@ -391,7 +407,7 @@ mex_tile_allocate (ClutterActor           *actor,
       child_box.y1 = padding.top + (header_h / 2.0) - (label_h / 2.0);
       child_box.y2 = child_box.y1 + label_h;
 
-      fade = clutter_actor_get_effect (priv->label, "fade");
+      fade = clutter_actor_get_effect (priv->box_layout, "fade");
 
       middle_w = available_width - icon1_w - icon2_w;
       if (priv->header_padding)
@@ -400,7 +416,7 @@ mex_tile_allocate (ClutterActor           *actor,
                                       !(middle_w > label_w));
       mx_fade_effect_set_bounds (MX_FADE_EFFECT (fade), 0, 0, middle_w, 0);
 
-      clutter_actor_allocate (priv->label, &child_box, flags);
+      clutter_actor_allocate (priv->box_layout, &child_box, flags);
 
       /* secondary icon */
       if (priv->icon2)
@@ -450,7 +466,7 @@ mex_tile_paint (ClutterActor *actor)
                           priv->header_height);
         }
 
-      clutter_actor_paint (priv->label);
+      clutter_actor_paint (priv->box_layout);
 
       if (priv->icon1)
         clutter_actor_paint (priv->icon1);
@@ -557,6 +573,13 @@ mex_tile_class_init (MexTileClass *klass)
                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LABEL, pspec);
 
+  pspec = g_param_spec_string ("secondary-label",
+                               "Secondary Label",
+                               "Text to use for the secondary label",
+                               NULL,
+                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SECONDARY_LABEL, pspec);
+
   pspec = g_param_spec_object ("primary-icon",
                                "Primary icon",
                                "ClutterActor to display in the primary "
@@ -607,6 +630,9 @@ mex_tile_style_changed_cb (MexTile *self, MxStyleChangedFlags flags)
 
   mx_stylable_apply_clutter_text_attributes (MX_STYLABLE (self),
                                              CLUTTER_TEXT (priv->label));
+
+  mx_stylable_apply_clutter_text_attributes (MX_STYLABLE (self),
+                                             CLUTTER_TEXT (priv->secondary_label));
 
   if (image && image->uri)
     {
@@ -692,18 +718,29 @@ mex_tile_init (MexTile *self)
 
   priv->material = cogl_material_copy (template_material);
 
-  priv->label = clutter_text_new ();
 
+  /* layout for primary and secondary labels */
+  priv->box_layout = mx_box_layout_new ();
+  mx_box_layout_set_spacing (MX_BOX_LAYOUT (priv->box_layout), 12);
+
+  /* add fade effect to the box layout */
   fade = (ClutterEffect*) mx_fade_effect_new ();
   mx_fade_effect_set_border (MX_FADE_EFFECT (fade), 0, 50, 0, 0);
   mx_fade_effect_set_color (MX_FADE_EFFECT (fade), &opaque);
-  clutter_actor_add_effect_with_name (priv->label, "fade", fade);
-  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (fade),
-                                  TRUE);
+  clutter_actor_add_effect_with_name (priv->box_layout, "fade", fade);
+  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (fade), TRUE);
 
   clutter_actor_push_internal (CLUTTER_ACTOR (self));
-  clutter_actor_set_parent (priv->label, CLUTTER_ACTOR (self));
+  clutter_actor_set_parent (priv->box_layout, CLUTTER_ACTOR (self));
   clutter_actor_pop_internal (CLUTTER_ACTOR (self));
+
+
+  priv->label = clutter_text_new ();
+  priv->secondary_label = clutter_text_new ();
+  clutter_actor_set_opacity (priv->secondary_label, 128);
+
+  clutter_container_add (CLUTTER_CONTAINER (priv->box_layout), priv->label,
+                         priv->secondary_label, NULL);
 
   priv->header_visible = TRUE;
 
@@ -751,6 +788,23 @@ mex_tile_get_label (MexTile *tile)
 {
   g_return_val_if_fail (MEX_IS_TILE (tile), NULL);
   return clutter_text_get_text (CLUTTER_TEXT (tile->priv->label));
+}
+
+void
+mex_tile_set_secondary_label (MexTile *tile, const gchar *label)
+{
+  g_return_if_fail (MEX_IS_TILE (tile));
+
+  clutter_text_set_text (CLUTTER_TEXT (tile->priv->secondary_label), label);
+
+  g_object_notify (G_OBJECT (tile), "secondary-label");
+}
+
+const gchar *
+mex_tile_get_secondary_label (MexTile *tile)
+{
+  g_return_val_if_fail (MEX_IS_TILE (tile), NULL);
+  return clutter_text_get_text (CLUTTER_TEXT (tile->priv->secondary_label));
 }
 
 void
