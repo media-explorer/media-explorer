@@ -564,7 +564,7 @@ mex_view_model_refresh_external_items (MexViewModel *model)
   /* add the items to the new list */
   for (i = 0; i < priv->internal_items->len; i++)
     {
-      MexContent *content;
+      MexContent *content, *group_item;
 
       content = g_ptr_array_index (priv->internal_items, i);
 
@@ -617,23 +617,37 @@ mex_view_model_refresh_external_items (MexViewModel *model)
               strlower = g_utf8_strdown (g, -1);
               if (!g_hash_table_lookup (groups, strlower))
                 {
-                  content = g_hash_table_lookup (priv->group_items, strlower);
+                  group_item = g_hash_table_lookup (priv->group_items, strlower);
 
-                  if (!content)
+                  if (!group_item)
                     {
-                      content = g_object_new (MEX_TYPE_GENERIC_CONTENT,
-                                              "title", g,
-                                              "mimetype", "x-mex/group",
-                                              NULL);
+                      const gchar *prop_name;
+
+                      group_item = g_object_new (MEX_TYPE_GENERIC_CONTENT,
+                                                 "title", g,
+                                                 "mimetype", "x-mex/group",
+                                                 NULL);
+
+                      prop_name = mex_content_get_property_name (MEX_CONTENT (content),
+                                                                 MEX_CONTENT_METADATA_ALBUM);
+                      g_object_bind_property (content, prop_name, group_item, prop_name,
+                                              G_BINDING_SYNC_CREATE);
+
+                      prop_name = mex_content_get_property_name (MEX_CONTENT (content),
+                                                                 MEX_CONTENT_METADATA_ARTIST);
+                      g_object_bind_property (content, prop_name, group_item, prop_name,
+                                              G_BINDING_SYNC_CREATE);
+
 
                       /* keep a list of the groups created during this refresh */
-                      g_hash_table_insert (groups, strlower, content);
+                      g_hash_table_insert (groups, strlower, group_item);
 
                       /* add this item to the group items cache */
                       g_hash_table_insert (priv->group_items,
-                                           g_strdup (strlower), content);
-                      g_object_ref_sink (content);
+                                           g_strdup (strlower), group_item);
+                      g_object_ref_sink (group_item);
                     }
+                  content = group_item;
 
                   if (priv->filter_by)
                     {
