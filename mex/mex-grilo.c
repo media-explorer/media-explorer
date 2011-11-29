@@ -151,7 +151,7 @@ set_metadata_from_media (MexContent          *content,
             mex_content_set_metadata (content, mex_key, replacement);
             mex_content_set_metadata (content, MEX_CONTENT_METADATA_SERIES_NAME,
                                       showname);
-            season_str = g_strdup_printf ("%d", season);
+            season_str = g_strdup_printf (_("Season %d"), season);
             mex_content_set_metadata (content, MEX_CONTENT_METADATA_SEASON,
                                       season_str);
             g_free (season_str);
