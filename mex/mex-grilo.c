@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include "mex-metadata-utils.h"
 
+#include <glib/gi18n.h>
+
 static GHashTable *mex_to_grl;
 
 /**/
@@ -130,8 +132,7 @@ set_metadata_from_media (MexContent          *content,
 
             if (showname)
               {
-                replacement = g_strdup_printf ("%s - S%d - E%d",
-                                               showname, season, episode);
+                replacement = g_strdup_printf (_("Episode %d"), episode);
               }
             else
               {
