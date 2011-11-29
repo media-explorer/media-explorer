@@ -2248,6 +2248,7 @@ main (int argc, char **argv)
   if (!g_option_context_parse (context, &argc, &argv, &error))
     {
       g_warning ("Failed to parse options: %s", error->message);
+      g_clear_error (&error);
       exit (1);
     }
   g_option_context_free (context);
@@ -2544,7 +2545,6 @@ main (int argc, char **argv)
                                  web_settings_loc,
                                  G_KEY_FILE_NONE, NULL);
 
-      error = NULL;
       autostart = g_key_file_get_boolean (web_settings, "settings",
                                           "autostart", &error);
       /* We get an error if the config key is not found so do the
@@ -2553,7 +2553,7 @@ main (int argc, char **argv)
       if (error)
         {
           auto_start_dbus_service (MEX_WEBREMOTE_DBUS_SERVICE);
-          g_error_free (error);
+          g_clear_error (&error);
         }
       else
         {
@@ -2594,8 +2594,7 @@ main (int argc, char **argv)
 #ifdef MEX_ENABLE_DEBUG
   /* When we are building the application in debug mode let's try to cleanly
    * remove everything to make valgrind and our debug plugin more useful */
-  if (error)
-    g_error_free (error);
+  g_clear_error (&error);
 
   g_object_unref (app);
 
