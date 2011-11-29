@@ -379,7 +379,7 @@ mex_telepathy_channel_create_toolbar (MexTelepathyChannel *self)
                                "ToolbarArea");
 }
 
-ClutterActor *
+static ClutterActor *
 mex_telepathy_channel_create_static_image (void)
 {
   ClutterActor *actor;
@@ -409,7 +409,7 @@ mex_telepathy_channel_create_static_image (void)
   return actor;
 }
 
-MexShadow *
+static MexShadow *
 mex_telepathy_channel_create_shadow (void)
 {
   ClutterColor shadow_color = {0, 0, 0, 64};
@@ -1410,6 +1410,8 @@ mex_telepathy_channel_class_init (MexTelepathyChannelClass *klass)
 static void
 mex_telepathy_channel_init (MexTelepathyChannel *self)
 {
+  ClutterActor *stage;
+
   self->priv = TELEPATHY_CHANNEL_PRIVATE (self);
   self->priv->connection = NULL;
   self->priv->channel = NULL;
@@ -1419,7 +1421,7 @@ mex_telepathy_channel_init (MexTelepathyChannel *self)
   self->priv->busy_box = NULL;
   mex_telepathy_channel_create_video_page (self);
 
-  ClutterActor *stage = mx_window_get_child (mex_get_main_window ());
+  stage = mex_get_stage ();
   self->priv->scene_width = clutter_actor_get_width (stage);
   self->priv->scene_height = clutter_actor_get_height (stage);
 }

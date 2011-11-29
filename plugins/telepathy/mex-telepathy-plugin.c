@@ -460,13 +460,12 @@ mex_telepathy_plugin_add_contact (gpointer contact_ptr,
   TpContact *contact = TP_CONTACT (contact_ptr);
   TpConnection *connection;
   TpAccount *account;
+  MexContact *mex_contact;
 
   /* Get the connection and account so we can keep track of it */
   connection = tp_contact_get_connection (contact);
   account = tp_connection_get_account (connection);
   g_hash_table_insert (priv->contact_accounts, contact, account);
-
-  MexContact *mex_contact;
 
   MEX_DEBUG ("Adding %s", tp_contact_get_alias (contact));
 
@@ -591,7 +590,7 @@ mex_telepathy_plugin_on_account_status_changed (TpAccount  *account,
 {
   MexTelepathyPlugin *self = MEX_TELEPATHY_PLUGIN (user_data);
   guint i;
-  GPtrArray *removed = NULL;
+  GList *removed = NULL;
   MexContact *mex_contact;
   TpContact *contact;
   TpConnection *contact_connection;
