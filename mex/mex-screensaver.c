@@ -69,7 +69,6 @@ connect_gnome_screensaverd (MexScreensaver *self)
 {
  MexScreensaverPrivate *priv = MEX_SCREENSAVER (self)->priv;
  GDBusProxy *proxy = NULL;
- GError *error = NULL;
 
  /* Try with gnome 2 api first. gnome_version 0 is the default
   * representing the undetermined state
@@ -82,7 +81,7 @@ connect_gnome_screensaverd (MexScreensaver *self)
                                             "org.gnome.ScreenSaver",
                                             "/org/gnome/ScreenSaver",
                                             "org.gnome.ScreenSaver",
-                                            NULL, &error);
+                                            NULL, NULL);
    }
 
  /* The gnome 2 api didn't work and we've been called again with version 3 */
@@ -94,8 +93,8 @@ connect_gnome_screensaverd (MexScreensaver *self)
                                             "org.gnome.SessionManager",
                                             "/org/gnome/SessionManager",
                                             "org.gnome.SessionManager",
-                                            NULL, &error);
-   }
+                                            NULL, NULL);
+  }
 
  return proxy;
 }
@@ -118,6 +117,9 @@ mex_screensaver_inhibit (MexScreensaver *self)
 
   proxy = connect_gnome_screensaverd (self);
 
+  /* we always get a proxy unless proxy creating went wrong. even if
+   * the target doesn't exist.
+   */
   if (!proxy)
     return;
 
@@ -140,7 +142,8 @@ mex_screensaver_inhibit (MexScreensaver *self)
       else
         {
           if (error->domain == G_DBUS_ERROR &&
-              error->code == G_DBUS_ERROR_UNKNOWN_METHOD)
+              (error->code == G_DBUS_ERROR_UNKNOWN_METHOD ||
+              error->code == G_DBUS_ERROR_SERVICE_UNKNOWN))
             {
               g_clear_error (&error);
               priv->gnome_version = 3;
@@ -164,7 +167,8 @@ mex_screensaver_inhibit (MexScreensaver *self)
       if ((variant = g_dbus_proxy_call_sync (proxy, "Inhibit",
                                             g_variant_new ("(susu)",
                                                            "MediaExplorer",
-                                                           0, "Playing media", 8),
+                                                           0, "Playing media",
+                                                           8),
                                             G_DBUS_CALL_FLAGS_NONE, -1, NULL,
                                             &error)))
         {
@@ -176,7 +180,8 @@ mex_screensaver_inhibit (MexScreensaver *self)
       else
         {
           if (error->domain == G_DBUS_ERROR &&
-              error->code == G_DBUS_ERROR_UNKNOWN_METHOD)
+              (error->code == G_DBUS_ERROR_UNKNOWN_METHOD ||
+              error->code == G_DBUS_ERROR_SERVICE_UNKNOWN))
             {
               g_clear_error (&error);
               priv->gnome_version = -1;
