@@ -631,6 +631,11 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                                                  NULL);
 
                       prop_name = mex_content_get_property_name (MEX_CONTENT (content),
+                                                                 MEX_CONTENT_METADATA_STILL);
+                      g_object_bind_property (content, prop_name, group_item, prop_name,
+                                              G_BINDING_SYNC_CREATE);
+
+                      prop_name = mex_content_get_property_name (MEX_CONTENT (content),
                                                                  MEX_CONTENT_METADATA_ALBUM);
                       g_object_bind_property (content, prop_name, group_item, prop_name,
                                               G_BINDING_SYNC_CREATE);
