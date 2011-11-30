@@ -404,7 +404,7 @@ mex_tile_allocate (ClutterActor           *actor,
 
       /* label */
       child_box.x2 = child_box.x1 + label_w;
-      child_box.y1 = padding.top + (header_h / 2.0) - (label_h / 2.0);
+      child_box.y1 = (int) (padding.top + (header_h / 2.0) - (label_h / 2.0));
       child_box.y2 = child_box.y1 + label_h;
 
       fade = clutter_actor_get_effect (priv->box_layout, "fade");
