@@ -102,6 +102,12 @@ MxButton.Settings:focus
   -mx-icon-name: "icon-settings";
 }
 
+MxButton.Back
+{
+  -mx-icon-name: "icon-back";
+  padding: 4;
+}
+
 /* Icons */
 MxIcon.Clear
 {

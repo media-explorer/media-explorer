@@ -28,6 +28,15 @@
             "label-visible" : false,
             "child::x-fill" : false,
             "child::y-fill" : false
+          },
+          {
+            "type" : "MxButton",
+            "id" : "back-button",
+            "icon-size" : 26,
+            "style-class" : "Back",
+            "label-visible" : false,
+            "child::x-fill" : false,
+            "child::y-fill" : false
           }
         ]
       },

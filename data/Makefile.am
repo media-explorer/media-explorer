@@ -118,6 +118,8 @@ dist_icon_22x22_DATA = \
 
 icon_26x26dir = $(icondir)/26x26
 dist_icon_26x26_DATA = \
+		 icons/icon-back.png \
+		 icons/icon-back-highlight.png \
 		 icons/call-audio.png \
 		 icons/call-audio-highlight.png \
 		 icons/call-end.png \

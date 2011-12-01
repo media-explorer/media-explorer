@@ -23,6 +23,7 @@
 #include "mex-info-bar.h"
 #include "mex-tile.h"
 #include "mex-generic-notification-source.h"
+#include "mex-action-manager.h"
 
 #include <glib/gi18n-lib.h>
 
@@ -46,6 +47,7 @@ struct _MexInfoBarPrivate
   ClutterActor *settings_dialog;
   ClutterActor *settings_button;
   ClutterActor *power_button;
+  ClutterActor *back_button;
 
 
   ClutterScript *script;
@@ -81,13 +83,22 @@ mex_info_bar_accept_focus (MxFocusable *focusable,
 {
   MexInfoBarPrivate *priv = MEX_INFO_BAR (focusable)->priv;
 
+  MxFocusable *result;
+
   ClutterActor *buttons_area;
 
  buttons_area =
     CLUTTER_ACTOR (clutter_script_get_object (priv->script, "buttons-area"));
 
-  return mx_focusable_accept_focus (MX_FOCUSABLE (buttons_area),
-                                    MX_FOCUS_HINT_PRIOR);
+  /* try the previous focusable first */
+  result = mx_focusable_accept_focus (MX_FOCUSABLE (buttons_area),
+                                      MX_FOCUS_HINT_PRIOR);
+
+  if (!result)
+    result = mx_focusable_accept_focus (MX_FOCUSABLE (buttons_area),
+                                        MX_FOCUS_HINT_FIRST);
+
+  return result;
 }
 
 static void
@@ -318,18 +329,17 @@ mex_info_bar_show_buttons (MexInfoBar *self, gboolean visible)
 {
   MexInfoBarPrivate *priv = self->priv;
 
-  mx_widget_set_disabled (MX_WIDGET (priv->settings_button), !visible);
-  mx_widget_set_disabled (MX_WIDGET (priv->power_button), !visible);
-
   if (!visible)
     {
-      clutter_actor_set_opacity (priv->settings_button, 0x00);
-      clutter_actor_set_opacity (priv->power_button, 0x00);
+      clutter_actor_hide (priv->settings_button);
+      clutter_actor_hide (priv->power_button);
+      clutter_actor_show (priv->back_button);
     }
   else
     {
-      clutter_actor_set_opacity (priv->settings_button, 0xff);
-      clutter_actor_set_opacity (priv->power_button, 0xff);
+      clutter_actor_show (priv->settings_button);
+      clutter_actor_show (priv->power_button);
+      clutter_actor_hide (priv->back_button);
     }
 }
 
@@ -552,6 +562,26 @@ _show_power_dialog_cb (ClutterActor *actor, MexInfoBar *self)
   return TRUE;
 }
 
+static void
+_back_button_cb (ClutterActor *actor,
+                 MexInfoBar   *bar)
+{
+  GList *actions, *l;
+
+  actions = mex_action_manager_get_actions (mex_action_manager_get_default ());
+
+  /* find the back action */
+  for (l = actions; l; l = g_list_next (l))
+    {
+      MxAction *action = l->data;
+
+      if (!g_strcmp0 (mx_action_get_name (action), "go-back"))
+        g_action_activate (G_ACTION (action), NULL);
+    }
+
+  g_list_free (actions);
+}
+
 void
 mex_info_bar_new_notification (MexInfoBar *self,
                                const gchar *message,
@@ -595,6 +625,9 @@ mex_info_bar_init (MexInfoBar *self)
   priv->power_button =
     CLUTTER_ACTOR (clutter_script_get_object (script, "power-button"));
 
+  priv->back_button =
+    CLUTTER_ACTOR (clutter_script_get_object (script, "back-button"));
+
   priv->notification_source = mex_generic_notification_source_new ();
 
   notification_area =
@@ -611,6 +644,10 @@ mex_info_bar_init (MexInfoBar *self)
   g_signal_connect (priv->power_button,
                     "clicked",
                     G_CALLBACK (_show_power_dialog_cb), self);
+
+  g_signal_connect (priv->back_button,
+                    "clicked",
+                    G_CALLBACK (_back_button_cb), self);
 
   _create_power_dialog (MEX_INFO_BAR (self));
   _create_settings_dialog (MEX_INFO_BAR (self));
