@@ -1983,7 +1983,31 @@ mex_open_group_cb (MxAction *action,
   else
     g_object_set (model, "title", filter_value, NULL);
 
-  mex_explorer_push_model (MEX_EXPLORER (data->explorer), model);
+  if (filter_key == MEX_CONTENT_METADATA_ALBUM)
+    {
+      /* play albums immediately */
+      content = mex_model_get_content (model, 0);
+
+      if (!content)
+        {
+          g_warning (G_STRLOC ": Play initiated on action with "
+                     "no associated content");
+          return;
+        }
+
+      g_object_set (content, "last-position-start", FALSE, NULL);
+      mex_content_view_set_context (MEX_CONTENT_VIEW (data->player), model);
+      if (content)
+        mex_content_view_set_content (MEX_CONTENT_VIEW (data->player), content);
+
+      /* hide other actors */
+      mex_hide_actor (data, data->slide_show);
+
+      /* show the video player */
+      run_play_transition (data, content, data->player, TRUE);
+    }
+  else
+    mex_explorer_push_model (MEX_EXPLORER (data->explorer), model);
 }
 
 static void
