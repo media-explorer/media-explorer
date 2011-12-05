@@ -110,7 +110,7 @@ mex_view_model_set_model (MexViewModel *self,
     {
       MexContent *content;
       GController *controller;
-      gint i = 0;
+      gint i;
 
       priv->model = g_object_ref_sink (model);
 
@@ -122,12 +122,20 @@ mex_view_model_set_model (MexViewModel *self,
       /* copy initial items across */
       g_ptr_array_set_size (priv->internal_items, 0);
 
-      while ((content = mex_model_get_content (priv->model, i++)))
+      for (i = 0; (content = mex_model_get_content (priv->model, i)); i++)
         {
+          GControllerReference *ref;
+
           g_ptr_array_add (priv->internal_items, g_object_ref (content));
 
           g_signal_connect (content, "notify", G_CALLBACK (content_notify_cb),
                             self);
+
+          ref = g_controller_create_reference (priv->controller,
+                                               G_CONTROLLER_ADD,
+                                               G_TYPE_UINT, 1,
+                                               i);
+          g_controller_emit_changed (priv->controller, ref);
 
           /* any MexProgram objects must have all their data resolved to be
            * useful in the view model */
