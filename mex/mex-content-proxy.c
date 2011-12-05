@@ -238,8 +238,8 @@ mex_content_proxy_new (MexModel         *model,
                        GType             object_type)
 {
   return g_object_new (MEX_TYPE_CONTENT_PROXY,
-                       "model", model,
                        "view", view,
+                       "model", model,
                        "object-type", object_type,
                        NULL);
 }
