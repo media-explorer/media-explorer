@@ -21,6 +21,7 @@
 #include "mex-generic-content.h"
 #include "mex-model-manager.h"
 #include "mex-program.h"
+#include "mex-group-item.h"
 
 #include <stdarg.h>
 
@@ -632,11 +633,30 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                   if (!group_item)
                     {
                       const gchar *prop_name;
+                      FilterKeyValue *filter2;
+                      gint group_key;
 
-                      group_item = g_object_new (MEX_TYPE_GENERIC_CONTENT,
-                                                 "title", g,
-                                                 "mimetype", "x-mex/group",
-                                                 NULL);
+                      if (priv->filter_by)
+                        filter2 = priv->filter_by->data;
+                      else
+                        filter2 = NULL;
+
+
+                      if (c_info->primary_group_by_key == priv->group_by_key)
+                        group_key = c_info->secondary_group_by_key;
+                      else
+                        group_key = 0;
+
+                      group_item =
+                        (MexContent*) mex_group_item_new (g,
+                                                          priv->model,
+                                                          /* filter key, value */
+                                                          priv->group_by_key, g,
+                                                          /* second filter key, value*/
+                                                          (priv->filter_by) ? filter2->key : 0,
+                                                          (priv->filter_by) ? filter2->value : NULL,
+                                                          /* group key */
+                                                          group_key);
 
                       prop_name = mex_content_get_property_name (MEX_CONTENT (content),
                                                                  MEX_CONTENT_METADATA_STILL);

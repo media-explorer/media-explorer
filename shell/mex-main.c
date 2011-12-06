@@ -1937,51 +1937,16 @@ mex_open_group_cb (MxAction *action,
                    MexData  *data)
 {
   MexContent *content;
-  MexModel *model, *source_model;
-  gint filter_key, second_filter_key;
-  gchar *filter_value, *second_filter_value;
-  gint group_key;
+  MexModel *model;
+  gint filter_key;
 
   content = mex_action_get_content (action);
 
-  source_model = g_object_get_data (G_OBJECT (content), "source-model");
-  source_model = mex_model_get_model (source_model);
-  model = mex_view_model_new (source_model);
+  g_object_get (content,
+                "filter-key", &filter_key,
+                NULL);
 
-  filter_key = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (content),
-                                                   "filter-key"));
-  filter_value = g_object_get_data (G_OBJECT (content), "filter-value");
-
-
-  second_filter_key =
-    GPOINTER_TO_INT (g_object_get_data (G_OBJECT (content),
-                                        "second-filter-key"));
-
-  second_filter_value =
-    g_object_get_data (G_OBJECT (content), "second-filter-value");
-
-  group_key = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (content),
-                                                  "group-key"));
-
-  mex_view_model_set_group_by (MEX_VIEW_MODEL (model), group_key);
-
-
-  mex_view_model_set_filter_by (MEX_VIEW_MODEL (model),
-                                filter_key, filter_value,
-                                second_filter_key, second_filter_value,
-                                MEX_CONTENT_METADATA_NONE);
-
-  if (second_filter_key)
-    {
-      gchar *title;
-
-      title = g_strdup_printf ("%s - %s",
-                               second_filter_value, filter_value);
-      g_object_set (model, "title", title, NULL);
-      g_free (title);
-    }
-  else
-    g_object_set (model, "title", filter_value, NULL);
+  model = mex_group_item_get_model (MEX_GROUP_ITEM (content));
 
   if (filter_key == MEX_CONTENT_METADATA_ALBUM)
     {

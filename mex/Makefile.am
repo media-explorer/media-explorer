@@ -70,6 +70,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-grilo-feed.h			\
 	$(top_srcdir)/mex/mex-grilo-tracker-feed.h		\
 	$(top_srcdir)/mex/mex-grilo-program.h			\
+	$(top_srcdir)/mex/mex-group-item.h			\
 	$(top_srcdir)/mex/mex-info-bar.h			\
 	$(top_srcdir)/mex/mex-info-panel.h			\
 	$(top_srcdir)/mex/mex-lirc.h				\
@@ -174,6 +175,7 @@ mex_sources =					\
 	mex-grilo-feed.c			\
 	mex-grilo-tracker-feed.c		\
 	mex-grilo-program.c			\
+	mex-group-item.c			\
 	mex-info-bar.c				\
 	mex-info-panel.c			\
 	mex-lirc.c				\
