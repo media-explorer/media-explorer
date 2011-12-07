@@ -115,6 +115,9 @@ mex_view_model_set_model (MexViewModel *self,
 
       priv->model = g_object_ref_sink (model);
 
+      if (priv->model)
+        g_object_get (priv->model, "title", &priv->title, NULL);
+
       controller = mex_model_get_controller (model);
       g_signal_connect (controller, "changed",
                         G_CALLBACK (mex_view_model_controller_changed_cb),
@@ -297,6 +300,7 @@ mex_view_model_finalize (GObject *object)
     }
 
   g_free (priv->title);
+  priv->title = NULL;
 
   /* clear the filter list */
   mex_view_model_set_filter_by (MEX_VIEW_MODEL (object),
