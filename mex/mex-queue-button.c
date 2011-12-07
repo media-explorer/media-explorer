@@ -122,18 +122,18 @@ mex_queue_button_class_init (MexQueueButtonClass *klass)
 }
 
 static void
-_add_remove_recursive (MexModel *queue_model, MexFeed *feed, gboolean add)
+_add_remove_recursive (MexModel *queue_model, MexModel *model, gboolean add)
 {
   gint len, i;
 
-  len = mex_model_get_length (MEX_MODEL (feed));
+  len = mex_model_get_length (model);
 
   for (i=0; i < len; i++)
     {
       MexContent *content;
       const gchar *mimetype;
 
-      content = mex_model_get_content (MEX_MODEL (feed), i);
+      content = mex_model_get_content (model, i);
 
       mimetype = mex_content_get_metadata (content,
                                            MEX_CONTENT_METADATA_MIMETYPE);
@@ -148,7 +148,7 @@ _add_remove_recursive (MexModel *queue_model, MexFeed *feed, gboolean add)
       else
         mex_model_remove_content (queue_model, content);
     }
-  g_object_unref (feed);
+  g_object_unref (model);
 }
 
 static void
@@ -158,7 +158,7 @@ _remove_directory_query_complete_cb (MexFeed *feed,
 {
   MexQueueButtonPrivate *priv = q_button->priv;
 
-  _add_remove_recursive (priv->queue_model, feed, FALSE);
+  _add_remove_recursive (priv->queue_model, MEX_MODEL (feed), FALSE);
 }
 
 static void
@@ -168,7 +168,7 @@ _add_directory_query_complete_cb (MexFeed *feed,
 {
   MexQueueButtonPrivate *priv = q_button->priv;
 
-  _add_remove_recursive (priv->queue_model, feed, TRUE);
+  _add_remove_recursive (priv->queue_model, MEX_MODEL (feed), TRUE);
 }
 
 
@@ -190,14 +190,15 @@ _add_from_directory (MexQueueButton *q_button, gboolean add)
   const gchar *stream_uri;
 
   /* check if this content is a group */
-  if (MEX_IS_PROGRAM (priv->content)
-      && !g_strcmp0 (mex_content_get_metadata (priv->content,
-                                               MEX_CONTENT_METADATA_MIMETYPE),
-                     "x-mex/group"))
+  if (MEX_IS_GROUP_ITEM (priv->content))
     {
-      g_object_get (priv->content, "feed", &feed, NULL);
+      MexModel *model;
 
-      _add_remove_recursive (priv->queue_model, feed, add);
+      model = mex_group_item_get_model (MEX_GROUP_ITEM (priv->content));
+
+      _add_remove_recursive (priv->queue_model,
+                             g_object_ref (model),
+                             add);
 
       /* _add_remove_recursive will unref feed */
 
