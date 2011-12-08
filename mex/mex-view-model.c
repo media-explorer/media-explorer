@@ -676,38 +676,8 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                       /* add this item to the group items cache */
                       g_hash_table_insert (priv->group_items,
                                            g_strdup (strlower), group_item);
+
                       g_object_ref_sink (group_item);
-
-
-                      if (priv->filter_by)
-                        {
-                          FilterKeyValue *filter = priv->filter_by->data;
-
-                          g_object_set_data (G_OBJECT (group_item),
-                                             "second-filter-key",
-                                             GINT_TO_POINTER (filter->key));
-
-                          g_object_set_data_full (G_OBJECT (group_item),
-                                                  "second-filter-value",
-                                                  g_strdup (filter->value), g_free);
-                        }
-
-                      g_object_set_data (G_OBJECT (group_item), "filter-key",
-                                         GINT_TO_POINTER (priv->group_by_key));
-                      g_object_set_data_full (G_OBJECT (group_item), "filter-value",
-                                              g_strdup (g), g_free);
-
-
-                      g_object_set_data_full (G_OBJECT (group_item), "source-model",
-                                              g_object_ref (model), g_object_unref);
-
-                      /* set the group by key to the secondary group by key for
-                       * this category if the primary group by key was used for this
-                       * model */
-                      if (c_info->primary_group_by_key == priv->group_by_key)
-                        g_object_set_data (G_OBJECT (group_item), "group-key",
-                                           GINT_TO_POINTER (c_info->secondary_group_by_key));
-
                     }
                   content = group_item;
                 }
