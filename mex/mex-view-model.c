@@ -721,17 +721,17 @@ mex_view_model_refresh_external_items (MexViewModel *model)
             }
 
           /* remove the item */
-          g_ptr_array_remove_index_fast (priv->external_items, i);
+          g_ptr_array_remove_index (priv->external_items, i);
 
           /* check if a previously hidden item is now visible */
-          if (priv->limit && i < priv->limit && i < priv->external_items->len)
+          if (priv->limit > 0 && priv->external_items->len >= priv->limit)
             {
               /* emit the added signal for the item that is now visible */
 
               ref = g_controller_create_reference (priv->controller,
                                                    G_CONTROLLER_ADD,
                                                    G_TYPE_UINT, 1,
-                                                   i);
+                                                   priv->limit - 1);
               g_controller_emit_changed (priv->controller, ref);
             }
 
