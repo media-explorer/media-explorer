@@ -819,7 +819,7 @@ mex_view_model_controller_changed_cb (GController          *controller,
                                       GControllerReference *ref,
                                       MexViewModel         *self)
 {
-  gint n_indices, i;
+  gint n_indices;
 
   MexViewModelPrivate *priv = self->priv;
 
@@ -878,12 +878,6 @@ mex_view_model_controller_changed_cb (GController          *controller,
       break;
 
     case G_CONTROLLER_CLEAR:
-      g_ptr_array_set_size (priv->external_items, 0);
-
-      for (i = 0; i < priv->external_items->len; i++)
-        g_signal_handlers_disconnect_by_func (g_ptr_array_index (priv->external_items, i),
-                                              G_CALLBACK (content_notify_cb),
-                                              self);
       g_ptr_array_set_size (priv->internal_items, 0);
       break;
 
