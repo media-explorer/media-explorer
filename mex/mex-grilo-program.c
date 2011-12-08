@@ -376,7 +376,7 @@ mex_grilo_program_set_metadata (MexContent         *content,
   MexGriloProgramPrivate *priv    = program->priv;
   MexContentIface        *iface, *parent_iface;
 
-  if (!priv->in_update)
+  if (!priv->in_update && key != MEX_CONTENT_METADATA_QUEUED)
     mex_grilo_set_media_content_metadata (priv->media, key, value);
 
 
