@@ -712,7 +712,7 @@ mex_view_model_refresh_external_items (MexViewModel *model)
       if (!_g_ptr_array_contains (new_items, priv->external_items->pdata[i]))
         {
           /* emit the removed signal */
-          if (i < priv->limit)
+          if (priv->limit == 0 || i < priv->limit)
             {
               ref = g_controller_create_reference (priv->controller,
                                                    G_CONTROLLER_REMOVE,
