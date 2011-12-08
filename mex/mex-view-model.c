@@ -724,7 +724,7 @@ mex_view_model_refresh_external_items (MexViewModel *model)
           g_ptr_array_remove_index_fast (priv->external_items, i);
 
           /* check if a previously hidden item is now visible */
-          if (priv->limit && i < priv->limit)
+          if (priv->limit && i < priv->limit && i < priv->external_items->len)
             {
               /* emit the added signal for the item that is now visible */
 
