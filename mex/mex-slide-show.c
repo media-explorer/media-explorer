@@ -1078,11 +1078,14 @@ mex_slide_show_set_model (MexContentView *view,
                                   "limit", 200,
                                   NULL);
 
-      priv->proxy = mex_content_proxy_new (priv->model,
+      priv->proxy = mex_content_proxy_new (NULL,
                                            container,
                                            MEX_TYPE_CONTENT_TILE);
+      /* set the model after the object-created signal handler is connected to
+       * ensure it is called for all items */
       g_signal_connect (priv->proxy, "object-created",
                         G_CALLBACK (tile_created_cb), view);
+      mex_proxy_set_model (priv->proxy, model);
     }
 }
 
