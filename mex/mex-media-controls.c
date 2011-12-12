@@ -1075,10 +1075,9 @@ mex_media_controls_set_content (MexMediaControls *self,
   /* We may not have a context if we're launched by something like SetUri*/
   if (context)
     {
-      MexModel *orig_model;
+      MexModel *orig_model = NULL;
 
-      orig_model = mex_model_get_model (context);
-      g_object_set (G_OBJECT (priv->proxy_model), "model", orig_model, NULL);
+      g_object_set (G_OBJECT (priv->proxy_model), "model", context, NULL);
 
       mex_view_model_set_start_content (priv->proxy_model, priv->content);
       mex_view_model_set_loop (priv->proxy_model, TRUE);
@@ -1087,6 +1086,7 @@ mex_media_controls_set_content (MexMediaControls *self,
       /* From coloumn context = MexViewModel MexAggregateModel MexQueueModel */
       /* From grid  context = MexProxyModel MexProxyModel MexQueueModel */
 
+      orig_model = mex_model_get_model (context);
       if (MEX_IS_AGGREGATE_MODEL (orig_model))
         {
           MexModel *real_model;
