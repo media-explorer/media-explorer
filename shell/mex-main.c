@@ -1154,6 +1154,18 @@ mex_event_cb (ClutterActor *actor,
       mex_go_back (data);
       return TRUE;
     }
+
+  if (((key_event->modifier_state & CLUTTER_CONTROL_MASK) == 4) &&
+      key_event->keyval == CLUTTER_KEY_t)
+    {
+      if (mx_window_get_window_rotation (data->window)
+          == MX_WINDOW_ROTATION_180)
+        mx_window_set_window_rotation (data->window, MX_WINDOW_ROTATION_0);
+      else
+        mx_window_set_window_rotation (data->window, MX_WINDOW_ROTATION_180);
+      return TRUE;
+    }
+
   return FALSE;
 }
 
