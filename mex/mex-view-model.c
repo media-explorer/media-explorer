@@ -711,6 +711,8 @@ mex_view_model_refresh_external_items (MexViewModel *model)
     {
       if (!_g_ptr_array_contains (new_items, priv->external_items->pdata[i]))
         {
+          gboolean new_item_visible;
+
           /* emit the removed signal */
           if (priv->limit == 0 || i < priv->limit)
             {
@@ -720,14 +722,21 @@ mex_view_model_refresh_external_items (MexViewModel *model)
               g_controller_emit_changed (priv->controller, ref);
             }
 
+
+          /* if the item to be removed is below the model's limit and the length
+           * of the items is greater than the limit, then a new item should
+           * become once the old item is removed */
+          if (i < priv->limit && priv->external_items->len > priv->limit)
+            new_item_visible = TRUE;
+          else
+            new_item_visible = FALSE;
+
           /* remove the item */
           g_ptr_array_remove_index (priv->external_items, i);
 
-          /* check if a previously hidden item is now visible */
-          if (priv->limit > 0 && priv->external_items->len >= priv->limit)
+          if (new_item_visible)
             {
               /* emit the added signal for the item that is now visible */
-
               ref = g_controller_create_reference (priv->controller,
                                                    G_CONTROLLER_ADD,
                                                    G_TYPE_UINT, 1,
