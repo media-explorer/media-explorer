@@ -291,6 +291,8 @@ mex_view_model_finalize (GObject *object)
       g_ptr_array_free (priv->internal_items, TRUE);
       priv->external_items = NULL;
 
+      if (priv->start_content)
+        g_object_unref (priv->start_content);
       priv->start_content = NULL;
     }
 
@@ -899,6 +901,8 @@ mex_view_model_controller_changed_cb (GController          *controller,
                                                 self);
           g_ptr_array_remove_index_fast (priv->internal_items, 0);
         }
+      if (priv->start_content)
+        g_object_unref (priv->start_content);
       priv->start_content = NULL;
       break;
 
