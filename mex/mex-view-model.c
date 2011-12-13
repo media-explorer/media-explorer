@@ -287,10 +287,11 @@ mex_view_model_finalize (GObject *object)
           g_signal_handlers_disconnect_by_func (o,
                                                 G_CALLBACK (content_notify_cb),
                                                 object);
-          g_object_unref (o);
         }
       g_ptr_array_free (priv->internal_items, TRUE);
       priv->external_items = NULL;
+
+      priv->start_content = NULL;
     }
 
   if (priv->group_items)
@@ -887,7 +888,18 @@ mex_view_model_controller_changed_cb (GController          *controller,
       break;
 
     case G_CONTROLLER_CLEAR:
-      g_ptr_array_set_size (priv->internal_items, 0);
+      while (priv->internal_items->len > 0)
+        {
+          GObject *o;
+
+          o = g_ptr_array_index (priv->internal_items, 0);
+
+          g_signal_handlers_disconnect_by_func (o,
+                                                G_CALLBACK (content_notify_cb),
+                                                self);
+          g_ptr_array_remove_index_fast (priv->internal_items, 0);
+        }
+      priv->start_content = NULL;
       break;
 
     case G_CONTROLLER_REPLACE:
