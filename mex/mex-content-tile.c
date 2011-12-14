@@ -90,10 +90,13 @@ _stop_video_preview (MexContentTile *self)
   if (!priv->video_preview)
     return FALSE;
 
-  g_object_ref (priv->video_preview);
-  mx_bin_set_child (MX_BIN (self), priv->image);
-
   clutter_media_set_playing (CLUTTER_MEDIA (priv->video_preview), FALSE);
+  mx_bin_set_child (MX_BIN (self), priv->image);
+  /* After setting the child the old child is killed off so NULL this to
+   *  help with checks
+   */
+  priv->video_preview = NULL;
+
 
   return FALSE;
 }
@@ -113,23 +116,20 @@ _start_video_preview (MexContentTile *self)
   mimetype = mex_content_get_metadata (priv->content,
                                        MEX_CONTENT_METADATA_MIMETYPE);
 
-  if (strncmp (mimetype, "video/", 6) != 0)
+  if ((mimetype) && strncmp (mimetype, "video/", 6) != 0)
     return FALSE;
 
   if (!(uri = mex_content_get_metadata (priv->content,
                                         MEX_CONTENT_METADATA_STREAM)))
     return FALSE;
 
-  if (!priv->video_preview)
-    {
-      priv->video_preview = clutter_gst_video_texture_new ();
+  priv->video_preview = clutter_gst_video_texture_new ();
 
-      clutter_gst_video_texture_set_idle_material (CLUTTER_GST_VIDEO_TEXTURE (priv->video_preview),
-                                                   NULL);
-      g_signal_connect (priv->video_preview, "eos",
-                       G_CALLBACK (_stop_video_eos),
-                       self);
-    }
+  clutter_gst_video_texture_set_idle_material (CLUTTER_GST_VIDEO_TEXTURE (priv->video_preview),
+                                               NULL);
+  g_signal_connect (priv->video_preview, "eos",
+                    G_CALLBACK (_stop_video_eos),
+                    self);
 
   clutter_actor_set_opacity (priv->video_preview, 0);
 
