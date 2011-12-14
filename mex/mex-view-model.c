@@ -378,7 +378,7 @@ static gint
 mex_view_model_index (MexModel *model, MexContent *content)
 {
   MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
-  gint start = 0, index = 0;
+  gint start = 0, index = 0, position;
   gboolean found;
 
   /* find the start content's index */
@@ -402,6 +402,7 @@ mex_view_model_index (MexModel *model, MexContent *content)
 
   /* find the search item's index */
   found = FALSE;
+  index = position = start;
   while (index < priv->external_items->len)
     {
       if (g_ptr_array_index (priv->external_items, index) == content)
@@ -409,16 +410,24 @@ mex_view_model_index (MexModel *model, MexContent *content)
           found = TRUE;
           break;
         }
+
+      /* check if search has looped */
+      if (priv->looped && index + 1 == start)
+        break;
+
+      /* loop if required */
+      if (priv->looped && index + 1 == priv->external_items->len)
+        index = -1;
+
       index++;
+
+      position++;
     }
 
   if (!found)
     return -1;
 
-  if (priv->start_content)
-    return (priv->external_items->len - start) + index;
-  else
-    return index;
+  return position;
 }
 
 static void
