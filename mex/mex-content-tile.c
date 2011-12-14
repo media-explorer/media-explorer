@@ -23,6 +23,9 @@
 #include "mex-program.h"
 
 #include "mex-utils.h"
+#include <string.h>
+
+#include <clutter-gst/clutter-gst.h>
 
 static void mex_content_view_iface_init (MexContentViewIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
@@ -48,9 +51,13 @@ struct _MexContentTilePrivate
   MexModel *model;
 
   ClutterActor *image;
+  ClutterActor *video_preview;
 
   gint thumb_height;
   gint thumb_width;
+
+  guint start_video_preview;
+  guint stop_video_preview;
 
   gpointer download_id;
 
@@ -68,11 +75,97 @@ enum
 
 static gulong signals[LAST_SIGNAL] = { 0, };
 
+static gboolean
+_stop_video_preview (MexContentTile *self)
+{
+  MexContentTilePrivate *priv = MEX_CONTENT_TILE (self)->priv;
+
+  if (priv->start_video_preview > 0)
+    g_source_remove (priv->start_video_preview);
+
+  /* video never started */
+  if (mx_bin_get_child (MX_BIN (self)) == priv->image)
+    return FALSE;
+
+  if (!priv->video_preview)
+    return FALSE;
+
+  g_object_ref (priv->video_preview);
+  mx_bin_set_child (MX_BIN (self), priv->image);
+
+  clutter_media_set_playing (CLUTTER_MEDIA (priv->video_preview), FALSE);
+
+  return FALSE;
+}
+
+static void
+_stop_video_eos (ClutterMedia *media, MexContentTile *self)
+{
+  _stop_video_preview (self);
+}
+
+static gboolean
+_start_video_preview (MexContentTile *self)
+{
+  MexContentTilePrivate *priv = self->priv;
+
+  const gchar *mimetype, *uri;
+  mimetype = mex_content_get_metadata (priv->content,
+                                       MEX_CONTENT_METADATA_MIMETYPE);
+
+  if (strncmp (mimetype, "video/", 6) != 0)
+    return FALSE;
+
+  if (!(uri = mex_content_get_metadata (priv->content,
+                                        MEX_CONTENT_METADATA_STREAM)))
+    return FALSE;
+
+  if (!priv->video_preview)
+    {
+      priv->video_preview = clutter_gst_video_texture_new ();
+
+      clutter_gst_video_texture_set_idle_material (CLUTTER_GST_VIDEO_TEXTURE (priv->video_preview),
+                                                   NULL);
+      g_signal_connect (priv->video_preview, "eos",
+                       G_CALLBACK (_stop_video_eos),
+                       self);
+    }
+
+  clutter_actor_set_opacity (priv->video_preview, 0);
+
+  g_object_ref (priv->image);
+  mx_bin_set_child (MX_BIN (self), priv->video_preview);
+
+
+  clutter_actor_animate (priv->video_preview, CLUTTER_LINEAR, 500,
+                         "opacity", 0xff, NULL);
+
+  clutter_actor_set_size (priv->video_preview,
+                          (gfloat)priv->thumb_width,
+                          (gfloat)priv->thumb_height);
+
+  clutter_media_set_uri (CLUTTER_MEDIA (priv->video_preview), uri);
+  clutter_media_set_audio_volume (CLUTTER_MEDIA (priv->video_preview), 0.0);
+  clutter_media_set_playing (CLUTTER_MEDIA (priv->video_preview), TRUE);
+
+  if (priv->stop_video_preview <= 0)
+    priv->stop_video_preview =
+      g_timeout_add_seconds (180, (GSourceFunc)_stop_video_preview, self);
+
+  return FALSE;
+}
+
 static MxFocusable*
 mex_content_tile_accept_focus (MxFocusable *focusable,
                                MxFocusHint  hint)
 {
+  MexContentTilePrivate *priv = MEX_CONTENT_TILE (focusable)->priv;
+
   clutter_actor_grab_key_focus (CLUTTER_ACTOR (focusable));
+
+  priv->start_video_preview =
+    g_timeout_add_seconds (1, (GSourceFunc)_start_video_preview,
+                           MEX_CONTENT_TILE (focusable));
 
   g_signal_emit (focusable, signals[FOCUS_IN], 0);
 
@@ -85,6 +178,8 @@ mex_content_tile_move_focus (MxFocusable      *focusable,
                              MxFocusable      *old_focus)
 {
   g_signal_emit (focusable, signals[FOCUS_OUT], 0);
+
+  _stop_video_preview (MEX_CONTENT_TILE (old_focus));
 
   return NULL;
 }
@@ -524,6 +619,19 @@ mex_content_tile_dispose (GObject *object)
       MexDownloadQueue *dl_queue = mex_download_queue_get_default ();
       mex_download_queue_cancel (dl_queue, priv->download_id);
       priv->download_id = NULL;
+    }
+
+  if (priv->start_video_preview > 0)
+    g_source_remove (priv->start_video_preview);
+
+  if (priv->stop_video_preview > 0)
+    g_source_remove (priv->stop_video_preview);
+
+  /* This may or may not be parented so explicitly mark for destroying */
+  if (priv->video_preview)
+    {
+      clutter_actor_destroy (CLUTTER_ACTOR (priv->video_preview));
+      priv->video_preview = NULL;
     }
 
   G_OBJECT_CLASS (mex_content_tile_parent_class)->dispose (object);
