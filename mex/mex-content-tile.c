@@ -454,6 +454,7 @@ mex_content_tile_set_content (MexContentView *view,
 {
   MexContentTile *tile = MEX_CONTENT_TILE (view);
   MexContentTilePrivate *priv = tile->priv;
+  const gchar *label_prop_name, *secondary_label_prop_name;
 
   if (priv->content == content)
     return;
@@ -476,7 +477,6 @@ mex_content_tile_set_content (MexContentView *view,
   priv->content = g_object_ref_sink (content);
 
   /* Update title/thumbnail display */
-  const gchar *label_prop_name, *secondary_label_prop_name;
 
   label_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
                                                    MEX_CONTENT_METADATA_ARTIST);
