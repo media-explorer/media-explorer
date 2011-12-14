@@ -1046,7 +1046,6 @@ mex_slide_show_set_model (MexContentView *view,
                           MexModel       *model)
 {
   MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (view)->priv;
-  MexModel *orig_model;
 
   if (priv->model)
     {
@@ -1072,9 +1071,8 @@ mex_slide_show_set_model (MexContentView *view,
       /* FIXME: Set an arbitrary 200-item limit as we can't handle large
        *        amounts of actors without massive slow-down.
        */
-      orig_model = mex_model_get_model (model);
       priv->model = g_object_new (MEX_TYPE_VIEW_MODEL,
-                                  "model", orig_model,
+                                  "model", model,
                                   "limit", 200,
                                   NULL);
 
