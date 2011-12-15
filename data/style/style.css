@@ -621,7 +621,11 @@ MxDialog MxButton:hover:focus
   border-image: url("highlight-bg.png") 1 0 0;
 }
 
-
+/* Share actions Dialog */
+MxDialog.MexShareDialog MxLabel
+{
+  padding: 0 0 10 0;
+}
 
 /* Settings Dialog */
 MxDialog.MexInfoBarDialog

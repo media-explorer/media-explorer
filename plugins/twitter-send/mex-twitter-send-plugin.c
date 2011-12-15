@@ -17,10 +17,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "mex-twitter-send-plugin.h"
-
 #include <libsocialweb-client/sw-client.h>
-
 #include <glib/gi18n.h>
 
 #define MEX_LOG_DOMAIN_DEFAULT  twitter_send_log_domain
@@ -174,15 +176,18 @@ mex_twitter_send_plugin_on_share_action (MxAction *action,
 
   priv->dialog = mx_dialog_new ();
   mx_stylable_set_style_class (MX_STYLABLE (priv->dialog),
-                               "MexErrorDialog");
+                               "MexShareDialog");
   clutter_actor_set_name (priv->dialog, "twitter-send-prompt-dialog");
 
   stack = mx_window_get_child (mex_get_main_window ());
   mx_dialog_set_transient_parent (MX_DIALOG (priv->dialog), stack);
 
-  label_text = g_strdup_printf (_("What do you think of %s?"),
+  label_text = g_strdup_printf (_("Whatd do you think of: %s?"),
                                 priv->last_title);
+
   priv->prompt_label = mx_label_new_with_text (label_text);
+  mx_label_set_line_wrap (MX_LABEL (priv->prompt_label), TRUE);
+
   MEX_DEBUG ("Label text: %s", label_text);
 
   awesome_button = mx_button_new_with_label (_("Awesome!"));
@@ -243,6 +248,8 @@ mex_twitter_send_plugin_on_share_action (MxAction *action,
                            dontshare_button,
                            5);
 
+  clutter_actor_set_width (layout, 600.0);
+
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->dialog), layout);
 
   clutter_actor_show (priv->dialog);
@@ -276,6 +283,8 @@ mex_twitter_send_plugin_init (MexTwitterSendPlugin *self)
   mx_action_set_icon (action_info->action, "media-share-mex");
   action_info->mime_types = g_strdupv ((gchar **)app_mimetypes);
   priv->actions = g_list_append (priv->actions, action_info);
+  /* log domain */
+  MEX_LOG_DOMAIN_INIT (twitter_send_log_domain, "TwitterSend");
 }
 
 MexTwitterSendPlugin *
@@ -305,3 +314,13 @@ mex_get_plugin_type (void)
 {
   return MEX_TYPE_TWITTER_SEND_PLUGIN;
 }
+
+MEX_DEFINE_PLUGIN ("Twitter send plugin",
+                   "Twitter integration",
+                   PACKAGE_VERSION,
+                   "LGPLv2.1+",
+                   "Rob Bradford <rob.bradford@linux.intel.com>,"
+                   "Dario Freddi <dario.freddi@collabora.com>",
+                   MEX_API_MAJOR, MEX_API_MINOR,
+                   mex_twitter_send_plugin_get_type,
+                   MEX_PLUGIN_PRIORITY_NORMAL)
