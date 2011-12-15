@@ -155,6 +155,8 @@ dist_icon_26x26_DATA = \
 		 icons/media-watch-from-beginning-mex.png \
 		 icons/media-watch-mex-highlight.png \
 		 icons/media-watch-mex.png \
+		 icons/media-share-mex.png \
+		 icons/media-share-mex-highlight.png \
 		 icons/x-mex-app-launch-mex.png \
 		 icons/x-mex-app-launch-mex-highlight.png \
 		 icons/stock_left-mex-highlight.png \
