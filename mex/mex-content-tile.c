@@ -111,6 +111,8 @@ static gboolean
 _start_video_preview (MexContentTile *self)
 {
   MexContentTilePrivate *priv = self->priv;
+  GstElement *pipeline;
+  gint gst_flags;
 
   const gchar *mimetype, *uri;
   mimetype = mex_content_get_metadata (priv->content,
@@ -124,6 +126,14 @@ _start_video_preview (MexContentTile *self)
     return FALSE;
 
   priv->video_preview = clutter_gst_video_texture_new ();
+
+  pipeline = clutter_gst_video_texture_get_pipeline (priv->video_preview);
+  g_object_get (G_OBJECT (pipeline), "flags", &gst_flags, NULL);
+
+  gst_flags = 1;//GST_PLAY_FLAG_VIDEO;
+
+  g_object_set (G_OBJECT (pipeline), "flags", gst_flags, NULL);
+
 
   clutter_gst_video_texture_set_idle_material (CLUTTER_GST_VIDEO_TEXTURE (priv->video_preview),
                                                NULL);
@@ -145,7 +155,6 @@ _start_video_preview (MexContentTile *self)
                           (gfloat)priv->thumb_height);
 
   clutter_media_set_uri (CLUTTER_MEDIA (priv->video_preview), uri);
-  clutter_media_set_audio_volume (CLUTTER_MEDIA (priv->video_preview), 0.0);
   clutter_media_set_playing (CLUTTER_MEDIA (priv->video_preview), TRUE);
 
   if (priv->stop_video_preview <= 0)
