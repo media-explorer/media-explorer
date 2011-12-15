@@ -53,6 +53,7 @@ struct _MexTwitterSendPluginPrivate
   ClutterActor               *prompt_label;
 
   const gchar                *last_title;
+  const gchar                *content_verb;
 };
 
 G_GNUC_UNUSED static void
@@ -149,13 +150,16 @@ mex_twitter_send_plugin_on_tweet (MxButton *button,
 
   MEX_DEBUG ("accept chosen");
 
-  tweet = g_strdup_printf (_("I have watched %s on media-explorer."
-                             " It's %s"), priv->last_title,
+  tweet = g_strdup_printf (_("I %s \"%s\" on media-explorer."
+                             " It's %s"),
+                           priv->content_verb,
+                           priv->last_title,
                            mx_button_get_label (MX_BUTTON (button)));
 
   sw_client_service_update_status (priv->service,
                                    mex_twitter_send_plugin_on_status_updated,
                                    tweet, self);
+  g_free (tweet);
 }
 
 static void
@@ -168,11 +172,22 @@ mex_twitter_send_plugin_on_share_action (MxAction *action,
   MxButtonGroup *button_group;
   ClutterActor *awesome_button, *decent_button,
                *pretty_bad_button, *horrible_button, *dontshare_button;
+  const gchar *mime;
+
   gchar *label_text;
 
   MexContent *current_content = mex_action_get_content (action);
   priv->last_title = mex_content_get_metadata (current_content,
                                                MEX_CONTENT_METADATA_TITLE);
+
+
+  mime = mex_content_get_metadata (current_content,
+                                   MEX_CONTENT_METADATA_MIMETYPE);
+
+  if (g_str_has_prefix (mime, "audio/"))
+    priv->content_verb = _("listened to");
+  else
+    priv->content_verb = _("watched");
 
   priv->dialog = mx_dialog_new ();
   mx_stylable_set_style_class (MX_STYLABLE (priv->dialog),
