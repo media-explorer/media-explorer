@@ -690,7 +690,8 @@ tile_created_cb (MexProxy *proxy,
   mime_type = mex_content_get_metadata (MEX_CONTENT (content),
                                         MEX_CONTENT_METADATA_MIMETYPE);
 
-  if (g_strcmp0 (mime_type, "x-grl/box") == 0)
+  if (g_strcmp0 (mime_type, "x-grl/box") == 0
+      || g_strcmp0 (mime_type, "x-mex/group") == 0)
     {
       g_signal_stop_emission_by_name (proxy, "object-created");
       return;
