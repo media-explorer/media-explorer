@@ -107,6 +107,12 @@ mex_view_model_set_model (MexViewModel *self,
   if (model == priv->model)
     return;
 
+  if (priv->start_content)
+    {
+      g_object_unref (priv->start_content);
+      priv->start_content = NULL;
+    }
+
   if (model)
     {
       MexContent *content;
@@ -890,6 +896,12 @@ mex_view_model_controller_changed_cb (GController          *controller,
                                                   self);
 
             g_ptr_array_remove_fast (priv->internal_items, content);
+
+            if (priv->start_content == content)
+              {
+                g_object_unref (priv->start_content);
+                priv->start_content = NULL;
+              }
           }
       }
       break;
