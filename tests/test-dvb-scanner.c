@@ -25,6 +25,15 @@
 #include <glib.h>
 #include <gio/gio.h>
 
+static const gchar *opt_country = "GB";
+
+GOptionEntry entries[] =
+{
+  { "country", 'c', 0, G_OPTION_ARG_STRING, &opt_country,
+    "Select your country ('GB', 'FR')", NULL },
+  { NULL }
+};
+
 typedef struct
 {
   GDBusProxy *proxy;
@@ -143,7 +152,7 @@ handle_key (TestDvbScanner *scanner,
       do_start_scan (scanner);
       break;
     case 'c':
-      do_set_country (scanner, "GB");
+      do_set_country (scanner, opt_country);
       break;
     }
 }
@@ -178,13 +187,21 @@ int
 main (int argc, char **argv)
 {
   TestDvbScanner scanner;
+  GOptionContext *context;
   GIOChannel *input;
   GIOFlags input_flags;
-  GError *err = NULL;
+  GError *error = NULL;
   struct termios ternimal_ios, scanner_ios;
 
   memset (&scanner, 0, sizeof (TestDvbScanner));
   g_type_init ();
+
+  context = g_option_context_new ("- test-dvb-scanner");
+
+  g_option_context_add_main_entries (context, entries, NULL);
+
+  if (!g_option_context_parse (context, &argc, &argv, &error))
+    g_error ("Could not parse options: %s\n", error->message);
 
   scanner.proxy =
     g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
@@ -193,9 +210,9 @@ main (int argc, char **argv)
                                    "org.media-explorer.DVB.Scanner",
                                    "/org/MediaExplorer/DVB/Scanner",
                                    "org.MediaExplorer.DVB.Scanner",
-                                   NULL, &err);
-  if (err)
-    g_error ("%s", err->message);
+                                   NULL, &error);
+  if (error)
+    g_error ("%s", error->message);
 
   g_signal_connect (scanner.proxy, "g-signal",
                     G_CALLBACK (on_dbus_signal_received), &scanner);
