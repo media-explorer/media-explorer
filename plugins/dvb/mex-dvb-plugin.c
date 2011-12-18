@@ -36,7 +36,7 @@
 
 #include "mex-dvb-plugin.h"
 
-G_DEFINE_TYPE (MexDvbPlugin, mex_dvb_plugin, G_TYPE_OBJECT)
+G_DEFINE_TYPE (MexDvbPlugin, mex_dvb_plugin, MEX_TYPE_PLUGIN)
 
 #define DVB_PLUGIN_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_DVB_PLUGIN, MexDvbPluginPrivate))
@@ -402,6 +402,35 @@ read_error:
 }
 
 /*
+ * MexPlugin implementation
+ */
+
+static void
+mex_dvb_plugin_start (MexPlugin *self)
+{
+  MexDvbPlugin *plugin = MEX_DVB_PLUGIN (self);
+  GPtrArray *channels;
+
+  channels = load_channels_from_file (plugin);
+  if (channels && channels->len > 0)
+    {
+      MexChannelManager *manager;
+
+      manager = mex_channel_manager_get_default ();
+      mex_channel_manager_add_channels (manager, channels);
+    }
+
+  if (channels)
+    g_ptr_array_unref (channels);
+}
+
+static void
+mex_dvb_plugin_stop (MexPlugin *plugin)
+{
+  g_warning (G_STRLOC ": Not implemented");
+}
+
+/*
  * GObject implementation
  */
 
@@ -415,30 +444,20 @@ static void
 mex_dvb_plugin_class_init (MexDvbPluginClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
+  MexPluginClass *plugin_class = MEX_PLUGIN_CLASS (klass);
 
   g_type_class_add_private (klass, sizeof (MexDvbPluginPrivate));
 
   object_class->finalize = mex_dvb_plugin_finalize;
+
+  plugin_class->start = mex_dvb_plugin_start;
+  plugin_class->stop = mex_dvb_plugin_stop;
 }
 
 static void
 mex_dvb_plugin_init (MexDvbPlugin *self)
 {
-  GPtrArray *channels;
-
   self->priv = DVB_PLUGIN_PRIVATE (self);
-
-  channels = load_channels_from_file (self);
-  if (channels && channels->len > 0)
-    {
-      MexChannelManager *manager;
-
-      manager = mex_channel_manager_get_default ();
-      mex_channel_manager_add_channels (manager, channels);
-    }
-
-  if (channels)
-    g_ptr_array_unref (channels);
 }
 
 static GType

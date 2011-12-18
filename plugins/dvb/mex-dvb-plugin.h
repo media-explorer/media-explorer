@@ -23,6 +23,7 @@
 #define __MEX_DVB_PLUGIN_H__
 
 #include <glib-object.h>
+#include <mex.h>
 
 G_BEGIN_DECLS
 
@@ -49,14 +50,14 @@ typedef struct _MexDvbPluginPrivate MexDvbPluginPrivate;
 
 struct _MexDvbPlugin
 {
-  GObject parent;
+  MexPlugin parent;
 
   MexDvbPluginPrivate *priv;
 };
 
 struct _MexDvbPluginClass
 {
-  GObjectClass parent_class;
+  MexPluginClass parent_class;
 };
 
 GType mex_dvb_plugin_get_type (void) G_GNUC_CONST;
