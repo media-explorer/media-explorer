@@ -28,7 +28,7 @@ G_BEGIN_DECLS
 
 #define MEX_TYPE_DVB_PLUGIN mex_dvb_plugin_get_type()
 
-#define MEX_DVB_PLUGIN(obj) i	      \
+#define MEX_DVB_PLUGIN(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST ((obj), MEX_TYPE_DVB_PLUGIN, MexDvbPlugin))
 
 #define MEX_DVB_PLUGIN_CLASS(klass) \
