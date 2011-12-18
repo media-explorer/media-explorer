@@ -26,10 +26,10 @@ TEST_PROGS       += test-core
 test_core_SOURCES  = test-core.c
 test_core_LDADD    = $(progs_ldadd)
 
-TEST_PROGS           += test-channel
-test_channel_SOURCES  = test-channel.c
-test_channel_LDADD    = $(progs_ldadd)
-EXTRA_DIST           += channels-uri.conf
+TEST_PROGS       += test-dvb
+test_dvb_SOURCES  = test-dvb.c
+test_dvb_LDADD    = $(progs_ldadd)
+EXTRA_DIST       += channels-uri.conf
 
 TEST_PROGS       += test-epg
 test_epg_SOURCES  = test-epg.c

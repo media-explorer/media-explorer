@@ -112,8 +112,8 @@ main (int   argc,
     g_test_init (&argc, &argv, NULL);
     mex_init (&argc, &argv);
 
-    g_test_add_func ("/channel/provider/uri", test_uri_channel_provider);
-    g_test_add_func ("/channel/manager/creation", test_manager_simple);
+    g_test_add_func ("/dvb/channel-provider/uri", test_uri_channel_provider);
+    g_test_add_func ("/dvb/channel-manager/creation", test_manager_simple);
 
     return g_test_run ();
 }
