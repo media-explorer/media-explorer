@@ -283,6 +283,7 @@ parse_tuning_parameters (MexChannel  *channel,
   mex_dvbt_channel_set_modulation (MEX_DVBT_CHANNEL (channel), modulation);
   mex_dvbt_channel_set_transmission_mode (MEX_DVBT_CHANNEL (channel),
                                           trans_mode);
+  mex_dvbt_channel_set_guard (MEX_DVBT_CHANNEL (channel), guard);
   mex_dvbt_channel_set_hierarchy (MEX_DVBT_CHANNEL (channel), hierarchy);
 
   return TRUE;

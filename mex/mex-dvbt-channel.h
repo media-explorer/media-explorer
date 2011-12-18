@@ -88,6 +88,9 @@ void                      mex_dvbt_channel_set_modulation         (MexDVBTChanne
 MexDvbTransmissionMode    mex_dvbt_channel_get_transmission_mode  (MexDVBTChannel *channel);
 void                      mex_dvbt_channel_set_transmission_mode  (MexDVBTChannel         *channel,
                                                                    MexDvbTransmissionMode  mode);
+MexDvbGuard               mex_dvbt_channel_get_guard              (MexDVBTChannel *channel);
+void                      mex_dvbt_channel_set_guard              (MexDVBTChannel *channel,
+                                                                   MexDvbGuard     guard);
 MexDvbHierarchy           mex_dvbt_channel_get_hierarchy          (MexDVBTChannel *channel);
 void                      mex_dvbt_channel_set_hierarchy          (MexDVBTChannel  *channel,
                                                                    MexDvbHierarchy  hierarchy);

@@ -39,6 +39,7 @@ enum
   PROP_CODE_RATE_LP,
   PROP_MODULATION,
   PROP_TRANSMISSION_MODE,
+  PROP_GUARD,
   PROP_HIERARCHY
 };
 
@@ -50,6 +51,7 @@ struct _MexDVBTChannelPrivate
   MexDvbCodeRate code_rate_hp, code_rate_lp;
   MexDvbModulation modulation;
   MexDvbTransmissionMode transmission_mode;
+  MexDvbGuard guard;
   MexDvbHierarchy hierarchy;
 };
 
@@ -84,6 +86,9 @@ mex_dvbt_channel_get_property (GObject    *object,
       break;
     case PROP_TRANSMISSION_MODE:
       g_value_set_enum (value, priv->transmission_mode);
+      break;
+    case PROP_GUARD:
+      g_value_set_enum (value, priv->guard);
       break;
     case PROP_HIERARCHY:
       g_value_set_enum (value, priv->hierarchy);
@@ -123,6 +128,9 @@ mex_dvbt_channel_set_property (GObject      *object,
       break;
     case PROP_TRANSMISSION_MODE:
       priv->transmission_mode = g_value_get_enum (value);
+      break;
+    case PROP_GUARD:
+      priv->guard = g_value_get_enum (value);
       break;
     case PROP_HIERARCHY:
       priv->hierarchy = g_value_get_enum (value);
@@ -204,6 +212,14 @@ mex_dvbt_channel_class_init (MexDVBTChannelClass *klass)
                              MEX_DVB_TRANSMISSION_MODE_AUTO,
                              MEX_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_TRANSMISSION_MODE, pspec);
+
+  pspec = g_param_spec_enum ("guard",
+                             "Guard",
+                             "Guard",
+                             MEX_TYPE_DVB_GUARD,
+                             MEX_DVB_GUARD_AUTO,
+                             MEX_PARAM_READWRITE);
+  g_object_class_install_property (object_class, PROP_GUARD, pspec);
 
   pspec = g_param_spec_enum ("hierarchy",
                              "Hierarchy",
@@ -393,6 +409,30 @@ mex_dvbt_channel_set_transmission_mode (MexDVBTChannel         *channel,
   priv->transmission_mode = mode;
 
   g_object_notify (G_OBJECT (channel), "transmission-mode");
+}
+
+MexDvbGuard
+mex_dvbt_channel_get_guard (MexDVBTChannel *channel)
+{
+  g_return_val_if_fail (MEX_IS_DVBT_CHANNEL (channel), MEX_DVB_GUARD_AUTO);
+
+  return channel->priv->guard;
+}
+
+void
+mex_dvbt_channel_set_guard (MexDVBTChannel *channel,
+                            MexDvbGuard     guard)
+{
+  MexDVBTChannelPrivate *priv = channel->priv;
+
+  g_return_if_fail (MEX_IS_DVBT_CHANNEL (channel));
+
+  if (guard == priv->guard)
+    return;
+
+  priv->guard = guard;
+
+  g_object_notify (G_OBJECT (channel), "guard");
 }
 
 MexDvbHierarchy
