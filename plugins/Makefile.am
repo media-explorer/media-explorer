@@ -19,6 +19,14 @@ _libadd     = $(MEX_LIBS) $(top_builddir)/mex/libmex-@MEX_API_VERSION@.la
 servicedir = $(datadir)/dbus-1/services/
 service_DATA =
 
+if ENABLE_TESTS
+
+include $(top_srcdir)/build/Makefile.am.gtester
+
+noinst_PROGRAMS = $(TEST_PROGS)
+
+endif # ENABLE_TESTS
+
 if USE_PLUGIN_LIBRARY
 plugins_LTLIBRARIES += mex-library.la
 
@@ -404,5 +412,12 @@ dvb/scanner/%.service: $(srcdir)/dvb/scanner/%.service.in $(top_builddir)/config
 
 service_DATA += dvb/scanner/mex-dvb-scanner.service
 EXTRA_DIST += dvb/scanner/mex-dvb-scanner.service.in
+
+# tests
+if ENABLE_TESTS
+TEST_PROGS           += mex-test-dvb
+mex_test_dvb_SOURCES  = dvb/mex-dvb-plugin.c
+mex_test_dvb_LDADD    = $(_libadd)
+endif
 
 endif

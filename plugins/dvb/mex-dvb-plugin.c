@@ -296,6 +296,7 @@ parse_line (MexDvbPlugin  *plugin,
 {
   gchar **fields;
   MexChannel *channel = NULL;
+  gchar *error_message = "";
 
   fields = g_strsplit (line, ":", 0);
   if (get_n_fields (fields) != 14)
@@ -307,19 +308,34 @@ parse_line (MexDvbPlugin  *plugin,
   channel = mex_dvbt_channel_new ();
 
   if (parse_service_id (channel, fields[0]) == FALSE)
-    goto parse_error;
+    {
+      error_message = "Invalid service name";
+      goto parse_error;
+    }
 
   if (parse_frequency (channel, fields[1]) == FALSE)
-    goto parse_error;
+    {
+      error_message = "Invalid frequency";
+      goto parse_error;
+    }
 
   if (parse_tuning_parameters (channel, fields[2]) == FALSE)
-    goto parse_error;
+    {
+      error_message = "Invalid tuning parameters";
+      goto parse_error;
+    }
 
   if (g_strcmp0 (fields[3], "T") != 0)
-    goto parse_error;
+    {
+      error_message = "Expected 'T' field not found";
+      goto parse_error;
+    }
 
-  if (g_strcmp0 (fields[3], "27500") != 0)
-    goto parse_error;
+  if (g_strcmp0 (fields[4], "27500") != 0)
+    {
+      error_message = "Expected '27500' field not found";
+      goto parse_error;
+    }
 
   if (channel_out)
     *channel_out = channel;
@@ -328,7 +344,7 @@ parse_line (MexDvbPlugin  *plugin,
   return TRUE;
 
 parse_error:
-  g_warning ("Could not parse %s", line);
+  g_warning ("Could not parse %s%s", line, error_message);
   if (channel)
     g_object_unref (channel);
   g_strfreev (fields);
@@ -474,3 +490,78 @@ MEX_DEFINE_PLUGIN ("DVB",
                    MEX_API_MAJOR, MEX_API_MINOR,
                    mex_dvb_get_type,
                    MEX_PLUGIN_PRIORITY_NORMAL)
+
+/*
+ * Unit tests
+ */
+
+#if defined (ENABLE_TESTS)
+
+static MexDvbPlugin *
+load_plugin (void)
+{
+  return g_object_new (MEX_TYPE_DVB_PLUGIN, NULL);
+}
+
+static const char bbc_def[] = "BBC ONE;BBC:505833:I999B8C34D0M16T2G32Y0:T:"
+                              "27500:600:601,602=eng:0:0:4164:9018:4100:0:4164";
+
+static void
+test_dvbt_parse_config (void)
+{
+  MexChannel *channel = NULL;
+  MexDVBTChannel *dvbt_channel;
+  MexDvbPlugin *plugin;
+  gboolean parsed;
+
+  plugin = load_plugin ();
+
+  parsed = parse_line (plugin, bbc_def, &channel);
+  g_assert (parsed);
+  g_assert (channel);
+
+  g_assert_cmpstr (mex_channel_get_name (channel), ==, "BBC ONE");
+
+  g_assert (MEX_IS_DVBT_CHANNEL (channel));
+  dvbt_channel = MEX_DVBT_CHANNEL (channel);
+
+  g_assert_cmpuint (mex_dvbt_channel_get_frequency (dvbt_channel), ==, 505833);
+  g_assert_cmpint (mex_dvbt_channel_get_inversion (dvbt_channel),
+                   ==,
+                   MEX_DVB_INVERSION_AUTO);
+  g_assert_cmpint (mex_dvbt_channel_get_bandwidth (dvbt_channel),
+                   ==,
+                   MEX_DVB_BANDWIDTH_8M);
+  g_assert_cmpint (mex_dvbt_channel_get_code_rate_hp (dvbt_channel),
+                   ==,
+                   MEX_DVB_CODE_RATE_3_4);
+  g_assert_cmpint (mex_dvbt_channel_get_code_rate_lp (dvbt_channel),
+                   ==,
+                   MEX_DVB_CODE_RATE_NONE);
+  g_assert_cmpint (mex_dvbt_channel_get_modulation (dvbt_channel),
+                   ==,
+                   MEX_DVB_MODULATION_QAM16);
+  g_assert_cmpint (mex_dvbt_channel_get_transmission_mode (dvbt_channel),
+                   ==,
+                   MEX_DVB_TRANSMISSION_MODE_2K);
+  g_assert_cmpint (mex_dvbt_channel_get_guard (dvbt_channel),
+                   ==,
+                   MEX_DVB_GUARD_32);
+  g_assert_cmpint (mex_dvbt_channel_get_hierarchy (dvbt_channel),
+                   ==,
+                   MEX_DVB_HIERARCHY_NONE);
+}
+
+int
+main (int   argc,
+      char *argv[])
+{
+    g_type_init ();
+    g_test_init (&argc, &argv, NULL);
+
+    g_test_add_func ("/dvb/channel/dvbt-parse-config", test_dvbt_parse_config);
+
+    return g_test_run ();
+}
+
+#endif
