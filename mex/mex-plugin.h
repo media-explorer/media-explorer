@@ -24,7 +24,28 @@
 
 G_BEGIN_DECLS
 
-typedef enum _MexPluginPriority MexPluginPriority;
+#define MEX_TYPE_PLUGIN mex_plugin_get_type()
+
+#define MEX_PLUGIN(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST ((obj), MEX_TYPE_PLUGIN, MexPlugin))
+
+#define MEX_PLUGIN_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST ((klass), MEX_TYPE_PLUGIN, MexPluginClass))
+
+#define MEX_IS_PLUGIN(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE ((obj), MEX_TYPE_PLUGIN))
+
+#define MEX_IS_PLUGIN_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE ((klass), MEX_TYPE_PLUGIN))
+
+#define MEX_PLUGIN_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), MEX_TYPE_PLUGIN, MexPluginClass))
+
+typedef struct _MexPlugin MexPlugin;
+typedef struct _MexPluginClass MexPluginClass;
+typedef struct _MexPluginPrivate MexPluginPrivate;
+
+typedef enum   _MexPluginPriority MexPluginPriority;
 typedef struct _MexPluginDescription MexPluginDescription;
 
 /**
@@ -90,6 +111,26 @@ G_MODULE_EXPORT MexPluginDescription mex_plugin_info =    \
     get_type, priority,                                   \
     { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL }    \
 };
+
+struct _MexPlugin
+{
+  GObject parent;
+
+  MexPluginPrivate *priv;
+};
+
+struct _MexPluginClass
+{
+  GObjectClass parent_class;
+
+  void (*start) (MexPlugin *plugin);
+  void (*stop)  (MexPlugin *plugin);
+};
+
+GType	    mex_plugin_get_type	  (void) G_GNUC_CONST;
+MexPlugin * mex_plugin_new	  (void);
+void	    mex_plugin_start	  (MexPlugin *plugin);
+void	    mex_plugin_stop	  (MexPlugin *plugin);
 
 G_END_DECLS
 

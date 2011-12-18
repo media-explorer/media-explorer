@@ -351,6 +351,16 @@ mex_plugin_manager_refresh (MexPluginManager *manager)
       plugin = g_object_new (plugin_type, NULL);
       g_hash_table_insert (priv->plugins, desc, plugin);
 
+      /*
+       * MexPlugin has been introduced late-ish. For those plugin we keep the
+       * same semantics than before (for now™) ie. the code to initialize the
+       * plugin is called at creation time. Later™ we could decouple the
+       * instanciation of the plugin object itslef with the work to start doing
+       * something.
+       */
+      if (MEX_IS_PLUGIN (plugin))
+	mex_plugin_start (MEX_PLUGIN (plugin));
+
       g_signal_emit (manager, signals[PLUGIN_LOADED], 0, plugin);
     }
 }
