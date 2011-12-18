@@ -104,6 +104,61 @@ test_manager_simple (void)
   g_free (config_file);
 }
 
+/*
+ * The goal of this test is to ensure the various defines we have to tune
+ * the dvb card map to the dvbsrc ones (The numeric values have been
+ * obtained by running gst-inspect dvbsrc).
+ */
+static void
+test_gst_defines (void)
+{
+  g_assert_cmpuint (MEX_DVB_BANDWIDTH_8M,   ==, 0);
+  g_assert_cmpuint (MEX_DVB_BANDWIDTH_7M,   ==, 1);
+  g_assert_cmpuint (MEX_DVB_BANDWIDTH_6M,   ==, 2);
+  g_assert_cmpuint (MEX_DVB_BANDWIDTH_AUTO, ==, 3);
+
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_NONE, ==, 0);
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_1_2,  ==, 1);
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_2_3,  ==, 2);
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_3_4,  ==, 3);
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_4_5,  ==, 4);
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_5_6,  ==, 5);
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_6_7,  ==, 6);
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_7_8,  ==, 7);
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_8_9,  ==, 8);
+  g_assert_cmpuint (MEX_DVB_CODE_RATE_AUTO, ==, 9);
+
+  g_assert_cmpuint (MEX_DVB_GUARD_32,   ==, 0);
+  g_assert_cmpuint (MEX_DVB_GUARD_16,   ==, 1);
+  g_assert_cmpuint (MEX_DVB_GUARD_8,    ==, 2);
+  g_assert_cmpuint (MEX_DVB_GUARD_4,    ==, 3);
+  g_assert_cmpuint (MEX_DVB_GUARD_AUTO, ==, 4);
+
+  g_assert_cmpuint (MEX_DVB_MODULATION_QPSK,   ==, 0);
+  g_assert_cmpuint (MEX_DVB_MODULATION_QAM16,  ==, 1);
+  g_assert_cmpuint (MEX_DVB_MODULATION_QAM32,  ==, 2);
+  g_assert_cmpuint (MEX_DVB_MODULATION_QAM64,  ==, 3);
+  g_assert_cmpuint (MEX_DVB_MODULATION_QAM128, ==, 4);
+  g_assert_cmpuint (MEX_DVB_MODULATION_QAM256, ==, 5);
+  g_assert_cmpuint (MEX_DVB_MODULATION_AUTO,   ==, 6);
+  g_assert_cmpuint (MEX_DVB_MODULATION_8VSB,   ==, 7);
+  g_assert_cmpuint (MEX_DVB_MODULATION_16VSB,  ==, 8);
+
+  g_assert_cmpuint (MEX_DVB_TRANSMISSION_MODE_2K,   ==, 0);
+  g_assert_cmpuint (MEX_DVB_TRANSMISSION_MODE_8K,   ==, 1);
+  g_assert_cmpuint (MEX_DVB_TRANSMISSION_MODE_AUTO, ==, 2);
+
+  g_assert_cmpuint (MEX_DVB_HIERARCHY_NONE, ==, 0);
+  g_assert_cmpuint (MEX_DVB_HIERARCHY_1,    ==, 1);
+  g_assert_cmpuint (MEX_DVB_HIERARCHY_2,    ==, 2);
+  g_assert_cmpuint (MEX_DVB_HIERARCHY_4,    ==, 3);
+  g_assert_cmpuint (MEX_DVB_HIERARCHY_AUTO, ==, 4);
+
+  g_assert_cmpuint (MEX_DVB_INVERSION_OFF,  ==, 0);
+  g_assert_cmpuint (MEX_DVB_INVERSION_ON,   ==, 1);
+  g_assert_cmpuint (MEX_DVB_INVERSION_AUTO, ==, 2);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -114,6 +169,7 @@ main (int   argc,
 
     g_test_add_func ("/dvb/channel-provider/uri", test_uri_channel_provider);
     g_test_add_func ("/dvb/channel-manager/creation", test_manager_simple);
+    g_test_add_func ("/dvb/gst-defines", test_gst_defines);
 
     return g_test_run ();
 }

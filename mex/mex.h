@@ -46,6 +46,7 @@
 #include <mex/mex-content-view.h>
 #include <mex/mex-debug.h>
 #include <mex/mex-download-queue.h>
+#include <mex/mex-dvb-defines.h>
 #include <mex/mex-dvbt-channel.h>
 #include <mex/mex-explorer.h>
 #include <mex/mex-epg.h>
