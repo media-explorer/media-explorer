@@ -431,7 +431,7 @@ mex_get_main_window (void)
   return mex_main_window;
 }
 
-gboolean
+static gboolean
 mex_get_fullscreen (void)
 {
   if (!mex_main_window)
@@ -440,13 +440,7 @@ mex_get_fullscreen (void)
   return mx_window_get_fullscreen (mex_main_window);
 }
 
-void
-mex_toggle_fullscreen (void)
-{
-  mex_set_fullscreen (!mex_get_fullscreen ());
-}
-
-void
+static void
 mex_set_fullscreen (gboolean fullscreen)
 {
   if (!mex_main_window)
@@ -456,4 +450,10 @@ mex_set_fullscreen (gboolean fullscreen)
     return;
 
   mx_window_set_fullscreen (mex_main_window, fullscreen);
+}
+
+void
+mex_toggle_fullscreen (void)
+{
+  mex_set_fullscreen (!mex_get_fullscreen ());
 }

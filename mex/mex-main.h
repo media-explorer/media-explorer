@@ -91,8 +91,6 @@ void            mex_deinit                  (void);
 
 void            mex_set_main_window         (MxWindow *main_window);
 MxWindow *      mex_get_main_window         (void);
-void            mex_set_fullscreen          (gboolean fullscreen);
-gboolean        mex_get_fullscreen          (void);
 void            mex_toggle_fullscreen       (void);
 ClutterActor *  mex_get_stage               (void);
 
