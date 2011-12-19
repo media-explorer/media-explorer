@@ -94,9 +94,6 @@ MxWindow *      mex_get_main_window         (void);
 void            mex_toggle_fullscreen       (void);
 ClutterActor *  mex_get_stage               (void);
 
-MexModel*       mex_get_root_model          (void);
-MexModel*       mex_get_model_for_category  (const gchar *category);
-
 G_END_DECLS
 
 #endif /* __MEX_MAIN_H__ */
