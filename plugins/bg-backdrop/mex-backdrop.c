@@ -236,7 +236,10 @@ mex_backdrop_dispose (GObject *object)
           BackdropItem *item = &priv->items[i];
 
           if (item->actor)
-            g_object_unref (item->actor);
+            {
+              clutter_actor_destroy (item->actor);
+              item->actor = NULL;
+            }
         }
     }
 
