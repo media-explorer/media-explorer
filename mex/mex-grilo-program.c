@@ -187,7 +187,7 @@ mex_grilo_program_get_stream (MexProgram        *program,
   if (GRL_IS_METADATA_SOURCE (source) &&
       grl_metadata_source_supported_operations (
                                                 GRL_METADATA_SOURCE (source)) & GRL_OP_METADATA) {
-    keys = grl_metadata_key_list_new (GRL_METADATA_KEY_URL);
+    keys = grl_metadata_key_list_new (GRL_METADATA_KEY_URL, NULL);
     grl_media_source_metadata (source,
                                priv->media,
                                keys,
