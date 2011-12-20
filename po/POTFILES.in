@@ -3,8 +3,10 @@ mex/mex-content.c
 mex/mex-generic-model.c
 mex/mex-gio-notification-source.c
 mex/mex-grid-view.c
+mex/mex-grilo.c
 mex/mex-info-bar.c
 mex/mex-info-panel.c
+mex/mex-main.c
 mex/mex-metadata-utils.c
 mex/mex-model.c
 mex/mex-network-notification-source.c
@@ -18,4 +20,5 @@ plugins/queue/mex-queue-plugin.c
 plugins/search/mex-search-plugin.c
 plugins/telepathy/mex-telepathy-plugin.c
 plugins/tracker/mex-tracker-plugin.c
+plugins/twitter-send/mex-twitter-send-plugin.c
 shell/mex-main.c
