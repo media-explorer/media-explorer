@@ -551,7 +551,7 @@ order_by_func (gconstpointer a,
 
 }
 
-static gboolean
+static gint
 _g_ptr_array_contains (GPtrArray *haystack, gpointer needle)
 {
   gint i;
@@ -559,10 +559,10 @@ _g_ptr_array_contains (GPtrArray *haystack, gpointer needle)
   for (i = 0; i < haystack->len; i++)
     {
       if (haystack->pdata[i] == needle)
-        return TRUE;
+        return i;
     }
 
-  return FALSE;
+  return -1;
 }
 
 static void
@@ -570,12 +570,14 @@ mex_view_model_refresh_external_items (MexViewModel *model)
 {
   MexViewModelPrivate *priv = model->priv;
   gint i;
-  GPtrArray *new_items;
+  GHashTable *new_items, *external_items;
+  GHashTableIter iter;
   GHashTable *groups = NULL;
   GControllerReference *ref;
+  gpointer key;
 
   /* allocate the full array to start with */
-  new_items = g_ptr_array_new_full (priv->internal_items->len, g_object_unref);
+  new_items = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 
   if (priv->group_by_key)
     {
@@ -708,7 +710,7 @@ mex_view_model_refresh_external_items (MexViewModel *model)
         }
 
       /* add the item to the list */
-      g_ptr_array_add (new_items, g_object_ref (content));
+      g_hash_table_insert (new_items, g_object_ref (content), GINT_TO_POINTER (1));
     }
 
   if (groups)
@@ -720,16 +722,22 @@ mex_view_model_refresh_external_items (MexViewModel *model)
 
   /* compare new_items and external_items */
 
+  /* add external_items to a hash table to improve lookup performance */
+  external_items = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
+  for (i = 0; i < priv->external_items->len; i++)
+    g_hash_table_insert (external_items, g_object_ref (priv->external_items->pdata[i]), GINT_TO_POINTER (1));
 
   /* Remove items first, so that the items added later can be added at the
    * correct positions with respect to any limit value */
-
   /* find items to remove from external_items */
-  for (i = 0; i < priv->external_items->len; i++)
+  g_hash_table_iter_init (&iter, external_items);
+  while (g_hash_table_iter_next (&iter, &key, NULL))
     {
-      if (!_g_ptr_array_contains (new_items, priv->external_items->pdata[i]))
+      if (!g_hash_table_lookup (new_items, key))
         {
           gboolean new_item_visible;
+
+          i = _g_ptr_array_contains (priv->external_items, key);
 
           /* emit the removed signal */
           if (priv->limit == 0 || i < priv->limit)
@@ -769,13 +777,14 @@ mex_view_model_refresh_external_items (MexViewModel *model)
 
 
   /* find items to add to external_items */
-  for (i = 0; i < new_items->len; i++)
+  g_hash_table_iter_init (&iter, new_items);
+  while (g_hash_table_iter_next (&iter, &key, NULL))
     {
-      if (!_g_ptr_array_contains (priv->external_items, new_items->pdata[i]))
+      if (!g_hash_table_lookup (external_items, key))
         {
           /* add the item */
           g_ptr_array_add (priv->external_items,
-                           g_object_ref (new_items->pdata[i]));
+                           g_object_ref (key));
 
           /* emit the added signal, if there is no limit or the new index is
            * less than the limit */
@@ -791,7 +800,10 @@ mex_view_model_refresh_external_items (MexViewModel *model)
     }
 
   /* destroy the new_items list */
-  g_ptr_array_free (new_items, TRUE);
+  g_hash_table_destroy (new_items);
+
+  /* destroy the external_items hash table */
+  g_hash_table_destroy (external_items);
 
   /* sort the items */
   if (priv->order_by_key)
