@@ -1,3 +1,30 @@
+===============================================================================
+Mex 0.3.4                                                            2011-12-20
+===============================================================================
+
+  • List of changes since media-explorer 0.3.2
+
+    » Add grouping support to categories
+
+    » Refactored Model Manager API
+
+    » Visual refresh of the web remote
+
+    » Add a secondary label to MexTile for extra information
+
+    » Add a "back" button on grid and column views
+
+    » Add live previews of videos
+
+    » Add the "twitter-send" plugin
+
+
+Contributors to this release:
+
+  Damien Lespiau, Dario Freddi, Dave Tappy, Michael Wood, Thomas Wood
+
+
+===============================================================================
 Mex 0.3.2                                                            2011-10-31
 ===============================================================================
 
@@ -19,6 +46,7 @@ Contributors to this release:
   Damien Lespiau, Jeremy Whiting, Thomas Wood, Lionel Landwerlin, Michael Wood,
   Dario Freddi, Sjoerd Simons, Nick Richard
 
+===============================================================================
 Mex 0.2.0                                                            2011-09-30
 ===============================================================================
 
@@ -40,6 +68,7 @@ Contributors to this release:
  Damien Lespiau, Jeremy Whiting, Dario Freddi, Lionel Landwerlin,
  Thomas Wood, Michael Wood, Sjoerd Simons, Juan A. Suarez Romero, Nick Richards
 
+===============================================================================
 Mex 0.1.6                                                            2011-08-31
 ===============================================================================
 
