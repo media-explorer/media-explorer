@@ -36,6 +36,9 @@
 
 #include "mex-dvb-plugin.h"
 
+#define MEX_LOG_DOMAIN_DEFAULT  dvb_log_domain
+MEX_LOG_DOMAIN_STATIC (dvb_log_domain);
+
 G_DEFINE_TYPE (MexDvbPlugin, mex_dvb_plugin, MEX_TYPE_PLUGIN)
 
 #define DVB_PLUGIN_PRIVATE(o) \
@@ -148,7 +151,7 @@ vdr_code_rate_to_enum (gint in)
       return MEX_DVB_CODE_RATE_8_9;
     case 35:
     case 910:
-      g_warning ("Unsupported code rate %d", in);
+      MEX_WARNING ("Unsupported code rate %d", in);
       return MEX_DVB_CODE_RATE_AUTO;
     default:
       return MEX_DVB_CODE_RATE_AUTO;
@@ -165,7 +168,7 @@ vdr_modulation_to_enum (gint in)
     case 5:
     case 6:
     case 7:
-      g_warning ("Unsupported modulation %d", in);
+      MEX_WARNING ("Unsupported modulation %d", in);
       return MEX_DVB_MODULATION_AUTO;
     case 10:
       return MEX_DVB_MODULATION_8VSB;
@@ -194,7 +197,7 @@ vdr_transmission_mode_to_enum (gint in)
     case 2:
       return MEX_DVB_TRANSMISSION_MODE_2K;
     case 4:
-      g_warning ("Unsupported transmission mode %d", in);
+      MEX_WARNING ("Unsupported transmission mode %d", in);
       return -1;
     case 8:
       return MEX_DVB_TRANSMISSION_MODE_8K;
@@ -301,7 +304,7 @@ parse_line (MexDvbPlugin  *plugin,
   fields = g_strsplit (line, ":", 0);
   if (get_n_fields (fields) != 14)
     {
-      g_warning ("Expecting 14 fields, found %d", get_n_fields (fields));
+      MEX_WARNING ("Expecting 14 fields, found %d", get_n_fields (fields));
       goto parse_error;
     }
 
@@ -344,7 +347,7 @@ parse_line (MexDvbPlugin  *plugin,
   return TRUE;
 
 parse_error:
-  g_warning ("Could not parse %s%s", line, error_message);
+  MEX_WARNING ("Could not parse %s%s", line, error_message);
   if (channel)
     g_object_unref (channel);
   g_strfreev (fields);
@@ -372,15 +375,15 @@ load_channels_from_file (MexDvbPlugin *plugin)
   if (error && error->code == G_IO_ERROR_NOT_FOUND )
     {
       /* Obviously this will have to trigger the scanning UI */
-      g_message ("channels.conf missing, need to run the scanner (%s)",
-                 channels_conf_path);
+      MEX_INFO ("channels.conf missing, need to run the scanner (%s)",
+                channels_conf_path);
       g_clear_error (&error);
       goto read_error;
     }
   else if (error)
     {
-      g_message ("Could not read config file %s: %s", channels_conf_path,
-                 error->message);
+      MEX_WARNING ("Could not read config file %s: %s", channels_conf_path,
+                   error->message);
       g_clear_error (&error);
       goto read_error;
     }
@@ -404,7 +407,7 @@ load_channels_from_file (MexDvbPlugin *plugin)
     }
   if (G_UNLIKELY (error))
     {
-      g_warning ("Could not read line: %s", error->message);
+      MEX_WARNING ("Could not read line: %s", error->message);
       g_clear_error (&error);
     }
 
@@ -427,6 +430,8 @@ mex_dvb_plugin_start (MexPlugin *self)
   MexDvbPlugin *plugin = MEX_DVB_PLUGIN (self);
   GPtrArray *channels;
 
+  MEX_INFO ("DVB plugin started");
+
   channels = load_channels_from_file (plugin);
   if (channels && channels->len > 0)
     {
@@ -443,7 +448,7 @@ mex_dvb_plugin_start (MexPlugin *self)
 static void
 mex_dvb_plugin_stop (MexPlugin *plugin)
 {
-  g_warning (G_STRLOC ": Not implemented");
+  MEX_WARNING ("Not implemented");
 }
 
 /*
@@ -474,6 +479,8 @@ static void
 mex_dvb_plugin_init (MexDvbPlugin *self)
 {
   self->priv = DVB_PLUGIN_PRIVATE (self);
+
+  MEX_LOG_DOMAIN_INIT (dvb_log_domain, "dvb-plugin");
 }
 
 static GType
