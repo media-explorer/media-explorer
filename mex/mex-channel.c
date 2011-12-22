@@ -84,7 +84,7 @@ mex_channel_get_metadata (MexContent         *content,
     case MEX_CONTENT_METADATA_STILL:
       return priv->thumbnail_uri;
     case MEX_CONTENT_METADATA_MIMETYPE:
-      return "x-mex-channel";
+      return "x-mex/tv";
     case MEX_CONTENT_METADATA_STATION_LOGO:
       return priv->logo_uri;
     default:
