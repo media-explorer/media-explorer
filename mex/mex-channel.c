@@ -95,10 +95,30 @@ mex_channel_get_metadata (MexContent         *content,
   return NULL;
 }
 
+static const char *
+mex_channel_get_property_name (MexContent         *content,
+                               MexContentMetadata  key)
+{
+  switch (key)
+    {
+    case MEX_CONTENT_METADATA_TITLE:
+      return "name";
+    /* XXX: Silence the warning in default. ContentTile is asking for ARTIST */
+    case MEX_CONTENT_METADATA_ARTIST:
+      return NULL;
+    default:
+      g_warning ("Can't provide property name for %s on a MexChannel",
+                 mex_content_metadata_key_to_string (key));
+    }
+
+  return NULL;
+}
+
 static void
 mex_content_iface_init (MexContentIface *iface)
 {
   iface->get_metadata = mex_channel_get_metadata;
+  iface->get_property_name = mex_channel_get_property_name;
 }
 
 /*
