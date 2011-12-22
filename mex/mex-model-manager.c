@@ -394,14 +394,21 @@ mex_model_manager_add_model (MexModelManager *manager,
 
   priv = manager->priv;
 
+  /* models need to have their category set to be added to the right aggregate
+   * model */
+  g_object_get (G_OBJECT (model), "category", &category, NULL);
+  if (category == NULL)
+    {
+      g_warning ("Trying to add a model that does not have a category set");
+      return;
+    }
+
   priv->models = g_list_insert_sorted_with_data (priv->models,
                                                  g_object_ref (model),
                                                  mex_model_manager_sort_cb,
                                                  manager);
 
   /* add the new model to the category aggregate model */
-  g_object_get (G_OBJECT (model), "category", &category, NULL);
-
   aggregate = g_hash_table_lookup (priv->aggregate_models, category);
   if (aggregate)
     mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (aggregate), model);
