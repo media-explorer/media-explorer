@@ -491,14 +491,21 @@ mex_content_tile_set_content (MexContentView *view,
 
   /* Update title/thumbnail display */
 
-  label_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
-                                                   MEX_CONTENT_METADATA_ARTIST);
-  secondary_label_prop_name = mex_content_get_property_name (MEX_CONTENT (priv->content),
+  label_prop_name = mex_content_get_property_name (priv->content,
                                                    MEX_CONTENT_METADATA_TITLE);
-  g_object_bind_property (content, label_prop_name, tile, "secondary-label",
+  secondary_label_prop_name =
+    mex_content_get_property_name (priv->content,
+                                   MEX_CONTENT_METADATA_ARTIST);
+
+  g_object_bind_property (content, label_prop_name,
+                          tile, "label",
                           G_BINDING_SYNC_CREATE);
-  g_object_bind_property (content, secondary_label_prop_name, tile, "label",
-                          G_BINDING_SYNC_CREATE);
+  if (secondary_label_prop_name)
+    {
+      g_object_bind_property (content, secondary_label_prop_name,
+                              tile, "secondary-label",
+                              G_BINDING_SYNC_CREATE);
+    }
 
 
 
