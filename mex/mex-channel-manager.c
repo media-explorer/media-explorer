@@ -16,6 +16,10 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#include <glib/gi18n.h>
+
+#include "mex-generic-model.h"
+#include "mex-model-manager.h"
 
 #include "mex-channel-manager.h"
 
@@ -29,6 +33,7 @@ G_DEFINE_TYPE (MexChannelManager, mex_channel_manager, G_TYPE_OBJECT)
 struct _MexChannelManagerPrivate
 {
   GPtrArray *channels;
+  MexModel *channels_model;
   MexLogoProvider *logo_provider; /* For now a single logo provider */
 };
 
@@ -99,6 +104,12 @@ mex_channel_manager_dispose (GObject *object)
       priv->logo_provider = NULL;
     }
 
+  if (priv->channels_model)
+    {
+      g_object_unref (priv->channels_model);
+      priv->channels_model = NULL;
+    }
+
   G_OBJECT_CLASS (mex_channel_manager_parent_class)->dispose (object);
 }
 
@@ -130,10 +141,17 @@ static void
 mex_channel_manager_init (MexChannelManager *self)
 {
   MexChannelManagerPrivate *priv;
+  MexModelManager *manager;
 
   self->priv = priv = CHANNEL_MANAGER_PRIVATE (self);
 
   priv->channels = g_ptr_array_new_with_free_func (g_object_unref);
+
+  manager = mex_model_manager_get_default ();
+  priv->channels_model = mex_generic_model_new (_("TV"), "icon-panelheader-tv");
+  g_object_set (G_OBJECT (priv->channels_model), "category", "live", NULL);
+
+  mex_model_manager_add_model (manager, priv->channels_model);
 }
 
 MexChannelManager *
@@ -172,6 +190,7 @@ add_channels_from_ptr_array (MexChannelManager *manager,
       MexChannel *channel = g_ptr_array_index (channels, i);
 
       priv->channels->pdata[previous_len + i] = g_object_ref (channel);
+      mex_model_add_content (priv->channels_model, MEX_CONTENT (channel));
     }
 }
 

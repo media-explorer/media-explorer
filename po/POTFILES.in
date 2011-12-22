@@ -1,4 +1,5 @@
 applets/networks/mtn-app.c
+mex/mex-channel-manager.c
 mex/mex-content.c
 mex/mex-generic-model.c
 mex/mex-gio-notification-source.c
