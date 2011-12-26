@@ -42,9 +42,7 @@ static const MexModelCategoryInfo videos = {
        " here."), MEX_CONTENT_METADATA_SERIES_NAME,
     MEX_CONTENT_METADATA_SEASON
 };
-static const MexModelCategoryInfo live = {
-    "live", N_("Live TV"), "icon-panelheader-tv", 25, ""
-};
+
 static const MexModelCategoryInfo pictures = {
     "pictures", N_("Photos"), "icon-panelheader-photos", 30,
     N_("Connect an external drive or update your network settings to see Photos"
@@ -73,7 +71,6 @@ mex_init_default_categories (void)
 
   mmanager = mex_model_manager_get_default ();
 
-  mex_model_manager_add_category (mmanager, &live);
   mex_model_manager_add_category (mmanager, &videos);
   mex_model_manager_add_category (mmanager, &music);
   mex_model_manager_add_category (mmanager, &pictures);

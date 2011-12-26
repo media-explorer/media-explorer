@@ -23,6 +23,10 @@
 
 #include "mex-channel-manager.h"
 
+static gint mex_channel_manager_sort (MexContent *a,
+                                      MexContent *b,
+                                      gpointer user_data);
+
 G_DEFINE_TYPE (MexChannelManager, mex_channel_manager, G_TYPE_OBJECT)
 
 #define CHANNEL_MANAGER_PRIVATE(o)                          \
@@ -36,6 +40,23 @@ struct _MexChannelManagerPrivate
   MexModel *channels_model;
   MexLogoProvider *logo_provider; /* For now a single logo provider */
 };
+
+/* The Live TV category is definied with the channel manager */
+static const MexModelCategoryInfo live = {
+    "live", N_("Live TV"), "icon-panelheader-tv", 25, "", 0, 0, FALSE,
+    mex_channel_manager_sort
+};
+
+static gint
+mex_channel_manager_sort (MexContent *a,
+                          MexContent *b,
+                          gpointer user_data)
+{
+  MexChannel *c_a = MEX_CHANNEL (a);
+  MexChannel *c_b = MEX_CHANNEL (b);
+
+  return strcmp (mex_channel_get_name (c_a), mex_channel_get_name (c_b));
+}
 
 static void
 ensure_logos (MexChannelManager *manager)
@@ -148,6 +169,9 @@ mex_channel_manager_init (MexChannelManager *self)
   priv->channels = g_ptr_array_new_with_free_func (g_object_unref);
 
   manager = mex_model_manager_get_default ();
+
+  mex_model_manager_add_category (manager, &live);
+
   priv->channels_model = mex_generic_model_new (_("TV"), "icon-panelheader-tv");
   g_object_set (G_OBJECT (priv->channels_model), "category", "live", NULL);
 
