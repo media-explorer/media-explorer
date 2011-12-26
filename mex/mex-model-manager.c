@@ -261,9 +261,6 @@ mex_model_manager_init (MexModelManager *self)
   /* initialise the root model that contains an aggregate model for each
    * category */
   priv->root_model = mex_aggregate_model_new ();
-  mex_model_set_sort_func (MEX_MODEL (priv->root_model),
-                           mex_model_sort_smart_cb,
-                           GINT_TO_POINTER (FALSE));
 }
 
 MexModelManager *
