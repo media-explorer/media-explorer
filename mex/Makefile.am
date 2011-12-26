@@ -49,6 +49,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-content-tile.h			\
 	$(top_srcdir)/mex/mex-content-view.h			\
 	$(top_srcdir)/mex/mex-content.h				\
+	$(top_srcdir)/mex/mex-debug.h				\
 	$(top_srcdir)/mex/mex-download-queue.h			\
 	$(top_srcdir)/mex/mex-explorer.h			\
 	$(top_srcdir)/mex/mex-epg.h				\
@@ -155,6 +156,7 @@ mex_sources =					\
 	mex-content-tile.c			\
 	mex-content-view.c			\
 	mex-content.c				\
+	mex-debug.c				\
 	mex-download-queue.c			\
 	mex-epg.c				\
 	mex-epg-event.c				\
