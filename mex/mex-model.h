@@ -23,6 +23,8 @@
 #include <glib-object.h>
 #include <glib-controller/glib-controller.h>
 
+#include <mex/mex-debug.h>
+
 G_BEGIN_DECLS
 
 #define MEX_TYPE_MODEL              (mex_model_get_type ())
@@ -84,6 +86,8 @@ gint  mex_model_index      (MexModel   *model,
                             MexContent *content);
 
 MexModel *mex_model_get_model (MexModel *model);
+gchar * mex_model_to_string (MexModel          *model,
+                             MexDebugVerbosity  verbosity);
 
 G_END_DECLS
 

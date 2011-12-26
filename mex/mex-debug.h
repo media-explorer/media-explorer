@@ -23,6 +23,14 @@
 
 G_BEGIN_DECLS
 
+typedef enum _MexDebugVerbosity
+{
+  MEX_DEBUG_VERBOSITY_NONE,
+  MEX_DEBUG_VERBOSITY_MINIMAL,
+  MEX_DEBUG_VERBOSITY_TALKATIVE,
+  MEX_DEBUG_VERBOSITY_UNSTOPPABLE
+} MexDebugVerbosity;
+
 void mex_object_to_string (GObject *object);
 
 G_END_DECLS

@@ -386,3 +386,49 @@ mex_model_get_model (MexModel *model)
 
   return NULL;
 }
+
+/**
+ * mex_model_to_string :
+ * @model: the model
+ * @verbosity: the verbosity of the dump
+ *
+ * Return value: a string representation of the model
+ *
+ * Since: 0.2
+ */
+gchar *
+mex_model_to_string (MexModel          *model,
+                     MexDebugVerbosity  verbosity)
+{
+  GString *dump;
+
+  dump = g_string_new (NULL);
+
+  g_string_append_printf (dump,
+                          "%s (%u elements)\n",
+                          G_OBJECT_TYPE_NAME (model),
+                          mex_model_get_length (model));
+
+  if (verbosity >= MEX_DEBUG_VERBOSITY_TALKATIVE)
+    {
+      MexContent *content;
+      const gchar *title;
+      guint i, len;
+
+      len = mex_model_get_length (model);
+      for (i = 0; i < len - 1; i++)
+        {
+          content = mex_model_get_content (model, i);
+          title = mex_content_get_metadata (content,
+                                            MEX_CONTENT_METADATA_TITLE);
+          g_string_append_printf (dump, "%s, ", title);
+        }
+
+      content = mex_model_get_content (model, len - 1);
+      title = mex_content_get_metadata (content, MEX_CONTENT_METADATA_TITLE);
+      g_string_append (dump, title);
+
+    }
+
+  return g_string_free (dump, FALSE);
+}
