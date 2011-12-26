@@ -386,6 +386,7 @@ mex_model_manager_add_model (MexModelManager *manager,
   MexModelManagerPrivate *priv;
   MexModel *aggregate;
   gchar *category;
+  const MexModelCategoryInfo *category_info;
 
   g_return_if_fail (MEX_IS_MODEL_MANAGER (manager));
 
@@ -410,8 +411,13 @@ mex_model_manager_add_model (MexModelManager *manager,
   if (aggregate)
     mex_aggregate_model_add_model (MEX_AGGREGATE_MODEL (aggregate), model);
 
-  g_free (category);
+  /* If not already sorted, the model inherit the sort function from the
+   * category */
+  category_info = mex_model_manager_get_category_info (manager, category);
+  if (!mex_model_is_sorted (model))
+    mex_model_set_sort_func (model, category_info->sort_func, NULL);
 
+  g_free (category);
 
   /* emit the model-added signal */
   g_signal_emit (manager, signals[MODEL_ADDED], 0, model);
