@@ -316,6 +316,24 @@ mex_model_set_sort_func (MexModel         *model,
              g_type_name (G_OBJECT_TYPE (model)));
 }
 
+gboolean
+mex_model_is_sorted (MexModel *model)
+{
+  MexModelIface *iface;
+
+  g_return_val_if_fail (MEX_IS_MODEL (model), FALSE);
+
+  iface = MEX_MODEL_GET_IFACE (model);
+
+  if (G_LIKELY (iface->is_sorted))
+    return iface->is_sorted (model);
+
+  g_warning ("MexModel of type '%s' does not implement is_sorted ()",
+             g_type_name (G_OBJECT_TYPE (model)));
+
+  return FALSE;
+}
+
 guint
 mex_model_get_length (MexModel *model)
 {

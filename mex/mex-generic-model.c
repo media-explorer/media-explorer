@@ -345,6 +345,14 @@ mex_generic_model_set_sort_func (MexModel         *model,
   g_object_unref (ref);
 }
 
+static gboolean
+mex_generic_model_is_sorted (MexModel *model)
+{
+  MexGenericModel *gm = (MexGenericModel *) model;
+
+  return gm->priv->sort_func != NULL;
+}
+
 static guint
 mex_generic_model_get_length (MexModel *model)
 {
@@ -378,6 +386,7 @@ mex_model_iface_init (MexModelIface *iface)
   iface->remove_content = mex_generic_model_remove_content;
   iface->clear = mex_generic_model_clear;
   iface->set_sort_func = mex_generic_model_set_sort_func;
+  iface->is_sorted = mex_generic_model_is_sorted;
   iface->get_length = mex_generic_model_get_length;
   iface->index = mex_generic_model_index;
   iface->get_model = mex_generic_model_get_model;
