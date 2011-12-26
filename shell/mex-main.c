@@ -683,7 +683,12 @@ mex_notify_depth_cb (MexExplorer *explorer,
   model = mex_explorer_get_model (explorer);
   container = mex_explorer_get_container_for_model (explorer, model);
 
-  if (container && !MEX_IS_GRID_VIEW (container))
+  /* We don't want to re-sort the model when:
+   *  - we're in the grid view (it gets sorted by the grid)
+   *  - we're talking about the root model (no need to ever sort this one)
+   */
+  if ((container && !MEX_IS_GRID_VIEW (container)) &&
+      (model != mex_explorer_get_root_model (explorer)))
     {
       data->using_alt = FALSE;
       mex_model_set_sort_func (model, mex_model_sort_smart_cb,
