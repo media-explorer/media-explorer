@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_RESIZING_HBOX_H
-#define _MEX_RESIZING_HBOX_H
+#ifndef __MEX_RESIZING_HBOX_H__
+#define __MEX_RESIZING_HBOX_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -93,4 +93,4 @@ gboolean mex_resizing_hbox_get_depth_fade (MexResizingHBox *hbox);
 
 G_END_DECLS
 
-#endif /* _MEX_RESIZING_HBOX_H */
+#endif /* __MEX_RESIZING_HBOX_H__ */

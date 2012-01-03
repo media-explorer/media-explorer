@@ -16,9 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
-#ifndef _MEX_SCROLL_VIEW_H
-#define _MEX_SCROLL_VIEW_H
+#ifndef __MEX_SCROLL_VIEW_H__
+#define __MEX_SCROLL_VIEW_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -94,4 +93,4 @@ gboolean mex_scroll_view_get_interpolate (MexScrollView *view);
 
 G_END_DECLS
 
-#endif /* _MEX_SCROLL_VIEW_H */
+#endif /* __MEX_SCROLL_VIEW_H__ */

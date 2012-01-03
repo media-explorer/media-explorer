@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_QUEUE_MODEL_H
-#define _MEX_QUEUE_MODEL_H
+#ifndef __MEX_QUEUE_MODEL_H__
+#define __MEX_QUEUE_MODEL_H__
 
 #include <glib-object.h>
 #include <mex/mex.h>
@@ -68,4 +68,4 @@ MexModel *mex_queue_model_dup_singleton (void);
 
 G_END_DECLS
 
-#endif /* _MEX_QUEUE_MODEL_H */
+#endif /* __MEX_QUEUE_MODEL_H__ */

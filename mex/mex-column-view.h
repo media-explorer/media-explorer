@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_COLUMN_VIEW_H
-#define _MEX_COLUMN_VIEW_H
+#ifndef __MEX_COLUMN_VIEW_H__
+#define __MEX_COLUMN_VIEW_H__
 
 #include <glib-object.h>
 
@@ -89,4 +89,4 @@ void          mex_column_view_set_focus (MexColumnView *column, gboolean focus);
 
 G_END_DECLS
 
-#endif /* _MEX_COLUMN_VIEW_H */
+#endif /* __MEX_COLUMN_VIEW_H__ */

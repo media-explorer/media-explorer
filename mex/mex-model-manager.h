@@ -16,9 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
-#ifndef _MEX_MODEL_MANAGER_H
-#define _MEX_MODEL_MANAGER_H
+#ifndef __MEX_MODEL_MANAGER_H__
+#define __MEX_MODEL_MANAGER_H__
 
 #include <glib-object.h>
 #include <mex/mex-model.h>
@@ -130,4 +129,4 @@ MexModel* mex_model_manager_get_model_for_category (MexModelManager *manager,
 
 G_END_DECLS
 
-#endif /* _MEX_MODEL_MANAGER_H */
+#endif /* __MEX_MODEL_MANAGER_H__ */

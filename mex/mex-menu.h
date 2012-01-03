@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_MENU_H
-#define _MEX_MENU_H
+#ifndef __MEX_MENU_H__
+#define __MEX_MENU_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -121,4 +121,4 @@ void mex_menu_add_section_header (MexMenu     *menu,
                                   const gchar *title);
 G_END_DECLS
 
-#endif /* _MEX_MENU_H */
+#endif /* __MEX_MENU_H__ */

@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_PROXY_H
-#define _MEX_PROXY_H
+#ifndef __MEX_PROXY_H__
+#define __MEX_PROXY_H__
 
 #include <glib-object.h>
 #include <mex/mex-model.h>
@@ -80,4 +80,4 @@ GType     mex_proxy_get_object_type (MexProxy *proxy);
 
 G_END_DECLS
 
-#endif /* _MEX_PROXY_H */
+#endif /* __MEX_PROXY_H__ */

@@ -16,6 +16,9 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifndef __MEX_THUMBNAILER_H__
+#define __MEX_THUMBNAILER_H__
+
 #include <glib.h>
 
 #include <mex-content.h>
@@ -28,3 +31,5 @@ void mex_thumbnailer_generate (const char *url,
                                gpointer user_data);
 
 gchar * mex_get_thumbnail_path_for_uri (const gchar *uri);
+
+#endif /* __MEX_THUMBNAILER_H__ */

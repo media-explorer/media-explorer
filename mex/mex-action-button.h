@@ -16,9 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
-#ifndef _MEX_ACTION_BUTTON_H
-#define _MEX_ACTION_BUTTON_H
+#ifndef __MEX_ACTION_BUTTON_H__
+#define __MEX_ACTION_BUTTON_H__
 
 #include <mx/mx.h>
 
@@ -68,4 +67,4 @@ ClutterActor *mex_action_button_new (MxAction *action);
 
 G_END_DECLS
 
-#endif /* _MEX_ACTION_BUTTON_H */
+#endif /* __MEX_ACTION_BUTTON_H__ */

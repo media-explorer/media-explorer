@@ -16,9 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
-#ifndef _MEX_AGGREGATE_MODEL_H
-#define _MEX_AGGREGATE_MODEL_H
+#ifndef __MEX_AGGREGATE_MODEL_H__
+#define __MEX_AGGREGATE_MODEL_H__
 
 #include <glib-object.h>
 #include <mex/mex-generic-model.h>
@@ -90,4 +89,4 @@ MexModel *mex_aggregate_model_get_model_for_content (MexAggregateModel *aggregat
 
 G_END_DECLS
 
-#endif /* _MEX_AGGREGATE_MODEL_H */
+#endif /* __MEX_AGGREGATE_MODEL_H__ */

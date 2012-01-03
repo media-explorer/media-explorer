@@ -16,9 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
-#ifndef _MEX_CONTENT_TILE_H
-#define _MEX_CONTENT_TILE_H
+#ifndef __MEX_CONTENT_TILE_H__
+#define __MEX_CONTENT_TILE_H__
 
 #include <mx/mx.h>
 #include <mex/mex-content-view.h>
@@ -70,4 +69,4 @@ ClutterActor *mex_content_tile_new (void);
 
 G_END_DECLS
 
-#endif /* _MEX_CONTENT_TILE_H */
+#endif /* __MEX_CONTENT_TILE_H__ */

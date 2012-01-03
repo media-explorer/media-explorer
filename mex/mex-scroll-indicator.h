@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_SCROLL_INDICATOR_H
-#define _MEX_SCROLL_INDICATOR_H
+#ifndef __MEX_SCROLL_INDICATOR_H__
+#define __MEX_SCROLL_INDICATOR_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -73,4 +73,4 @@ MxAdjustment *mex_scroll_indicator_get_adjustment (MexScrollIndicator *scroll);
 
 G_END_DECLS
 
-#endif /* _MEX_SCROLL_INDICATOR_H */
+#endif /* __MEX_SCROLL_INDICATOR_H__ */

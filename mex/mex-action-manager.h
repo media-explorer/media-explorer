@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_ACTION_MANAGER_H
-#define _MEX_ACTION_MANAGER_H
+#ifndef __MEX_ACTION_MANAGER_H__
+#define __MEX_ACTION_MANAGER_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -94,4 +94,4 @@ void mex_action_manager_remove_action (MexActionManager *manager,
 
 G_END_DECLS
 
-#endif /* _MEX_ACTION_MANAGER_H */
+#endif /* __MEX_ACTION_MANAGER_H__*/

@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_SURFACE_PLAYER_H
-#define _MEX_SURFACE_PLAYER_H
+#ifndef __MEX_SURFACE_PLAYER_H__
+#define __MEX_SURFACE_PLAYER_H__
 
 #include <glib-object.h>
 
@@ -67,4 +67,4 @@ MexSurfacePlayer *mex_surface_player_new (void);
 
 G_END_DECLS
 
-#endif /* _MEX_SURFACE_PLAYER_H */
+#endif /* __MEX_SURFACE_PLAYER_H__ */

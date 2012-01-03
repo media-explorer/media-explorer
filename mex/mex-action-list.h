@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_ACTION_LIST_H
-#define _MEX_ACTION_LIST_H
+#ifndef __MEX_ACTION_LIST_H__
+#define __MEX_ACTION_LIST_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -70,4 +70,4 @@ void mex_action_list_refresh (MexActionList *action_list);
 
 G_END_DECLS
 
-#endif /* _MEX_ACTION_LIST_H */
+#endif /* __MEX_ACTION_LIST_H__ */

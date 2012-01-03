@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_MEDIA_CONTROLS_H
-#define _MEX_MEDIA_CONTROLS_H
+#ifndef __MEX_MEDIA_CONTROLS_H__
+#define __MEX_MEDIA_CONTROLS_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -93,4 +93,4 @@ void mex_media_controls_set_disabled (MexMediaControls *self,
 
 G_END_DECLS
 
-#endif /* _MEX_MEDIA_CONTROLS_H */
+#endif /* __MEX_MEDIA_CONTROLS_H__ */

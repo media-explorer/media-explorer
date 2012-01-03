@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_VIEW_MODEL_H
-#define _MEX_VIEW_MODEL_H
+#ifndef __MEX_VIEW_MODEL_H__
+#define __MEX_VIEW_MODEL_H__
 
 #include "mex-generic-model.h"
 
@@ -85,4 +85,4 @@ void mex_view_model_set_order_by (MexViewModel       *model,
 
 G_END_DECLS
 
-#endif /* _MEX_VIEW_MODEL_H */
+#endif /* __MEX_VIEW_MODEL_H__ */

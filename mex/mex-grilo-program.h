@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_GRILO_PROGRAM_H
-#define _MEX_GRILO_PROGRAM_H
+#ifndef __MEX_GRILO_PROGRAM_H__
+#define __MEX_GRILO_PROGRAM_H__
 
 #include <glib-object.h>
 #include <mex/mex-program.h>
@@ -77,4 +77,4 @@ GList * mex_grilo_program_get_default_keys (void);
 
 G_END_DECLS
 
-#endif /* _MEX_GRILO_PROGRAM_H */
+#endif /* __MEX_GRILO_PROGRAM_H__ */

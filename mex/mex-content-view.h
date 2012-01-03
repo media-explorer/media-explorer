@@ -59,4 +59,4 @@ void        mex_content_view_set_context (MexContentView *view,
 MexModel*   mex_content_view_get_context (MexContentView *view);
 G_END_DECLS
 
-#endif
+#endif /* __MEX_CONTENT_VIEW_H__ */

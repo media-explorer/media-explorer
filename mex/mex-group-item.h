@@ -1,7 +1,3 @@
-/* mex-group-item.h */
-
-#ifndef _MEX_GROUP_ITEM_H
-#define _MEX_GROUP_ITEM_H
 /*
  * Mex - a media explorer
  *
@@ -19,6 +15,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
+
+#ifndef __MEX_GROUP_ITEM_H__
+#define __MEX_GROUP_ITEM_H__
 
 #include <mex/mex-generic-content.h>
 
@@ -77,4 +76,4 @@ MexModel* mex_group_item_get_model (MexGroupItem *item);
 
 G_END_DECLS
 
-#endif /* _MEX_GROUP_ITEM_H */
+#endif /* __MEX_GROUP_ITEM_H__ */

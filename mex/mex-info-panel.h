@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_INFO_PANEL_H
-#define _MEX_INFO_PANEL_H
+#ifndef __MEX_INFO_PANEL_H__
+#define __MEX_INFO_PANEL_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -77,4 +77,4 @@ void            mex_info_panel_set_media  (MexInfoPanel *panel,
 
 G_END_DECLS
 
-#endif /* _MEX_INFO_PANEL_H */
+#endif /* __MEX_INFO_PANEL_H__ */

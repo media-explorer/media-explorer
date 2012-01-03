@@ -16,10 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-/* mex-notification-area.h */
-
-#ifndef _MEX_NOTIFICATION_AREA_H
-#define _MEX_NOTIFICATION_AREA_H
+#ifndef __MEX_NOTIFICATION_AREA_H__
+#define __MEX_NOTIFICATION_AREA_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -74,4 +72,4 @@ void mex_notification_area_add_source (MexNotificationArea *area,
 
 G_END_DECLS
 
-#endif /* _MEX_NOTIFICATION_AREA_H */
+#endif /* __MEX_NOTIFICATION_AREA_H__ */

@@ -16,10 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-/* mex-notification-source.h */
-
-#ifndef _MEX_NOTIFICATION_SOURCE_H
-#define _MEX_NOTIFICATION_SOURCE_H
+#ifndef __MEX_NOTIFICATION_SOURCE_H__
+#define __MEX_NOTIFICATION_SOURCE_H__
 
 #include <glib-object.h>
 
@@ -90,4 +88,4 @@ void mex_notification_free (gpointer boxed_type);
 
 G_END_DECLS
 
-#endif /* _MEX_NOTIFICATION_SOURCE_H */
+#endif /* __MEX_NOTIFICATION_SOURCE_H__ */

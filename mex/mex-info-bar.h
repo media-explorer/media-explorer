@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_INFO_BAR_H
-#define _MEX_INFO_BAR_H
+#ifndef __MEX_INFO_BAR_H__
+#define __MEX_INFO_BAR_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -82,4 +82,4 @@ ClutterActor *mex_info_bar_get_default (void);
 
 G_END_DECLS
 
-#endif /* _MEX_INFO_BAR_H */
+#endif /* __MEX_INFO_BAR_H__ */

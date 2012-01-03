@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_APPLET_MANAGER_H
-#define _MEX_APPLET_MANAGER_H
+#ifndef __MEX_APPLET_MANAGER_H__
+#define __MEX_APPLET_MANAGER_H__
 
 #include <glib-object.h>
 #include <mex/mex-applet.h>
@@ -81,4 +81,4 @@ void mex_applet_manager_remove_applet (MexAppletManager *manager,
 
 G_END_DECLS
 
-#endif /* _MEX_APPLET_MANAGER_H */
+#endif /* __MEX_APPLET_MANAGER_H__ */

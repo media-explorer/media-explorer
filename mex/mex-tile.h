@@ -16,9 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
-#ifndef _MEX_TILE_H
-#define _MEX_TILE_H
+#ifndef __MEX_TILE_H__
+#define __MEX_TILE_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -89,4 +88,4 @@ void          mex_tile_set_secondary_label (MexTile *tile, const gchar *label);
 
 G_END_DECLS
 
-#endif /* _MEX_TILE_H */
+#endif /* __MEX_TILE_H__ */

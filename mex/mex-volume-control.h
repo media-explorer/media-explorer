@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_VOLUME_CONTROL_H
-#define _MEX_VOLUME_CONTROL_H
+#ifndef __MEX_VOLUME_CONTROL_H__
+#define __MEX_VOLUME_CONTROL_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -72,4 +72,4 @@ void mex_volume_control_volume_mute (MexVolumeControl *self);
 
 G_END_DECLS
 
-#endif /* _MEX_VOLUME_CONTROL_H */
+#endif /* __MEX_VOLUME_CONTROL_H__ */

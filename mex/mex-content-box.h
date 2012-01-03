@@ -16,9 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
-#ifndef _MEX_CONTENT_BOX_H
-#define _MEX_CONTENT_BOX_H
+#ifndef __MEX_CONTENT_BOX_H__
+#define __MEX_CONTENT_BOX_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -75,4 +74,4 @@ gboolean mex_content_box_get_important (MexContentBox *box);
 
 G_END_DECLS
 
-#endif /* _MEX_CONTENT_BOX_H */
+#endif /* __MEX_CONTENT_BOX_H__ */

@@ -16,9 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-
-#ifndef _MEX_GENERIC_PROXY_H
-#define _MEX_GENERIC_PROXY_H
+#ifndef __MEX_GENERIC_PROXY_H__
+#define __MEX_GENERIC_PROXY_H__
 
 #include <glib-object.h>
 #include <mex/mex-proxy.h>
@@ -93,4 +92,4 @@ void mex_generic_proxy_bind_full (MexGenericProxy              *generic_proxy,
 
 G_END_DECLS
 
-#endif /* _MEX_GENERIC_PROXY_H */
+#endif /* __MEX_GENERIC_PROXY_H__ */

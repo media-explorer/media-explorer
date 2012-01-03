@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_ONLINE
-#define _MEX_ONLINE
+#ifndef __MEX_ONLINE_H__
+#define __MEX_ONLINE_H__
 
 #include <glib.h>
 
@@ -36,4 +36,4 @@ void mex_online_remove_notify (MexOnlineNotify callback,
 
 G_END_DECLS
 
-#endif /* _MEX_ONLINE */
+#endif /* __MEX_ONLINE_H__ */

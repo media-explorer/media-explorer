@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_QUEUE_BUTTON_H
-#define _MEX_QUEUE_BUTTON_H
+#ifndef __MEX_QUEUE_BUTTON_H__
+#define __MEX_QUEUE_BUTTON_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -69,4 +69,4 @@ ClutterActor *mex_queue_button_new (void);
 
 G_END_DECLS
 
-#endif /* _MEX_QUEUE_BUTTON_H */
+#endif /* __MEX_QUEUE_BUTTON_H__ */

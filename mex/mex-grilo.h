@@ -1,5 +1,5 @@
-#ifndef _MEX_GRILO_H
-#define _MEX_GRILO_H
+#ifndef __MEX_GRILO_H__
+#define __MEX_GRILO_H__
 
 #include <grilo.h>
 
@@ -14,4 +14,4 @@ void mex_grilo_set_media_content_metadata (GrlMedia           *media,
 void mex_grilo_update_content_from_media (MexContent *content,
                                           GrlMedia   *media);
 
-#endif /* _MEX_GRILO_H */
+#endif /* __MEX_GRILO_H__ */

@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_CLOCK_BIN_H
-#define _MEX_CLOCK_BIN_H
+#ifndef __MEX_CLOCK_BIN_H__
+#define __MEX_CLOCK_BIN_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -71,4 +71,4 @@ MxIcon *mex_clock_bin_get_icon (MexClockBin *bin);
 
 G_END_DECLS
 
-#endif /* _MEX_CLOCK_BIN_H */
+#endif /* __MEX_CLOCK_BIN_H__ */

@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_SHADOW_H
-#define _MEX_SHADOW_H
+#ifndef __MEX_SHADOW_H__
+#define __MEX_SHADOW_H__
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
@@ -91,4 +91,4 @@ MexPaintTextureFrameFlags mex_shadow_get_paint_flags (MexShadow *shadow);
 
 G_END_DECLS
 
-#endif /* _MEX_SHADOW_H */
+#endif /* __MEX_SHADOW_H__ */

@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_PLUGIN_MANAGER_H
-#define _MEX_PLUGIN_MANAGER_H
+#ifndef __MEX_PLUGIN_MANAGER_H__
+#define __MEX_PLUGIN_MANAGER_H__
 
 #include <glib-object.h>
 
@@ -75,4 +75,4 @@ void mex_plugin_manager_refresh (MexPluginManager *manager);
 
 G_END_DECLS
 
-#endif /* _MEX_PLUGIN_MANAGER_H */
+#endif /* __MEX_PLUGIN_MANAGER_H__ */

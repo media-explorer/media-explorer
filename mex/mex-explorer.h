@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_EXPLORER_H
-#define _MEX_EXPLORER_H
+#ifndef __MEX_EXPLORER_H__
+#define __MEX_EXPLORER_H__
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
@@ -117,4 +117,4 @@ gboolean mex_explorer_get_touch_mode (MexExplorer *explorer);
 
 G_END_DECLS
 
-#endif /* _MEX_EXPLORER_H */
+#endif /* __MEX_EXPLORER_H__ */

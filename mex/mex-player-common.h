@@ -16,12 +16,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_PLAYER_COMMON_H
-#define _MEX_PLAYER_COMMON_H
+#ifndef __MEX_PLAYER_COMMON_H__
+#define __MEX_PLAYER_COMMON_H__
 
 #define MEX_PLAYER_OBJECT_PATH "/org/MediaExplorer/Player"
 #define MEX_PLAYER_SERVICE_NAME "org.media-explorer.Player"
 #define MEX_PLAYER_INTERFACE_NAME "org.MediaExplorer.MediaPlayer"
 
-#endif /* _MEX_PLAYER_COMMON_H */
+#endif /* __MEX_PLAYER_COMMON_H__ */
 

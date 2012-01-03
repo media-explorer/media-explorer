@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_GRID_VIEW_H
-#define _MEX_GRID_VIEW_H
+#ifndef __MEX_GRID_VIEW_H__
+#define __MEX_GRID_VIEW_H__
 
 #include <mx/mx.h>
 #include "mex-menu.h"
@@ -73,4 +73,4 @@ MexGrid *mex_grid_view_get_grid (MexGridView *view);
 
 G_END_DECLS
 
-#endif /* _MEX_GRID_VIEW_H */
+#endif /* __MEX_GRID_VIEW_H__ */

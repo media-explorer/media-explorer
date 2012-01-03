@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_PLAYER_CLIENT_H
-#define _MEX_PLAYER_CLIENT_H
+#ifndef __MEX_PLAYER_CLIENT_H__
+#define __MEX_PLAYER_CLIENT_H__
 
 #include <glib-object.h>
 
@@ -67,4 +67,4 @@ MexPlayerClient *mex_player_client_new (void);
 
 G_END_DECLS
 
-#endif /* _MEX_PLAYER_CLIENT_H */
+#endif /* __MEX_PLAYER_CLIENT_H__ */

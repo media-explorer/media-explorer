@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_MEDIA_DBUS_BRIDGE_H
-#define _MEX_MEDIA_DBUS_BRIDGE_H
+#ifndef __MEX_MEDIA_DBUS_BRIDGE_H__
+#define __MEX_MEDIA_DBUS_BRIDGE_H__
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
@@ -70,4 +70,4 @@ gboolean mex_media_dbus_bridge_register (MexMediaDBUSBridge  *bridge,
 
 G_END_DECLS
 
-#endif /* _MEX_MEDIA_DBUS_BRIDGE_H */
+#endif /* __MEX_MEDIA_DBUS_BRIDGE_H__ */

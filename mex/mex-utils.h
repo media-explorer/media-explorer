@@ -23,8 +23,8 @@
 #include <mex/mex-model.h>
 #include <mex/mex-model-manager.h>
 
-#ifndef _MEX_UTILS_H
-#define _MEX_UTILS_H
+#ifndef __MEX_UTILS_H__
+#define __MEX_UTILS_H__
 
 typedef enum
 {
@@ -125,4 +125,4 @@ mex_g_signal_connect_object (gpointer       instance,
                              gpointer       gobject,
                              GConnectFlags  connect_flags);
 
-#endif /* _MEX_UTILS_H */
+#endif /* __MEX_UTILS_H__ */

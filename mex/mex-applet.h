@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_APPLET
-#define _MEX_APPLET
+#ifndef __MEX_APPLET_H__
+#define __MEX_APPLET_H__
 
 #include <glib-object.h>
 #include <mex/mex-generic-content.h>
@@ -88,4 +88,4 @@ void mex_applet_request_close (MexApplet *applet, ClutterActor *actor);
 void mex_applet_closed (MexApplet *applet, ClutterActor *actor);
 G_END_DECLS
 
-#endif /* _MEX_APPLET */
+#endif /* __MEX_APPLET_H__ */

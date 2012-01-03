@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_BACKGROUND_MANAGER_H
-#define _MEX_BACKGROUND_MANAGER_H
+#ifndef __MEX_BACKGROUND_MANAGER_H__
+#define __MEX_BACKGROUND_MANAGER_H__
 
 #include <glib-object.h>
 
@@ -87,4 +87,4 @@ mex_background_manager_get_background (MexBackgroundManager *manager,
 
 G_END_DECLS
 
-#endif /* _MEX_BACKGROUND_MANAGER_H */
+#endif /* __MEX_BACKGROUND_MANAGER_H__ */

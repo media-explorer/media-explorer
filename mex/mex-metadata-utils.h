@@ -65,4 +65,4 @@ void mex_metadata_info_free (MexMetadataInfo *info);
 gboolean mex_metadata_info_get_visible (MexMetadataInfo *info,
                                         const gchar *value);
 
-#endif
+#endif /* __MEX_METADATA_UTILS_H__ */

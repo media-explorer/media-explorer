@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _MEX_GRID_H
-#define _MEX_GRID_H
+#ifndef __MEX_GRID_H__
+#define __MEX_GRID_H__
 
 #include <glib-object.h>
 #include <mx/mx.h>
@@ -76,4 +76,4 @@ MexModel* mex_grid_get_model (MexGrid *grid);
 
 G_END_DECLS
 
-#endif /* _MEX_GRID_H */
+#endif /* __MEX_GRID_H__ */

@@ -17,6 +17,9 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
+#ifndef __MEX_SCENE_H__
+#define __MEX_SCENE_H__
+
 #include <clutter/clutter.h>
 
 #define MEX_TYPE_SCENE              (mex_scene_get_type ())
@@ -62,3 +65,5 @@ void mex_scene_close (MexScene              *scene,
 
 void mex_scene_get_current_target (MexScene        *scene,
                                    ClutterActorBox *box);
+
+#endif /* __MEX_SCENE_H__ */

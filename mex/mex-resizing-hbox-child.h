@@ -17,8 +17,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_RESIZING_HBOX_CHILD_H
-#define _MEX_RESIZING_HBOX_CHILD_H
+#ifndef __MEX_RESIZING_HBOX_CHILD_H__
+#define __MEX_RESIZING_HBOX_CHILD_H__
 
 #include <clutter/clutter.h>
 #include "mex-resizing-hbox.h"
@@ -90,4 +90,4 @@ GType mex_resizing_hbox_child_get_type (void);
 
 G_END_DECLS
 
-#endif /* _MEX_RESIZING_HBOX_CHILD_H */
+#endif /* __MEX_RESIZING_HBOX_CHILD_H__ */
