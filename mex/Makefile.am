@@ -303,7 +303,7 @@ mex_test_internal_SOURCES  = mex-test-internal.c mex-test-internal.h
 mex_test_internal_CPPFLAGS = $(test_cppflags)
 mex_test_internal_LDADD    = $(test_ldadd)
 
-dist_check_SCRIPTS = check-header-guards.sh
+dist_check_SCRIPTS = check-header-guards.sh check-header-c++-ready.sh
 TESTS = $(dist_check_SCRIPTS)
 
 endif # ENABLE_TESTS

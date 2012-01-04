@@ -22,6 +22,8 @@
 
 #include <clutter/clutter.h>
 
+G_BEGIN_DECLS
+
 #define MEX_TYPE_SCENE              (mex_scene_get_type ())
 #define MEX_SCENE(obj)              (G_TYPE_CHECK_INSTANCE_CAST ((obj), MEX_TYPE_SCENE, MexScene))
 #define MEX_IS_SCENE(obj)           (G_TYPE_CHECK_INSTANCE_TYPE ((obj), MEX_TYPE_SCENE))
@@ -65,5 +67,7 @@ void mex_scene_close (MexScene              *scene,
 
 void mex_scene_get_current_target (MexScene        *scene,
                                    ClutterActorBox *box);
+
+G_END_DECLS
 
 #endif /* __MEX_SCENE_H__ */

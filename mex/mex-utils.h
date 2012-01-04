@@ -26,6 +26,8 @@
 #ifndef __MEX_UTILS_H__
 #define __MEX_UTILS_H__
 
+G_BEGIN_DECLS
+
 typedef enum
 {
   MEX_TEXTURE_FRAME_EMPTY        = 0,
@@ -124,5 +126,7 @@ mex_g_signal_connect_object (gpointer       instance,
                              GCallback      c_handler,
                              gpointer       gobject,
                              GConnectFlags  connect_flags);
+
+G_END_DECLS
 
 #endif /* __MEX_UTILS_H__ */

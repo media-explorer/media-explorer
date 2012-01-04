@@ -23,6 +23,8 @@
 
 #include <mex/mex-content.h>
 
+G_BEGIN_DECLS
+
 typedef gboolean (*MexMetadataInfoVisibleCb) (const gchar *value, gpointer user_data);
 
 typedef struct
@@ -64,5 +66,7 @@ void mex_metadata_info_free (MexMetadataInfo *info);
 
 gboolean mex_metadata_info_get_visible (MexMetadataInfo *info,
                                         const gchar *value);
+
+G_END_DECLS
 
 #endif /* __MEX_METADATA_UTILS_H__ */

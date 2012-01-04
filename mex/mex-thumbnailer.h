@@ -23,6 +23,8 @@
 
 #include <mex-content.h>
 
+G_BEGIN_DECLS
+
 typedef void (*MexThumbnailCallback) (const char *uri, gpointer user_data);
 
 void mex_thumbnailer_generate (const char *url,
@@ -31,5 +33,7 @@ void mex_thumbnailer_generate (const char *url,
                                gpointer user_data);
 
 gchar * mex_get_thumbnail_path_for_uri (const gchar *uri);
+
+G_END_DECLS
 
 #endif /* __MEX_THUMBNAILER_H__ */
