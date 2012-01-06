@@ -20,13 +20,15 @@
 #include "config.h"
 #endif
 
-#include "mex.h"
-
 #ifdef HAVE_LIRC
 #include <lirc/lirc_client.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <clutter/x11/clutter-x11.h>
+
+#include "mex-log.h"
+#include "mex-utils.h"
+#include "mex-lirc.h"
 
 static struct lirc_config *mex_lirc_config = NULL;
 

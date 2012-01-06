@@ -20,7 +20,8 @@
 #define __MEX_QUEUE_MODEL_H__
 
 #include <glib-object.h>
-#include <mex/mex.h>
+
+#include <mex/mex-generic-model.h>
 
 G_BEGIN_DECLS
 

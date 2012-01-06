@@ -20,9 +20,10 @@
 #define __MEX_GRID_VIEW_H__
 
 #include <mx/mx.h>
-#include "mex-menu.h"
-#include "mex-model.h"
-#include "mex-grid.h"
+
+#include <mex/mex-menu.h>
+#include <mex/mex-model.h>
+#include <mex/mex-grid.h>
 
 G_BEGIN_DECLS
 

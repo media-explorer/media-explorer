@@ -16,7 +16,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#include <mex/mex.h>
 #include "mex-applet.h"
 #include "mex-marshal.h"
 #include "mex-enum-types.h"

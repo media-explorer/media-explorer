@@ -20,15 +20,15 @@
 #include "config.h"
 #endif
 
+#include <glib/gi18n-lib.h>
+#include <grilo.h>
+
 #include "mex-queue-button.h"
 #include "mex-content-view.h"
 #include "mex-program.h"
 #include "mex-queue-model.h"
-
-#include <glib/gi18n-lib.h>
-#include <grilo.h>
-
 #include "mex-grilo-tracker-feed.h"
+#include "mex-group-item.h"
 
 static void
 mex_queue_button_set_content (MexContentView *view,

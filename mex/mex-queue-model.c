@@ -20,9 +20,11 @@
 #include "config.h"
 #endif
 
-#include "mex-queue-model.h"
-
 #include <glib/gi18n.h>
+#include <json-glib/json-glib.h>
+
+#include "mex-queue-model.h"
+#include "mex-program.h"
 
 G_DEFINE_TYPE (MexQueueModel, mex_queue_model, MEX_TYPE_GENERIC_MODEL)
 

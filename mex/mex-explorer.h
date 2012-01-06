@@ -22,8 +22,9 @@
 
 #include <glib-object.h>
 #include <clutter/clutter.h>
-#include <mex/mex-model.h>
 #include <mx/mx.h>
+
+#include <mex/mex-model.h>
 
 G_BEGIN_DECLS
 

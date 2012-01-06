@@ -21,18 +21,19 @@
 #include "config.h"
 #endif
 
-#include "mex-main.h"
-#include "mex-content.h"
-
 #include <clutter/clutter.h>
 #include <glib/gi18n.h>
-
-#include "mex-log-private.h"
-#include "mex.h"
 
 #ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
 #endif
+
+#include "mex-main.h"
+#include "mex-content.h"
+#include "mex-settings.h"
+#include "mex-log-private.h"
+#include "mex-model-manager.h"
+#include "mex-grilo.h"
 
 /* Default Categories */
 static const MexModelCategoryInfo videos = {

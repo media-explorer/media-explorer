@@ -22,7 +22,14 @@
 
 #include "mex-media-controls.h"
 #include "mex-view-model.h"
-#include "mex.h"
+#include "mex-proxy.h"
+#include "mex-content-tile.h"
+#include "mex-queue-model.h"
+#include "mex-shadow.h"
+#include "mex-main.h"
+#include "mex-player.h"
+#include "mex-content-proxy.h"
+#include "mex-aggregate-model.h"
 
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 
