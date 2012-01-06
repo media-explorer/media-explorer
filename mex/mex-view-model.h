@@ -19,7 +19,7 @@
 #ifndef __MEX_VIEW_MODEL_H__
 #define __MEX_VIEW_MODEL_H__
 
-#include "mex-generic-model.h"
+#include <mex/mex-generic-model.h>
 
 G_BEGIN_DECLS
 

@@ -21,7 +21,7 @@
 #define __MEX_RESIZING_HBOX_CHILD_H__
 
 #include <clutter/clutter.h>
-#include "mex-resizing-hbox.h"
+#include <mex/mex-resizing-hbox.h>
 
 G_BEGIN_DECLS
 

@@ -21,7 +21,7 @@
 
 #include <glib-object.h>
 #include <mx/mx.h>
-#include "mex-notification-source.h"
+#include <mex/mex-notification-source.h>
 
 G_BEGIN_DECLS
 

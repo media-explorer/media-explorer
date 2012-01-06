@@ -22,9 +22,8 @@
 
 #include <glib-object.h>
 #include <mx/mx.h>
-#include "mex-content.h"
-#include "mex-model.h"
-#include "mex-utils.h"
+#include <mex/mex-content.h>
+#include <mex/mex-model.h>
 
 G_BEGIN_DECLS
 

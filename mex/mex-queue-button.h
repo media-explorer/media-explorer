@@ -21,7 +21,7 @@
 
 #include <glib-object.h>
 #include <mx/mx.h>
-#include "mex-action-button.h"
+#include <mex/mex-action-button.h>
 
 G_BEGIN_DECLS
 

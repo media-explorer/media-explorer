@@ -21,7 +21,7 @@
 #define __MEX_MMKEYS_H__
 
 #include <glib-object.h>
-#include "mex-volume-control.h"
+#include <mex/mex-volume-control.h>
 
 G_BEGIN_DECLS
 

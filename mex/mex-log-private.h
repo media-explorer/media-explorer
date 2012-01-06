@@ -19,13 +19,9 @@
 #ifndef __MEX_LOG_PRIVATE_H__
 #define __MEX_LOG_PRIVATE_H__
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <glib.h>
 
-#include "mex-log.h"
+#include <mex/mex-log.h>
 
 G_BEGIN_DECLS
 

@@ -27,8 +27,6 @@
 
 #include <mx/mx.h>
 
-#include "mex-utils.h"
-
 G_BEGIN_DECLS
 
 #define MEX_TYPE_PLAYER mex_player_get_type()

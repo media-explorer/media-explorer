@@ -50,6 +50,7 @@
 #include "mex-screensaver.h"
 #include "mex-info-panel.h"
 #include "mex-log.h"
+#include "mex-utils.h"
 
 #define MEX_LOG_DOMAIN_DEFAULT  player_log_domain
 MEX_LOG_DOMAIN(player_log_domain);

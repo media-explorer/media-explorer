@@ -307,6 +307,7 @@ dist_check_SCRIPTS =			\
 	check-header-guards.sh		\
 	check-header-c++-ready.sh	\
 	check-mex-h-inclusion.sh	\
+	check-no-quote-includes.sh	\
 	$(NULL)
 TESTS = $(dist_check_SCRIPTS)
 
