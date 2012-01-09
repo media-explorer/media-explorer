@@ -127,7 +127,7 @@ _start_video_preview (MexContentTile *self)
 
   priv->video_preview = clutter_gst_video_texture_new ();
 
-  pipeline = clutter_gst_video_texture_get_pipeline (priv->video_preview);
+  pipeline = clutter_gst_video_texture_get_pipeline (CLUTTER_GST_VIDEO_TEXTURE (priv->video_preview));
   g_object_get (G_OBJECT (pipeline), "flags", &gst_flags, NULL);
 
   gst_flags = 1;//GST_PLAY_FLAG_VIDEO;
