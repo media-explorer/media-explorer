@@ -169,6 +169,46 @@ mex_generic_model_add_content (MexModel   *model,
   g_object_notify (G_OBJECT (model), "length");
 }
 
+static void
+mex_generic_model_add (MexModel *model,
+                       GList    *content_list)
+{
+  MexGenericModel *gm = (MexGenericModel *) model;
+  MexGenericModelPrivate *priv = gm->priv;
+  GControllerReference *ref;
+  MexContent *content;
+  gint pos;
+  GList *list = g_list_copy (content_list);
+
+  ref = g_controller_create_reference (priv->controller, G_CONTROLLER_ADD,
+                                       G_TYPE_UINT, 0);
+
+  while (list)
+    {
+      content = list->data;
+      g_object_ref_sink (content);
+
+      /* the items cannot be inserted sorted at this point because the
+       * references (i.e. position) of previously added items might be changed
+       */
+      pos = priv->items->len;
+      g_array_append_val (priv->items, content);
+
+      g_controller_reference_add_index (ref, pos);
+
+      list = g_list_delete_link (list, list);
+    }
+
+  g_controller_emit_changed (priv->controller, ref);
+
+  g_object_unref (ref);
+
+  g_object_notify (G_OBJECT (model), "length");
+
+  g_list_free (list);
+}
+
+
 static int
 array_find (GArray   *array,
             gpointer  data)
@@ -333,6 +373,7 @@ mex_model_iface_init (MexModelIface *iface)
 {
   iface->get_controller = mex_generic_model_get_controller;
   iface->get_content = mex_generic_model_get_content;
+  iface->add = mex_generic_model_add;
   iface->add_content = mex_generic_model_add_content;
   iface->remove_content = mex_generic_model_remove_content;
   iface->clear = mex_generic_model_clear;
