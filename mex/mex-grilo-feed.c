@@ -44,6 +44,8 @@ struct _MexGriloFeedPrivate {
   guint        completed : 1;
 
   MexGriloFeedOpenCb open_callback;
+
+  GList *items_to_add;
 };
 
 #define BROWSE_LIMIT 100
@@ -318,14 +320,31 @@ mex_grilo_feed_new (GrlMediaSource *source,
                        NULL);
 }
 
+static gboolean
+emit_media_added_finished (MexGriloFeed *feed)
+{
+  mex_model_add (MEX_MODEL (feed), feed->priv->items_to_add);
+
+  g_list_free (feed->priv->items_to_add);
+  feed->priv->items_to_add = NULL;
+
+  g_object_unref (feed);
+
+  return FALSE;
+}
+
 static void
 emit_media_added (MexGriloFeed *feed, GrlMedia *media)
 {
   MexProgram *program;
 
-  program = mex_grilo_program_new (feed, media);
+  /* collect items by waiting 250ms */
+  if (!feed->priv->items_to_add)
+    g_timeout_add (250, (GSourceFunc) emit_media_added_finished,
+                   g_object_ref (feed));
 
-  mex_model_add_content (MEX_MODEL (feed), MEX_CONTENT (program));
+  program = mex_grilo_program_new (feed, media);
+  feed->priv->items_to_add = g_list_prepend (feed->priv->items_to_add, program);
 }
 
 static void
