@@ -152,7 +152,7 @@ mex_aggregate_model_controller_changed_cb (GController          *controller,
                                            MexAggregateModel    *self)
 {
   gint i;
-
+  GList *list = NULL;
   gint n_indices = 0;
   MexAggregateModelPrivate *priv = self->priv;
   MexModel *model = g_hash_table_lookup (priv->controller_to_model, controller);
@@ -176,9 +176,11 @@ mex_aggregate_model_controller_changed_cb (GController          *controller,
           gint content_index = g_controller_reference_get_index_uint (ref, i);
           content = mex_model_get_content (model, content_index);
           g_hash_table_insert (priv->content_to_model, content, model);
-
-          mex_model_add_content (MEX_MODEL (self), content);
+          list = g_list_prepend (list, content);
         }
+        mex_model_add (MEX_MODEL (self), list);
+        g_list_free (list);
+        list = NULL;
       break;
 
     case G_CONTROLLER_REMOVE:
