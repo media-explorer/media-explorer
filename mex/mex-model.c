@@ -209,6 +209,26 @@ mex_model_get_content (MexModel *model,
 }
 
 void
+mex_model_add (MexModel *model,
+               GList    *content_list)
+{
+  MexModelIface *iface;
+
+  g_return_if_fail (MEX_IS_MODEL (model));
+
+  iface = MEX_MODEL_GET_IFACE (model);
+
+  if (G_LIKELY (iface->add))
+    {
+      iface->add (model, content_list);
+      return;
+    }
+
+  g_warning ("MexModel of type '%s' does not implement add ()",
+             g_type_name (G_OBJECT_TYPE (model)));
+}
+
+void
 mex_model_add_content (MexModel   *model,
                        MexContent *content)
 {

@@ -50,6 +50,8 @@ struct _MexModelIface
                                        guint     index_);
   void (*add_content) (MexModel   *model,
                        MexContent *content);
+  void (*add) (MexModel *model,
+               GList    *content_list);
   void (*remove_content) (MexModel   *model,
                           MexContent *content);
   void (*clear) (MexModel *model);
@@ -67,6 +69,8 @@ GType         mex_model_get_type         (void) G_GNUC_CONST;
 GController * mex_model_get_controller   (MexModel *model);
 MexContent *  mex_model_get_content      (MexModel *model,
                                           guint     index_);
+void mex_model_add (MexModel *model,
+                    GList    *content);
 void mex_model_add_content (MexModel   *model,
                             MexContent *content);
 void mex_model_remove_content (MexModel   *model,
