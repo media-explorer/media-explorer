@@ -52,6 +52,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-debug.h				\
 	$(top_srcdir)/mex/mex-download-queue.h			\
 	$(top_srcdir)/mex/mex-dvb-defines.h			\
+	$(top_srcdir)/mex/mex-dvb-player.h			\
 	$(top_srcdir)/mex/mex-dvbt-channel.h			\
 	$(top_srcdir)/mex/mex-explorer.h			\
 	$(top_srcdir)/mex/mex-epg.h				\
@@ -160,6 +161,7 @@ mex_sources =					\
 	mex-content.c				\
 	mex-debug.c				\
 	mex-download-queue.c			\
+	mex-dvb-player.c			\
 	mex-dvbt-channel.c			\
 	mex-epg.c				\
 	mex-epg-event.c				\
@@ -344,6 +346,7 @@ Mex_0_2_gir_SCANNERFLAGS = 				\
 	--identifier-prefix=Mex 			\
 	--symbol-prefix=mex				\
 	--add-include-path=$(builddir)/glib-controller	\
+	--add-init-section="gst_init(NULL, NULL);"	\
 	$(NULL)
 Mex_0_2_gir_CFLAGS = $(common_includes) $(MEX_CFLAGS) -I$(top_srcdir)/mex
 Mex_0_2_gir_INCLUDES =	\

@@ -71,7 +71,6 @@ typedef struct
 
   MexBackground *background;
   ClutterActor *player;
-  ClutterMedia *media;
 
   ClutterActor *current_actor;
 
@@ -1107,11 +1106,17 @@ mex_captured_event_cb (ClutterActor *actor,
        * button is a play pause.
        */
     case CLUTTER_KEY_AudioPlay:
-      if (clutter_media_get_playing (data->media))
-        mex_player_pause (MEX_PLAYER (data->player));
-      else
-        mex_player_play (MEX_PLAYER (data->player));
-      return TRUE;
+      {
+        ClutterMedia *media;
+
+        media = mex_player_get_clutter_media (MEX_PLAYER (data->player));
+
+        if (clutter_media_get_playing (media))
+          mex_player_pause (MEX_PLAYER (data->player));
+        else
+          mex_player_play (MEX_PLAYER (data->player));
+        return TRUE;
+      }
 
     case CLUTTER_KEY_AudioPause:
       mex_player_pause (MEX_PLAYER (data->player));
@@ -1462,13 +1467,16 @@ mex_tool_present_actor_cb (MexToolProvider *provider,
                            MexData         *data)
 {
   MexToolProviderInterface *iface;
+  ClutterMedia *media;
 
   if (G_UNLIKELY (actor == NULL))
     return;
 
+  media = mex_player_get_clutter_media (MEX_PLAYER (data->player));
+
   /* Check for existing visible tools or players */
   if ((data->current_tool && data->current_tool != actor)
-     || clutter_media_get_playing (data->media) )
+     || clutter_media_get_playing (media))
     {
       /* Hide the old other_tool if there is one */
       if (data->other_tool && data->other_tool != actor)
@@ -1554,6 +1562,8 @@ mex_tool_toggle_mode (MexData *data,
 void
 mex_toggle_pip (MexData *data)
 {
+  ClutterMedia *media;
+
   mex_tool_toggle_mode (data,
                         data->current_tool_provider,
                         data->current_tool,
@@ -1562,6 +1572,9 @@ mex_toggle_pip (MexData *data)
                         data->other_tool_provider,
                         data->other_tool,
                         &data->other_tool_mode);
+
+  media = mex_player_get_clutter_media (MEX_PLAYER  (data->player));
+
   /* Show or hide data->explorer depending on the tool_modes in use */
   if ((data->current_tool &&
       (data->current_tool_mode == TOOL_MODE_SBS
@@ -1569,7 +1582,7 @@ mex_toggle_pip (MexData *data)
       (data->other_tool &&
       (data->other_tool_mode == TOOL_MODE_SBS
        || data->other_tool_mode == TOOL_MODE_FULL)) ||
-      clutter_media_get_playing (data->media))
+      clutter_media_get_playing (media))
     {
       mex_hide_actor (data, data->explorer);
     }
@@ -2255,6 +2268,7 @@ mex_startup (MxApplication *app,
   MexPluginManager *pmanager;
   MexBackgroundManager *bmanager;
   MexModelManager *mmanager;
+  ClutterMedia *media;
   gchar *tmp;
   gchar *web_settings_loc;
 #ifdef HAVE_CLUTTER_CEX100
@@ -2369,10 +2383,10 @@ mex_startup (MxApplication *app,
   clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
                                data->player);
 
-  data->media = mex_player_get_clutter_media (MEX_PLAYER (data->player));
-  g_signal_connect (data->media, "error",
+  media = mex_player_get_clutter_media (MEX_PLAYER (data->player));
+  g_signal_connect (media, "error",
                     G_CALLBACK (mex_player_media_error_cb), data);
-  g_signal_connect (data->media, "notify::buffer-fill",
+  g_signal_connect (media, "notify::buffer-fill",
                     G_CALLBACK (mex_player_media_notify_buffer_fill_cb), data);
 
   clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), data->layout);

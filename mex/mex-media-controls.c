@@ -20,6 +20,8 @@
 # include "config.h"
 #endif
 
+#include <clutter-gst/clutter-gst.h>
+
 #include "mex-media-controls.h"
 #include "mex-view-model.h"
 #include "mex-proxy.h"
@@ -1212,9 +1214,13 @@ mex_media_controls_set_disabled (MexMediaControls *self,
                                             mex_media_controls_notify_progress_cb,
                                             self);
 #ifndef USE_PLAYER_DBUS
-      g_signal_handlers_disconnect_by_func (priv->media,
-                                            mex_media_controls_notify_download_cb,
-                                            self);
+      if (CLUTTER_GST_IS_VIDEO_TEXTURE (priv->media))
+        {
+          g_signal_handlers_disconnect_by_func (
+              priv->media,
+              mex_media_controls_notify_download_cb,
+              self);
+        }
 #endif /* !USE_PLAYER_DBUS */
     }
   else
@@ -1229,9 +1235,12 @@ mex_media_controls_set_disabled (MexMediaControls *self,
                         G_CALLBACK (mex_media_controls_notify_progress_cb),
                         self);
 #ifndef USE_PLAYER_DBUS
-      g_signal_connect (priv->media, "download-buffering",
-                        G_CALLBACK (mex_media_controls_notify_download_cb),
-                        self);
+      if (CLUTTER_GST_IS_VIDEO_TEXTURE (priv->media))
+        {
+          g_signal_connect (priv->media, "download-buffering",
+                            G_CALLBACK (mex_media_controls_notify_download_cb),
+                            self);
+        }
 #endif /* !USE_PLAYER_DBUS */
 
       mex_media_controls_notify_can_seek_cb (priv->media, NULL, self);

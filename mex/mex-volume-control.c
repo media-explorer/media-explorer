@@ -43,12 +43,20 @@ enum
 
 struct _MexVolumeControlPrivate
 {
-  ClutterMedia *media;
   ClutterActor *volume;
 
   gdouble previous_vol_value;
   gdouble vol_value;
 };
+
+static ClutterMedia *
+get_media (void)
+{
+  MexPlayer *player;
+
+  player = mex_player_get_default ();
+  return  mex_player_get_clutter_media (player);
+}
 
 static void
 update_style_class (MexVolumeControl *self)
@@ -66,8 +74,10 @@ static void
 update_volume_and_style_class (MexVolumeControl *self)
 {
   MexVolumeControlPrivate *priv = self->priv;
+  ClutterMedia *media;
 
-  clutter_media_set_audio_volume (priv->media, priv->vol_value);
+  media = get_media ();
+  clutter_media_set_audio_volume (media, priv->vol_value);
   update_style_class (self);
 }
 
@@ -204,7 +214,7 @@ on_audio_volume_changed (ClutterMedia *media,
   static gboolean first_notification = TRUE;
   gdouble new_volume;
 
-  new_volume = clutter_media_get_audio_volume (priv->media);
+  new_volume = clutter_media_get_audio_volume (media);
   if (fabs (priv->vol_value - new_volume) < 0.01)
     return;
 
@@ -228,19 +238,18 @@ mex_volume_control_init (MexVolumeControl *self)
 {
   MexVolumeControlPrivate *priv = self->priv = VOLUME_CONTROL_PRIVATE (self);
   gchar *new_style_class;
-  MexPlayer *player;
+  ClutterMedia *media;
 
-  player = mex_player_get_default ();
-  priv->media = mex_player_get_clutter_media (player);
+  media = get_media ();
 
   priv->volume = mx_button_new ();
   mx_widget_set_disabled (MX_WIDGET (priv->volume), TRUE);
 
-  priv->vol_value = clutter_media_get_audio_volume (priv->media);
+  priv->vol_value = clutter_media_get_audio_volume (media);
 
   /* The media sound can also be changed from another process changint the
    * stream audio with pulse audio, adjust the volume on those changes */
-  g_signal_connect (priv->media, "notify::audio-volume",
+  g_signal_connect (media, "notify::audio-volume",
                     G_CALLBACK (on_audio_volume_changed), self);
 
   new_style_class = g_strdup_printf ("volume-%.0f", priv->vol_value * 10);

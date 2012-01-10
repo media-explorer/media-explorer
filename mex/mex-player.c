@@ -51,12 +51,18 @@
 #include "mex-info-panel.h"
 #include "mex-log.h"
 #include "mex-utils.h"
+#include "mex-private.h"
+#include "mex-dvb-player.h"
+#include "mex-dvbt-channel.h"
 
 #define MEX_LOG_DOMAIN_DEFAULT  player_log_domain
 MEX_LOG_DOMAIN(player_log_domain);
 
 static void mex_player_content_view_iface_init (MexContentViewIface *iface);
 static void mex_player_focusable_iface_init (MxFocusableIface *iface);
+static void mex_player_set_clutter_media (MexPlayer    *player,
+                                          ClutterMedia *media);
+static void ensure_clutter_media (MexPlayer *player);
 
 G_DEFINE_TYPE_WITH_CODE (MexPlayer, mex_player, MX_TYPE_STACK,
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_CONTENT_VIEW,
@@ -113,6 +119,8 @@ enum
 enum
 {
   PROP_0,
+
+  PROP_MEDIA
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
@@ -205,6 +213,8 @@ mex_player_set_content (MexContentView *view,
 
       priv->content = g_object_ref_sink (content);
 
+      ensure_clutter_media (MEX_PLAYER (view));
+
       sposition = mex_content_get_metadata (content,
                                             MEX_CONTENT_METADATA_LAST_POSITION);
       sduration = mex_content_get_metadata (content,
@@ -230,7 +240,11 @@ mex_player_set_content (MexContentView *view,
             }
         }
 
-      if (MEX_IS_PROGRAM (content))
+      if (MEX_IS_DVBT_CHANNEL (content))
+        {
+          clutter_media_set_playing (priv->media, TRUE);
+        }
+      else if (MEX_IS_PROGRAM (content))
         {
           mex_program_get_stream (MEX_PROGRAM (content),
                                   mex_get_stream_cb,
@@ -347,20 +361,7 @@ mex_player_dispose (GObject *object)
       priv->model = NULL;
     }
 
-  if (priv->media)
-    {
-      g_signal_handlers_disconnect_by_func (priv->media,
-                                            media_eos_cb, player);
-      g_signal_handlers_disconnect_by_func (priv->media,
-                                            media_playing_cb, player);
-      g_signal_handlers_disconnect_by_func (priv->media,
-                                            media_update_progress, player);
-      g_signal_handlers_disconnect_by_func (priv->media,
-                                            media_uri_changed_cb, player);
-
-      g_object_unref (priv->media);
-      priv->media = NULL;
-    }
+  mex_player_set_clutter_media (player, NULL);
 
   if (priv->screensaver)
     {
@@ -563,6 +564,7 @@ mex_player_class_init (MexPlayerClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   ClutterActorClass *actor_class = CLUTTER_ACTOR_CLASS (klass);
+  GParamSpec *pspec;
 
   g_type_class_add_private (klass, sizeof (MexPlayerPrivate));
 
@@ -587,6 +589,12 @@ mex_player_class_init (MexPlayerClass *klass)
                                         0, NULL, NULL,
                                         g_cclosure_marshal_VOID__VOID,
                                         G_TYPE_NONE, 0);
+  pspec = g_param_spec_object ("media",
+                               "Media",
+                               "The underlying ClutterMedia object",
+                               CLUTTER_TYPE_MEDIA,
+                               MEX_PARAM_READABLE);
+  g_object_class_install_property (object_class, PROP_MEDIA, pspec);
 }
 
 static gboolean
@@ -794,6 +802,182 @@ media_update_progress (GObject    *gobject,
     priv->current_position = clutter_media_get_progress (priv->media);
 }
 
+/* Depending on the type of MxContent being played back (say a DVB Channel Vs a
+ * on-disk file) we'd like to use a special GStreamer pipeline and provide a
+ * ClutterMedia interface for it. Thus priv->media can be changed on a
+ * per-content basis */
+static void
+mex_player_set_clutter_media (MexPlayer    *player,
+			      ClutterMedia *media)
+{
+  MexPlayerPrivate *priv = player->priv;
+  GError *error = NULL;
+
+  if (priv->media)
+    {
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            media_eos_cb, player);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            media_playing_cb, player);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            media_update_progress, player);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            media_uri_changed_cb, player);
+
+      if (CLUTTER_IS_ACTOR (priv->media))
+        clutter_container_remove_actor (CLUTTER_CONTAINER (player),
+                                        CLUTTER_ACTOR (priv->media));
+
+      /* Update the sub-widgets that need to know about the ClutterMedia */
+      mex_info_panel_set_media (MEX_INFO_PANEL (priv->info_panel), NULL);
+      mex_media_controls_set_media (MEX_MEDIA_CONTROLS (priv->controls), NULL);
+
+      g_object_unref (priv->media);
+      priv->media = NULL;
+    }
+
+  if (media)
+    {
+      /* we don't take a reference here as the function being static, we assume
+       * the media has been created in this class and we own the reference
+       * already */
+      priv->media = media;
+
+      g_signal_connect (media, "eos", G_CALLBACK (media_eos_cb), player);
+      g_signal_connect (media, "notify::playing",
+			G_CALLBACK (media_playing_cb), player);
+      g_signal_connect (media, "notify::progress",
+			G_CALLBACK (media_update_progress), player);
+      g_signal_connect (media, "notify::uri",
+			G_CALLBACK (media_uri_changed_cb),
+			player);
+
+      /* when the ClutterMedia object is also an actor, it's a ClutterTexture
+       * that we need to display */
+      if (CLUTTER_IS_ACTOR (priv->media))
+        {
+          clutter_container_add_actor (CLUTTER_CONTAINER (player),
+                                       CLUTTER_ACTOR (priv->media));
+          clutter_container_lower_child (CLUTTER_CONTAINER (player),
+                                         CLUTTER_ACTOR (priv->media),
+                                         NULL);
+          clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->media),
+                                                 TRUE);
+          clutter_container_child_set (CLUTTER_CONTAINER (player),
+                                       CLUTTER_ACTOR (priv->media),
+                                       "fit", TRUE, NULL);
+        }
+
+      /* Update the sub-widgets that need to know about the ClutterMedia */
+      mex_info_panel_set_media (MEX_INFO_PANEL (priv->info_panel), priv->media);
+      mex_media_controls_set_media (MEX_MEDIA_CONTROLS (priv->controls),
+                                    priv->media);
+
+#if (defined(USE_PLAYER_SURFACE) || defined (USE_PLAYER_CLUTTER_GST))
+      if (priv->bridge == NULL)
+        {
+          priv->bridge = mex_media_dbus_bridge_new (priv->media);
+          if (!mex_media_dbus_bridge_register (priv->bridge, &error))
+            {
+              g_warning (G_STRLOC ": Error registering player on D-BUS");
+              g_clear_error (&error);
+            }
+        }
+
+      mex_media_dbus_bridge_set_media (priv->bridge, media);
+#endif
+
+    }
+
+  g_object_notify (G_OBJECT (player), "media");
+}
+
+#ifdef USE_PLAYER_CLUTTER_GST
+
+static ClutterMedia *
+get_default_clutter_media (void)
+{
+  ClutterMedia *media;
+
+  media = (ClutterMedia *) clutter_gst_video_texture_new ();
+
+  /* We want to keep a reference to the media here to ensure consistency
+   * with the D-BUS client interface behaviour */
+  g_object_ref_sink (media);
+
+  /* Use progressive download when possible. Don't enable that yet, the
+   * behaviour of seeking in the non already downloaded part of the stream
+   * is not great. Either disable seeking in that case or find out why.*/
+#if 0
+  video_texture = CLUTTER_GST_VIDEO_TEXTURE (media);
+  clutter_gst_video_texture_set_buffering_mode (video_texture,
+						CLUTTER_GST_BUFFERING_MODE_DOWNLOAD);
+#endif
+
+  return media;
+}
+
+#elif defined (USE_PLAYER_DBUS)
+
+static ClutterMedia *
+get_default_clutter_media (void)
+{
+  return (ClutterMedia *) mex_player_client_new ();
+}
+
+#elif defined (USE_PLAYER_SURFACE)
+
+static ClutterMedia *
+get_default_clutter_media (void)
+{
+  return (ClutterMedia *) mex_surface_player_new ();
+}
+
+#else
+
+#error Unexpected player configuration
+
+#endif
+
+/* ensure_clutter_media() is responsible for making sure the ClutterMedia
+ * instance in priv->media can play priv->content. If content is NULL, it
+ * defaults to a playbin2 powered pipeline */
+static void
+ensure_clutter_media (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+  ClutterMedia *media = NULL;
+
+  if (MEX_IS_DVBT_CHANNEL (priv->content) &&
+      (priv->media == NULL || !MEX_IS_DVB_PLAYER (priv->media)))
+    {
+      /* We need a MexDvbPlayer to play MexChannels (FIXME: what about the
+       * dbus and surface players?) */
+      MEX_INFO ("switching to MexDvbPlayer");
+
+      media = (ClutterMedia *) mex_dvb_player_new ();
+      g_object_ref_sink (media);
+    }
+  else if (priv->media == NULL)
+    {
+      MEX_INFO ("creating default ClutterMedia");
+
+      media = get_default_clutter_media ();
+    }
+  else if (MEX_IS_DVB_PLAYER (priv->media) &&
+           !MEX_IS_DVBT_CHANNEL (priv->content))
+    {
+      /* if we have a MexDvbPlayer and not wanting to play a MexChannel, time
+       * to switch back to the default ClutterMedia */
+      MEX_INFO ("switching to default ClutterMedia");
+
+      media = get_default_clutter_media ();
+    }
+
+  if (media)
+    mex_player_set_clutter_media (player, media);
+}
+
 static void
 mex_player_init (MexPlayer *self)
 {
@@ -803,62 +987,6 @@ mex_player_init (MexPlayer *self)
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
 
-#ifdef USE_PLAYER_CLUTTER_GST
-  priv->media = (ClutterMedia *) clutter_gst_video_texture_new ();
-
-  /* We want to keep a reference to the media here to ensure consistency with
-   * the D-BUS client interface behaviour
-   */
-  g_object_ref_sink (priv->media);
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (self),
-                               CLUTTER_ACTOR (priv->media));
-  clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->media), TRUE);
-  clutter_container_child_set (CLUTTER_CONTAINER (self),
-                               CLUTTER_ACTOR (priv->media),
-                               "fit", TRUE, NULL);
-
-  /* Use progressive download when possible. Don't enable that yet, the
-   * behaviour of seeking in the non already downloaded part of the stream
-   * is not great. Either disable seeking in that case or find out why.*/
-#if 0
-  video_texture = CLUTTER_GST_VIDEO_TEXTURE (priv->media);
-  clutter_gst_video_texture_set_buffering_mode (video_texture,
-						CLUTTER_GST_BUFFERING_MODE_DOWNLOAD);
-#endif
-#else
-#ifdef USE_PLAYER_DBUS
-  priv->media = (ClutterMedia *) mex_player_client_new ();
-#else
-#ifdef USE_PLAYER_SURFACE
-  priv->media = (ClutterMedia *) mex_surface_player_new ();
-#else
-#error Unexpected player setup
-#endif
-#endif
-#endif
-
-  g_signal_connect (priv->media, "eos", G_CALLBACK (media_eos_cb), self);
-  g_signal_connect (priv->media, "notify::playing",
-                    G_CALLBACK (media_playing_cb), self);
-  g_signal_connect (priv->media, "notify::progress",
-                    G_CALLBACK (media_update_progress), self);
-  g_signal_connect (priv->media, "notify::uri",
-                    G_CALLBACK (media_uri_changed_cb),
-                    self);
-
-#if (defined(USE_PLAYER_SURFACE) || defined (USE_PLAYER_CLUTTER_GST))
-  {
-    GError *error = NULL;
-    priv->bridge = mex_media_dbus_bridge_new (priv->media);
-    if (!mex_media_dbus_bridge_register (priv->bridge, &error))
-      {
-        g_warning (G_STRLOC ": Error registering player on D-BUS");
-        g_clear_error (&error);
-      }
-  }
-#endif
-
   /* add info panel */
   priv->info_panel = mex_info_panel_new (MEX_INFO_PANEL_MODE_FULL);
   mx_widget_set_disabled (MX_WIDGET (priv->info_panel), TRUE);
@@ -867,18 +995,17 @@ mex_player_init (MexPlayer *self)
                                "y-fill", FALSE, "y-align", MX_ALIGN_END,
                                NULL);
   clutter_actor_set_opacity (priv->info_panel, 0);
-  mex_info_panel_set_media (MEX_INFO_PANEL (priv->info_panel), priv->media);
 
   /* add media controls */
   priv->controls = mex_media_controls_new ();
   g_signal_connect (priv->controls, "stopped", G_CALLBACK (controls_stopped_cb),
                     self);
-  mex_media_controls_set_media (MEX_MEDIA_CONTROLS (priv->controls),
-                                priv->media);
   clutter_container_add_actor (CLUTTER_CONTAINER (self), priv->controls);
   clutter_container_child_set (CLUTTER_CONTAINER (self), priv->controls,
                                "y-fill", FALSE, "y-align", MX_ALIGN_END,
                                NULL);
+
+  ensure_clutter_media (self);
 
   priv->screensaver = mex_screensaver_new ();
 }
@@ -895,6 +1022,24 @@ mex_player_get_default (void)
   return singleton;
 }
 
+/**
+ * mex_player_get_clutter_media:
+ *
+ * @player: a #MexPlayer instance
+ * Return value: The underlying #ClutterMedia object used to drive the player
+ *
+ * <note>
+ * Be careful here, the ClutterMedia object returned by that function can
+ * change underneath your feet, so it's not recommanded that you cache the
+ * object but query for it when you need it.
+ *
+ * If for some reason, you really, really need to store it, listen to the
+ * nofitfy::media signal on the player object to be notified when to update
+ * the ClutterMedia pointer (or use a weak reference).
+ * </note>
+ *
+ * Since: 1.0
+ */
 ClutterMedia *
 mex_player_get_clutter_media (MexPlayer *player)
 {

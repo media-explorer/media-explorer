@@ -958,6 +958,17 @@ on_media_subtitle_track_changed (ClutterMedia *media,
   mx_combo_box_set_index (MX_COMBO_BOX (priv->subtitle_combo_box), index_ + 1);
 }
 
+/**
+ * mex_info_panel_set_media:
+ * @panel: a #MexInfoPanel instance
+ * @media: (allow-none): the #ClutterMedia object to use
+ *
+ * The info panel needs access to the underlying ClutterMedia object of
+ * MexPlayer to retrieve information from it like the list of audio or
+ * subtitles streams.
+ *
+ * Since: 1.0
+ */
 void
 mex_info_panel_set_media (MexInfoPanel *panel,
                           ClutterMedia *media)
@@ -965,10 +976,12 @@ mex_info_panel_set_media (MexInfoPanel *panel,
   MexInfoPanelPrivate *priv = panel->priv;
 
   g_return_if_fail (MEX_IS_INFO_PANEL (panel));
-  g_return_if_fail (CLUTTER_IS_MEDIA (media));
 
   /* we only do something with the info from ClutterMedia in full mode */
   if (priv->mode != MEX_INFO_PANEL_MODE_FULL)
+    return;
+
+  if (media == priv->media)
     return;
 
   if (priv->media)
@@ -977,7 +990,13 @@ mex_info_panel_set_media (MexInfoPanel *panel,
                                             on_media_audio_streams_changed,
                                             panel);
       g_signal_handlers_disconnect_by_func (priv->media,
+                                            on_media_audio_stream_changed,
+                                            panel);
+      g_signal_handlers_disconnect_by_func (priv->media,
                                             on_media_subtitle_tracks_changed,
+                                            panel);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            on_media_subtitle_track_changed,
                                             panel);
     }
 

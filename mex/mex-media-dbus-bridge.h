@@ -65,6 +65,8 @@ struct _MexMediaDBUSBridgeClass
 GType mex_media_dbus_bridge_get_type (void) G_GNUC_CONST;
 
 MexMediaDBUSBridge *mex_media_dbus_bridge_new (ClutterMedia *media);
+void mex_media_dbus_bridge_set_media (MexMediaDBUSBridge *bridge,
+                                      ClutterMedia       *media);
 gboolean mex_media_dbus_bridge_register (MexMediaDBUSBridge  *bridge,
                                          GError             **error);
 

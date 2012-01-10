@@ -90,6 +90,10 @@ static const gchar introspection_xml[] =
  * for control is used instead of directly accessing the clutter media object.
  */
 
+static void
+mex_media_dbus_bridge_set_media_internal (MexMediaDBUSBridge *bridge,
+                                          ClutterMedia       *media);
+
 G_DEFINE_TYPE (MexMediaDBUSBridge, mex_media_dbus_bridge, G_TYPE_OBJECT)
 
 #define MEDIA_DBUS_BRIDGE_PRIVATE(o) \
@@ -110,10 +114,6 @@ struct _MexMediaDBUSBridgePrivate
   GDBusNodeInfo *introspection_data;
   GDBusConnection *connection;
 };
-
-static void
-mex_media_dbus_bridge_set_media (MexMediaDBUSBridge *bridge,
-                                 ClutterMedia       *media);
 
 static void
 mex_media_dbus_bridge_get_property (GObject    *object,
@@ -160,7 +160,7 @@ mex_media_dbus_bridge_dispose (GObject *object)
   MexMediaDBUSBridge *bridge = MEX_MEDIA_DBUS_BRIDGE (object);
   MexMediaDBUSBridgePrivate *priv = bridge->priv;
 
-  mex_media_dbus_bridge_set_media (bridge, NULL);
+  mex_media_dbus_bridge_set_media_internal (bridge, NULL);
 
   if (priv->connection)
     {
@@ -320,20 +320,33 @@ _media_eos_cb (ClutterMedia       *media,
 }
 
 static void
-mex_media_dbus_bridge_set_media (MexMediaDBUSBridge *bridge,
-                                 ClutterMedia       *media)
+mex_media_dbus_bridge_set_media_internal (MexMediaDBUSBridge *bridge,
+                                          ClutterMedia       *media)
 {
   MexMediaDBUSBridgePrivate *priv = bridge->priv;
 
+  if (media == priv->media)
+    return;
+
   if (priv->media)
     {
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            _media_notify_cb,
+                                            bridge);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            _media_error_cb,
+                                            bridge);
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            _media_eos_cb,
+                                            bridge);
+
       g_object_unref (priv->media);
       priv->media = NULL;
     }
 
   if (media)
     {
-      priv->media = g_object_ref_sink (media);
+      priv->media = g_object_ref (media);
 
       g_signal_connect_object (media,
                                "notify",
@@ -369,6 +382,24 @@ mex_media_dbus_bridge_set_media (MexMediaDBUSBridge *bridge,
       */
       g_object_notify (G_OBJECT (media), "progress");
     }
+}
+
+/**
+ * mex_media_dbus_bridge_set_media:
+ * @bridge: a #MexMediaDBUSBridge instance
+ * @media: the #ClutterMedia instance that will drive the bridge
+ *
+ * You cannot pass %NULL as @media here, the bridge always needs a valid
+ * ClutterMedia object to be able to back the DBus API at any time.
+ */
+void
+mex_media_dbus_bridge_set_media (MexMediaDBUSBridge *bridge,
+                                 ClutterMedia       *media)
+{
+  g_return_if_fail (MEX_IS_MEDIA_DBUS_BRIDGE (bridge));
+  g_return_if_fail (media != NULL);
+
+  mex_media_dbus_bridge_set_media_internal (bridge, media);
 }
 
 /******************************************************************************/
@@ -443,7 +474,6 @@ handle_method_call (GDBusConnection       *connection,
       b = clutter_media_get_can_seek (priv->media);
       return_value = g_variant_new ("(b)", b);
     }
-
   g_dbus_method_invocation_return_value (invocation, return_value);
 }
 
