@@ -794,11 +794,11 @@ mex_explorer_present (MexExplorer  *explorer,
   priv->previous_child = priv->current_child;
   priv->current_child = child;
 
-  /* remove focus from the current child */
-  mex_push_focus (MX_FOCUSABLE (child));
-
   if (!priv->previous_child)
     return;
+
+  /* remove focus from the current child */
+  mex_push_focus (MX_FOCUSABLE (child));
 
   /* transition between the old child and the new */
   priv->in_transition = TRUE;
