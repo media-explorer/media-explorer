@@ -1244,6 +1244,11 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
                 {
                   cumulative_width += (int) (child_nat_width / 2.0);
 
+                  /* if prev_width has not been set, use the previous position
+                   * of the actor */
+                  if (priv->prev_width == -1)
+                    priv->prev_width = cumulative_width;
+
                   child_box.x1 = (int) (padding.left + (width / 2.0)
                                         - (cumulative_width * progress)
                                         - (priv->prev_width * (1.0 - progress)));
@@ -1817,6 +1822,9 @@ mex_resizing_hbox_init (MexResizingHBox *self)
   priv->vdepth = 0.99f;
   priv->max_depth = 5;
   priv->fade = TRUE;
+
+  priv->prev_width = -1;
+  priv->current_width = -1;
 
   g_signal_connect_object (priv->timeline, "new-frame",
                            G_CALLBACK (clutter_actor_queue_relayout),
