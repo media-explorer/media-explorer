@@ -794,6 +794,29 @@ mex_show_home_screen (MexData *data)
   mex_explorer_pop_to_root (MEX_EXPLORER (data->explorer));
 }
 
+static gboolean
+mex_finish_home_screen (MexData *data)
+{
+  MexModelManager *mmanager = mex_model_manager_get_default ();
+  ClutterActor *resizing_hbox;
+  GList *c;
+
+  /* select the videos column */
+  mex_explorer_set_focused_model (MEX_EXPLORER (data->explorer),
+                                  mex_model_manager_get_model_for_category (mmanager,
+                                                                            "videos"));
+
+  /* find the resizing hbox */
+  c = clutter_container_get_children (data->explorer);
+  resizing_hbox = c->data;
+
+  /* set the correct depth scale */
+  mex_resizing_hbox_set_horizontal_depth_scale (MEX_RESIZING_HBOX (resizing_hbox),
+                                                0.667f);
+
+  return FALSE;
+}
+
 static void
 mex_go_back_transition_complete (ClutterAnimation *animation,
                                  gpointer         *data)
@@ -2518,13 +2541,10 @@ main (int argc, char **argv)
   mex_explorer_set_root_model (MEX_EXPLORER (data.explorer),
                                mex_model_manager_get_root_model (mmanager));
 
-  /* select the videos column */
-  mex_explorer_set_focused_model (MEX_EXPLORER (data.explorer),
-                                  mex_model_manager_get_model_for_category (mmanager,
-                                                                            "videos"));
 
-  /* Present interface */
-  mex_show_home_screen (&data);
+  /* wait for content to be loaded before activating the home screen */
+  g_timeout_add_seconds (2, (GSourceFunc) mex_finish_home_screen, &data);
+
 
   if (!opt_ignore_res)
     check_resolution (&data);
