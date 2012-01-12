@@ -64,6 +64,10 @@ struct _MexMenuPrivate
    */
   ClutterActor    *layout;
 
+
+  /* the actor that contains the action items */
+  ClutterActor    *action_layout;
+
   /* The current menu hierarchy depth. 0 is root, and a menu can extend to
    * the left (so this will be negative) or to the right (positive).
    */
@@ -478,7 +482,7 @@ mex_menu_item_new (MexMenu *self, MxAction *action, MexMenuActionType type)
 static ClutterActor *
 mex_menu_create_layout (MexMenu *menu, gboolean lower)
 {
-  ClutterActor *layout;
+  ClutterActor *layout, *scroll;
 
   MexMenuPrivate *priv = menu->priv;
 
@@ -491,6 +495,15 @@ mex_menu_create_layout (MexMenu *menu, gboolean lower)
   mx_stylable_set_style_class (MX_STYLABLE (layout), "Menu");
 
   clutter_container_add_actor (CLUTTER_CONTAINER (menu), layout);
+
+
+  priv->action_layout = mx_box_layout_new_with_orientation (MX_ORIENTATION_VERTICAL);
+
+  scroll = mex_scroll_view_new ();
+  clutter_container_add_actor (CLUTTER_CONTAINER (scroll), priv->action_layout);
+  clutter_container_add_actor (CLUTTER_CONTAINER (layout), scroll);
+
+  g_object_set_data (G_OBJECT (layout), "action-layout", priv->action_layout);
 
   return layout;
 }
@@ -562,7 +575,7 @@ mex_menu_add_action (MexMenu           *menu,
   item = mex_menu_item_new (menu, action, type);
   g_hash_table_insert (priv->action_to_item, action, item);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->layout), item);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->action_layout), item);
 
   if (priv->focus_on_add)
     {
@@ -777,7 +790,7 @@ mex_menu_uncheck_buttons (MexMenu *menu)
 
   MexMenuPrivate *priv = menu->priv;
 
-  children = clutter_container_get_children (CLUTTER_CONTAINER (priv->layout));
+  children = clutter_container_get_children (CLUTTER_CONTAINER (priv->action_layout));
   while (children)
     {
       if (g_object_get_qdata (children->data, mex_menu_item_quark))
@@ -821,6 +834,8 @@ mex_menu_push (MexMenu *menu)
 
       l = g_list_find (children, clutter_actor_get_parent (priv->layout));
       priv->layout = l->next->data;
+      priv->action_layout = g_object_get_data (G_OBJECT (priv->layout),
+                                               "action-layout");
       clutter_container_remove_actor (CLUTTER_CONTAINER (menu),
                                       CLUTTER_ACTOR (l->data));
       g_list_free (children);
