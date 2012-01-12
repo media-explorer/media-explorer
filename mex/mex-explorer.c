@@ -29,6 +29,7 @@
 #include "mex-marshal.h"
 #include "mex-resizing-hbox.h"
 #include "mex-tile.h"
+#include "mex-grid.h"
 
 #include "mex-scene.h"
 

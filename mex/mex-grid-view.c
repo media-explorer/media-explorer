@@ -18,7 +18,9 @@
 
 #include "mex-grid-view.h"
 #include "mex-scene.h"
+#include "mex-model.h"
 #include <glib/gi18n.h>
+#include "mex.h"
 
 /* defines */
 #define MENU_MIN_WIDTH 284.0

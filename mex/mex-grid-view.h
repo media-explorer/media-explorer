@@ -19,7 +19,9 @@
 #ifndef _MEX_GRID_VIEW_H
 #define _MEX_GRID_VIEW_H
 
-#include <mex/mex.h>
+#include <mx/mx.h>
+#include "mex-menu.h"
+#include "mex-model.h"
 
 G_BEGIN_DECLS
 
