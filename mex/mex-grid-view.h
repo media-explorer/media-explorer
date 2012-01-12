@@ -67,6 +67,8 @@ GType mex_grid_view_get_type (void) G_GNUC_CONST;
 
 ClutterActor *mex_grid_view_new (MexModel *model);
 
+MexMenu *mex_grid_view_get_menu (MexGridView *view);
+
 G_END_DECLS
 
 #endif /* _MEX_GRID_VIEW_H */

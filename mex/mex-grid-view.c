@@ -787,3 +787,9 @@ mex_grid_view_new (MexModel *model)
 {
   return g_object_new (MEX_TYPE_GRID_VIEW, "model", model, NULL);
 }
+
+MexMenu *
+mex_grid_view_get_menu (MexGridView *view)
+{
+  return (MexMenu*) view->priv->menu_layout;
+}
