@@ -160,6 +160,8 @@ add_model (MexTrackerPlugin *self,
       cat_name = "pictures";
       query = "?urn a nfo:FileDataObject . "
               "?urn tracker:available true . "
+              "FILTER (nfo:width(?urn) > 100)"
+              "FILTER (nfo:height(?urn) > 100)"
               "FILTER (fn:starts-with(nie:mimeType(?urn),'image/'))";
       models = self->priv->image_models;
       metadata_keys = self->priv->image_keys;
