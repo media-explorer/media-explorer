@@ -1464,6 +1464,8 @@ mex_resizing_hbox_draw_child (MexResizingHBox *self,
       return;
     }
 
+  if (self->priv->hdepth >= 0.99)
+    highlight_left = highlight_right = TRUE;
 
   meta = MEX_RESIZING_HBOX_CHILD (
     clutter_container_get_child_meta (CLUTTER_CONTAINER (self), child));
