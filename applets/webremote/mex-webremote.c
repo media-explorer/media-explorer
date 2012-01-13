@@ -58,6 +58,8 @@ send_response (SoupServer   *server,
   /* Normal request or Unspecified */
   if (response_type == NORMAL || !response_type)
     {
+      GFile *gfile;
+      GFileInfo *info;
       /* TODO: return style dir not datadir where you can request all kinds of
        * things
        */
@@ -75,7 +77,15 @@ send_response (SoupServer   *server,
       else
         uri = g_strconcat (self->mex_data_dir, "/webremote/", path, NULL);
 
-      mime_type = g_content_type_guess (uri, NULL, 0, NULL);
+      gfile = g_file_new_for_path (uri);
+      info = g_file_query_info (gfile,
+                                G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE,
+                                0, NULL, &error);
+
+      mime_type = g_strdup (g_file_info_get_content_type (info));
+
+      g_object_unref (info);
+      g_object_unref (gfile);
 
       if (self->opt_debug)
         g_debug ("Requested: %s", uri);
@@ -111,7 +121,10 @@ send_response (SoupServer   *server,
     }
 
   if (error)
-    g_error ("ERROR: %s\n", error->message);
+    {
+      g_error ("ERROR: %s\n", error->message);
+      g_clear_error (&error);
+    }
 
   buffer = soup_buffer_new (SOUP_MEMORY_TAKE, processed_data, data_size);
 
