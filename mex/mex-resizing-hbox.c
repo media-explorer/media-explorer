@@ -513,11 +513,17 @@ mex_resizing_hbox_create_child_meta (ClutterContainer *container,
   MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (container)->priv;
   MexResizingHBoxChild *meta =
     g_object_new (MEX_TYPE_RESIZING_HBOX_CHILD, "actor", actor, NULL);
+  guint stagger_length;
+
+  if (CLUTTER_ACTOR_IS_MAPPED (container))
+    stagger_length = priv->stagger_length;
+  else
+    stagger_length = 1;
 
   meta->actor = actor;
   meta->stagger = TRUE;
   meta->initial_height = meta->target_height = 1.0;
-  meta->timeline = clutter_timeline_new (priv->stagger_length);
+  meta->timeline = clutter_timeline_new (stagger_length);
 
   g_signal_connect_swapped (meta->timeline, "new-frame",
                             G_CALLBACK (mex_resizing_hbox_relayout_meta), meta);
@@ -1012,6 +1018,13 @@ mex_resizing_hbox_start_animation (MexResizingHBox *self)
 
   clutter_timeline_set_direction (priv->timeline, CLUTTER_TIMELINE_FORWARD);
   clutter_timeline_rewind (priv->timeline);
+
+  /* prevent animations running when not at fully visible */
+  if (clutter_actor_get_paint_opacity (self) == 0xff)
+    clutter_timeline_set_duration (priv->timeline, priv->anim_length);
+  else
+    clutter_timeline_set_duration (priv->timeline, 1);
+
   clutter_timeline_start (priv->timeline);
 }
 
@@ -1706,7 +1719,7 @@ mex_resizing_hbox_class_init (MexResizingHBoxClass *klass)
                               "The multiplier used to determine how much "
                               "children should shrink beyond the child "
                               "designated by the depth-index, horizontally.",
-                              0.f, 1.f, 0.99f,
+                              0.f, 1.f, 0.667f,
                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_HDEPTH_SCALE, pspec);
 
@@ -1820,7 +1833,7 @@ mex_resizing_hbox_init (MexResizingHBox *self)
   priv->alpha = clutter_alpha_new_full (priv->timeline, CLUTTER_EASE_OUT_QUAD);
   priv->resizing_enabled = TRUE;
   priv->depth_index = -1;
-  priv->hdepth = 0.99f;
+  priv->hdepth = 0.667f;
   priv->vdepth = 0.99f;
   priv->max_depth = 5;
   priv->fade = TRUE;

@@ -798,22 +798,19 @@ static gboolean
 mex_finish_home_screen (MexData *data)
 {
   MexModelManager *mmanager = mex_model_manager_get_default ();
-  ClutterActor *resizing_hbox;
-  GList *c;
+
+  clutter_actor_set_opacity (data->explorer, 0);
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (data->layout),
+                                           data->explorer,
+                                           1, "expand", TRUE,
+                                           NULL);
+
+  clutter_actor_animate (data->explorer, CLUTTER_LINEAR, 350, "opacity", 255, NULL);
 
   /* select the videos column */
   mex_explorer_set_focused_model (MEX_EXPLORER (data->explorer),
                                   mex_model_manager_get_model_for_category (mmanager,
                                                                             "videos"));
-
-  /* find the resizing hbox */
-  c = clutter_container_get_children (data->explorer);
-  resizing_hbox = c->data;
-
-  /* set the correct depth scale */
-  mex_resizing_hbox_set_horizontal_depth_scale (MEX_RESIZING_HBOX (resizing_hbox),
-                                                0.667f);
-
   return FALSE;
 }
 
@@ -2406,11 +2403,6 @@ main (int argc, char **argv)
                                            "x-fill", TRUE,
                                            "y-fill", FALSE, NULL);
 
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (data.layout),
-                                           data.explorer,
-                                           1, "expand", TRUE,
-                                           NULL);
-
 
   /* A stack is the top level actor in the window */
   data.stack = mx_stack_new ();
@@ -2543,7 +2535,7 @@ main (int argc, char **argv)
 
 
   /* wait for content to be loaded before activating the home screen */
-  g_timeout_add_seconds (2, (GSourceFunc) mex_finish_home_screen, &data);
+  g_timeout_add (500, (GSourceFunc) mex_finish_home_screen, &data);
 
 
   if (!opt_ignore_res)
