@@ -101,6 +101,7 @@ struct w_scan_flags flags = {
         0xFF,           // switch pos
         0,              // codepage, 0 = UTF-8
         0,              // print pmt
+        0,              // dump the frequency in KHz (0) or in Hz (1)
 };
 
 static unsigned int modulation_min = 0;         // initialization of modulation loop. QAM64  if FE_QAM
@@ -2980,6 +2981,7 @@ int w_scan_main (int argc, char **argv)
                 case OUTPUT_GSTREAMER:
                         // Gstreamer output: As vdr-1.7, but pmt_pid added at end of line.
                         flags.print_pmt = 1;
+                        flags.freq_in_hz = 1;
                         flags.vdr_version = 7;
                         output_format = OUTPUT_VDR;
                         info("output format gstreamer\n");

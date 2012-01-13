@@ -60,6 +60,7 @@ struct w_scan_flags {
 	uint16_t	sw_pos;
         uint16_t        codepage;
         uint8_t         print_pmt;
+        uint8_t         freq_in_hz;
 };
 
 #define AUDIO_CHAN_MAX (32)

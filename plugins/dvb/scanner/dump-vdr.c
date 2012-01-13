@@ -366,21 +366,28 @@ switch (flags->fe_type) {
 
 void dump_param_vdr_1_7(FILE * f, struct extended_dvb_frontend_parameters * p, struct w_scan_flags * flags) {
 
+        uint32_t frequency;
+
+        if (flags->freq_in_hz)
+              frequency = p->frequency;
+        else
+              frequency = p->frequency / 1000;
+
 switch (flags->fe_type) {
         case FE_ATSC:
-                fprintf (f, ":%i:",   p->frequency / 1000);                
+                fprintf (f, ":%i:", frequency);
                 fprintf (f, "M%s:A:", vdr17_modulation_name(p->u.vsb.modulation));
                 fprintf (f, "%i:",    p->u.qam.symbol_rate / 1000);
                 break;
 
         case FE_QAM:
-                fprintf (f, ":%i:",   p->frequency / 1000);
+                fprintf (f, ":%i:", frequency);
                 fprintf (f, "M%s:C:", vdr17_modulation_name(p->u.qam.modulation));
                 fprintf (f, "%i:",    p->u.qam.symbol_rate / 1000);
                 break;
 
         case FE_OFDM:
-                fprintf (f, ":%i:", p->frequency / 1000);
+                fprintf (f, ":%i:", frequency);
                 fprintf (f, "I%s", vdr_inversion_name(p->inversion));
                 fprintf (f, "B%s", vdr_bandwidth_name(p->u.ofdm.bandwidth));
                 fprintf (f, "C%s", vdr_fec_name(p->u.ofdm.code_rate_HP));
@@ -393,7 +400,7 @@ switch (flags->fe_type) {
                 break;
 
         case FE_QPSK:
-                fprintf (f, ":%i:",   p->frequency / 1000);
+                fprintf (f, ":%i:", frequency);
                 switch (p->u.qpsk.polarization) {
                         case POLARIZATION_HORIZONTAL:
                                 fprintf (f, "h");
