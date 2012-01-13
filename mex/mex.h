@@ -74,6 +74,7 @@
 #include <mex/mex-model.h>
 #include <mex/mex-model-manager.h>
 #include <mex/mex-model-provider.h>
+#include <mex/mex-music-grid-view.h>
 #include <mex/mex-feed.h>
 #include <mex/mex-player.h>
 #include <mex/mex-plugin.h>

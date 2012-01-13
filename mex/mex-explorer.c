@@ -29,6 +29,7 @@
 #include "mex-marshal.h"
 #include "mex-resizing-hbox.h"
 #include "mex-tile.h"
+#include "mex-music-grid-view.h"
 #include "mex-grid.h"
 
 #include "mex-scene.h"
@@ -925,7 +926,21 @@ mex_explorer_push_model (MexExplorer *explorer,
     }
   else
     {
-      page = mex_grid_view_new (model);
+      gchar *category;
+
+      g_object_get (model, "category", &category, NULL);
+
+      if (!g_strcmp0 (category, "music"))
+        {
+          page = mex_music_grid_view_new (model);
+        }
+      else
+        {
+          /* create the grid view for the model */
+          page = mex_grid_view_new (model);
+        }
+
+      g_free (category);
     }
 
   if (page)

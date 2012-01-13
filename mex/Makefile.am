@@ -77,14 +77,15 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-log.h				\
 	$(top_srcdir)/mex/mex-logo-provider.h			\
 	$(top_srcdir)/mex/mex-main.h				\
-	$(top_srcdir)/mex/mex-media-dbus-bridge.h		\
 	$(top_srcdir)/mex/mex-media-controls.h			\
+	$(top_srcdir)/mex/mex-media-dbus-bridge.h		\
 	$(top_srcdir)/mex/mex-menu.h				\
 	$(top_srcdir)/mex/mex-metadata-utils.h			\
 	$(top_srcdir)/mex/mex-mmkeys.h				\
-	$(top_srcdir)/mex/mex-model.h				\
 	$(top_srcdir)/mex/mex-model-manager.h			\
 	$(top_srcdir)/mex/mex-model-provider.h			\
+	$(top_srcdir)/mex/mex-model.h				\
+	$(top_srcdir)/mex/mex-music-grid-view.h			\
 	$(top_srcdir)/mex/mex-network-notification-source.h 	\
 	$(top_srcdir)/mex/mex-notification-area.h		\
 	$(top_srcdir)/mex/mex-notification-source.h		\
@@ -190,6 +191,7 @@ mex_sources =					\
 	mex-model.c				\
 	mex-model-manager.c			\
 	mex-model-provider.c			\
+	mex-music-grid-view.c			\
 	mex-network-notification-source.c	\
 	mex-notification-area.c			\
 	mex-notification-source.c		\
