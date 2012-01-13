@@ -41,7 +41,7 @@ struct _MexChannelManagerPrivate
   MexLogoProvider *logo_provider; /* For now a single logo provider */
 };
 
-/* The Live TV category is definied with the channel manager */
+/* The Live TV category is defined with the channel manager */
 static const MexModelCategoryInfo live = {
     "live", N_("Live TV"), "icon-panelheader-tv", 25, "", 0, 0, FALSE,
     mex_channel_manager_sort
