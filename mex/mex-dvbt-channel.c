@@ -32,6 +32,8 @@ enum
 {
   PROP_0,
 
+  PROP_SERVICE_ID,
+
   PROP_FREQUENCY,
   PROP_INVERSION,
   PROP_BANDWIDTH,
@@ -45,6 +47,8 @@ enum
 
 struct _MexDVBTChannelPrivate
 {
+  gchar *service_id;
+
   guint frequency;  /* in kHz */
   MexDvbInversion inversion;
   MexDvbBandwidth bandwidth;
@@ -66,6 +70,9 @@ mex_dvbt_channel_get_property (GObject    *object,
 
   switch (property_id)
     {
+    case PROP_SERVICE_ID:
+      g_value_set_string (value, priv->service_id);
+      break;
     case PROP_FREQUENCY:
       g_value_set_uint (value, priv->frequency);
       break;
@@ -108,6 +115,10 @@ mex_dvbt_channel_set_property (GObject      *object,
 
   switch (property_id)
     {
+    case PROP_SERVICE_ID:
+      g_free (priv->service_id);
+      priv->service_id = g_value_dup_string (value);
+      break;
     case PROP_FREQUENCY:
       priv->frequency = g_value_get_uint (value);
       break;
@@ -143,6 +154,10 @@ mex_dvbt_channel_set_property (GObject      *object,
 static void
 mex_dvbt_channel_finalize (GObject *object)
 {
+  MexDVBTChannelPrivate *priv = MEX_DVBT_CHANNEL (object)->priv;
+
+  g_free (priv->service_id);
+
   G_OBJECT_CLASS (mex_dvbt_channel_parent_class)->finalize (object);
 }
 
@@ -157,6 +172,13 @@ mex_dvbt_channel_class_init (MexDVBTChannelClass *klass)
   object_class->get_property = mex_dvbt_channel_get_property;
   object_class->set_property = mex_dvbt_channel_set_property;
   object_class->finalize = mex_dvbt_channel_finalize;
+
+  pspec = g_param_spec_string ("service-id",
+                               "Service ID",
+                               "Service ID",
+                               NULL,
+                               MEX_PARAM_READWRITE);
+  g_object_class_install_property (object_class, PROP_SERVICE_ID, pspec);
 
   pspec = g_param_spec_uint ("frequency",
                              "Frequency",
@@ -240,6 +262,28 @@ MexChannel *
 mex_dvbt_channel_new (void)
 {
   return g_object_new (MEX_TYPE_DVBT_CHANNEL, NULL);
+}
+
+const gchar *
+mex_dvbt_channel_get_service_id (MexDVBTChannel *channel)
+{
+  g_return_val_if_fail (MEX_IS_DVBT_CHANNEL (channel), NULL);
+
+  return channel->priv->service_id;
+}
+
+void
+mex_dvbt_channel_set_service_id (MexDVBTChannel *channel,
+                                 const gchar    *service_id)
+{
+  MexDVBTChannelPrivate *priv = channel->priv;
+
+  g_return_if_fail (MEX_IS_DVBT_CHANNEL (channel));
+
+  g_free (priv->service_id);
+  priv->service_id  = g_strdup (service_id);
+
+  g_object_notify (G_OBJECT (channel), "service-id");
 }
 
 guint

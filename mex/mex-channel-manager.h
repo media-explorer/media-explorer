@@ -81,6 +81,9 @@ void                mex_channel_manager_add_logo_provider     (MexChannelManager
 guint               mex_channel_manager_get_n_channels        (MexChannelManager *manager);
 gint                mex_channel_manager_get_channel_position  (MexChannelManager *manager,
                                                                MexChannel        *channel);
+MexChannel *        mex_channel_manager_get_channel_by_service (MexChannelManager *manager,
+                                                                const gchar       *service_name);
+
 G_END_DECLS
 
 #endif /* __MEX_CHANNEL_MANAGER_H__ */

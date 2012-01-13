@@ -20,6 +20,7 @@
 
 #include "mex-generic-model.h"
 #include "mex-model-manager.h"
+#include "mex-dvbt-channel.h"
 
 #include "mex-channel-manager.h"
 
@@ -38,6 +39,10 @@ struct _MexChannelManagerPrivate
 {
   GPtrArray *channels;
   MexModel *channels_model;
+  GHashTable *service_to_channel; /* FIXME: There's no guarantees the service
+                                     name is unique, so we need to do better
+                                     than that */
+
   MexLogoProvider *logo_provider; /* For now a single logo provider */
 };
 
@@ -141,6 +146,7 @@ mex_channel_manager_finalize (GObject *object)
   MexChannelManagerPrivate *priv = manager->priv;
 
   g_ptr_array_free (priv->channels, TRUE);
+  g_hash_table_unref (priv->service_to_channel);
 
   G_OBJECT_CLASS (mex_channel_manager_parent_class)->finalize (object);
 }
@@ -167,6 +173,7 @@ mex_channel_manager_init (MexChannelManager *self)
   self->priv = priv = CHANNEL_MANAGER_PRIVATE (self);
 
   priv->channels = g_ptr_array_new_with_free_func (g_object_unref);
+  priv->service_to_channel = g_hash_table_new (g_str_hash, g_str_equal);
 
   manager = mex_model_manager_get_default ();
 
@@ -212,8 +219,22 @@ add_channels_from_ptr_array (MexChannelManager *manager,
   for (i = 0; i < channels->len; i++)
     {
       MexChannel *channel = g_ptr_array_index (channels, i);
+      const gchar *service;
 
       priv->channels->pdata[previous_len + i] = g_object_ref (channel);
+
+      if (MEX_IS_DVBT_CHANNEL (channel))
+        service = mex_dvbt_channel_get_service_id ((MexDVBTChannel *) channel);
+      else
+        service = mex_content_get_metadata (MEX_CONTENT (channel),
+                                            MEX_CONTENT_METADATA_TITLE);
+
+      if (g_hash_table_lookup (priv->service_to_channel, service))
+        g_warning ("2 channels have the same service id/name");
+      else
+        g_hash_table_insert (priv->service_to_channel,
+                             (gpointer) service, channel);
+
       mex_model_add_content (priv->channels_model, MEX_CONTENT (channel));
     }
 }
@@ -289,4 +310,27 @@ mex_channel_manager_add_logo_provider (MexChannelManager *manager,
   priv->logo_provider = g_object_ref (provider);
 
   ensure_logos (manager);
+}
+
+/**
+ * mex_channel_manager_get_channel_by_service:
+ * @manager: the #MexChannelManager
+ * @service_name: the service name
+ *
+ * Retrieves the #MexChannel corresponding to @service_name.
+ *
+ * Returns: (transfer none): the #MexChannel that has @service_name as service
+ * name or %NULL if none if found
+ *
+ * Since: 1.0
+ */
+MexChannel *
+mex_channel_manager_get_channel_by_service (MexChannelManager *manager,
+                                            const gchar       *service_name)
+{
+  MexChannelManagerPrivate *priv = manager->priv;
+
+  g_return_val_if_fail (MEX_IS_CHANNEL_MANAGER (manager), NULL);
+
+  return g_hash_table_lookup (priv->service_to_channel, service_name);
 }

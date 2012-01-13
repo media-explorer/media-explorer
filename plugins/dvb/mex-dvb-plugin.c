@@ -76,7 +76,9 @@ parse_service_id (MexChannel *channel,
     return FALSE;
 
   *semi_colon = '\0';
+
   mex_channel_set_name (channel, field);
+  mex_dvbt_channel_set_service_id (channel, field);
 
   return TRUE;
 }
