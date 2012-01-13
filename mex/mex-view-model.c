@@ -55,7 +55,8 @@ enum
   PROP_SORT_FUNCTIONS,
   PROP_ALT_MODEL,
   PROP_ALT_MODEL_STRING,
-  PROP_ALT_MODEL_ACTIVE
+  PROP_ALT_MODEL_ACTIVE,
+  PROP_SKIP_UNGROUPED_ITEMS
 };
 
 typedef struct
@@ -73,6 +74,7 @@ struct _MexViewModelPrivate
   guint       offset;
 
   guint looped  : 1;
+  guint skip_ungrouped_items : 1;
 
   GPtrArray *external_items;
   GPtrArray *internal_items;
@@ -182,6 +184,10 @@ mex_view_model_get_property (GObject    *object,
       g_value_set_string (value, priv->title);
       break;
 
+    case PROP_SKIP_UNGROUPED_ITEMS:
+      g_value_set_boolean (value, priv->skip_ungrouped_items);
+      break;
+
     case PROP_SORT_FUNC:
     case PROP_SORT_DATA:
     case PROP_ICON_NAME:
@@ -220,6 +226,11 @@ mex_view_model_set_property (GObject      *object,
     case PROP_TITLE:
       g_free (self->priv->title);
       self->priv->title = g_value_dup_string (value);
+      break;
+
+    case PROP_SKIP_UNGROUPED_ITEMS:
+      self->priv->skip_ungrouped_items = g_value_get_boolean (value);
+      mex_view_model_refresh_external_items (self);
       break;
 
     case PROP_SORT_FUNC:
@@ -488,6 +499,13 @@ mex_view_model_class_init (MexViewModelClass *klass)
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_LIMIT, pspec);
 
+  pspec = g_param_spec_boolean ("skip-ungrouped-items",
+                                "Skip Ungrouped items",
+                                "Skip items that cannot be grouped",
+                                FALSE,
+                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_SKIP_UNGROUPED_ITEMS, pspec);
+
   g_object_class_override_property (object_class, PROP_TITLE, "title");
   g_object_class_override_property (object_class, PROP_SORT_FUNC, "sort-function");
   g_object_class_override_property (object_class, PROP_SORT_DATA, "sort-data");
@@ -637,6 +655,9 @@ mex_view_model_refresh_external_items (MexViewModel *model)
 
 
           g = mex_content_get_metadata (content, priv->group_by_key);
+
+          if (!g && priv->skip_ungrouped_items)
+            continue;
 
           if (g)
             {
