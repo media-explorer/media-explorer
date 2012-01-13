@@ -31,7 +31,7 @@ struct _MexGriloTrackerFeedPrivate {
   GList          *keys;
 };
 
-#define BROWSE_FLAGS (GRL_RESOLVE_IDLE_RELAY | GRL_RESOLVE_FAST_ONLY)
+#define BROWSE_FLAGS (GRL_RESOLVE_IDLE_RELAY | GRL_RESOLVE_FULL)
 
 #define GET_PRIVATE(obj)                                                \
   (G_TYPE_INSTANCE_GET_PRIVATE ((obj),                                  \

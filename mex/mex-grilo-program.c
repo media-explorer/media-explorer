@@ -302,28 +302,6 @@ mex_grilo_program_thumbnail (MexContent *content, GrlMedia *media)
 }
 
 static void
-program_complete_cb (GrlMediaSource *source,
-                     guint          operation_id,
-                     GrlMedia       *media,
-                     gpointer        userdata,
-                     const GError   *error)
-{
-  MexGriloProgram *self = MEX_GRILO_PROGRAM (userdata);
-  MexGriloProgramPrivate *priv = self->priv;
-  MexContent *content = MEX_CONTENT (self);
-
-  priv->in_update = TRUE;
-
-  mex_grilo_update_content_from_media (content, media);
-  mex_grilo_program_thumbnail (content, media);
-
-  priv->in_update = FALSE;
-
-  g_object_unref (self);
-  g_object_unref (source);
-}
-
-static void
 mex_grilo_program_complete (MexProgram *program)
 {
   GList *keys = NULL;
@@ -352,19 +330,14 @@ mex_grilo_program_complete (MexProgram *program)
         & GRL_OP_METADATA))
     return;
 
-  /* FIXME: Currently just adding a ref, but we should keep the operation ID
-   *        and cancel it on dispose instead.
-   */
-  g_object_ref (self);
-  grl_media_source_metadata (source,
-                             priv->media,
-                             keys,
-                             GRL_RESOLVE_IDLE_RELAY | GRL_RESOLVE_FULL,
-                             program_complete_cb,
-                             self);
+  priv->in_update = TRUE;
 
-  /* We don't unref the source here, it is done in
-     mex_grilo_program_complete_cb */
+  mex_grilo_update_content_from_media (MEX_CONTENT (program), priv->media);
+  mex_grilo_program_thumbnail (MEX_CONTENT (program), priv->media);
+
+  priv->in_update = FALSE;
+
+  g_object_unref (source);
 }
 
 static void

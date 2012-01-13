@@ -903,12 +903,6 @@ mex_view_model_controller_changed_cb (GController          *controller,
                               self);
 
             g_ptr_array_add (priv->internal_items, g_object_ref (content));
-
-
-            /* any MexProgram objects must have all their data resolved to be
-             * useful in the view model */
-            if (MEX_IS_PROGRAM (content))
-              _mex_program_complete (MEX_PROGRAM (content));
           }
       }
       break;

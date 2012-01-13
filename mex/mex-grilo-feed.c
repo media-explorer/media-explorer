@@ -49,7 +49,7 @@ struct _MexGriloFeedPrivate {
 };
 
 #define BROWSE_LIMIT 100
-#define BROWSE_FLAGS (GRL_RESOLVE_IDLE_RELAY | GRL_RESOLVE_FAST_ONLY)
+#define BROWSE_FLAGS (GRL_RESOLVE_IDLE_RELAY | GRL_RESOLVE_FULL)
 
 #define GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj),           \
                                                        MEX_TYPE_GRILO_FEED, \
@@ -344,6 +344,7 @@ emit_media_added (MexGriloFeed *feed, GrlMedia *media)
                    g_object_ref (feed));
 
   program = mex_grilo_program_new (feed, media);
+  _mex_program_complete (program);
   feed->priv->items_to_add = g_list_prepend (feed->priv->items_to_add, program);
 }
 
