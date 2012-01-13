@@ -1097,6 +1097,9 @@ mex_view_model_set_group_by (MexViewModel       *model,
 {
   MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
 
+  if (priv->group_by_key == metadata_key)
+    return;
+
   priv->group_by_key = metadata_key;
 
   if (priv->group_items)
@@ -1110,6 +1113,10 @@ mex_view_model_set_order_by (MexViewModel       *model,
                              gboolean            descending)
 {
   MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+
+  if (priv->order_by_key == metadata_key
+      && priv->order_by_descending == descending)
+    return;
 
   priv->order_by_key = metadata_key;
   priv->order_by_descending = descending;
