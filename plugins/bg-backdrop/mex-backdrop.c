@@ -28,7 +28,8 @@ typedef struct BackdropItem {
   double        opacity;       /* opacity (computed from progress) */
   double        x;             /* spatial position (computed from progress)*/
   double        y;
-  ClutterActor *actor;
+  CoglMaterial *material;
+  double        size;
 } BackdropItem;
 
 #define N_ITEMS     20
@@ -43,6 +44,7 @@ struct _MexBackdropPrivate
   BackdropItem items[N_ITEMS];
   ClutterTimeline *timeline;
   const gchar *name;
+  CoglMaterial *material;
 };
 
 static void time_step (ClutterTimeline *timeline,
@@ -56,8 +58,21 @@ static void time_step (ClutterTimeline *timeline,
   int i;
   int cx, cy;
   int item_size;
-  GError *error = NULL;
   gint delta = clutter_timeline_get_delta (timeline);
+  static gint counter;
+
+
+  counter += delta;
+
+  if (counter >= 40)
+    {
+      delta = counter;
+      counter = 0;
+    }
+  else
+    return;
+
+
   clutter_actor_get_size (self, &w, &h);
   cx = w/2;
   cy = h/2;
@@ -72,23 +87,12 @@ static void time_step (ClutterTimeline *timeline,
       BackdropItem *item = &priv->items[i];
       if (item->active == 0)
         {
-          if (!item->actor)
+          if (!item->material)
             {
-              CoglMaterial *material;
-              CoglColor     color;
-              item->actor = clutter_texture_new_from_file (MEX_DATA_PLUGIN_DIR "/sprite.png", &error);
+              CoglColor color;
 
-              if (error)
-                {
-                  g_warning ("Error loading texture: %s", error->message);
-                  g_clear_error (&error);
-                }
-
-              clutter_actor_set_size (item->actor, item_size, item_size);
-              clutter_actor_set_parent (item->actor, self);
-              clutter_actor_set_anchor_point_from_gravity (item->actor, CLUTTER_GRAVITY_CENTER);
-
-              material = clutter_texture_get_cogl_material (CLUTTER_TEXTURE (item->actor));
+              /* create a cheap copy of the template material */
+              item->material = cogl_material_copy (priv->material);
               switch (i % 3)
                 {
                   case 0:
@@ -107,8 +111,12 @@ static void time_step (ClutterTimeline *timeline,
                     cogl_color_init_from_4f (&color, 1.0, 0.5, 0.2, 0.8);
                     break;
                 }
-              cogl_material_set_layer_combine_constant (material, 1, &color);
-              cogl_material_set_layer_combine (material, 1, "RGBA = MODULATE (PREVIOUS, CONSTANT)", NULL);
+
+              cogl_material_set_layer_combine_constant (item->material, 1,
+                                                        &color);
+              cogl_material_set_layer_combine (item->material, 1,
+                                               "RGBA = MODULATE (PREVIOUS, CONSTANT)",
+                                               NULL);
             }
           {
             item->active = 1;
@@ -146,14 +154,13 @@ static void time_step (ClutterTimeline *timeline,
               item->direction = g_random_double_range (0, G_PI * 2);
               item->target_scale = g_random_double_range (MIN_T_SCALE, MAX_T_SCALE);
             }
+
+          /* update the item size */
+          item->size = item_size * item->scale;
         }
-      clutter_actor_set_position (item->actor, item->x, item->y);
-      clutter_actor_set_opacity (item->actor, item->opacity * 255);
-      clutter_actor_set_scale (item->actor, item->scale, item->scale);
     }
 
-  if (error)
-    g_error_free (error);
+  clutter_actor_queue_redraw (self);
 }
 
 static void
@@ -166,28 +173,12 @@ mex_backdrop_paint (ClutterActor *self)
   for (i = 0; i < N_ITEMS; i++)
     {
       BackdropItem *item = &priv->items[i];
-      if (item->active && item->actor)
-        clutter_actor_paint (item->actor);
-    }
-}
 
-static void
-mex_backdrop_allocate (ClutterActor          *actor,
-                       const ClutterActorBox *box,
-                       ClutterAllocationFlags flags)
-{
-  MexBackdrop *backdrop = MEX_BACKDROP (actor);
-  MexBackdropPrivate *priv = backdrop->priv;
-  int i;
-
-  CLUTTER_ACTOR_CLASS (mex_backdrop_parent_class)->allocate (actor, box, flags);
-
-  for (i = 0; i < N_ITEMS; i++)
-    {
-      BackdropItem *item = &priv->items[i];
-      if (item->active && item->actor)
+      if (item->active)
         {
-          clutter_actor_allocate_preferred_size (item->actor, flags);
+          cogl_set_source (item->material);
+          cogl_rectangle (item->x, item->y, item->x + item->size,
+                          item->y + item->size);
         }
     }
 }
@@ -223,24 +214,30 @@ mex_backdrop_get_property (GObject    *object,
 static void
 mex_backdrop_dispose (GObject *object)
 {
-  gint i;
   MexBackdropPrivate *priv = MEX_BACKDROP (object)->priv;
+  int i;
 
   if (priv->timeline)
     {
       g_object_unref (priv->timeline);
       priv->timeline = NULL;
+    }
 
-      for (i = 0; i < N_ITEMS; i++)
+  for (i = 0; i < N_ITEMS; i++)
+    {
+      BackdropItem *item = &priv->items[i];
+
+      if (item->material)
         {
-          BackdropItem *item = &priv->items[i];
-
-          if (item->actor)
-            {
-              clutter_actor_destroy (item->actor);
-              item->actor = NULL;
-            }
+          cogl_object_unref (item->material);
+          item->material = NULL;
         }
+    }
+
+  if (priv->material)
+    {
+      cogl_object_unref (priv->material);
+      priv->material = NULL;
     }
 
   G_OBJECT_CLASS (mex_backdrop_parent_class)->dispose (object);
@@ -255,7 +252,6 @@ mex_backdrop_class_init (MexBackdropClass *klass)
   g_type_class_add_private (gobject_class, sizeof (MexBackdropPrivate));
 
   actor_class->paint    = mex_backdrop_paint;
-  actor_class->allocate = mex_backdrop_allocate;
 
   gobject_class->dispose      = mex_backdrop_dispose;
   gobject_class->set_property = mex_backdrop_set_property;
@@ -266,6 +262,8 @@ static void
 mex_backdrop_init (MexBackdrop *self)
 {
   MexBackdropPrivate *priv;
+  CoglHandle *texture;
+  GError *error = NULL;
 
   self->priv = priv = MEX_BACKDROP_GET_PRIVATE (self);
 
@@ -273,6 +271,23 @@ mex_backdrop_init (MexBackdrop *self)
 
   priv->timeline = clutter_timeline_new (100000000);
   clutter_timeline_set_loop (priv->timeline, TRUE);
+
+  /* create template material */
+  priv->material = cogl_material_new ();
+
+  texture = cogl_texture_new_from_file (MEX_DATA_PLUGIN_DIR "/sprite.png",
+                                        COGL_TEXTURE_NONE,
+                                        COGL_PIXEL_FORMAT_ANY, NULL);
+
+  if (error)
+    {
+      g_warning ("Error loading texture: %s", error->message);
+      g_clear_error (&error);
+    }
+  else
+    {
+      cogl_material_set_layer (priv->material, 0, texture);
+    }
 
   g_signal_connect (priv->timeline, "new-frame", G_CALLBACK (time_step), self);
 }
