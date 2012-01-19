@@ -44,3 +44,6 @@ thumbnailer/mex-thumbnailer
 .gdb_history
 
 .clang_complete
+core.*
+*.rej
+*.orig
