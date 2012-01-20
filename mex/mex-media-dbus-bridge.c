@@ -461,6 +461,7 @@ on_bus_acquired (GDBusConnection *connection,
 {
   MexMediaDBUSBridgePrivate *priv = MEX_MEDIA_DBUS_BRIDGE (bridge)->priv;
   guint registration_id;
+  GError *error = NULL;
 
   priv->connection = g_object_ref (connection);
 
@@ -469,8 +470,13 @@ on_bus_acquired (GDBusConnection *connection,
                                        MEX_PLAYER_OBJECT_PATH,
                                        priv->introspection_data->interfaces[0],
                                        &interface_vtable,
-                                       bridge, bridge, NULL);
-  g_assert (registration_id > 0);
+                                       bridge, bridge, &error);
+
+  if (registration_id == 0)
+    {
+      g_warning ("Could not register MexPlayer object: %s", error->message);
+      g_error_free (error);
+    }
 }
 
 static void
