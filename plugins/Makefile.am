@@ -318,3 +318,16 @@ plugins_LTLIBRARIES += 60mex-twitter-send.la
 60mex_twitter_send_la_CFLAGS  = -DG_LOG_DOMAIN=\"Mex-Twitter-Send\" $(PLUGIN_TWITTER_SEND_CFLAGS)
 60mex_twitter_send_la_LIBADD = $(_libadd) $(PLUGIN_TWITTER_SEND_LIBS)
 endif
+
+if USE_PLUGIN_APPS
+plugins_LTLIBRARIES += mex-apps.la
+
+mex_appsdir = $(plugin_datadir)/apps
+dist_mex_apps_DATA = apps/data/apps.json apps/data/blank.css
+mex_apps_la_SOURCES = 		\
+	apps/mex-apps-plugin.c
+mex_apps_la_CFLAGS  = 		\
+	-DG_LOG_DOMAIN=\"Mex-Apps\"	\
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_appsdir)\" $(PLUGIN_APPS_CFLAGS)
+mex_apps_la_LIBADD = $(_libadd) $(PLUGIN_APPS_LIBS)
+endif

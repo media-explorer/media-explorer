@@ -318,6 +318,10 @@ _reset_thumbnail (MexContentTile *tile)
     {
       placeholder_filename = "folder-tile.png";
     }
+  else if (mime && g_str_equal (mime, "x-mex/app"))
+    {
+      placeholder_filename = "thumb-app.png";
+    }
 
   if (placeholder_filename)
     {

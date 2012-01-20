@@ -74,6 +74,7 @@ dist_style_DATA = \
 	style/spinner.png \
 	style/style.css \
 	style/text-input-bg.png \
+	style/thumb-app.png \
 	style/thumb-bg.png \
         style/thumb-call-avatar.png \
         style/thumb-call-avatar-small.png \
