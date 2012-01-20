@@ -1020,7 +1020,7 @@ mex_resizing_hbox_start_animation (MexResizingHBox *self)
   clutter_timeline_rewind (priv->timeline);
 
   /* prevent animations running when not at fully visible */
-  if (clutter_actor_get_paint_opacity (self) == 0xff)
+  if (clutter_actor_get_paint_opacity (CLUTTER_ACTOR (self)) == 0xff)
     clutter_timeline_set_duration (priv->timeline, priv->anim_length);
   else
     clutter_timeline_set_duration (priv->timeline, 1);
