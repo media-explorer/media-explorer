@@ -566,7 +566,7 @@ mex_tile_shadow_quark (void)
   return shadow_quark;
 }
 
-/* Copied from MxWidget, but TRUE/FALSE swapped round to make sense */
+#if !MX_CHECK_VERSION(1, 99, 0)
 static gboolean
 mx_border_image_equal (MxBorderImage *v1,
                        MxBorderImage *v2)
@@ -597,6 +597,7 @@ mx_border_image_equal (MxBorderImage *v1,
 
   return TRUE;
 }
+#endif
 
 void
 mex_replace_border_image (CoglHandle     *texture_p,

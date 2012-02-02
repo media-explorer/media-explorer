@@ -170,12 +170,15 @@ AS_CASE([$with_profile],
 
         [AC_MSG_ERROR([Unknown profile $with_profile])])
 
+PKG_CHECK_EXISTS([mx-1.0],[mx_version=1.0],[])
+PKG_CHECK_EXISTS([mx-2.0],[mx_version=2.0],[mx_version=1.0])
+
 modules="glib-2.0 >= $GLIB_REQ_VERSION                  \
          gio-2.0                                        \
          gdk-pixbuf-2.0                                 \
          libsoup-2.4                                    \
          clutter-1.0 >= $CLUTTER_REQ_VERSION            \
-         mx-1.0 >= $MX_REQ_VERSION                      \
+         mx-$mx_version >= $MX_REQ_VERSION              \
          grilo-0.1 >= $GRILO_REQ_VERSION                \
          gstreamer-0.10 >= $GSTREAMER_REQ_VERSION       \
          gstreamer-tag-0.10 >= $GSTREAMER_REQ_VERSION   \
@@ -547,6 +550,7 @@ echo ""
 echo " • Profile: ${with_profile}"
 echo ""
 echo " • Build:"
+echo "        Mx Version        : ${mx_version}"
 echo "        Debugging flags   : ${enable_debug}"
 echo "        Maintainer flags  : ${enable_warning_flags}"
 echo "        Unit tests        : ${enable_tests}"

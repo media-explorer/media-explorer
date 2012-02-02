@@ -497,7 +497,8 @@ mex_menu_create_layout (MexMenu *menu, gboolean lower)
   clutter_container_add_actor (CLUTTER_CONTAINER (menu), layout);
 
 
-  priv->action_layout = mx_box_layout_new_with_orientation (MX_ORIENTATION_VERTICAL);
+  priv->action_layout = mx_box_layout_new ();
+  mx_box_layout_set_orientation (MX_BOX_LAYOUT (priv->action_layout), MX_ORIENTATION_VERTICAL);
 
   scroll = mex_scroll_view_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (scroll), priv->action_layout);
