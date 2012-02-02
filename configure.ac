@@ -416,7 +416,7 @@ AC_ARG_ENABLE([networks],
               [enable_networks=$mex_default_enable_networks])
 
 AS_IF([test "x$enable_networks" = "xyes"],
-      [PKG_CHECK_MODULES(NETWORKS, [glib-2.0 mx-1.0])],
+      [PKG_CHECK_MODULES(NETWORKS, [glib-2.0 mx-$mx_version])],
       [])
 AM_CONDITIONAL(ENABLE_NETWORKS, test "x$enable_networks" = "xyes")
 
@@ -453,7 +453,7 @@ AM_CONDITIONAL(ENABLE_DISPLAYCONF, test "x$enable_displayconf" = "xyes")
 # Shell
 #
 
-PKG_CHECK_MODULES(SHELL, [mx-1.0 clutter-1.0 glib-2.0])
+PKG_CHECK_MODULES(SHELL, [mx-$mx_version clutter-1.0 glib-2.0])
 
 AS_CASE([$clutter_soname],
 
