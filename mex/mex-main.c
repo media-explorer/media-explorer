@@ -83,18 +83,10 @@ mex_init_default_categories (void)
 static void
 grilo_load_default_plugins (GrlPluginRegistry *registry)
 {
-  /* Tracker is our first choice of plugin */
-  if (!grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL))
-    {
-      /* try and load the upnp and filesystem plugins instead */
-      if (!grl_plugin_registry_load_by_id (registry, "grl-upnp", NULL) &&
-          !grl_plugin_registry_load_by_id (registry, "grl-filesystem", NULL))
-        {
-          g_warning ("Could not load fallback plugins\n \
-                        please check that grilo-plugins has been correctly \
-                        installed");
-        }
-    }
+  grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL);
+
+  grl_plugin_registry_load_by_id (registry, "grl-upnp", NULL);
+  grl_plugin_registry_load_by_id (registry, "grl-filesystem", NULL);
 
   grl_plugin_registry_load_by_id (registry, "grl-lastfm-albumart", NULL);
 }
