@@ -9,10 +9,12 @@ mex/mex-info-panel.c
 mex/mex-main.c
 mex/mex-metadata-utils.c
 mex/mex-model.c
+mex/mex-music-grid-view.c
 mex/mex-network-notification-source.c
 mex/mex-queue-button.c
 mex/mex-queue-model.c
 mex/mex-utils.c
+plugins/apps/mex-apps-plugin.c
 plugins/applications/mex-applications-plugin.c
 plugins/gnome-dvb/mex-gnome-dvb-plugin.c
 plugins/optical-disc/mex-opticaldisc-plugin.c
