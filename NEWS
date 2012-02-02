@@ -1,4 +1,30 @@
 ===============================================================================
+Mex 0.3.6                                                            2012-02-02
+===============================================================================
+
+  • List of changes since media-explorer 0.3.4
+
+    » Performance improvements to models
+
+    » Fade in animation at startup
+
+    » Ensure items have all information before being added to a model view
+
+    » Improve the performance of the backdrop plugin
+
+    » Add an "Apps" column to link to various web services
+
+    » Fix Webremote mimetype detection
+
+    » Filter out images smaller than 100x100 in the tracker plugin
+
+
+Contributors to this release:
+
+  Michael Wood, Thomas Wood
+
+
+===============================================================================
 Mex 0.3.4                                                            2011-12-20
 ===============================================================================
 
