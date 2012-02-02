@@ -95,6 +95,8 @@ mex_library_plugin_get_box_for_path (GrlMediaSource *source,
 
   GError *error = NULL;
 
+  g_return_val_if_fail (path != NULL, NULL);
+
   uri = g_filename_to_uri (path, NULL, &error);
   if (!uri)
     {
@@ -159,14 +161,18 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                                  NULL);
 
       mex_settings_key = mex_get_settings_key_file ();
+      paths_len = 0;
       paths = g_key_file_get_string_list (mex_settings_key,
                                           "library-plugin",
                                           "video_paths",
                                           &paths_len,
                                           NULL);
 
-     paths = (gchar **)g_realloc ((gpointer)paths,
-                                  (paths_len + 2) * sizeof (gchar *));
+      if (!paths)
+        paths = g_new (gchar*, 2);
+      else
+        paths = (gchar **)g_realloc ((gpointer)paths,
+                (paths_len + 2) * sizeof (gchar *));
 
      paths[paths_len] =
        g_strdup (g_get_user_special_dir (G_USER_DIRECTORY_VIDEOS));
@@ -211,6 +217,7 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                                  GRL_METADATA_KEY_HEIGHT,
                                                  NULL);
 
+      paths_len = 0;
       paths = g_key_file_get_string_list (mex_settings_key,
                                           "library-plugin",
                                           "pictures_paths",
@@ -220,8 +227,11 @@ mex_library_plugin_init (MexLibraryPlugin *self)
       paths = (gchar **)g_realloc ((gpointer)paths,
                                    (paths_len + 2) * sizeof (gchar *));
 
-      paths[paths_len] =
-        g_strdup (g_get_user_special_dir (G_USER_DIRECTORY_PICTURES));
+      if (!paths)
+        paths = g_new (gchar*, 2);
+      else
+        paths[paths_len] =
+          g_strdup (g_get_user_special_dir (G_USER_DIRECTORY_PICTURES));
 
       paths_len++;
       paths[paths_len] = NULL;
@@ -263,14 +273,18 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                                  GRL_METADATA_KEY_ALBUM,
                                                  NULL);
 
+      paths_len = 0;
       paths = g_key_file_get_string_list (mex_settings_key,
                                           "library-plugin",
                                           "music_paths",
                                           &paths_len,
                                           NULL);
 
-      paths = (gchar **)g_realloc ((gpointer)paths,
-                                   (paths_len + 2) * sizeof (gchar *));
+      if (!paths)
+        paths = g_new (gchar*, 2);
+      else
+        paths = (gchar **)g_realloc ((gpointer)paths,
+            (paths_len + 2) * sizeof (gchar *));
 
       paths[paths_len] =
         g_strdup (g_get_user_special_dir (G_USER_DIRECTORY_MUSIC));
