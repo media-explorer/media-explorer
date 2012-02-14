@@ -104,32 +104,18 @@ AC_SUBST(TELEPATHY_GLIB_REQ_VERSION)
 # you can specify a --with-profile=$profile as a configuration option to hopefully
 # get sane defaults.
 
-# we base our OS detection on the winsys soname of the clutter library. This
-# soname reflects which GL winsys has been when compiling clutter and we can use
-# it to set our default profile (see --with-profile)
-clutter_soname=`$PKG_CONFIG --variable soname_infix clutter-1.0`
-
-AS_CASE([$clutter_soname],
-
-        [cex100],
-        [
-          mex_os=linux
-          default_profile=intelce
-        ],
-
-        [glx|eglx],
-        [
-          mex_os=linux
-          default_profile=gnome
-        ],
-
-        [win32],
+AC_CANONICAL_HOST
+AS_CASE([$host],
+        [*-*-mingw*|*-*-cygwin*],
         [
           mex_os=windows
           default_profile=windows
         ],
-
-        [AC_MSG_ERROR([Unknown clutter winsys $clutter_soname, please add it and optionally create a new profile])])
+        [
+          mex_os=linux
+          default_profile=gnome
+        ]
+)
 
 AC_SUBST(MEX_OS, [$mex_os])
 
@@ -458,14 +444,14 @@ AM_CONDITIONAL(ENABLE_DISPLAYCONF, test "x$enable_displayconf" = "xyes")
 
 PKG_CHECK_MODULES(SHELL, [mx-$mx_version clutter-1.0 glib-2.0])
 
-AS_CASE([$clutter_soname],
+AS_CASE([$profile],
 
-        [cex100],
+        [intelce],
         [
         AC_DEFINE(HAVE_CLUTTER_CEX100, [1], [Defined if we are on CEX100])
         ],
 
-        [glx|eglx],
+        [gnome],
         [
         AC_DEFINE(HAVE_CLUTTER_X11, [1], [Defined if we are on X11])
         ]
