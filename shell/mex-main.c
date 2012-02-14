@@ -1915,7 +1915,7 @@ _close_screen_dialog_cb (MxAction *action, gpointer user_data)
 static void
 check_resolution (MexData *data)
 {
-#if HAVE_CLUTTER_X11
+#ifdef HAVE_CLUTTER_X11
   Screen *screen;
   ClutterActor *dialog, *layout, *title, *label;
   MxAction *action;
