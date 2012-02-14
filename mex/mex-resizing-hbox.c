@@ -1812,14 +1812,6 @@ mex_resizing_hbox_style_changed_cb (MxStylable          *self,
                             &priv->border_material);
 
   clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
-
-  priv->state_timeline = clutter_timeline_new (ANIMATION_DURATION);
-  priv->state_alpha = clutter_alpha_new_full (priv->state_timeline,
-                                             CLUTTER_EASE_IN_OUT_CUBIC);
-  g_signal_connect (priv->state_timeline, "new-frame",
-                    G_CALLBACK (mex_resizing_hbox_state_timeline_cb), self);
-  g_signal_connect (priv->state_timeline, "completed",
-                    G_CALLBACK (mex_resizing_hbox_state_timeline_complete_cb), self);
 }
 
 static void
@@ -1850,6 +1842,14 @@ mex_resizing_hbox_init (MexResizingHBox *self)
 
   g_signal_connect (self, "style-changed",
                     G_CALLBACK (mex_resizing_hbox_style_changed_cb), NULL);
+
+  priv->state_timeline = clutter_timeline_new (ANIMATION_DURATION);
+  priv->state_alpha = clutter_alpha_new_full (priv->state_timeline,
+                                             CLUTTER_EASE_IN_OUT_CUBIC);
+  g_signal_connect (priv->state_timeline, "new-frame",
+                    G_CALLBACK (mex_resizing_hbox_state_timeline_cb), self);
+  g_signal_connect (priv->state_timeline, "completed",
+                    G_CALLBACK (mex_resizing_hbox_state_timeline_complete_cb), self);
 }
 
 ClutterActor *
