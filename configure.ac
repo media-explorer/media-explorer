@@ -158,6 +158,7 @@ AS_CASE([$with_profile],
 
 PKG_CHECK_EXISTS([mx-1.0],[mx_version=1.0],[])
 PKG_CHECK_EXISTS([mx-2.0],[mx_version=2.0],[mx_version=1.0])
+AC_SUBST(mx_version)
 
 modules="glib-2.0 >= $GLIB_REQ_VERSION                  \
          gio-2.0                                        \

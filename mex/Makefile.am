@@ -318,7 +318,7 @@ Mex-@MEX_API_VERSION@.gir: libmex-@MEX_API_VERSION@.la
 Mex_0_2_gir_PACKAGES = 	\
 	gobject-2.0		\
 	clutter-1.0		\
-	mx-1.0			\
+	mx-@mx_version@		\
 	libsoup-gnome-2.4	\
 	grilo-0.1		\
 	$(NULL)
@@ -335,7 +335,7 @@ Mex_0_2_gir_CFLAGS = $(common_includes) $(MEX_CFLAGS) -I$(top_srcdir)/mex
 Mex_0_2_gir_INCLUDES =	\
 	GObject-2.0	\
 	Clutter-1.0	\
-	Mx-1.0		\
+	Mx-@mx_version@	\
 	Grl-0.1		\
 	GController-1.0	\
 	$(NULL)
