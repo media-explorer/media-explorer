@@ -24,6 +24,7 @@
 #include "mex-group-item.h"
 
 #include <stdarg.h>
+#include <string.h>
 
 
 static void mex_model_iface_init (MexModelIface *iface);
@@ -395,7 +396,7 @@ static gint
 mex_view_model_index (MexModel *model, MexContent *content)
 {
   MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
-  gint start = 0, index = 0, position;
+  gint start = 0, idx = 0, position;
   gboolean found;
 
   /* find the start content's index */
@@ -419,24 +420,24 @@ mex_view_model_index (MexModel *model, MexContent *content)
 
   /* find the search item's index */
   found = FALSE;
-  index = position = start;
-  while (index < priv->external_items->len)
+  idx = position = start;
+  while (idx < priv->external_items->len)
     {
-      if (g_ptr_array_index (priv->external_items, index) == content)
+      if (g_ptr_array_index (priv->external_items, idx) == content)
         {
           found = TRUE;
           break;
         }
 
       /* check if search has looped */
-      if (priv->looped && index + 1 == start)
+      if (priv->looped && idx + 1 == start)
         break;
 
       /* loop if required */
-      if (priv->looped && index + 1 == priv->external_items->len)
-        index = -1;
+      if (priv->looped && idx + 1 == priv->external_items->len)
+        idx = -1;
 
-      index++;
+      idx++;
 
       position++;
     }
@@ -583,6 +584,36 @@ _g_ptr_array_contains (GPtrArray *haystack, gpointer needle)
   return -1;
 }
 
+static gint
+_g_ptr_array_add_sorted_with_data (GPtrArray *array,
+                                   gpointer item,
+                                   GCompareDataFunc compare_func,
+                                   gpointer user_data)
+{
+  gint i;
+
+  /* find the position to insert the item */
+  for (i = 0; i < array->len; i++)
+    {
+      if (compare_func (&item, &array->pdata[i], user_data) < 0)
+        break;
+    }
+
+  /* increase the size of the array */
+  g_ptr_array_set_size (array, array->len + 1);
+
+  /* move all the items after the insertion position if the new position is not
+   * at the end of the array */
+  if (i < array->len - 1)
+    g_memmove (&array->pdata[i + 1], &array->pdata[i],
+               (array->len - i - 1) * sizeof (gpointer));
+
+  /* add the new item to the array */
+  array->pdata[i] = item;
+
+  return i;
+}
+
 static void
 mex_view_model_refresh_external_items (MexViewModel *model)
 {
@@ -593,6 +624,7 @@ mex_view_model_refresh_external_items (MexViewModel *model)
   GHashTable *groups = NULL;
   GControllerReference *ref;
   gpointer key;
+  SortFuncInfo info = { priv->order_by_key, priv->order_by_descending };
 
   /* allocate the full array to start with */
   new_items = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
@@ -803,19 +835,41 @@ mex_view_model_refresh_external_items (MexViewModel *model)
     {
       if (!g_hash_table_lookup (external_items, key))
         {
+          gint position;
+
           /* add the item */
-          g_ptr_array_add (priv->external_items,
-                           g_object_ref (key));
+          if (priv->order_by_key)
+            {
+              position = _g_ptr_array_add_sorted_with_data (priv->external_items,
+                                                            g_object_ref (key),
+                                                            order_by_func, &info);
+            }
+          else
+            {
+              g_ptr_array_add (priv->external_items,
+                               g_object_ref (key));
+
+              position = priv->external_items->len - 1;
+            }
 
           /* emit the added signal, if there is no limit or the new index is
            * less than the limit */
-          if (!priv->limit || priv->external_items->len - 1 < priv->limit)
+          if (!priv->limit || position < priv->limit)
             {
               ref = g_controller_create_reference (priv->controller,
                                                    G_CONTROLLER_ADD,
                                                    G_TYPE_UINT, 1,
-                                                   priv->external_items->len - 1);
+                                                   position);
               g_controller_emit_changed (priv->controller, ref);
+
+              if (priv->limit && position < priv->limit)
+                {
+                  ref = g_controller_create_reference (priv->controller,
+                                                       G_CONTROLLER_REMOVE,
+                                                       G_TYPE_UINT, 1,
+                                                       priv->limit -1);
+                  g_controller_emit_changed (priv->controller, ref);
+                }
             }
         }
     }
@@ -825,14 +879,6 @@ mex_view_model_refresh_external_items (MexViewModel *model)
 
   /* destroy the external_items hash table */
   g_hash_table_destroy (external_items);
-
-  /* sort the items */
-  if (priv->order_by_key)
-    {
-      SortFuncInfo info = { priv->order_by_key, priv->order_by_descending };
-
-      g_ptr_array_sort_with_data (priv->external_items, order_by_func, &info);
-    }
 }
 
 static void
@@ -1114,6 +1160,18 @@ mex_view_model_set_order_by (MexViewModel       *model,
 
   priv->order_by_key = metadata_key;
   priv->order_by_descending = descending;
+
+  /* remove the existing external items, so that it is fully re-sorted */
+  while (priv->external_items->len > 0)
+    {
+      GControllerReference *ref;
+
+      ref = g_controller_create_reference (priv->controller,
+                                           G_CONTROLLER_REMOVE,
+                                           G_TYPE_UINT, 1, 0);
+      g_controller_emit_changed (priv->controller, ref);
+      g_ptr_array_remove_index (priv->external_items, 0);
+    }
 
   mex_view_model_refresh_external_items (model);
 }
