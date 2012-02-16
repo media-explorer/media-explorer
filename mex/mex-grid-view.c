@@ -389,7 +389,9 @@ mex_grid_view_timeline_complete_cb (ClutterTimeline *timeline,
   else if (priv->state == STATE_OPENING)
     {
       priv->state = STATE_OPEN;
-      clutter_actor_show (priv->grid);
+      clutter_actor_animate (priv->grid, CLUTTER_LINEAR, 250,
+                             "opacity", 255,
+                             NULL);
     }
 
   if (priv->callback)
@@ -494,6 +496,7 @@ mex_grid_view_init (MexGridView *self)
   /* grid */
   priv->grid = mex_grid_new ();
   clutter_container_add_actor (CLUTTER_CONTAINER (scroll_view), priv->grid);
+  clutter_actor_set_opacity (priv->grid, 0);
 
 
   /* Name actors so we can style */
