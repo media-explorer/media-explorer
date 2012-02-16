@@ -536,6 +536,8 @@ mex_view_model_init (MexViewModel *self)
   priv->internal_items = g_ptr_array_new_with_free_func (g_object_unref);
 
   priv->controller = g_ptr_array_controller_new (priv->external_items);
+
+  priv->order_by_key = MEX_CONTENT_METADATA_TITLE;
 }
 
 MexModel *
