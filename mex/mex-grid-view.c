@@ -57,7 +57,6 @@ struct _MexGridViewPrivate
 
   MexModel *model;
   MexModel *alt_model;
-  MexProxy *proxy;
 
   guint state;
 
@@ -170,12 +169,6 @@ static void
 mex_grid_view_dispose (GObject *object)
 {
   MexGridViewPrivate *priv = MEX_GRID_VIEW (object)->priv;
-
-  if (priv->proxy)
-    {
-      g_object_unref (priv->proxy);
-      priv->proxy = NULL;
-    }
 
   if (priv->alpha)
     {
@@ -397,7 +390,6 @@ mex_grid_view_timeline_complete_cb (ClutterTimeline *timeline,
     {
       priv->state = STATE_OPEN;
       clutter_actor_show (priv->grid);
-      mex_proxy_set_model (priv->proxy, priv->model);
     }
 
   if (priv->callback)
@@ -525,40 +517,6 @@ mex_grid_view_init (MexGridView *self)
                     G_CALLBACK (mex_grid_view_timeline_complete_cb), self);
 }
 
-
-static void
-mex_explorer_grid_box_notify_open_cb (MexContentBox *box,
-                                      GParamSpec    *pspec,
-                                      MexScrollView *view)
-{
-  mex_scroll_view_set_indicators_hidden (view, mex_content_box_get_open (box));
-}
-
-static void
-mex_explorer_grid_object_created_cb (MexProxy      *proxy,
-                                     MexContent    *content,
-                                     GObject       *object,
-                                     gpointer       grid)
-{
-  MexContentBox *content_box = MEX_CONTENT_BOX (object);
-
-  mex_content_box_set_important (content_box, TRUE);
-
-  /* Make sure the tiles stay the correct size */
-  g_object_bind_property (grid, "tile-width",
-                          content_box, "thumb-width",
-                          G_BINDING_SYNC_CREATE);
-
-  /* Make sure expanded grid tiles fill a nice-looking space */
-  g_object_bind_property (grid, "tile-width",
-                          content_box, "action-list-width",
-                          G_BINDING_SYNC_CREATE);
-
-  g_signal_connect (object, "notify::open",
-                    G_CALLBACK (mex_explorer_grid_box_notify_open_cb),
-                    clutter_actor_get_parent (grid));
-}
-
 static void
 mex_set_detail_and_pop_cb (MxAction    *action,
                            MexGridView *view)
@@ -653,7 +611,6 @@ mex_grid_view_set_model (MexGridView *view,
                          MexModel    *model)
 {
   MexGridViewPrivate *priv = MEX_GRID_VIEW (view)->priv;
-  ClutterActor *stage;
   MxAction *order;
   gchar *category = NULL;
   GPtrArray *sort_funcs = NULL;
@@ -742,21 +699,8 @@ mex_grid_view_set_model (MexGridView *view,
       priv->alt_model = NULL;
     }
 
-  stage = clutter_actor_get_stage (CLUTTER_ACTOR (view));
-
-  if (priv->proxy)
-    g_object_unref (priv->proxy);
-
-  priv->proxy = mex_content_proxy_new (NULL, CLUTTER_CONTAINER (priv->grid),
-                                       MEX_TYPE_CONTENT_BOX);
-  mex_content_proxy_set_stage (MEX_CONTENT_PROXY (priv->proxy),
-                               CLUTTER_STAGE (stage));
-  g_signal_connect (priv->proxy, "object-created",
-                    G_CALLBACK (mex_explorer_grid_object_created_cb),
-                    priv->grid);
-
-  if (priv->state == STATE_OPEN && CLUTTER_ACTOR_IS_MAPPED (view))
-    mex_proxy_set_model (priv->proxy, priv->model);
+  /* set the model on the grid */
+  mex_grid_set_model (MEX_GRID (priv->grid), model);
 
   /* set grid title */
   g_object_bind_property (model, "title",

@@ -71,6 +71,9 @@ ClutterActor * mex_grid_new (void);
 gint mex_grid_get_stride (MexGrid *grid);
 void mex_grid_set_stride (MexGrid *grid, gint stride);
 
+void mex_grid_set_model (MexGrid *grid, MexModel *model);
+MexModel* mex_grid_get_model (MexGrid *grid);
+
 G_END_DECLS
 
 #endif /* _MEX_GRID_H */

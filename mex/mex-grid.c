@@ -22,17 +22,15 @@
 #include "mex-content-view.h"
 #include "mex-scrollable-container.h"
 #include "mex-shadow.h"
+#include "mex-content-tile.h"
 #include <math.h>
 
-static void clutter_container_iface_init (ClutterContainerIface *iface);
 static void mx_scrollable_iface_init (MxScrollableIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 static void mx_stylable_iface_init (MxStylableIface *iface);
 static void mex_scrollable_container_iface_init (MexScrollableContainerInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexGrid, mex_grid, MX_TYPE_WIDGET,
-                         G_IMPLEMENT_INTERFACE (CLUTTER_TYPE_CONTAINER,
-                                                clutter_container_iface_init)
                          G_IMPLEMENT_INTERFACE (MX_TYPE_SCROLLABLE,
                                                 mx_scrollable_iface_init)
                          G_IMPLEMENT_INTERFACE (MX_TYPE_FOCUSABLE,
@@ -77,6 +75,8 @@ struct _MexGridPrivate
   CoglHandle       highlight;
   CoglHandle       highlight_material;
   MxBorderImage   *highlight_image;
+
+  MexModel        *model;
 };
 
 enum
@@ -107,108 +107,6 @@ mex_grid_child_add_shadow (ClutterActor *child)
                               MEX_TEXTURE_FRAME_BOTTOM);
 }
 
-
-static void
-mex_grid_add (ClutterContainer *container,
-              ClutterActor     *actor)
-{
-  MexGrid *self = MEX_GRID (container);
-  MexGridPrivate *priv = self->priv;
-
-  g_array_append_val (priv->children, actor);
-
-  mex_grid_child_add_shadow (actor);
-
-  clutter_actor_set_parent (actor, CLUTTER_ACTOR (self));
-
-  mex_grid_start_animation (self);
-  g_signal_emit_by_name (self, "actor-added", actor);
-
-  if (priv->focus_waiting)
-    {
-      mex_push_focus (MX_FOCUSABLE (actor));
-      priv->focus_waiting = FALSE;
-    }
-}
-
-static void
-mex_grid_remove (ClutterContainer *container,
-                 ClutterActor     *actor)
-{
-  gint i;
-
-  MexGrid *self = MEX_GRID (container);
-  MexGridPrivate *priv = self->priv;
-
-  if (priv->current_focus == actor)
-    {
-      priv->current_focus = NULL;
-      priv->focused_row = 0;
-    }
-
-  for (i = 0; i < priv->children->len; i++)
-    {
-      ClutterActor *child = g_array_index (priv->children, ClutterActor *, i);
-
-      if (child != actor)
-        continue;
-
-      g_object_ref (actor);
-
-      g_array_remove_index (priv->children, i);
-      clutter_actor_unparent (actor);
-
-      g_signal_emit_by_name (self, "actor-removed", actor);
-
-      g_object_unref (actor);
-      mex_grid_start_animation (self);
-
-      /* reset last_visible and first_visible */
-      priv->last_visible = -1;
-      priv->first_visible = -1;
-
-      return;
-    }
-
-  g_warning (G_STRLOC ": Trying to remove an unknown child");
-}
-
-static void
-mex_grid_foreach (ClutterContainer *container,
-                  ClutterCallback   callback,
-                  gpointer          user_data)
-{
-  gint i;
-  MexGrid *self = MEX_GRID (container);
-  MexGridPrivate *priv = self->priv;
-
-  /* Skip this foreach if it came from a style-changed signal. This will
-   * break style rules of our children that rely on changing properties of
-   * our parents, but it's just too slow.
-   */
-  if (!priv->next_foreach_is_style_changed)
-    {
-      /* FIXME: this will probably break if the child list is modified
-       * in the callback... We ought to account for this somehow.
-       */
-      for (i = 0; i < priv->children->len; i++)
-        {
-          ClutterActor *child =
-            g_array_index (priv->children, ClutterActor *, i);
-          callback (child, user_data);
-        }
-    }
-  else
-    priv->next_foreach_is_style_changed = FALSE;
-}
-
-static void
-clutter_container_iface_init (ClutterContainerIface *iface)
-{
-  iface->add = mex_grid_add;
-  iface->remove = mex_grid_remove;
-  iface->foreach = mex_grid_foreach;
-}
 
 /* MxScrollableIface */
 
@@ -738,6 +636,11 @@ mex_grid_dispose (GObject *object)
       priv->highlight_material = NULL;
     }
 
+
+  /* remove signal handlers from model controller and remove all children */
+  mex_grid_set_model (MEX_GRID (object), NULL);
+
+
   G_OBJECT_CLASS (mex_grid_parent_class)->dispose (object);
 }
 
@@ -1160,11 +1063,6 @@ mex_grid_pick (ClutterActor *actor, const ClutterColor *color)
 static void
 mex_grid_destroy (ClutterActor *actor)
 {
-  GList *children = clutter_container_get_children (CLUTTER_CONTAINER (actor));
-
-  g_list_foreach (children, (GFunc)clutter_actor_destroy, NULL);
-  g_list_free (children);
-
   if (CLUTTER_ACTOR_CLASS (mex_grid_parent_class)->destroy)
     CLUTTER_ACTOR_CLASS (mex_grid_parent_class)->destroy (actor);
 }
@@ -1464,4 +1362,191 @@ mex_grid_set_stride (MexGrid *grid, gint stride)
        */
       mex_grid_start_animation (grid);
     }
+}
+
+/**
+ * mex_grid_add_content:
+ *
+ * Add an item to the grid for the given content and position
+ */
+static void
+mex_grid_add_content (MexGrid    *grid,
+                      MexContent *content,
+                      gint        position)
+{
+  MexGridPrivate *priv = grid->priv;
+  ClutterActor *box;
+
+  box = mex_content_box_new ();
+
+  mex_grid_child_add_shadow (box);
+
+  mex_content_box_set_important (MEX_CONTENT_BOX (box), TRUE);
+
+  /* Make sure the tiles stay the correct size */
+  g_object_bind_property (grid, "tile-width",
+                          box, "thumb-width",
+                          G_BINDING_SYNC_CREATE);
+
+  /* Make sure expanded grid tiles fill a nice-looking space */
+  g_object_bind_property (grid, "tile-width",
+                          box, "action-list-width",
+                          G_BINDING_SYNC_CREATE);
+
+  mex_content_view_set_content (MEX_CONTENT_VIEW (box), content);
+
+  clutter_actor_set_parent (box, CLUTTER_ACTOR (grid));
+
+  g_array_insert_val (priv->children, position, box);
+}
+
+/**
+ * mex_grid_clear:
+ *
+ * Remove all the items from the grid
+ */
+static void
+mex_grid_clear (MexGrid *grid)
+{
+  MexGridPrivate *priv = grid->priv;
+
+  /* remove all children */
+  while (priv->children->len > 0)
+    {
+      clutter_actor_destroy (g_array_index (priv->children, ClutterActor*,
+                                            0));
+      g_array_remove_index_fast (priv->children, 0);
+    }
+}
+
+/**
+ * mex_grid_populate:
+ *
+ * Populate the grid with the items from the model
+ */
+static void
+mex_grid_populate (MexGrid *grid)
+{
+  MexContent *content;
+  gint i = 0;
+
+  while ((content = mex_model_get_content (grid->priv->model, i)))
+    mex_grid_add_content (grid, content, i++);
+}
+
+static void
+mex_grid_controller_changed (GController          *controller,
+                             GControllerAction     action,
+                             GControllerReference *ref,
+                             MexGrid              *grid)
+{
+  MexGridPrivate *priv = grid->priv;
+  gint i, n_indices;
+  MexContent *content;
+  ClutterActor *box;
+
+  n_indices = g_controller_reference_get_n_indices (ref);
+
+  switch (action)
+    {
+    case G_CONTROLLER_ADD:
+      for (i = 0; i < n_indices; i++)
+        {
+          gint content_index = g_controller_reference_get_index_uint (ref, i);
+          content = mex_model_get_content (priv->model, content_index);
+
+          mex_grid_add_content (grid, content, content_index);
+        }
+      break;
+
+    case G_CONTROLLER_REMOVE:
+      for (i = 0; i < n_indices; i++)
+        {
+          gint content_index = g_controller_reference_get_index_uint (ref, i);
+
+          box = g_array_index (priv->children, ClutterActor*, content_index);
+
+          clutter_actor_destroy (box);
+          g_array_remove_index (priv->children, content_index);
+        }
+      break;
+
+    case G_CONTROLLER_UPDATE:
+      /* Should be no need for this, GBinding sorts it out for us :) */
+      break;
+
+    case G_CONTROLLER_CLEAR:
+      mex_grid_clear (grid);
+      break;
+
+    case G_CONTROLLER_REPLACE:
+      mex_grid_clear (grid);
+      mex_grid_populate (grid);
+      break;
+
+    case G_CONTROLLER_INVALID_ACTION:
+      g_warning (G_STRLOC ": Controller has issued an error");
+      break;
+
+    default:
+      g_warning (G_STRLOC ": Unhandled action");
+      break;
+    }
+
+  clutter_actor_queue_relayout (CLUTTER_ACTOR (grid));
+}
+
+void
+mex_grid_set_model (MexGrid *grid, MexModel *model)
+{
+  MexGridPrivate *priv;
+  GController *controller;
+
+  g_return_if_fail (MEX_IS_GRID (grid));
+  g_return_if_fail (model == NULL || MEX_IS_MODEL (model));
+
+  priv = grid->priv;
+
+  if (priv->model)
+    {
+      /* remove all children */
+      while (priv->children->len > 0)
+        {
+          clutter_actor_destroy (g_array_index (priv->children, ClutterActor*,
+                                                0));
+          g_array_remove_index_fast (priv->children, 0);
+        }
+
+      /* remove "changed" signal handler */
+      controller = mex_model_get_controller (priv->model);
+      g_signal_handlers_disconnect_by_func (controller,
+                                            mex_grid_controller_changed, grid);
+
+      g_object_unref (priv->model);
+    }
+
+  if (model)
+    {
+      priv->model = g_object_ref (model);
+
+      /* add items currently in the model */
+      mex_grid_populate (grid);
+
+
+      controller = mex_model_get_controller (model);
+      g_signal_connect (controller, "changed",
+                        G_CALLBACK (mex_grid_controller_changed), grid);
+    }
+  else
+    {
+      priv->model = NULL;
+    }
+}
+
+MexModel *
+mex_grid_get_model (MexGrid *grid)
+{
+  g_return_val_if_fail (MEX_IS_GRID (grid), NULL);
+
+  return grid->priv->model;
 }
