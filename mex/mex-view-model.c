@@ -864,8 +864,10 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                                                    position);
               g_controller_emit_changed (priv->controller, ref);
 
-              if (priv->limit && position < priv->limit)
+              if (priv->limit && position < priv->limit
+                  && priv->external_items->len > priv->limit)
                 {
+                  /* remove the item that is no longer visible */
                   ref = g_controller_create_reference (priv->controller,
                                                        G_CONTROLLER_REMOVE,
                                                        G_TYPE_UINT, 1,
