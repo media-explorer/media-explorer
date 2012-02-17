@@ -1124,6 +1124,8 @@ mex_column_clear (MexColumn *column)
       clutter_actor_destroy (CLUTTER_ACTOR (priv->children->data));
       priv->children = g_list_delete_link (priv->children, priv->children);
     }
+
+  priv->current_focus = NULL;
 }
 
 /**
@@ -1163,6 +1165,9 @@ mex_column_controller_changed (GController          *controller,
           gint content_index = g_controller_reference_get_index_uint (ref, i);
 
           lnk = g_list_nth (priv->children, content_index);
+
+          if (lnk->data == priv->current_focus)
+            priv->current_focus = NULL;
 
           clutter_actor_destroy (lnk->data);
           priv->children = g_list_delete_link (priv->children, lnk);
