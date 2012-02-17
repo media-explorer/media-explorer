@@ -206,6 +206,7 @@ mex_column_add_content (MexColumn  *column,
 
   box = mex_content_box_new ();
   mex_content_view_set_content (MEX_CONTENT_VIEW (box), content);
+  mex_content_view_set_context (MEX_CONTENT_VIEW (box), priv->model);
 
   sibling = g_list_nth (priv->children, position);
   priv->children = g_list_insert_before (priv->children, sibling, box);

@@ -1394,6 +1394,7 @@ mex_grid_add_content (MexGrid    *grid,
                           G_BINDING_SYNC_CREATE);
 
   mex_content_view_set_content (MEX_CONTENT_VIEW (box), content);
+  mex_content_view_set_context (MEX_CONTENT_VIEW (box), priv->model);
 
   clutter_actor_set_parent (box, CLUTTER_ACTOR (grid));
 
