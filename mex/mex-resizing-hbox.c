@@ -137,19 +137,14 @@ mex_resizing_hbox_open (MexScene              *actor,
   /* fade in the children of the column */
   if (MEX_IS_COLUMN_VIEW (priv->current_focus))
     {
-      ClutterActor *container;
-      GList *actors, *children;
+      MexColumn *column;
+      MexColumnView *view;
 
-      container =
-        (ClutterActor *) mex_column_view_get_column (MEX_COLUMN_VIEW (priv->current_focus));
-      children = clutter_container_get_children (CLUTTER_CONTAINER (container));
+      view = (MexColumnView *) (priv->current_focus);
 
-      for (actors = children; actors; actors = g_list_next (actors))
-        {
-          clutter_actor_set_opacity (actors->data, 255);
-        }
+      column = mex_column_view_get_column (view);
 
-      g_list_free (children);
+      mex_column_set_child_opacity (column, 255);
     }
 
   clutter_timeline_start (priv->state_timeline);
@@ -1182,20 +1177,14 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
       /* fade in/out the children of the column */
       if (MEX_IS_COLUMN_VIEW (priv->current_focus))
         {
-          ClutterActor *container;
-          GList *l, *children;
+          MexColumn *column;
+          MexColumnView *view;
 
-          container =
-            (ClutterActor *) mex_column_view_get_column (MEX_COLUMN_VIEW (priv->current_focus));
-          children =
-            clutter_container_get_children (CLUTTER_CONTAINER (container));
+          view = (MexColumnView *) (priv->current_focus);
 
-          for (l = children; l; l = g_list_next (l))
-            {
-              clutter_actor_set_opacity (l->data, 255 * (1 - state_progress));
-            }
+          column = mex_column_view_get_column (view);
 
-          g_list_free (children);
+          mex_column_set_child_opacity (column, 255 * (1 - state_progress));
         }
 
       clutter_actor_allocate (priv->current_focus, &child_box, flags);

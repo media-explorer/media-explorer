@@ -470,25 +470,6 @@ mex_explorer_clear_cb (gpointer data, gpointer user_data)
 }
 
 static void
-mex_explorer_column_object_created_cb (MexProxy     *proxy,
-                                       MexContent   *content,
-                                       ClutterActor *object,
-                                       gpointer      column)
-{
-  const gchar *mime_type;
-
-  /* filter out folders from column views */
-  mime_type = mex_content_get_metadata (content,
-                                        MEX_CONTENT_METADATA_MIMETYPE);
-
-  if (g_strcmp0 (mime_type, "x-grl/box") == 0)
-    {
-      g_signal_stop_emission_by_name (proxy, "object-created");
-      return;
-    }
-}
-
-static void
 mex_explorer_column_activated_cb (ClutterActor *column,
                                   MexExplorer  *explorer)
 {
@@ -576,7 +557,6 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
                              MexExplorer       *explorer)
 {
   MexModel *view_model;
-  MexProxy *proxy;
   gchar *placeholder_text;
   ClutterContainer *container;
   ClutterActor *column_view, *label;
@@ -683,24 +663,9 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
                         explorer);
     }
 
-  /* Create the proxy to create objects for the column */
-  proxy = mex_content_proxy_new (view_model,
-                                 CLUTTER_CONTAINER (column),
-                                 MEX_TYPE_CONTENT_BOX);
-  mex_content_proxy_set_stage (MEX_CONTENT_PROXY (proxy),
-                               (ClutterStage *)clutter_actor_get_stage (
-                                 CLUTTER_ACTOR (explorer)));
 
-  /* Setup qdata and weak references so we can get references back to
-   * the container/the explorer/the model and so that we can forward
-   * the appropriate signals.
-   */
-  g_object_weak_ref (G_OBJECT (column_view),
-                     (GWeakNotify)g_object_unref,
-                     proxy);
-  g_signal_connect (proxy, "object-created",
-                    G_CALLBACK (mex_explorer_column_object_created_cb),
-                    column);
+  /* set the model on the column */
+  mex_column_set_model (column, view_model);
 
   g_signal_connect (column_view, "activated",
                     G_CALLBACK (mex_explorer_column_activated_cb),

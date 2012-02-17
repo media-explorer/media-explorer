@@ -78,6 +78,11 @@ void     mex_column_set_focus (MexColumn *column, gboolean focus);
 
 gboolean mex_column_get_opened (MexColumn *column);
 
+void      mex_column_set_model (MexColumn *column, MexModel *model);
+MexModel* mex_column_get_model (MexColumn *column);
+
+void      mex_column_set_child_opacity (MexColumn *column, guchar opacity);
+
 G_END_DECLS
 
 #endif /* __MEX_COLUMN_H__ */

@@ -20,6 +20,7 @@
 #include "mex-column.h"
 #include "mex-column-view.h"
 #include "mex-content-box.h"
+#include "mex-content-view.h"
 #include "mex-scroll-view.h"
 #include "mex-tile.h"
 #include "mex-shadow.h"
@@ -50,9 +51,10 @@ struct _MexColumnPrivate
 
   MxAdjustment *adjustment;
   gdouble       adjustment_value;
+
+  MexModel *model;
 };
 
-static void clutter_container_iface_init (ClutterContainerIface *iface);
 static void mx_scrollable_iface_init (MxScrollableIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 static void mx_stylable_iface_init (MxStylableIface *iface);
@@ -60,8 +62,6 @@ static void mex_scrollable_iface_init (MexScrollableContainerInterface *iface);
 
 #define GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), MEX_TYPE_COLUMN, MexColumnPrivate))
 G_DEFINE_TYPE_WITH_CODE (MexColumn, mex_column, MX_TYPE_WIDGET,
-                         G_IMPLEMENT_INTERFACE (CLUTTER_TYPE_CONTAINER,
-                                                clutter_container_iface_init)
                          G_IMPLEMENT_INTERFACE (MX_TYPE_SCROLLABLE,
                                                 mx_scrollable_iface_init)
                          G_IMPLEMENT_INTERFACE (MX_TYPE_FOCUSABLE,
@@ -187,169 +187,50 @@ content_box_open_notify (MexContentBox *box,
   g_object_notify (G_OBJECT (column), "opened");
 }
 
-/* ClutterContainerIface */
-
+/**
+ * mex_column_add_content:
+ *
+ * Add an item to the column for the specified content at the specified
+ * position.
+ */
 static void
-mex_column_add (ClutterContainer *container,
-                ClutterActor     *actor)
+mex_column_add_content (MexColumn  *column,
+                        MexContent *content,
+                        guint       position)
 {
-  MexColumn *self = MEX_COLUMN (container);
-  MexColumnPrivate *priv = self->priv;
+  MexColumnPrivate *priv = column->priv;
+  ClutterActor *box;
+  MexShadow *shadow;
+  ClutterColor shadow_color = { 0, 0, 0, 128 };
+  GList *sibling;
 
-  priv->children = g_list_append (priv->children, actor);
+  box = mex_content_box_new ();
+  mex_content_view_set_content (MEX_CONTENT_VIEW (box), content);
+
+  sibling = g_list_nth (priv->children, position);
+  priv->children = g_list_insert_before (priv->children, sibling, box);
   priv->n_items ++;
 
-  /* Expand/collapse any drawer that gets added as appropriate */
-  if (MEX_IS_CONTENT_BOX (actor))
-    {
-      MexShadow *shadow;
-      ClutterColor shadow_color = { 0, 0, 0, 128 };
+  /* add shadow */
+  shadow = mex_shadow_new ();
+  mex_shadow_set_paint_flags (shadow,
+                              MEX_TEXTURE_FRAME_TOP
+                              | MEX_TEXTURE_FRAME_BOTTOM);
+  mex_shadow_set_radius_y (shadow, 25);
+  mex_shadow_set_color (shadow, &shadow_color);
+  clutter_actor_add_effect_with_name (CLUTTER_ACTOR (box), "shadow",
+                                      CLUTTER_EFFECT (shadow));
+  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (shadow), FALSE);
 
-      shadow = mex_shadow_new ();
-      mex_shadow_set_paint_flags (shadow,
-                                  MEX_TEXTURE_FRAME_TOP
-                                  | MEX_TEXTURE_FRAME_BOTTOM);
-      mex_shadow_set_radius_y (shadow, 25);
-      mex_shadow_set_color (shadow, &shadow_color);
-      clutter_actor_add_effect_with_name (CLUTTER_ACTOR (actor), "shadow",
-                                          CLUTTER_EFFECT (shadow));
-      clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (shadow), FALSE);
+  g_signal_connect (box, "notify::open",
+                    G_CALLBACK (content_box_open_notify), column);
 
-      g_signal_connect (actor, "notify::open",
-                        G_CALLBACK (content_box_open_notify), container);
+  /* set important if the column has focus */
+  mex_content_box_set_important (MEX_CONTENT_BOX (box), priv->has_focus);
 
-      mex_content_box_set_important (MEX_CONTENT_BOX (actor), priv->has_focus);
-
-    }
-
-  clutter_actor_set_parent (actor, CLUTTER_ACTOR (self));
-
-  g_signal_emit_by_name (self, "actor-added", actor);
+  clutter_actor_set_parent (box, CLUTTER_ACTOR (column));
 }
 
-static void
-mex_column_remove (ClutterContainer *container,
-                   ClutterActor     *actor)
-{
-  GList *link_;
-
-  MexColumn *self = MEX_COLUMN (container);
-  MexColumnPrivate *priv = self->priv;
-
-  link_ = g_list_find (priv->children, actor);
-
-  if (!link_)
-    {
-      g_warning (G_STRLOC ": Trying to remove an unknown child");
-      return;
-    }
-
-  if (priv->current_focus == actor)
-    {
-      priv->current_focus = link_->next ? link_->next->data :
-        (link_->prev ? link_->prev->data : NULL);
-    }
-
-  g_signal_handlers_disconnect_by_func (actor,
-                                        content_box_open_notify,
-                                        container);
-
-  /* Remove the old actor */
-  if (priv->expand_timeline)
-    g_signal_handlers_disconnect_by_func (priv->expand_timeline,
-                                          mex_column_expand_child,
-                                          actor);
-  g_object_ref (actor);
-
-  clutter_actor_unparent (actor);
-  priv->children = g_list_delete_link (priv->children, link_);
-  priv->n_items --;
-
-  /* children may not be at full opacity if the item removed was "open" */
-  if (MEX_IS_CONTENT_BOX (actor)
-      && mex_content_box_get_open (MEX_CONTENT_BOX (actor)))
-    {
-      GList *l;
-
-      for (l = priv->children; l; l = l->next)
-        clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
-                               "opacity", 255, NULL);
-
-      priv->open_boxes--;
-      g_object_notify (G_OBJECT (self), "opened");
-    }
-
-  g_signal_emit_by_name (self, "actor-removed", actor);
-
-  g_object_unref (actor);
-}
-
-static void
-mex_column_foreach (ClutterContainer *container,
-                    ClutterCallback   callback,
-                    gpointer          user_data)
-{
-  MexColumn *self = MEX_COLUMN (container);
-  MexColumnPrivate *priv = self->priv;
-
-  g_list_foreach (priv->children, (GFunc)callback, user_data);
-}
-
-static void
-mex_column_reorder (ClutterContainer *container,
-                    ClutterActor     *actor,
-                    ClutterActor     *sibling,
-                    gboolean          after)
-{
-  GList *l, *sibling_link;
-  MexColumnPrivate *priv = MEX_COLUMN (container)->priv;
-
-  l = g_list_find (priv->children, actor);
-  sibling_link = g_list_find (priv->children, sibling);
-
-  if (!l || !sibling_link)
-    {
-      g_warning (G_STRLOC ": Children not found in internal child list");
-      return;
-    }
-
-  if (after)
-    sibling_link = g_list_next (sibling_link);
-
-  if (l == sibling_link)
-    return;
-
-  priv->children = g_list_delete_link (priv->children, l);
-  priv->children = g_list_insert_before (priv->children, sibling_link, actor);
-
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
-}
-
-static void
-mex_column_raise (ClutterContainer *container,
-                  ClutterActor     *actor,
-                  ClutterActor     *sibling)
-{
-  mex_column_reorder (container, actor, sibling, TRUE);
-}
-
-static void
-mex_column_lower (ClutterContainer *container,
-                  ClutterActor     *actor,
-                  ClutterActor     *sibling)
-{
-  mex_column_reorder (container, actor, sibling, FALSE);
-}
-
-static void
-clutter_container_iface_init (ClutterContainerIface *iface)
-{
-  iface->add = mex_column_add;
-  iface->remove = mex_column_remove;
-  iface->foreach = mex_column_foreach;
-  iface->raise = mex_column_raise;
-  iface->lower = mex_column_lower;
-}
 
 /* MxScrollableIface */
 
@@ -647,8 +528,8 @@ mex_column_dispose (GObject *object)
       priv->expand_timeline = NULL;
     }
 
-  while (priv->children)
-    clutter_actor_destroy (CLUTTER_ACTOR (priv->children->data));
+  /* unset the model and remove children */
+  mex_column_set_model (MEX_COLUMN (object), NULL);
 
   G_OBJECT_CLASS (mex_column_parent_class)->dispose (object);
 }
@@ -1210,6 +1091,108 @@ mex_column_init (MexColumn *self)
   priv->expand_timeline = clutter_timeline_new (1);
 }
 
+/**
+ * mex_column_populate:
+ *
+ * Add an item to the column for each item in the current model
+ */
+static void
+mex_column_populate (MexColumn *column)
+{
+  MexContent *content;
+  gint i = 0;
+
+  g_return_if_fail (column->priv->model != NULL);
+
+  while ((content = mex_model_get_content (column->priv->model, i)))
+    mex_column_add_content (column, content, i++);
+}
+
+/**
+ * mex_column_clear:
+ *
+ * Remove all items from the column.
+ */
+static void
+mex_column_clear (MexColumn *column)
+{
+  MexColumnPrivate *priv = column->priv;
+
+  while (priv->children)
+    {
+      clutter_actor_destroy (CLUTTER_ACTOR (priv->children->data));
+      priv->children = g_list_delete_link (priv->children, priv->children);
+    }
+}
+
+/**
+ * mex_column_controller_changed:
+ *
+ * Callback for when the current model controller's "changed" signal is emitted
+ */
+static void
+mex_column_controller_changed (GController          *controller,
+                               GControllerAction     action,
+                               GControllerReference *ref,
+                               MexColumn            *column)
+{
+  MexColumnPrivate *priv = column->priv;
+  gint i, n_indices;
+  MexContent *content;
+
+  n_indices = g_controller_reference_get_n_indices (ref);
+
+  switch (action)
+    {
+    case G_CONTROLLER_ADD:
+      for (i = 0; i < n_indices; i++)
+        {
+          gint content_index = g_controller_reference_get_index_uint (ref, i);
+          content = mex_model_get_content (priv->model, content_index);
+
+          mex_column_add_content (column, content, content_index);
+        }
+      break;
+
+    case G_CONTROLLER_REMOVE:
+      for (i = 0; i < n_indices; i++)
+        {
+          GList *lnk;
+
+          gint content_index = g_controller_reference_get_index_uint (ref, i);
+
+          lnk = g_list_nth (priv->children, content_index);
+
+          clutter_actor_destroy (lnk->data);
+          priv->children = g_list_delete_link (priv->children, lnk);
+        }
+      break;
+
+    case G_CONTROLLER_UPDATE:
+      break;
+
+    case G_CONTROLLER_CLEAR:
+      mex_column_clear (column);
+      break;
+
+    case G_CONTROLLER_REPLACE:
+      mex_column_clear (column);
+      mex_column_populate (column);
+      break;
+
+    case G_CONTROLLER_INVALID_ACTION:
+      g_warning (G_STRLOC ": Controller has issued an error");
+      break;
+
+    default:
+      g_warning (G_STRLOC ": Unhandled action");
+      break;
+    }
+
+  clutter_actor_queue_relayout (CLUTTER_ACTOR (column));
+}
+
+
 
 ClutterActor *
 mex_column_new (void)
@@ -1283,4 +1266,81 @@ mex_column_get_opened (MexColumn *column)
   g_return_val_if_fail (MEX_IS_COLUMN (column), FALSE);
 
   return column->priv->open_boxes != 0;
+}
+
+/**
+ * mex_column_set_model:
+ *
+ * Set the current model.
+ */
+void
+mex_column_set_model (MexColumn *column,
+                      MexModel  *model)
+{
+  MexColumnPrivate *priv;
+  GController *controller;
+
+  g_return_if_fail (MEX_IS_COLUMN (column));
+  g_return_if_fail (model == NULL || MEX_IS_MODEL (model));
+
+  priv = column->priv;
+
+  if (priv->model)
+    {
+      /* remove the "changed" signal handler */
+      controller = mex_model_get_controller (priv->model);
+      g_signal_handlers_disconnect_by_func (controller,
+                                            mex_column_controller_changed,
+                                            column);
+
+      /* clear the column */
+      mex_column_clear (column);
+
+      /* remove the model */
+      g_object_unref (priv->model);
+    }
+
+  if (model)
+    {
+      priv->model = g_object_ref (model);
+
+      mex_column_populate (column);
+
+      controller = mex_model_get_controller (priv->model);
+      g_signal_connect (controller, "changed",
+                        G_CALLBACK (mex_column_controller_changed),
+                        column);
+    }
+  else
+    priv->model = NULL;
+}
+
+/**
+ * mex_column_get_model:
+ *
+ * Get the current model.
+ *
+ * Returns: the current model
+ */
+MexModel*
+mex_column_get_model (MexColumn *column)
+{
+  g_return_val_if_fail (MEX_IS_COLUMN (column), NULL);
+
+  return column->priv->model;
+}
+
+/**
+ * mex_column_set_child_opacity
+ *
+ * Set the opacity of children in the column.
+ */
+void
+mex_column_set_child_opacity (MexColumn *column,
+                              guchar     opacity)
+{
+  GList *l;
+
+  for (l = column->priv->children; l; l = g_list_next (l))
+    clutter_actor_set_opacity (l->data, opacity);
 }
