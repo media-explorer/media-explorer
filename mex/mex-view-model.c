@@ -1065,9 +1065,14 @@ void
 mex_view_model_set_loop (MexViewModel *self,
                          gboolean      loop)
 {
-  self->priv->looped = loop;
+  g_return_if_fail (MEX_IS_VIEW_MODEL (self));
 
-  mex_view_model_refresh_external_items (self);
+  if (self->priv->looped != loop)
+    {
+      self->priv->looped = loop;
+
+      mex_view_model_refresh_external_items (self);
+    }
 }
 
 void
@@ -1081,6 +1086,8 @@ mex_view_model_set_filter_by (MexViewModel       *model,
   MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
   FilterKeyValue *filter;
   GList *list;
+
+  g_return_if_fail (MEX_IS_VIEW_MODEL (model));
 
   /* clear the old filter by list */
   for (list = priv->filter_by; list; list = g_list_next (list))
@@ -1139,7 +1146,13 @@ void
 mex_view_model_set_group_by (MexViewModel       *model,
                              MexContentMetadata  metadata_key)
 {
-  MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+  MexViewModelPrivate *priv;
+
+  g_return_if_fail (MEX_IS_VIEW_MODEL (model));
+
+  priv = MEX_VIEW_MODEL (model)->priv;
+
+
 
   if (priv->group_by_key == metadata_key)
     return;
@@ -1156,7 +1169,11 @@ mex_view_model_set_order_by (MexViewModel       *model,
                              MexContentMetadata  metadata_key,
                              gboolean            descending)
 {
-  MexViewModelPrivate *priv = MEX_VIEW_MODEL (model)->priv;
+  MexViewModelPrivate *priv;
+
+  g_return_if_fail (MEX_IS_VIEW_MODEL (model));
+
+  priv = MEX_VIEW_MODEL (model)->priv;
 
   if (priv->order_by_key == metadata_key
       && priv->order_by_descending == descending)
