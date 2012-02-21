@@ -4,10 +4,6 @@ if ENABLE_TESTS
 SUBDIRS += tests
 endif
 
-if ENABLE_EXAMPLES
-SUBDIRS += examples
-endif
-
 if ENABLE_EXTERNAL_PLAYER
 SUBDIRS += player
 endif

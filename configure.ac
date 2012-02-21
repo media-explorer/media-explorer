@@ -374,17 +374,6 @@ AM_CONDITIONAL([ENABLE_TESTS], [test "x$enable_tests" = "xyes"])
 AS_IF([test "x$enable_tests" = "xyes"],
       AC_DEFINE([ENABLE_TESTS], [1], [Build unit tests]))
 
-# Compile examples
-AC_ARG_ENABLE([examples],
-              [AC_HELP_STRING([--enable-examples=@<:@no/yes@:>@],
-                              [Build the examples default=yes])],
-              [],
-              [enable_examples=yes])
-
-AM_CONDITIONAL([ENABLE_EXAMPLES], [test "x$enable_examples" = "xyes"])
-AS_IF([test "x$enable_examples" = "xyes"],
-      AC_DEFINE([ENABLE_EXAMPLES], [1], [Build examples]))
-
 # GTK Doc check
 m4_ifdef([GTK_DOC_CHECK], [
 GTK_DOC_CHECK([1.13], [--flavour no-tmpl])
@@ -512,7 +501,6 @@ AC_CONFIG_FILES([
   player/Makefile
   data/Makefile
   data/appicons/Makefile
-  examples/Makefile
   doc/Makefile
   doc/reference/Makefile
   doc/reference/mex/Makefile
@@ -544,7 +532,6 @@ echo "        Mx Version        : ${mx_version}"
 echo "        Debugging flags   : ${enable_debug}"
 echo "        Maintainer flags  : ${enable_warning_flags}"
 echo "        Unit tests        : ${enable_tests}"
-echo "        Examples          : ${enable_examples}"
 echo "        Introspection data: ${enable_introspection}"
 echo ""
 echo " • Backends:"
