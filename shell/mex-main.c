@@ -1902,11 +1902,13 @@ out_of_box (MexData *data)
   g_free (out_box_done);
 }
 
+#ifdef HAVE_CLUTTER_X11
 static void
 _close_screen_dialog_cb (MxAction *action, gpointer user_data)
 {
   clutter_main_quit ();
 }
+#endif
 
 /*
  * Check the screen resolution and issue a warning if we're running in a mode
@@ -2020,7 +2022,19 @@ static void
 on_int_term_signaled (int sig)
 {
   cleanup_before_exit ();
+#if MX_CHECK_VERSION(1,99,3)
+    {
+      const GList *windows, *l;
+
+      /* remove all the windows from the application to allow it to quit */
+      windows = mx_application_get_windows (application_for_signal);
+
+      for (l = windows; l; l = g_list_next (l))
+        clutter_actor_destroy (CLUTTER_ACTOR (mx_window_get_clutter_stage (l->data)));
+    }
+#else
   mx_application_quit (application_for_signal);
+#endif
 }
 
 static GOptionEntry entries[] =
@@ -2041,7 +2055,7 @@ static GOptionEntry entries[] =
 };
 
 
-
+#if !MX_CHECK_VERSION(1,99,3)
 static void
 mex_open_files_action (MxAction *action,
                        GVariant *parameter,
@@ -2088,6 +2102,7 @@ mex_open_files_action (MxAction *action,
 
   mex_player_content_set_externally_cb (data);
 }
+#endif
 
 /* Default Actions */
 static MexActionInfo play;
@@ -2222,296 +2237,224 @@ mex_init_default_actions (MexData *data)
   mex_action_manager_add_action (amanager, &group);
 }
 
-
-
-int
-main (int argc, char **argv)
+/**
+ * mex_startup:
+ *
+ * Initialise various settings and create the main UI
+ *
+ */
+static void
+mex_startup (MxApplication *app,
+             MexData       *data)
 {
-  gchar *web_settings_loc;
-  MxWindow *window;
-  MxApplication *app;
-  MxAction *open_files_action;
-  GOptionContext *context;
   MexPluginManager *pmanager;
   MexBackgroundManager *bmanager;
   MexModelManager *mmanager;
   gchar *tmp;
-
-  GError *error = NULL;
-  MexData data = { 0, };
-
+  gchar *web_settings_loc;
 #ifdef HAVE_CLUTTER_CEX100
   const ClutterColor black = { 0x00, 0x00, 0x00, 0x00 };
 #else
   const ClutterColor black = { 0x00, 0x00, 0x00, 0xff };
 #endif /* HAVE_CLUTTER_CEX100 */
 
-  /* initialise translations */
-  setlocale (LC_ALL, "");
-  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
-  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-  textdomain (GETTEXT_PACKAGE);
-
-  /*
-   * Workaround SQLite Tracker backend problems by relying on the bus
-   * backend.
-   */
-  g_setenv ("TRACKER_SPARQL_BACKEND", "bus", TRUE);
-
-  g_thread_init (NULL);
-  g_type_init ();
-
-  /* Options */
-  context = g_option_context_new ("- The Media Explorer UI");
-
-  g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
-  g_option_context_add_group (context, grl_init_get_option_group ());
-  if (!g_option_context_parse (context, &argc, &argv, &error))
-    {
-      g_warning ("Failed to parse options: %s", error->message);
-      g_clear_error (&error);
-      exit (1);
-    }
-  g_option_context_free (context);
-
-  if (opt_version)
-    {
-      g_print ("Media Explorer version %s\n", MEX_VERSION_GIT);
-      exit (EXIT_SUCCESS);
-    }
-
-  g_bus_own_name (G_BUS_TYPE_SESSION, MEX_DBUS_NAME,
-                  G_BUS_NAME_OWNER_FLAGS_NONE, NULL, NULL, NULL, NULL, NULL);
-
-
-  /* log domain */
-  MEX_LOG_DOMAIN_INIT (main_log_domain, "main");
-
-  /* initialise mex */
-  mex_init (&argc, &argv);
-  mex_init_default_actions (&data);
-
-  mex_lirc_init ();
-
-  /* Create application */
-  app = mx_application_new (&argc, &argv, "Media Explorer",
-                            MX_APPLICATION_SINGLE_INSTANCE);
-  if (mx_application_is_running (app))
-    {
-      if (opt_file)
-        {
-          GVariant *param;
-
-          param = g_variant_new_bytestring_array ((const gchar**) opt_file, -1);
-
-          mx_application_invoke_action_with_parameter (app, "Open", param);
-        }
-
-      mx_application_invoke_action (app, "Raise");
-
-      g_object_unref (app);
-
-      return 0;
-    }
-  open_files_action = mx_action_new_with_parameter ("Open",
-                                                    G_VARIANT_TYPE_BYTESTRING_ARRAY);
-  g_signal_connect (open_files_action, "activate",
-                    G_CALLBACK (mex_open_files_action), &data);
-  mx_application_add_action (app, open_files_action);
-
 
   clutter_set_font_flags (clutter_get_font_flags () & ~CLUTTER_FONT_MIPMAPPING);
 
   mex_style_load_default ();
 
-  if (error)
-    {
-      g_warning (G_STRLOC ": Error loading style: %s", error->message);
-      g_clear_error (&error);
-    }
-
 #ifdef HAVE_CLUTTER_CEX100
   /* If we're on CEX100, use the default stage and make it semi-transparent */
-  data.stage = CLUTTER_STAGE (clutter_stage_get_default ());
-  clutter_stage_set_use_alpha (data.stage, TRUE);
-  data.window = window = mx_window_new_with_clutter_stage (data.stage);
+  data->stage = CLUTTER_STAGE (clutter_stage_get_default ());
+  clutter_stage_set_use_alpha (data->stage, TRUE);
+  data->window = mx_window_new_with_clutter_stage (data->stage);
   mx_application_add_window (app, window);
 #else
-  data.window = window = mx_application_create_window (app);
-  data.stage = mx_window_get_clutter_stage (window);
+#if MX_CHECK_VERSION(1,99,3)
+  data->window = mx_application_create_window (app, _("Media Explorer"));
+#else
+  data->window = mx_application_create_window (app);
 #endif
-  mx_window_set_title (window, "Media Explorer");
+  data->stage = mx_window_get_clutter_stage (data->window);
+#endif
+  mx_window_set_title (data->window, "Media Explorer");
 
 
-  mex_set_main_window (window);
+  mex_set_main_window (data->window);
 
-  g_signal_connect (data.stage, "activate",
+  g_signal_connect (data->stage, "activate",
                     G_CALLBACK (on_stage_actived), &data);
-  g_signal_connect (data.stage, "deactivate",
+  g_signal_connect (data->stage, "deactivate",
                     G_CALLBACK (on_stage_deactived), &data);
-  g_signal_connect (data.stage, "notify::fullscreen-set",
-                    G_CALLBACK (on_fullscreen_set), &data);
-  on_fullscreen_set (data.stage, NULL, &data);
+  g_signal_connect (data->stage, "notify::fullscreen-set",
+                    G_CALLBACK (on_fullscreen_set), data);
+  on_fullscreen_set (data->stage, NULL, data);
 
   /* Must set color after set use_alpha */
-  clutter_stage_set_color (data.stage, &black);
+  clutter_stage_set_color (data->stage, &black);
 
-  data.info_bar = mex_info_bar_get_default ();
+  data->info_bar = mex_info_bar_get_default ();
 
   if (getenv ("MEX_DISABLE_QUIT") == NULL)
-    g_signal_connect_swapped (data.info_bar, "close-request",
+#if MX_CHECK_VERSION(1,99,3)
+    g_signal_connect_swapped (data->info_bar, "close-request",
+                              G_CALLBACK (g_application_release), app);
+#else
+    g_signal_connect_swapped (data->info_bar, "close-request",
                               G_CALLBACK (mx_application_quit), app);
+#endif
   else
-    g_signal_connect_swapped (data.info_bar, "close-request",
-                              G_CALLBACK (mex_go_back), &data);
+    g_signal_connect_swapped (data->info_bar, "close-request",
+                              G_CALLBACK (mex_go_back), data);
 
   /* Create bindings pool */
-  data.bindings = clutter_binding_pool_new ("Media Explorer");
+  data->bindings = clutter_binding_pool_new ("Media Explorer");
+
 
   /* Create base widgets */
-  data.layout = mx_box_layout_new ();
-  clutter_actor_set_name (data.layout, "main-layout");
-  data.tool_area = mx_box_layout_new ();
-  clutter_actor_set_name (data.tool_area, "tool-area");
-  data.explorer = mex_explorer_new ();
-  clutter_actor_set_name (data.explorer, "main-explorer");
-  g_signal_connect (data.explorer, "notify::depth",
-                    G_CALLBACK (mex_notify_depth_cb), &data);
-  g_signal_connect (data.explorer, "header-activated",
-                    G_CALLBACK (mex_header_activated_cb), &data);
-  data.spinner = mx_spinner_new ();
-  clutter_actor_set_name (data.spinner, "main-spinner");
-  mx_spinner_set_animating (MX_SPINNER (data.spinner), FALSE);
-  clutter_actor_set_opacity (data.spinner, 0x00);
+  data->layout = mx_box_layout_new ();
+  clutter_actor_set_name (data->layout, "main-layout");
+  data->tool_area = mx_box_layout_new ();
+  clutter_actor_set_name (data->tool_area, "tool-area");
+  data->explorer = mex_explorer_new ();
+  clutter_actor_set_name (data->explorer, "main-explorer");
+  g_signal_connect (data->explorer, "notify::depth",
+                    G_CALLBACK (mex_notify_depth_cb), data);
+  g_signal_connect (data->explorer, "header-activated",
+                    G_CALLBACK (mex_header_activated_cb), data);
+  data->spinner = mx_spinner_new ();
+  clutter_actor_set_name (data->spinner, "main-spinner");
+  mx_spinner_set_animating (MX_SPINNER (data->spinner), FALSE);
+  clutter_actor_set_opacity (data->spinner, 0x00);
 
   /* Hook onto the download-queue length property notification to
    * indicate we're busy
    */
   g_signal_connect (mex_download_queue_get_default (), "notify::queue-length",
-                    G_CALLBACK (mex_notify_download_queue_length_cb), &data);
+                    G_CALLBACK (mex_notify_download_queue_length_cb), data);
 
   /* Pack shell into layout and set to expand */
-  mx_box_layout_set_orientation (MX_BOX_LAYOUT (data.layout),
+  mx_box_layout_set_orientation (MX_BOX_LAYOUT (data->layout),
                                  MX_ORIENTATION_VERTICAL);
 
 
 
   /* Pack info bar into layout */
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (data.layout),
-                                           data.info_bar,
+  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (data->layout),
+                                           data->info_bar,
                                            0, "expand", FALSE,
                                            "x-fill", TRUE,
                                            "y-fill", FALSE, NULL);
 
 
   /* A stack is the top level actor in the window */
-  data.stack = mx_stack_new ();
+  data->stack = mx_stack_new ();
 
   /* It's possible that MexPlayer does not provide an actor that will display
    * the video. This happens on STB hardware when the video is displayed in
    * another frame buffer. */
-  data.player = (ClutterActor *) mex_player_get_default ();
-  g_signal_connect_swapped (data.player, "close-request",
-                            G_CALLBACK (mex_go_back), &data);
-  g_signal_connect_swapped (data.player, "open-request",
+  data->player = (ClutterActor *) mex_player_get_default ();
+  g_signal_connect_swapped (data->player, "close-request",
+                            G_CALLBACK (mex_go_back), data);
+  g_signal_connect_swapped (data->player, "open-request",
                             G_CALLBACK (mex_player_content_set_externally_cb),
-                            &data);
+                            data);
 
-  clutter_actor_hide (data.player);
-  clutter_container_add_actor (CLUTTER_CONTAINER (data.stack),
-                               data.player);
+  clutter_actor_hide (data->player);
+  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
+                               data->player);
 
-  data.media = mex_player_get_clutter_media (MEX_PLAYER (data.player));
-  g_signal_connect (data.media, "error",
-                    G_CALLBACK (mex_player_media_error_cb), &data);
-  g_signal_connect (data.media, "notify::buffer-fill",
-                    G_CALLBACK (mex_player_media_notify_buffer_fill_cb), &data);
+  data->media = mex_player_get_clutter_media (MEX_PLAYER (data->player));
+  g_signal_connect (data->media, "error",
+                    G_CALLBACK (mex_player_media_error_cb), data);
+  g_signal_connect (data->media, "notify::buffer-fill",
+                    G_CALLBACK (mex_player_media_notify_buffer_fill_cb), data);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (data.stack), data.layout);
+  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), data->layout);
 
   /* Pack spinner into stack */
-  clutter_container_add_actor (CLUTTER_CONTAINER (data.stack), data.spinner);
-  mx_stack_child_set_x_fill (MX_STACK (data.stack), data.spinner, FALSE);
-  mx_stack_child_set_y_fill (MX_STACK (data.stack), data.spinner, FALSE);
-  mx_stack_child_set_x_align (MX_STACK (data.stack), data.spinner,
+  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), data->spinner);
+  mx_stack_child_set_x_fill (MX_STACK (data->stack), data->spinner, FALSE);
+  mx_stack_child_set_y_fill (MX_STACK (data->stack), data->spinner, FALSE);
+  mx_stack_child_set_x_align (MX_STACK (data->stack), data->spinner,
                               MX_ALIGN_END);
-  mx_stack_child_set_y_align (MX_STACK (data.stack), data.spinner,
+  mx_stack_child_set_y_align (MX_STACK (data->stack), data->spinner,
                               MX_ALIGN_START);
 
-  data.volume_control = mex_volume_control_new ();
-  clutter_actor_set_opacity (data.volume_control, 0x00);
+  data->volume_control = mex_volume_control_new ();
+  clutter_actor_set_opacity (data->volume_control, 0x00);
 
   /* Pack volume control into stack */
-  clutter_container_add_actor (CLUTTER_CONTAINER (data.stack), data.volume_control);
-  mx_stack_child_set_x_fill (MX_STACK (data.stack), data.volume_control, FALSE);
-  mx_stack_child_set_y_fill (MX_STACK (data.stack), data.volume_control, FALSE);
-  mx_stack_child_set_x_align (MX_STACK (data.stack), data.volume_control,
+  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), data->volume_control);
+  mx_stack_child_set_x_fill (MX_STACK (data->stack), data->volume_control, FALSE);
+  mx_stack_child_set_y_fill (MX_STACK (data->stack), data->volume_control, FALSE);
+  mx_stack_child_set_x_align (MX_STACK (data->stack), data->volume_control,
                               MX_ALIGN_MIDDLE);
-  mx_stack_child_set_y_align (MX_STACK (data.stack), data.volume_control,
+  mx_stack_child_set_y_align (MX_STACK (data->stack), data->volume_control,
                               MX_ALIGN_START);
 
   /* listen for notify:volume to show the volume controls when the volume
    * changes (whatever the source of that change is, possibly out of process */
-  g_signal_connect (data.volume_control, "notify::volume",
-                    G_CALLBACK (on_volume_changed), &data);
+  g_signal_connect (data->volume_control, "notify::volume",
+                    G_CALLBACK (on_volume_changed), data);
 
 
-  data.slide_show = mex_slide_show_new ();
-  g_signal_connect_swapped (data.slide_show, "close-request",
-                            G_CALLBACK (mex_go_back), &data);
-  clutter_container_add_actor (CLUTTER_CONTAINER (data.stack), data.slide_show);
-  clutter_actor_hide (data.slide_show);
+  data->slide_show = mex_slide_show_new ();
+  g_signal_connect_swapped (data->slide_show, "close-request",
+                            G_CALLBACK (mex_go_back), data);
+  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), data->slide_show);
+  clutter_actor_hide (data->slide_show);
 
   if (opt_show_version == TRUE)
     {
       /* Pack the version in the stack and align it to the bottom left */
-      data.version = mx_label_new_with_text ("v" MEX_VERSION_GIT);
+      data->version = mx_label_new_with_text ("v" MEX_VERSION_GIT);
 
-      clutter_container_add_actor (CLUTTER_CONTAINER (data.stack),
-                                   data.version);
-      mx_stack_child_set_x_fill (MX_STACK (data.stack), data.version, FALSE);
-      mx_stack_child_set_y_fill (MX_STACK (data.stack), data.version, FALSE);
-      mx_stack_child_set_x_align (MX_STACK (data.stack), data.version,
+      clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
+                                   data->version);
+      mx_stack_child_set_x_fill (MX_STACK (data->stack), data->version, FALSE);
+      mx_stack_child_set_y_fill (MX_STACK (data->stack), data->version, FALSE);
+      mx_stack_child_set_x_align (MX_STACK (data->stack), data->version,
                                   MX_ALIGN_START);
-      mx_stack_child_set_y_align (MX_STACK (data.stack), data.version,
+      mx_stack_child_set_y_align (MX_STACK (data->stack), data->version,
                                   MX_ALIGN_END);
     }
 
   /* Set the stack as the window child */
-  mx_window_set_child (window, data.stack);
+  mx_window_set_child (data->window, data->stack);
 
   /* Resize and display window */
-  mx_window_set_has_toolbar (window, FALSE);
-  mx_window_set_window_size (window, 1280, 720);
-  mx_window_show (window);
+  mx_window_set_has_toolbar (data->window, FALSE);
+  mx_window_set_window_size (data->window, 1280, 720);
+  mx_window_show (data->window);
 
   if (opt_fullscreen)
-    mx_window_set_fullscreen (window, TRUE);
+    mx_window_set_fullscreen (data->window, TRUE);
 
   /* Attach event handler to stage */
-  g_signal_connect (data.stage, "captured-event",
-                    G_CALLBACK (mex_captured_event_cb), &data);
+  g_signal_connect (data->stage, "captured-event",
+                    G_CALLBACK (mex_captured_event_cb), data);
 
-  g_signal_connect (data.stage, "event",
-                    G_CALLBACK (mex_event_cb), &data);
+  g_signal_connect (data->stage, "event",
+                    G_CALLBACK (mex_event_cb), data);
 
 
   /* Create model->provider mapping hash-table */
-  data.model_to_provider = g_hash_table_new (NULL, NULL);
+  data->model_to_provider = g_hash_table_new (NULL, NULL);
 
   /* Create the 'Up folder' shortcut content */
-  data.folder_content =
+  data->folder_content =
     g_object_ref_sink (MEX_CONTENT (mex_program_new (NULL)));
-  mex_content_set_metadata (data.folder_content,
+  mex_content_set_metadata (data->folder_content,
                             MEX_CONTENT_METADATA_TITLE,
                             _("Back"));
-  mex_content_set_metadata (data.folder_content,
+  mex_content_set_metadata (data->folder_content,
                             MEX_CONTENT_METADATA_MIMETYPE,
                             "x-mex/back");
 
   tmp = g_strconcat ("file://", mex_get_data_dir (),
                      "/shell/style/folder-tile-up.png", NULL);
-  mex_content_set_metadata (data.folder_content,
+  mex_content_set_metadata (data->folder_content,
                             MEX_CONTENT_METADATA_STILL, tmp);
   g_free (tmp);
 
@@ -2519,29 +2462,29 @@ main (int argc, char **argv)
   /* Background manager */
   bmanager = mex_background_manager_get_default ();
   g_signal_connect (bmanager, "background-changed",
-                    G_CALLBACK (mex_background_changed_cb), &data);
+                    G_CALLBACK (mex_background_changed_cb), data);
 
   /* Populate interface by loading plugins */
   pmanager = mex_plugin_manager_get_default ();
   g_signal_connect (pmanager, "plugin-loaded",
-                    G_CALLBACK (mex_plugin_loaded_cb), &data);
+                    G_CALLBACK (mex_plugin_loaded_cb), data);
   mex_plugin_manager_refresh (pmanager);
 
 
   /* set the root model on the explorer */
   mmanager = mex_model_manager_get_default ();
-  mex_explorer_set_root_model (MEX_EXPLORER (data.explorer),
+  mex_explorer_set_root_model (MEX_EXPLORER (data->explorer),
                                mex_model_manager_get_root_model (mmanager));
 
 
   /* wait for content to be loaded before activating the home screen */
-  g_timeout_add (500, (GSourceFunc) mex_finish_home_screen, &data);
+  g_timeout_add (500, (GSourceFunc) mex_finish_home_screen, data);
 
 
   if (!opt_ignore_res)
-    check_resolution (&data);
+    check_resolution (data);
   if (opt_touch)
-    mex_enable_touch_events (&data, TRUE);
+    mex_enable_touch_events (data, TRUE);
 
 
 #if defined (HAVE_WEBREMOTE)
@@ -2551,6 +2494,7 @@ main (int argc, char **argv)
     {
       GKeyFile *web_settings;
       gboolean autostart;
+      GError *error = NULL;
 
       web_settings = g_key_file_new ();
 
@@ -2587,20 +2531,200 @@ main (int argc, char **argv)
   signal (SIGTERM, on_int_term_signaled);
 
   /* Out of the box experience */
-  out_of_box (&data);
+  out_of_box (data);
 
   /* Start with background video activated */
-  mex_activate_background (&data, TRUE);
+  mex_activate_background (data, TRUE);
 
-  /* open any files from the command line */
+#if MX_CHECK_VERSION(1,99,3)
   if (opt_file)
-    g_action_activate (G_ACTION (open_files_action),
-                       g_variant_new_bytestring_array ((const gchar**) opt_file,
-                                                       -1));
+    {
+      gint i = 0;
+      GFile **files;
+
+      while (opt_file[i])
+        i++;
+
+      files = g_new (GFile*, i);
+
+      for (i = 0; opt_file[i]; i++)
+        {
+          GFile *file = g_file_new_for_path (opt_file[i]);
+
+          files[i] = file;
+        }
+
+      /* open the files */
+      g_application_open (G_APPLICATION (app), files, i, "");
+
+      /* unref all the files */
+      for (i = 0; opt_file[i]; i++)
+        {
+          g_object_unref (files[i]);
+        }
+    }
+#endif
+}
+
+#if MX_CHECK_VERSION(1,99,3)
+/**
+ * mex_open_files:
+ *
+ * Callback for the "open" action on GApplication. Adds the supplied files to
+ * the queue model and sets the current content to the first item.
+ */
+static void
+mex_open_files (GApplication *app,
+                gpointer      files,
+                gint          n_files,
+                gchar        *hint,
+                gpointer      user_data)
+{
+  MexContent *first_content = NULL;
+  MexData *data = user_data;
+  GList *queue_models = NULL;
+  MexModel *queue_model;
+  gint n;
+
+  queue_models = mex_model_manager_get_models_for_category (mex_model_manager_get_default (),
+                                                            "queue");
+
+  queue_model = MEX_MODEL (queue_models->data);
+
+  for (n = 0; n < n_files; n++)
+    {
+      GFile *file = ((GFile**) files)[n];
+
+      MexContent *content = mex_content_from_uri (g_file_get_uri (file));
+
+      if (content)
+        {
+          if (!first_content)
+            first_content = content;
+
+          mex_model_add_content (queue_model, content);
+        }
+    }
+
+  if (!first_content)
+    return;
+
+  mex_content_view_set_context (MEX_CONTENT_VIEW (data->player),
+                                queue_model);
+  mex_content_view_set_content (MEX_CONTENT_VIEW (data->player),
+                                first_content);
+
+  mex_player_content_set_externally_cb (data);
+}
+#endif
+
+int
+main (int argc, char **argv)
+{
+  MxApplication *app;
+  GOptionContext *context;
+
+  GError *error = NULL;
+  MexData data = { 0, };
+
+  /* initialise translations */
+  setlocale (LC_ALL, "");
+  bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+  textdomain (GETTEXT_PACKAGE);
+
+  /*
+   * Workaround SQLite Tracker backend problems by relying on the bus
+   * backend.
+   */
+  g_setenv ("TRACKER_SPARQL_BACKEND", "bus", TRUE);
+
+  g_thread_init (NULL);
+  g_type_init ();
+
+  /* Options */
+  context = g_option_context_new ("- The Media Explorer UI");
+
+  g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
+  g_option_context_add_group (context, grl_init_get_option_group ());
+  if (!g_option_context_parse (context, &argc, &argv, &error))
+    {
+      g_warning ("Failed to parse options: %s", error->message);
+      g_clear_error (&error);
+      exit (1);
+    }
+  g_option_context_free (context);
+
+  if (opt_version)
+    {
+      g_print ("Media Explorer version %s\n", MEX_VERSION_GIT);
+      exit (EXIT_SUCCESS);
+    }
 
 
+  /* log domain */
+  MEX_LOG_DOMAIN_INIT (main_log_domain, "main");
+
+  /* initialise mex */
+  mex_init (&argc, &argv);
+  mex_init_default_actions (&data);
+
+  mex_lirc_init ();
+
+  /* Create application */
+#if MX_CHECK_VERSION(1,99,3)
+  app = mx_application_new (MEX_DBUS_NAME, G_APPLICATION_HANDLES_OPEN);
+
+  g_signal_connect_after (app, "startup", G_CALLBACK (mex_startup), &data);
+  g_signal_connect_after (app, "open", G_CALLBACK (mex_open_files), &data);
+
+  g_application_run (G_APPLICATION (app), argc, argv);
+
+#else
+  g_bus_own_name (G_BUS_TYPE_SESSION, MEX_DBUS_NAME,
+                  G_BUS_NAME_OWNER_FLAGS_NONE, NULL, NULL, NULL, NULL, NULL);
+
+  app = mx_application_new (&argc, &argv, "Media Explorer",
+                            MX_APPLICATION_SINGLE_INSTANCE);
+
+  if (mx_application_is_running (app))
+    {
+      if (opt_file)
+        {
+          GVariant *param;
+
+          param = g_variant_new_bytestring_array ((const gchar**) opt_file, -1);
+
+          mx_application_invoke_action_with_parameter (app, "Open", param);
+        }
+
+      mx_application_invoke_action (app, "Raise");
+
+      g_object_unref (app);
+
+      return 0;
+    }
+
+    {
+      MxAction *open_files_action;
+
+      open_files_action = mx_action_new_with_parameter ("Open",
+                                                        G_VARIANT_TYPE_BYTESTRING_ARRAY);
+      g_signal_connect (open_files_action, "activate",
+                        G_CALLBACK (mex_open_files_action), &data);
+      mx_application_add_action (app, open_files_action);
+
+      mex_startup (app, &data);
+
+      /* open any files from the command line */
+      if (opt_file)
+        g_action_activate (G_ACTION (open_files_action),
+                           g_variant_new_bytestring_array ((const gchar**) opt_file,
+                                                           -1));
+    }
 
   mx_application_run (app);
+#endif
 
   cleanup_before_exit ();
 
