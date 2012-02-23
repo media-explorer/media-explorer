@@ -97,7 +97,7 @@ AC_SUBST(CLUTTER_GST_REQ_VERSION)
 AC_SUBST(GSTREAMER_REQ_VERSION)
 
 # telepathy plugin
-TELEPATHY_GLIB_REQ_VERSION=0.15.5
+TELEPATHY_GLIB_REQ_VERSION=0.17.5
 
 AC_SUBST(TELEPATHY_GLIB_REQ_VERSION)
 
@@ -479,8 +479,7 @@ AS_MEX_PLUGIN(telepathy,
               [telepathy-glib >= $TELEPATHY_GLIB_REQ_VERSION  \
                gstreamer-0.10                                 \
                telepathy-farstream                            \
-               telepathy-yell                                 \
-               farsight2-0.10])
+               farstream-0.1])
 AS_MEX_PLUGIN(debug-buddy)
 AS_MEX_PLUGIN(gnome-dvb)
 AS_MEX_PLUGIN(opticaldisc)
