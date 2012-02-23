@@ -181,8 +181,6 @@ if USE_PLUGIN_TELEPATHY
 plugins_LTLIBRARIES += mex-telepathy.la
 
 mex_telepathy_la_SOURCES = 			\
-	telepathy/tpy-client-factory.c		\
-	telepathy/tpy-client-factory.h		\
 	telepathy/mex-telepathy-channel.c	\
 	telepathy/mex-telepathy-channel.h	\
 	telepathy/mex-telepathy-plugin.c 	\

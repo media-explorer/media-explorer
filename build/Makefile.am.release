@@ -90,7 +90,7 @@ release-message: $(sha256_file)
 	@echo "  • telepathy-glib ≥ $(TELEPATHY_GLIB_REQ_VERSION)"
 	@echo "  • telepathy-farstream"
 	@echo "  • telepathy-yell"
-	@echo "  • farsight2-0.10"
+	@echo "  • farstream
 	@echo ""
 	@echo "(other plugins might have additional dependencies)"
 	@echo ""

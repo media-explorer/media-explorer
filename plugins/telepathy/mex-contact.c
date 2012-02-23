@@ -22,11 +22,8 @@
 #include "mex-log.h"
 #include "mex-utils.h"
 
-#include <telepathy-glib/dbus.h>
-#include <telepathy-glib/util.h>
-#include <telepathy-glib/interfaces.h>
+#include <telepathy-glib/telepathy-glib.h>
 
-#include <telepathy-yell/interfaces.h>
 
 #define MEX_LOG_DOMAIN_DEFAULT  telepathy_contact_log_domain
 MEX_LOG_DOMAIN_STATIC(telepathy_contact_log_domain);
@@ -292,7 +289,7 @@ mex_contact_compute_mimetype (MexContact *self)
               continue;
             }
 
-          if (!tp_strdiff (chan_type, TPY_IFACE_CHANNEL_TYPE_CALL))
+          if (!tp_strdiff (chan_type, TP_IFACE_CHANNEL_TYPE_CALL))
             {
               guint n;
               gboolean hasAudio = FALSE;
@@ -300,14 +297,14 @@ mex_contact_compute_mimetype (MexContact *self)
 
               /* Query fixed properties */
               if (tp_asv_get_boolean (fixed,
-                                      TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+                                      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
                                       NULL))
                 {
                   hasAudio = TRUE;
                 }
 
               if (tp_asv_get_boolean (fixed,
-                                      TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+                                      TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
                                       NULL))
                 {
                   hasVideo = TRUE;
@@ -316,12 +313,12 @@ mex_contact_compute_mimetype (MexContact *self)
               /* Query allowed properties */
               for (n = 0; allowed != NULL && allowed[n] != NULL; ++n)
                 {
-                  if (!tp_strdiff(TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+                  if (!tp_strdiff(TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
                                   allowed[n]))
                     {
                       hasAudio = TRUE;
                     }
-                  else if (!tp_strdiff(TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+                  else if (!tp_strdiff(TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
                                        allowed[n]))
                     {
                       hasVideo = TRUE;
