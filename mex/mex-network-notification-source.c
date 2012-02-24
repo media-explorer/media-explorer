@@ -106,8 +106,7 @@ _online_notify_cb (gboolean online,
 
       n = mex_notification_source_new_notification (source,
                                                     _("Network connection established"),
-                                                    "icon-notifications",
-                                                    30);
+                                                    "icon-notifications", 7);
       mex_notification_source_emit_notification_added (source, n);
 
       mex_notification_free (n);
@@ -117,7 +116,7 @@ _online_notify_cb (gboolean online,
             n = mex_notification_source_new_notification (source,
                                                           _("Network connection lost"),
                                                           "icon-notifications",
-                                                          -1);
+                                                          7);
 
             priv->offline_notification = n;
             mex_notification_source_emit_notification_added (source, n);
