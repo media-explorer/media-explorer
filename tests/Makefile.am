@@ -3,7 +3,8 @@ include $(top_srcdir)/build/Makefile.am.gtester
 NULL =
 EXTRA_DIST =
 
-noinst_PROGRAMS = $(TEST_PROGS) test-config test-keys test-view test-dvb-scanner
+noinst_PROGRAMS = $(TEST_PROGS) test-config test-keys test-view \
+		  test-dvb-scanner test-dvb-epg
 
 progs_ldadd =						\
 	$(top_builddir)/mex/libmex-@MEX_API_VERSION@.la	\
@@ -47,3 +48,6 @@ test_dvb_scanner_LDADD    = $(progs_ldadd)
 
 test_view_SOURCES  = test-view.c
 test_view_LDADD    = $(progs_ldadd)
+
+test_dvb_epg_SOURCES = test-dvb-epg.c
+test_dvb_epg_LDADD = $(progs_ldadd) $(MEX_LIBS)
