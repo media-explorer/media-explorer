@@ -33,6 +33,7 @@ enum
   PROP_0,
 
   PROP_SERVICE_ID,
+  PROP_PMT,
 
   PROP_FREQUENCY,
   PROP_INVERSION,
@@ -47,8 +48,6 @@ enum
 
 struct _MexDVBTChannelPrivate
 {
-  gchar *service_id;
-
   guint frequency;  /* in kHz */
   MexDvbInversion inversion;
   MexDvbBandwidth bandwidth;
@@ -57,6 +56,9 @@ struct _MexDVBTChannelPrivate
   MexDvbTransmissionMode transmission_mode;
   MexDvbGuard guard;
   MexDvbHierarchy hierarchy;
+
+  gchar *service_id;
+  guint pmt;
 };
 
 
@@ -73,6 +75,10 @@ mex_dvbt_channel_get_property (GObject    *object,
     case PROP_SERVICE_ID:
       g_value_set_string (value, priv->service_id);
       break;
+    case PROP_PMT:
+      g_value_set_uint (value, priv->pmt);
+      break;
+
     case PROP_FREQUENCY:
       g_value_set_uint (value, priv->frequency);
       break;
@@ -119,6 +125,10 @@ mex_dvbt_channel_set_property (GObject      *object,
       g_free (priv->service_id);
       priv->service_id = g_value_dup_string (value);
       break;
+    case PROP_PMT:
+      priv->pmt = g_value_get_uint (value);
+      break;
+
     case PROP_FREQUENCY:
       priv->frequency = g_value_get_uint (value);
       break;
@@ -179,6 +189,13 @@ mex_dvbt_channel_class_init (MexDVBTChannelClass *klass)
                                NULL,
                                MEX_PARAM_READWRITE);
   g_object_class_install_property (object_class, PROP_SERVICE_ID, pspec);
+
+  pspec = g_param_spec_uint ("pmt",
+                             "PMT",
+                             "Program Map Table",
+                             0, G_MAXUINT, 0,
+                             MEX_PARAM_READWRITE);
+  g_object_class_install_property (object_class, PROP_PMT, pspec);
 
   pspec = g_param_spec_uint ("frequency",
                              "Frequency",
@@ -284,6 +301,30 @@ mex_dvbt_channel_set_service_id (MexDVBTChannel *channel,
   priv->service_id  = g_strdup (service_id);
 
   g_object_notify (G_OBJECT (channel), "service-id");
+}
+
+guint
+mex_dvbt_channel_get_pmt (MexDVBTChannel *channel)
+{
+  g_return_val_if_fail (MEX_IS_DVBT_CHANNEL (channel), 0);
+
+  return channel->priv->pmt;
+}
+
+void
+mex_dvbt_channel_set_pmt (MexDVBTChannel *channel,
+                                guint           pmt)
+{
+  MexDVBTChannelPrivate *priv = channel->priv;
+
+  g_return_if_fail (MEX_IS_DVBT_CHANNEL (channel));
+
+  if (pmt == priv->pmt)
+    return;
+
+  priv->pmt = pmt;
+
+  g_object_notify (G_OBJECT (channel), "pmt");
 }
 
 guint

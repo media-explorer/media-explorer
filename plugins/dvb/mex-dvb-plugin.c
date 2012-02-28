@@ -78,7 +78,7 @@ parse_service_id (MexChannel *channel,
   *semi_colon = '\0';
 
   mex_channel_set_name (channel, field);
-  mex_dvbt_channel_set_service_id (channel, field);
+  mex_dvbt_channel_set_service_id (MEX_DVBT_CHANNEL (channel), field);
 
   return TRUE;
 }
@@ -295,6 +295,21 @@ parse_tuning_parameters (MexChannel  *channel,
 }
 
 static gboolean
+parse_pmt (MexChannel  *channel,
+           const gchar *field)
+{
+  gint pmt;
+
+  pmt = atoi (field);
+  if (pmt <= 0)
+    return FALSE;
+
+  mex_dvbt_channel_set_pmt (MEX_DVBT_CHANNEL (channel), pmt);
+
+  return TRUE;
+}
+
+static gboolean
 parse_line (MexDvbPlugin  *plugin,
             const gchar   *line,
             MexChannel   **channel_out)
@@ -339,6 +354,12 @@ parse_line (MexDvbPlugin  *plugin,
   if (g_strcmp0 (fields[4], "27500") != 0)
     {
       error_message = "Expected '27500' field not found";
+      goto parse_error;
+    }
+
+  if (parse_pmt (channel, fields[13]) == FALSE)
+    {
+      error_message = "Invalid PMT";
       goto parse_error;
     }
 

@@ -69,6 +69,9 @@ MexChannel *              mex_dvbt_channel_new                    (void);
 const gchar *             mex_dvbt_channel_get_service_id         (MexDVBTChannel *channel);
 void                      mex_dvbt_channel_set_service_id         (MexDVBTChannel *channel,
                                                                    const gchar    *service_id);
+guint                     mex_dvbt_channel_get_pmt                (MexDVBTChannel *channel);
+void                      mex_dvbt_channel_set_pmt                (MexDVBTChannel *channel,
+                                                                   guint           pmt);
 
 guint                     mex_dvbt_channel_get_frequency          (MexDVBTChannel *channel);
 void                      mex_dvbt_channel_set_frequency          (MexDVBTChannel *channel,

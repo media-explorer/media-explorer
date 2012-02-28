@@ -52,9 +52,12 @@
 #include <gio/gio.h>
 #include <gst/video/video.h>
 
-#include "mex-dvb-player.h"
 #include "mex-log.h"
 #include "mex-private.h"
+#include "mex-channel-manager.h"
+#include "mex-dvbt-channel.h"
+
+#include "mex-dvb-player.h"
 
 #define MEX_LOG_DOMAIN_DEFAULT  dvb_player_log_domain
 MEX_LOG_DOMAIN(dvb_player_log_domain);
@@ -62,6 +65,11 @@ MEX_LOG_DOMAIN(dvb_player_log_domain);
 struct _MexDvbPlayerPrivate
 {
   GstElement *pipeline;
+  GstElement *dvbbasebin;
+  GstElement *decoder;
+
+  gchar *uri;
+  MexChannel *channel;
 
   /* width / height (in pixels) of the frame data before applying the pixel
    * aspect ratio */
@@ -104,16 +112,82 @@ G_DEFINE_TYPE_WITH_CODE (MexDvbPlayer,
                                                 mex_dvb_player_media_init));
 
 static void
+tune_dvbt_channel (MexDvbPlayer   *player,
+                   MexDVBTChannel *channel)
+{
+  MexDvbPlayerPrivate *priv = player->priv;
+
+  g_object_set (priv->dvbbasebin,
+                "frequency", mex_dvbt_channel_get_frequency (channel),
+                "inversion", mex_dvbt_channel_get_inversion (channel),
+                "bandwidth", mex_dvbt_channel_get_bandwidth (channel),
+                "code-rate-hp", mex_dvbt_channel_get_code_rate_hp (channel),
+                "code-rate-lp", mex_dvbt_channel_get_code_rate_lp (channel),
+                "modulation", mex_dvbt_channel_get_modulation (channel),
+                "trans-mode", mex_dvbt_channel_get_transmission_mode (channel),
+                "guard", mex_dvbt_channel_get_guard (channel),
+                "hierarchy", mex_dvbt_channel_get_hierarchy (channel),
+                "program-numbers", mex_dvbt_channel_get_pmt (channel),
+                NULL);
+}
+
+static void
+set_channel (MexDvbPlayer *player,
+             MexChannel   *channel)
+{
+  MexDvbPlayerPrivate *priv = player->priv;
+
+  if (priv->channel)
+    {
+      g_object_unref (channel);
+      priv->channel = NULL;
+    }
+
+  if (channel)
+    priv->channel = g_object_ref (channel);
+
+  if (MEX_IS_DVBT_CHANNEL (channel))
+    tune_dvbt_channel (player, (MexDVBTChannel *) channel);
+  else
+    g_assert_not_reached ();
+}
+
+static void
 set_uri (MexDvbPlayer *player,
          const gchar  *uri)
 {
-  g_message ("dvb-player: set uri %s", uri);
+  MexDvbPlayerPrivate *priv = player->priv;
+  MexChannelManager *manager;
+  MexChannel *channel;
+  const gchar *service;
+
+  if (!g_str_has_prefix (uri, "dvb://"))
+    {
+      g_warning ("Non valid dvb URI %s", uri);
+      return;
+    }
+
+  service = uri + 6; /* skip "dvb://" */
+
+  manager = mex_channel_manager_get_default ();
+  channel = mex_channel_manager_get_channel_by_service (manager, service);
+
+  if (channel == NULL)
+    {
+      g_warning ("Could not find service '%s'", service);
+      return;
+    }
+
+  g_free (priv->uri);
+  priv->uri = g_strdup (uri);
+
+  set_channel (player, channel);
 }
 
 static const gchar *
 get_uri (MexDvbPlayer *player)
 {
-  return NULL;
+  return player->priv->uri;
 }
 
 static void
@@ -195,27 +269,40 @@ get_duration (MexDvbPlayer *player)
   return 0.0;
 }
 
+/*
+ * This pipeline obviously needs more work, that's a given, it's just the
+ * initial commit to have something working-ish
+ */
+
+static void
+on_pad_added (GstElement   *element,
+              GstPad       *src_pad,
+              MexDvbPlayer *player)
+{
+  MexDvbPlayerPrivate *priv = player->priv;
+  GstPad *sink_pad;
+
+  sink_pad = gst_element_get_static_pad (priv->decoder, "sink");
+  if (gst_pad_can_link (src_pad, sink_pad))
+    gst_pad_link (src_pad, sink_pad);
+  g_object_unref (sink_pad);
+}
+
 static void
 create_pipeline (MexDvbPlayer *player)
 {
   MexDvbPlayerPrivate *priv = player->priv;
-  GstElement *pipeline, *src, *capsfilter, *sink;
-  GstCaps *caps;
+  GstElement *pipeline, *sink, *demuxer;
   gboolean result;
-
-  g_message ("*** create dvb pipeline");
 
   pipeline = gst_pipeline_new (NULL);
 
-  src = gst_element_factory_make ("videotestsrc", NULL);
+  priv->dvbbasebin = gst_element_factory_make ("dvbbasebin", NULL);
 
-  capsfilter = gst_element_factory_make ("capsfilter", NULL);
-  caps = gst_caps_new_simple ("video/x-raw-yuv",
-                              "format", GST_TYPE_FOURCC,
-                                        GST_STR_FOURCC ("I420"),
-                              "framerate", GST_TYPE_FRACTION, 30, 1,
-                              NULL);
-  g_object_set (capsfilter, "caps", caps, NULL);
+  demuxer = gst_element_factory_make ("mpegtsdemux", NULL);
+  g_signal_connect (demuxer, "pad-added", G_CALLBACK (on_pad_added), player);
+
+  priv->decoder = gst_element_factory_make ("mpeg2dec", NULL);
 
   sink = gst_element_factory_make ("cluttersink", NULL);
   g_object_set (G_OBJECT (sink),
@@ -223,8 +310,15 @@ create_pipeline (MexDvbPlayer *player)
                 "qos", TRUE,
 		NULL);
 
-  gst_bin_add_many (GST_BIN (pipeline), src, capsfilter, sink, NULL);
-  result = gst_element_link_many (src, capsfilter, sink, NULL);
+  gst_bin_add_many (GST_BIN (pipeline), priv->dvbbasebin, demuxer,
+                    priv->decoder, sink, NULL);
+  result = gst_element_link (priv->dvbbasebin, demuxer);
+  result &= gst_element_link (priv->decoder, sink);
+
+  g_assert (priv->dvbbasebin);
+  g_assert (demuxer);
+  g_assert (priv->decoder);
+  g_assert (sink);
   g_assert (result);
 
   priv->pipeline = pipeline;
@@ -519,6 +613,8 @@ mex_dvb_player_dispose (GObject *object)
 {
   MexDvbPlayer *self = MEX_DVB_PLAYER (object);
   MexDvbPlayerPrivate *priv = self->priv;
+
+  set_channel (self, NULL);
 
   if (priv->pipeline)
     {
