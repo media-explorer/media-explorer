@@ -413,7 +413,7 @@ mex_utils_content_get_title (MexContent *content, gboolean *allocated)
     return (gchar *)retval;
 
   retval = mex_content_get_metadata (content,
-                                     MEX_CONTENT_METADATA_URL);
+                                     MEX_CONTENT_METADATA_STREAM);
   if (retval)
     {
       *allocated = TRUE;
