@@ -79,7 +79,7 @@ mex_channel_get_metadata (MexContent         *content,
     {
     case MEX_CONTENT_METADATA_TITLE:
       return priv->name;
-    case MEX_CONTENT_METADATA_STREAM:
+    case MEX_CONTENT_METADATA_URL:
       return priv->uri;
     case MEX_CONTENT_METADATA_STILL:
       return priv->thumbnail_uri;

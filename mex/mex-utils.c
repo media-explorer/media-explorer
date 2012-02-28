@@ -413,7 +413,7 @@ mex_utils_content_get_title (MexContent *content, gboolean *allocated)
     return (gchar *)retval;
 
   retval = mex_content_get_metadata (content,
-                                     MEX_CONTENT_METADATA_STREAM);
+                                     MEX_CONTENT_METADATA_URL);
   if (retval)
     {
       *allocated = TRUE;
@@ -779,7 +779,7 @@ mex_content_from_uri (const gchar *uri)
                             MEX_CONTENT_METADATA_MIMETYPE, mime_guess);
 
   mex_content_set_metadata (MEX_CONTENT (program),
-                            MEX_CONTENT_METADATA_STREAM, uri);
+                            MEX_CONTENT_METADATA_URL, uri);
 
   g_free (mime_guess);
 

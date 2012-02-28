@@ -70,7 +70,7 @@ static struct _Bindings {
   { MEX_CONTENT_METADATA_TITLE, "primary-text", mex_content_title_fallback_cb },
   { MEX_CONTENT_METADATA_DIRECTOR, "secondary-text", NULL },
   { MEX_CONTENT_METADATA_MIMETYPE, "mime-type", NULL },
-  { MEX_CONTENT_METADATA_STREAM, "media-url", NULL },
+  { MEX_CONTENT_METADATA_URL, "media-url", NULL },
   { MEX_CONTENT_METADATA_NONE, NULL, NULL }
 };
 

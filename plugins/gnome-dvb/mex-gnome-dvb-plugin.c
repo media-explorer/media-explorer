@@ -122,7 +122,7 @@ get_channel_url_ready_cb (GObject      *proxy,
 
   g_variant_get (variant, "(sb)", &url, &result);
 
-  mex_content_set_metadata (content, MEX_CONTENT_METADATA_STREAM, url);
+  mex_content_set_metadata (content, MEX_CONTENT_METADATA_URL, url);
 
   g_free (url);
 }

@@ -215,7 +215,7 @@ mex_slide_show_real_set_content (MexSlideShow *show,
   if (content == priv->content)
     return;
 
-  url = mex_content_get_metadata (content, MEX_CONTENT_METADATA_STREAM);
+  url = mex_content_get_metadata (content, MEX_CONTENT_METADATA_URL);
 
   if (!url)
     {

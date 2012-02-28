@@ -41,7 +41,7 @@ mex_content_title_fallback_cb (GBinding     *binding,
           const gchar *url;
           gchar *basename;
 
-          url = mex_content_get_metadata (content, MEX_CONTENT_METADATA_STREAM);
+          url = mex_content_get_metadata (content, MEX_CONTENT_METADATA_URL);
           basename = g_path_get_basename (url);
           target = g_uri_unescape_string (basename, NULL);
           g_free (basename);

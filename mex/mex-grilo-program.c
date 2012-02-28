@@ -134,7 +134,7 @@ mex_grilo_program_get_stream_cb (GrlMediaSource *source,
   const gchar *url = grl_media_get_url (media);
 
   MEX_CONTENT_IFACE (mex_grilo_program_parent_class)->set_metadata (content,
-                                                                    MEX_CONTENT_METADATA_STREAM,
+                                                                    MEX_CONTENT_METADATA_URL,
                                                                     url);
 
   closure->reply (MEX_PROGRAM (content),

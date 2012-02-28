@@ -272,7 +272,7 @@ mex_program_get_stream (MexProgram       *program,
   /* Some backends (eg. Apple trailers) may be able to cache the stream
      so we can just use the standard metadata method to obtain it */
   stream = mex_content_get_metadata (MEX_CONTENT (program),
-                                     MEX_CONTENT_METADATA_STREAM);
+                                     MEX_CONTENT_METADATA_URL);
   if (stream != NULL) {
     struct _GetStreamPayload *payload = g_slice_new (struct _GetStreamPayload);
     payload->program = g_object_ref (program);

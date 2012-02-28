@@ -122,7 +122,7 @@ _start_video_preview (MexContentTile *self)
     return FALSE;
 
   if (!(uri = mex_content_get_metadata (priv->content,
-                                        MEX_CONTENT_METADATA_STREAM)))
+                                        MEX_CONTENT_METADATA_URL)))
     return FALSE;
 
   priv->video_preview = clutter_gst_video_texture_new ();

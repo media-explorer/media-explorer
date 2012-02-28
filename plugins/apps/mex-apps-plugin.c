@@ -153,7 +153,7 @@ mex_apps_plugin_launch_cb (MxAction        *action,
   /* MexAppsPluginPrivate *priv = self->priv; */
   MexContent *content = mex_action_get_content (action);
   const gchar *text = mex_content_get_metadata (content,
-                                                MEX_CONTENT_METADATA_STREAM);
+                                                MEX_CONTENT_METADATA_URL);
 
   mex_tool_provider_present_actor (MEX_TOOL_PROVIDER (self), self->priv->view);
 

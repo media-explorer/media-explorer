@@ -255,7 +255,7 @@ mex_player_set_content (MexContentView *view,
           const gchar *uri;
 
           uri = mex_content_get_metadata (content,
-                                          MEX_CONTENT_METADATA_STREAM);
+                                          MEX_CONTENT_METADATA_URL);
           mex_get_stream_cb (NULL, uri, NULL, view);
         }
 
@@ -784,7 +784,7 @@ media_uri_changed_cb (GObject *object, GParamSpec *spec, MexPlayer *player)
         {
           mex_player_set_uri (player, uri);
         }
-      else if (g_strcmp0 (mex_content_get_metadata (ctrls_content, MEX_CONTENT_METADATA_STREAM), uri) != 0)
+      else if (g_strcmp0 (mex_content_get_metadata (ctrls_content, MEX_CONTENT_METADATA_URL), uri) != 0)
         {
           mex_player_set_uri (player, uri);
         }

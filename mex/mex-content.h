@@ -51,7 +51,7 @@ typedef enum {
     MEX_CONTENT_METADATA_YEAR,
     MEX_CONTENT_METADATA_DURATION,
     MEX_CONTENT_METADATA_PLAYER, /* This is the URL of the player object */
-    MEX_CONTENT_METADATA_STREAM, /* This is the URL of the video stream */
+    MEX_CONTENT_METADATA_URL, /* This is the URL of the video stream */
     MEX_CONTENT_METADATA_STUDIO,
     MEX_CONTENT_METADATA_DIRECTOR,
     MEX_CONTENT_METADATA_MIMETYPE,

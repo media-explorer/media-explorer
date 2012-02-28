@@ -223,7 +223,7 @@ _add_from_directory (MexQueueButton *q_button, gboolean add)
                     NULL);
 
       stream_uri =
-        mex_content_get_metadata (priv->content, MEX_CONTENT_METADATA_STREAM);
+        mex_content_get_metadata (priv->content, MEX_CONTENT_METADATA_URL);
 
       /* tracker filesystem feed */
       if (MEX_IS_GRILO_TRACKER_FEED (feed))
