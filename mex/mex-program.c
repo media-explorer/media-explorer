@@ -145,58 +145,6 @@ mex_program_get_property (GObject    *object,
   }
 }
 
-#if 0
-static char *
-program_get_metadata_fallback (MexGenericContent *gc,
-                               MexContentMetadata key)
-{
-  MexContent *content = MEX_CONTENT (gc);
-  const gchar *showname;
-  gchar *target;
-
-  switch (key) {
-  case MEX_CONTENT_METADATA_TITLE:
-    showname = mex_content_get_metadata (content,
-                                         MEX_CONTENT_METADATA_SERIES_NAME);
-
-    if (!showname) {
-      const gchar *url;
-      gchar *basename;
-
-      url = mex_content_get_metadata (content, MEX_CONTENT_METADATA_URL);
-      basename = g_path_get_basename (url);
-      target = g_uri_unescape_string (basename, NULL);
-      g_free (basename);
-    } else {
-      const gchar *episode, *season;
-
-      episode = mex_content_get_metadata (content,
-                                          MEX_CONTENT_METADATA_EPISODE);
-      season = mex_content_get_metadata (content,
-                                         MEX_CONTENT_METADATA_SEASON);
-
-      if (episode && season) {
-        target = g_strdup_printf ("%s: Season %s, Episode %s",
-                                  showname, season, episode);
-      } else if (episode) {
-        target = g_strdup_printf ("%s: Episode %s", showname, episode);
-      } else if (season) {
-        target = g_strdup_printf ("%s: Season %s", showname, season);
-      } else {
-        target = g_strdup (showname);
-      }
-    }
-    break;
-
-  default:
-    target = NULL;
-    break;
-  }
-
-  return target;
-}
-#endif
-
 static void
 mex_program_class_init (MexProgramClass *klass)
 {
