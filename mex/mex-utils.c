@@ -781,9 +781,6 @@ mex_content_from_uri (const gchar *uri)
   mex_content_set_metadata (MEX_CONTENT (program),
                             MEX_CONTENT_METADATA_STREAM, uri);
 
-  mex_content_set_metadata (MEX_CONTENT (program),
-                            MEX_CONTENT_METADATA_URL, uri);
-
   g_free (mime_guess);
 
   if (!is_dvd)
