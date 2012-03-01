@@ -778,7 +778,7 @@ mex_tile_set_label (MexTile *tile, const gchar *label)
   g_return_if_fail (MEX_IS_TILE (tile));
 
   priv = tile->priv;
-  clutter_text_set_text (CLUTTER_TEXT (priv->label), label);
+  clutter_text_set_text (CLUTTER_TEXT (priv->label), (label) ? label : "");
 
   g_object_notify (G_OBJECT (tile), "label");
 }
@@ -795,7 +795,8 @@ mex_tile_set_secondary_label (MexTile *tile, const gchar *label)
 {
   g_return_if_fail (MEX_IS_TILE (tile));
 
-  clutter_text_set_text (CLUTTER_TEXT (tile->priv->secondary_label), label);
+  clutter_text_set_text (CLUTTER_TEXT (tile->priv->secondary_label),
+                         (label) ? label : "");
 
   g_object_notify (G_OBJECT (tile), "secondary-label");
 }
