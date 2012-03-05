@@ -521,83 +521,6 @@ mex_grid_view_init (MexGridView *self)
 }
 
 static void
-mex_set_detail_and_pop_cb (MxAction    *action,
-                           MexGridView *view)
-{
-  MexGridViewPrivate *priv = view->priv;
-  MexModelSortFuncInfo *sort_info;
-
-  mex_menu_action_set_detail (MEX_MENU (priv->menu_layout), "order",
-                              mx_action_get_display_name (action));
-
-  sort_info = g_object_get_data (G_OBJECT (action), "sort-info");
-
-  mex_model_set_sort_func (priv->model, sort_info->sort_func,
-                           sort_info->userdata);
-
-  mex_menu_pop (MEX_MENU (priv->menu_layout));
-}
-
-static void
-mex_order_menu_cb (MxAction    *action,
-                   MexGridView *view)
-{
-  MexGridViewPrivate *priv = view->priv;
-  GPtrArray *sort_funcs;
-  gint i;
-  MexModel *model;
-  ClutterActor *header;
-
-  if (priv->order_by_layout)
-    return;
-
-  model = priv->model;
-
-  mex_menu_push (MEX_MENU (priv->menu_layout));
-
-  /* add header */
-  header = mx_label_new_with_text (_("Order by"));
-  mx_stylable_set_style_class (MX_STYLABLE (header), "Header");
-  mx_label_set_y_align (MX_LABEL (header), MX_ALIGN_MIDDLE);
-
-  priv->order_by_layout =
-    (ClutterActor*) mex_menu_get_layout (MEX_MENU (priv->menu_layout));
-  clutter_actor_set_width (CLUTTER_ACTOR (priv->order_by_layout), MENU_SECONDARY_WIDTH);
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (priv->order_by_layout), header, 0);
-
-  g_object_add_weak_pointer (G_OBJECT (priv->order_by_layout),
-                             (gpointer *) &priv->order_by_layout);
-
-  /* add items */
-  g_object_get (model, "sort-functions", &sort_funcs, NULL);
-  for (i = 0; i < sort_funcs->len; i++)
-    {
-      MexModelSortFuncInfo *sort_info = sort_funcs->pdata[i];
-      MxAction *sort_action;
-
-      sort_action = mx_action_new_full (sort_info->name,
-                                        sort_info->display_name,
-                                        G_CALLBACK (mex_set_detail_and_pop_cb),
-                                        view);
-      g_object_set_data (G_OBJECT (sort_action), "sort-info", sort_info);
-      mex_menu_add_action (MEX_MENU (priv->menu_layout), sort_action,
-                           MEX_MENU_NONE);
-    }
-  g_ptr_array_unref (sort_funcs);
-}
-
-static void
-mex_alt_model_cb (MxAction    *action,
-                  MexGridView *view)
-{
-  MexGridViewPrivate *priv = view->priv;
-
-  mex_menu_action_set_toggled (MEX_MENU (priv->menu_layout), "alt-model",
-                               !mex_menu_action_get_toggled (MEX_MENU (priv->menu_layout),
-                                                             "alt-model"));
-}
-
-static void
 mex_clear_queue_cb (MxAction *action,
                     MexModel *model)
 {
@@ -614,12 +537,7 @@ mex_grid_view_set_model (MexGridView *view,
                          MexModel    *model)
 {
   MexGridViewPrivate *priv = MEX_GRID_VIEW (view)->priv;
-  MxAction *order;
   gchar *category = NULL;
-  GPtrArray *sort_funcs = NULL;
-  MexModel *alt_model = NULL;
-  gchar *alt_model_string;
-  gboolean alt_model_active;
 
   g_return_if_fail (model != NULL);
 
@@ -628,13 +546,7 @@ mex_grid_view_set_model (MexGridView *view,
 
   priv->model = model;
 
-  g_object_get (model,
-                "category", &category,
-                "sort-functions", &sort_funcs,
-                "alt-model", &alt_model,
-                "alt-model-active", &alt_model_active,
-                "alt-model-string", &alt_model_string,
-                NULL);
+  g_object_get (model, "category", &category, NULL);
 
   /* Add the clear queue option */
   if (g_strcmp0 (category, "queue") == 0)
@@ -650,56 +562,6 @@ mex_grid_view_set_model (MexGridView *view,
       mex_menu_add_action (MEX_MENU (priv->menu_layout),
                            clear_queue,
                            MEX_MENU_NONE);
-    }
-
-  /* Add the order-by menu */
-  if (sort_funcs && sort_funcs->len > 0)
-    {
-      MexModelSortFuncInfo *sort_info;
-
-      order = mx_action_new_full ("order",
-                                  _("Order by"),
-                                  G_CALLBACK (mex_order_menu_cb),
-                                  view);
-
-      mex_menu_add_action (MEX_MENU (priv->menu_layout),
-                           order,
-                           MEX_MENU_RIGHT);
-
-      sort_info = sort_funcs->pdata[0];
-
-      if (sort_info)
-        mex_menu_action_set_detail (MEX_MENU (priv->menu_layout), "order",
-                                    sort_info->display_name);
-      else
-        mex_menu_action_set_detail (MEX_MENU (priv->menu_layout), "order",
-                                    _("Unsorted"));
-    }
-
-  /* Add alt model option */
-  if (alt_model)
-    {
-      /* check if the alt_model is being set */
-      if (alt_model_active)
-        priv->alt_model = model;
-      else
-        priv->alt_model = alt_model;
-
-      order = mx_action_new_full ("alt-model",
-                                  alt_model_string,
-                                  G_CALLBACK (mex_alt_model_cb),
-                                  view);
-
-      mex_menu_add_action (MEX_MENU (priv->menu_layout), order,
-                           MEX_MENU_TOGGLE);
-
-      mex_menu_action_set_toggled (MEX_MENU (priv->menu_layout),
-                                   "alt-model",
-                                   alt_model_active);
-    }
-  else
-    {
-      priv->alt_model = NULL;
     }
 
   /* set the model on the grid */
@@ -722,11 +584,6 @@ mex_grid_view_set_model (MexGridView *view,
     }
 
   g_free (category);
-  g_free (alt_model_string);
-  if (sort_funcs)
-    g_ptr_array_unref (sort_funcs);
-  if (alt_model)
-    g_object_unref (alt_model);
 }
 
 ClutterActor *
