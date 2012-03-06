@@ -83,6 +83,14 @@ mex_clock_bin_dispose (GObject *object)
       priv->update_source = 0;
     }
 
+  if (priv->clock_hbox)
+    {
+      clutter_actor_unparent (priv->clock_hbox);
+      priv->clock_hbox = NULL;
+      priv->time_label = NULL;
+      priv->icon = NULL;
+    }
+
   G_OBJECT_CLASS (mex_clock_bin_parent_class)->dispose (object);
 }
 
