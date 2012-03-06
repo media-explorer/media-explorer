@@ -118,4 +118,11 @@ MexContent *mex_content_from_uri (const gchar *uri);
 
 GKeyFile *mex_get_settings_key_file (void);
 
+gulong
+mex_g_signal_connect_object (gpointer       instance,
+                             const gchar   *detailed_signal,
+                             GCallback      c_handler,
+                             gpointer       gobject,
+                             GConnectFlags  connect_flags);
+
 #endif /* _MEX_UTILS_H */
