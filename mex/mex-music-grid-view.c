@@ -64,6 +64,7 @@ mex_music_grid_view_show_artists (MxAction         *action,
   MexMenu *menu;
   MexContent *content;
   MexModel *model;
+  gchar letter = '\0';
 
   /* create a new menu */
   menu = mex_grid_view_get_menu (MEX_GRID_VIEW (view));
@@ -91,8 +92,27 @@ mex_music_grid_view_show_artists (MxAction         *action,
   for (i = 0; (content = mex_model_get_content (model, i)); i++)
     {
       const gchar *title;
+      gchar *normalised;
 
       title = mex_content_get_metadata (content, MEX_CONTENT_METADATA_TITLE);
+
+      normalised = g_utf8_normalize (title, -1, G_NORMALIZE_ALL);
+      if (letter != normalised[0])
+        {
+          gchar display_name[2];
+
+          letter = normalised[0];
+
+          display_name[0] = letter;
+          display_name[1] = '\0';
+
+          action = mx_action_new ();
+          mx_action_set_name (action, display_name);
+          mx_action_set_display_name (action, display_name);
+          mex_menu_add_action (menu, action, MEX_MENU_NONE);
+        }
+      g_free (normalised);
+      normalised = NULL;
 
       action = mx_action_new_full (title, title,
                                    G_CALLBACK (mex_music_grid_view_select_artist),
