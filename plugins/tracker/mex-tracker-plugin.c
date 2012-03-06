@@ -237,13 +237,8 @@ handle_new_source_plugin (MexTrackerPlugin *self, GrlMediaPlugin *plugin)
   const char *id;
 
   id = grl_media_plugin_get_id (plugin);
-  if (g_strcmp0 (id,"grl-tracker") != 0)
-    {
-      MEX_WARNING ("Attempting to use the media explorer tracker plugin "
-                   "but grilo tracker plugin not loaded. "
-                   "You may not see any content!");
-      return;
-    }
+  if (g_strcmp0 (id, "grl-tracker") != 0)
+    return;
 
   ops = grl_metadata_source_supported_operations (meta);
   if ((ops & GRL_OP_QUERY) == 0)
