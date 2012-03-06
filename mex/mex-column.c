@@ -886,9 +886,9 @@ mex_column_expand_children (MexColumn    *column,
       /* stagger opening */
       clutter_timeline_add_marker_at_time (priv->expand_timeline,
                                            signal_name + 16, offset);
-      g_signal_connect_swapped (priv->expand_timeline, signal_name,
-                                G_CALLBACK (mex_column_expand_child),
-                                child);
+      mex_g_signal_connect_object (priv->expand_timeline, signal_name,
+                                   G_CALLBACK (mex_column_expand_child),
+                                   child, G_CONNECT_SWAPPED);
 
       offset += increment;
 
