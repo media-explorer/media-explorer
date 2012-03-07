@@ -586,6 +586,29 @@ mex_menu_add_action (MexMenu           *menu,
 }
 
 /**
+ * mex_menu_add_section_header:
+ * @menu: A #MexMenu
+ * @title: title for the header
+ *
+ * Adds a section header to the menu with the given title.
+ */
+void
+mex_menu_add_section_header (MexMenu     *menu,
+                             const gchar *title)
+{
+  ClutterActor *item;
+  MexMenuPrivate *priv;
+
+  g_return_if_fail (MEX_IS_MENU (menu));
+
+  priv = menu->priv;
+
+  item = mx_label_new_with_text (title);
+  mx_stylable_set_style_class (MX_STYLABLE (item), "MexMenuSectionHeader");
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->action_layout), item);
+}
+
+/**
  * mex_menu_action_set_detail:
  * @menu: A #MexMenu
  * @action: The action name

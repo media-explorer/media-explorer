@@ -117,6 +117,8 @@ gfloat mex_menu_get_min_width (MexMenu *menu);
 
 MxBoxLayout *mex_menu_get_layout  (MexMenu *menu);
 
+void mex_menu_add_section_header (MexMenu     *menu,
+                                  const gchar *title);
 G_END_DECLS
 
 #endif /* _MEX_MENU_H */

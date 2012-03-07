@@ -14,6 +14,12 @@ MxMenu
   background-color: #1e1821e5;
 }
 
+MxLabel.MexMenuSectionHeader
+{
+  padding: 11 15;
+  background-color: #27252b;
+}
+
 MxButton, MxButton:checked, MxButton:hover, MxButton:active, MxButton:disabled,
 MxMenu > MxButton, MxMenu > MxButton:hover, MxMenu > MxButton:disabled
 {
