@@ -25,6 +25,8 @@
 #include "mex-content-tile.h"
 #include <math.h>
 
+#define DEFAULT_TILE_RATIO (9.0 / 16.0)
+
 static void mx_scrollable_iface_init (MxScrollableIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 static void mx_stylable_iface_init (MxStylableIface *iface);
@@ -71,6 +73,7 @@ struct _MexGridPrivate
   gint             last_visible;
   gfloat           tile_width;
   gfloat           tile_height;
+  gfloat           tile_ratio;
 
   CoglHandle       highlight;
   CoglHandle       highlight_material;
@@ -87,7 +90,8 @@ enum
   PROP_HADJUST,
   PROP_VADJUST,
   PROP_TILE_WIDTH,
-  PROP_TILE_HEIGHT
+  PROP_TILE_HEIGHT,
+  PROP_TILE_RATIO
 };
 
 static void mex_grid_start_animation (MexGrid *self);
@@ -457,6 +461,7 @@ mex_grid_get_tile_size (MexGrid               *grid,
                          (gfloat) priv->stride);
 
   first_child = g_array_index (priv->children, ClutterActor *, 0);
+
   clutter_actor_get_preferred_height (first_child, *basic_width, NULL,
                                       basic_height);
 }
@@ -568,6 +573,10 @@ mex_grid_get_property (GObject    *object,
       g_value_set_float (value, self->priv->tile_height);
       break;
 
+    case PROP_TILE_RATIO:
+      g_value_set_float (value, self->priv->tile_ratio);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -597,6 +606,11 @@ mex_grid_set_property (GObject      *object,
       mex_grid_set_adjustments (MX_SCROLLABLE (object),
                                 NULL,
                                 g_value_get_object (value));
+      break;
+
+    case PROP_TILE_RATIO:
+      self->priv->tile_ratio = g_value_get_float (value);
+      g_object_notify (object, "tile-ratio");
       break;
 
     default:
@@ -1231,6 +1245,13 @@ mex_grid_class_init (MexGridClass *klass)
                               G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_TILE_HEIGHT, pspec);
 
+  pspec = g_param_spec_float ("tile-ratio",
+                              "Tile ratio",
+                              "The aspect ratio of the tile",
+                              0.f, G_MAXFLOAT, DEFAULT_TILE_RATIO,
+                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_TILE_RATIO, pspec);
+
   /* MxScrollable properties */
   g_object_class_override_property (object_class,
                                     PROP_HADJUST,
@@ -1327,6 +1348,8 @@ mex_grid_init (MexGrid *self)
 
   g_signal_connect_after (self, "style-changed",
                           G_CALLBACK (mex_grid_style_changed_cb), self);
+
+  priv->tile_ratio = DEFAULT_TILE_RATIO;
 }
 
 ClutterActor *
@@ -1391,6 +1414,10 @@ mex_grid_add_content (MexGrid    *grid,
   /* Make sure expanded grid tiles fill a nice-looking space */
   g_object_bind_property (grid, "tile-width",
                           box, "action-list-width",
+                          G_BINDING_SYNC_CREATE);
+
+  g_object_bind_property (grid, "tile-ratio",
+                          box, "thumb-ratio",
                           G_BINDING_SYNC_CREATE);
 
   mex_content_view_set_content (MEX_CONTENT_VIEW (box), content);
