@@ -106,10 +106,7 @@ mex_music_grid_view_show_artists (MxAction         *action,
           display_name[0] = letter;
           display_name[1] = '\0';
 
-          action = mx_action_new ();
-          mx_action_set_name (action, display_name);
-          mx_action_set_display_name (action, display_name);
-          mex_menu_add_action (menu, action, MEX_MENU_NONE);
+          mex_menu_add_section_header (menu, display_name);
         }
       g_free (normalised);
       normalised = NULL;
