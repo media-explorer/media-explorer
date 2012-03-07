@@ -18,6 +18,7 @@
 
 #include "mex-music-grid-view.h"
 #include "mex-view-model.h"
+#include "mex-content-box.h"
 
 #include <glib/gi18n.h>
 
@@ -154,6 +155,7 @@ mex_music_grid_view_constructed (GObject *object)
 {
   MexMenu *menu;
   MxAction *action;
+  MexGrid *grid;
 
   G_OBJECT_CLASS (mex_music_grid_view_parent_class)->constructed (object);
 
@@ -177,6 +179,10 @@ mex_music_grid_view_constructed (GObject *object)
                                G_CALLBACK (mex_music_grid_view_show_tracks),
                                object);
   mex_menu_add_action (menu, action, MEX_MENU_NONE);
+
+  /* set custom grid properties */
+  grid = mex_grid_view_get_grid (MEX_GRID_VIEW (object));
+  g_object_set (grid, "stride", 4, "tile-ratio", 1.0, NULL);
 }
 
 static void
