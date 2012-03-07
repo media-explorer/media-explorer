@@ -54,6 +54,7 @@ enum
   PROP_IMPORTANT,
   PROP_THUMB_WIDTH,
   PROP_ACTION_LIST_WIDTH,
+  PROP_THUMB_RATIO,
 
   PROP_LAST
 };
@@ -77,7 +78,8 @@ struct _MexContentBoxPrivate
   ClutterTimeline *timeline;
   ClutterAlpha *alpha;
 
-  gfloat thumb_width;
+  gint   thumb_width;
+  gfloat thumb_ratio;
 };
 
 static void mex_content_box_toggle_open (MexContentBox *box);
@@ -224,6 +226,10 @@ mex_content_box_get_property (GObject    *object,
       g_value_set_int (value, clutter_actor_get_width (priv->action_list));
       break;
 
+    case PROP_THUMB_RATIO:
+      g_value_set_float (value, priv->thumb_ratio);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -236,7 +242,6 @@ mex_content_box_set_property (GObject      *object,
                               GParamSpec   *pspec)
 {
   MexContentBoxPrivate *priv = MEX_CONTENT_BOX (object)->priv;
-  gint int_value;
 
   switch (property_id)
     {
@@ -246,12 +251,23 @@ mex_content_box_set_property (GObject      *object,
       break;
 
     case PROP_THUMB_WIDTH:
-      int_value = g_value_get_int (value);
-      if (int_value > 0)
-        g_object_set (priv->tile,
-                      "thumb-width", int_value,
-                      "thumb-height", (int) (int_value * DEFAULT_THUMB_RATIO),
-                      NULL);
+      priv->thumb_width = g_value_get_int (value);
+
+      if (priv->thumb_width == 0)
+        priv->thumb_width = DEFAULT_THUMB_WIDTH;
+
+      g_object_set (priv->tile,
+                    "thumb-width", priv->thumb_width,
+                    "thumb-height",
+                    (int) (priv->thumb_width * priv->thumb_ratio),
+                    NULL);
+      break;
+
+    case PROP_THUMB_RATIO:
+      priv->thumb_ratio = g_value_get_float (value);
+      g_object_set (priv->tile, "thumb-height",
+                    (int) (priv->thumb_width * priv->thumb_ratio), NULL);
+      g_object_notify (object, "thumb-ratio");
       break;
 
     case PROP_ACTION_LIST_WIDTH:
@@ -644,6 +660,15 @@ mex_content_box_class_init (MexContentBoxClass *klass)
                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_ACTION_LIST_WIDTH,
                                    properties[PROP_ACTION_LIST_WIDTH]);
+
+  properties[PROP_THUMB_RATIO] =
+    g_param_spec_float ("thumb-ratio",
+                        "Thumbnail Aspect Ratio",
+                        "Aspect ratio of the thumbnail",
+                        0, G_MAXFLOAT, DEFAULT_THUMB_RATIO,
+                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (object_class, PROP_THUMB_RATIO,
+                                   properties[PROP_THUMB_RATIO]);
 }
 
 static gboolean
@@ -737,6 +762,9 @@ mex_content_box_init (MexContentBox *self)
                             G_CALLBACK (clutter_actor_queue_relayout), self);
   g_signal_connect (priv->timeline, "completed",
                     G_CALLBACK (mex_content_box_timeline_completed), self);
+
+  priv->thumb_width = DEFAULT_THUMB_WIDTH;
+  priv->thumb_ratio = DEFAULT_THUMB_RATIO;
 }
 
 ClutterActor *
