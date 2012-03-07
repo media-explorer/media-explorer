@@ -22,6 +22,7 @@
 #include <mx/mx.h>
 #include "mex-menu.h"
 #include "mex-model.h"
+#include "mex-grid.h"
 
 G_BEGIN_DECLS
 
@@ -68,6 +69,7 @@ GType mex_grid_view_get_type (void) G_GNUC_CONST;
 ClutterActor *mex_grid_view_new (MexModel *model);
 
 MexMenu *mex_grid_view_get_menu (MexGridView *view);
+MexGrid *mex_grid_view_get_grid (MexGridView *view);
 
 G_END_DECLS
 

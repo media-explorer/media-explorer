@@ -597,3 +597,9 @@ mex_grid_view_get_menu (MexGridView *view)
 {
   return (MexMenu*) view->priv->menu_layout;
 }
+
+MexGrid *
+mex_grid_view_get_grid (MexGridView *view)
+{
+  return (MexGrid*) view->priv->grid;
+}
