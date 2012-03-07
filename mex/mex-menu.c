@@ -501,6 +501,7 @@ mex_menu_create_layout (MexMenu *menu, gboolean lower)
   mx_box_layout_set_orientation (MX_BOX_LAYOUT (priv->action_layout), MX_ORIENTATION_VERTICAL);
 
   scroll = mex_scroll_view_new ();
+  clutter_actor_set_clip_to_allocation (CLUTTER_ACTOR (scroll), TRUE);
   clutter_container_add_actor (CLUTTER_CONTAINER (scroll), priv->action_layout);
   clutter_container_add_actor (CLUTTER_CONTAINER (layout), scroll);
 
