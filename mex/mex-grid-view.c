@@ -434,7 +434,8 @@ mex_grid_view_class_init (MexGridViewClass *klass)
   actor_class->pick = mex_grid_view_pick;
 
   pspec = g_param_spec_object ("model", "model", "model", G_TYPE_OBJECT,
-                               G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
+                               G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE
+                               | G_PARAM_CONSTRUCT);
   g_object_class_install_property (object_class, PROP_MODEL, pspec);
 }
 
