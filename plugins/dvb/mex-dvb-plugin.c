@@ -381,7 +381,7 @@ static GPtrArray *
 load_channels_from_file (MexDvbPlugin *plugin)
 {
   MexSettings *settings;
-  GPtrArray *channels;
+  GPtrArray *channels = NULL;
   gchar *channels_conf_path;
   GFile *channels_conf;
   GFileInputStream *input;
@@ -456,10 +456,12 @@ mex_dvb_plugin_start (MexPlugin *self)
   MEX_INFO ("DVB plugin started");
 
   channels = load_channels_from_file (plugin);
+
   if (channels && channels->len > 0)
     {
       MexChannelManager *manager;
 
+      MEX_INFO ("Found %d configured channels", channels->len);
       manager = mex_channel_manager_get_default ();
       mex_channel_manager_add_channels (manager, channels);
     }
