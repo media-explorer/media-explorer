@@ -488,9 +488,48 @@ mex_explorer_unset_container_cb (gpointer  model,
   g_signal_handlers_disconnect_by_func (model, model_length_changed_cb, column);
 }
 
+/* The visibility of a column depends on a few things, let's factor all of
+ * those details in a useful little fonction */
+static gboolean
+mex_explorer_should_column_be_visible (MexColumn *column)
+{
+  MexModel *view_model, *model;
+  gchar *placeholder_text;
+  gboolean always_visible;
+
+  view_model = mex_column_get_model (column);
+  if (view_model == NULL)
+    return FALSE;
+
+  model = mex_model_get_model (view_model);
+  if (model == NULL)
+    return FALSE;
+
+  g_object_get (G_OBJECT (model),
+                "placeholder-text", &placeholder_text,
+                "always-visible", &always_visible,
+                NULL);
+
+  if (always_visible)
+    {
+      g_free (placeholder_text);
+      return TRUE;
+    }
+
+  if (placeholder_text && placeholder_text[0] != '\0')
+    {
+      g_free (placeholder_text);
+      return TRUE;
+    }
+
+  g_free (placeholder_text);
+
+  return !mex_column_is_empty (column);
+}
+
 static void
 mex_explorer_show_maybe_focus (ClutterActor *column,
-                               ClutterActor *box,
+                               GParamSpec   *pspec,
                                MexExplorer  *explorer)
 {
   ClutterActor *column_view;
@@ -498,6 +537,12 @@ mex_explorer_show_maybe_focus (ClutterActor *column,
 
   column_view = clutter_actor_get_parent (clutter_actor_get_parent (column));
   g_assert (MEX_IS_COLUMN_VIEW (column_view));
+
+  if (!mex_explorer_should_column_be_visible (MEX_COLUMN (column)))
+    {
+      clutter_actor_hide (column_view);
+      return;
+    }
 
   /* Show the column-view the column is in */
   clutter_actor_show (column_view);
@@ -653,16 +698,15 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
    */
   if ((!placeholder_text || !(*placeholder_text)) && !always_visible)
     {
-      clutter_actor_hide (column_view);
-
       /* FIXME: This column will stay hidden if there's placeholder text
        *        set after this point
        */
-      g_signal_connect (column, "actor-added",
-                        G_CALLBACK (mex_explorer_show_maybe_focus),
-                        explorer);
+      clutter_actor_hide (column_view);
     }
 
+  g_signal_connect (column, "notify::empty",
+                    G_CALLBACK (mex_explorer_show_maybe_focus),
+                    explorer);
 
   /* set the model on the column */
   mex_column_set_model (column, view_model);
