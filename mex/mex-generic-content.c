@@ -280,7 +280,7 @@ mex_generic_content_get_last_position_start (MexGenericContent *self)
 {
   MexGenericContentPrivate *priv = self->priv;
 
-  g_return_val_if_fail (IS_MEX_GENERIC_CONTENT (self), FALSE);
+  g_return_val_if_fail (MEX_IS_GENERIC_CONTENT (self), FALSE);
 
   return priv->last_position_start;
 }

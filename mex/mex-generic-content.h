@@ -35,10 +35,10 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_CLASS_CAST ((klass),                    \
                             MEX_TYPE_GENERIC_CONTENT,   \
                             MexGenericContentClass))
-#define IS_MEX_GENERIC_CONTENT(obj)                             \
+#define MEX_IS_GENERIC_CONTENT(obj)                             \
   (G_TYPE_CHECK_INSTANCE_TYPE ((obj),                           \
                                MEX_TYPE_GENERIC_CONTENT))
-#define IS_MEX_GENERIC_CONTENT_CLASS(klass)             \
+#define MEX_IS_GENERIC_CONTENT_CLASS(klass)             \
   (G_TYPE_CHECK_CLASS_TYPE ((klass),                    \
                             MEX_TYPE_GENERIC_CONTENT))
 #define MEX_GENERIC_CONTENT_GET_CLASS(obj)              \
