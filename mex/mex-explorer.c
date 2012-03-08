@@ -719,6 +719,7 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
 
   g_object_weak_ref (G_OBJECT (column_view), mex_explorer_unset_container_cb, model);
 
+  g_free (placeholder_text);
   g_object_unref (view_model);
 }
 
