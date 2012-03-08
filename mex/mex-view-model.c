@@ -63,6 +63,7 @@ enum
 typedef struct
 {
   MexContentMetadata key;
+  MexFilterCondition condition;
   gchar *value;
 } FilterKeyValue;
 
@@ -325,7 +326,7 @@ mex_view_model_finalize (GObject *object)
 
   /* clear the filter list */
   mex_view_model_set_filter_by (MEX_VIEW_MODEL (object),
-                                MEX_CONTENT_METADATA_NONE, NULL);
+                                MEX_CONTENT_METADATA_NONE, 0, NULL);
 
   G_OBJECT_CLASS (mex_view_model_parent_class)->finalize (object);
 }
@@ -653,7 +654,7 @@ mex_view_model_refresh_external_items (MexViewModel *model)
           GList *list;
           const gchar *v;
           FilterKeyValue *filter;
-          gboolean skip = FALSE;
+          gboolean skip;
 
           for (list = priv->filter_by; list; list = g_list_next (list))
             {
@@ -662,9 +663,14 @@ mex_view_model_refresh_external_items (MexViewModel *model)
               v = mex_content_get_metadata (content, filter->key);
 
               /* skip this item if it does not match the filter */
-              if (g_strcmp0 (v, filter->value))
+
+              skip = g_strcmp0 (v, filter->value);
+
+              if (filter->condition == MEX_FILTER_NOT)
+                skip = (skip == 0);
+
+              if (skip)
                 {
-                  skip = TRUE;
                   break;
                 }
             }
@@ -1078,6 +1084,7 @@ mex_view_model_set_loop (MexViewModel *self,
 void
 mex_view_model_set_filter_by (MexViewModel       *model,
                               MexContentMetadata  metadata_key,
+                              MexFilterCondition  filter_condition,
                               const gchar        *value,
                               ...)
 {
@@ -1108,6 +1115,7 @@ mex_view_model_set_filter_by (MexViewModel       *model,
 
   filter = g_slice_new (FilterKeyValue);
   filter->key = metadata_key;
+  filter->condition = filter_condition;
   filter->value = g_strdup (value);
 
   priv->filter_by = g_list_prepend (priv->filter_by, filter);
@@ -1127,6 +1135,8 @@ mex_view_model_set_filter_by (MexViewModel       *model,
           filter = NULL;
           break;
         }
+
+      filter->condition = va_arg (args, MexFilterCondition);
 
       filter->value = g_strdup (va_arg (args, char*));
 

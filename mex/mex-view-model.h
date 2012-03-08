@@ -61,6 +61,12 @@ struct _MexViewModelClass
   MexGenericModelClass parent_class;
 };
 
+typedef enum
+{
+  MEX_FILTER_EQUAL,
+  MEX_FILTER_NOT
+} MexFilterCondition;
+
 GType mex_view_model_get_type (void) G_GNUC_CONST;
 
 MexModel *mex_view_model_new (MexModel *model);
@@ -74,6 +80,7 @@ void mex_view_model_set_loop (MexViewModel *self, gboolean loop);
 
 void mex_view_model_set_filter_by (MexViewModel       *model,
                                    MexContentMetadata  metadata_key,
+                                   MexFilterCondition  filter_flags,
                                    const gchar        *value,
                                    ...);
 void mex_view_model_set_group_by (MexViewModel        *model,

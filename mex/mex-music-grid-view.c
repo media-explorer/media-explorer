@@ -45,7 +45,8 @@ mex_music_grid_view_select_artist (MxAction         *action,
   mex_view_model_set_group_by (MEX_VIEW_MODEL (priv->model),
                                MEX_CONTENT_METADATA_ALBUM);
   mex_view_model_set_filter_by (MEX_VIEW_MODEL (priv->model),
-                                MEX_CONTENT_METADATA_ARTIST, album_name, NULL);
+                                MEX_CONTENT_METADATA_ARTIST, MEX_FILTER_EQUAL,
+                                album_name, MEX_CONTENT_METADATA_NONE);
 
   mex_menu_pop (mex_grid_view_get_menu (MEX_GRID_VIEW (view)));
 
@@ -127,7 +128,8 @@ mex_music_grid_view_show_albums (MxAction         *action,
 {
   MexMusicGridViewPrivate *priv = view->priv;
 
-  mex_view_model_set_filter_by (MEX_VIEW_MODEL (priv->model), 0, NULL, NULL);
+  mex_view_model_set_filter_by (MEX_VIEW_MODEL (priv->model),
+                                MEX_CONTENT_METADATA_NONE, 0, NULL);
   mex_view_model_set_group_by (MEX_VIEW_MODEL (priv->model),
                                MEX_CONTENT_METADATA_ALBUM);
   g_object_set (priv->model,
@@ -142,7 +144,8 @@ mex_music_grid_view_show_tracks (MxAction         *action,
 {
   MexMusicGridViewPrivate *priv = view->priv;
 
-  mex_view_model_set_filter_by (MEX_VIEW_MODEL (priv->model), 0, NULL, NULL);
+  mex_view_model_set_filter_by (MEX_VIEW_MODEL (priv->model),
+                                MEX_CONTENT_METADATA_NONE, 0, NULL);
   mex_view_model_set_group_by (MEX_VIEW_MODEL (priv->model), 0);
   g_object_set (priv->model,
                 "title", _("All Tracks"),

@@ -59,7 +59,8 @@ test_view (MexViewModel *view)
   mex_view_model_set_start_content (view, NULL);
   mex_view_model_set_order_by (view, MEX_CONTENT_METADATA_TITLE, FALSE);
   mex_view_model_set_filter_by (view,
-                                MEX_CONTENT_METADATA_MIMETYPE, "video/ogg",
+                                MEX_CONTENT_METADATA_MIMETYPE, MEX_FILTER_EQUAL,
+                                "video/ogg",
                                 MEX_CONTENT_METADATA_NONE);
 
   print_titles (MEX_MODEL (view));

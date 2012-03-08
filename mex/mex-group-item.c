@@ -280,8 +280,9 @@ mex_group_item_get_model (MexGroupItem *item)
 
 
       mex_view_model_set_filter_by (MEX_VIEW_MODEL (priv->model),
-                                    priv->filter_key, priv->filter_value,
-                                    priv->second_filter_key,
+                                    priv->filter_key, MEX_FILTER_EQUAL,
+                                    priv->filter_value,
+                                    priv->second_filter_key, MEX_FILTER_EQUAL,
                                     priv->second_filter_value,
                                     MEX_CONTENT_METADATA_NONE);
 
