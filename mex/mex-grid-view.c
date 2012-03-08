@@ -31,7 +31,7 @@
 #include "mex-shadow.h"
 
 /* defines */
-#define MENU_MIN_WIDTH 284.0
+#define MENU_MIN_WIDTH 184.0
 #define MENU_SECONDARY_WIDTH 180.0
 #define GRID_TOP_PADDING 6
 #define ANIMATION_DURATION 400
