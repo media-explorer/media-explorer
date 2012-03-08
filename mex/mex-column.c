@@ -29,6 +29,7 @@
 enum
 {
   PROP_0,
+  PROP_EMPTY,
   PROP_HADJUST,
   PROP_VADJUST,
   PROP_COLLAPSE_ON_FOCUS,
@@ -479,6 +480,10 @@ mex_column_get_property (GObject    *object,
 
   switch (prop_id)
     {
+    case PROP_EMPTY:
+      g_value_set_boolean (value, mex_column_is_empty (self));
+      break;
+
     case PROP_HADJUST:
       mex_column_get_adjustments (MX_SCROLLABLE (self), &adjustment, NULL);
       g_value_set_object (value, adjustment);
@@ -1055,6 +1060,13 @@ mex_column_class_init (MexColumnClass *klass)
 
   g_type_class_add_private (klass, sizeof (MexColumnPrivate));
 
+  pspec = g_param_spec_boolean ("empty",
+                                "Empty",
+                                "Whether the column is empty",
+                                TRUE,
+                                G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+  g_object_class_install_property (o_class, PROP_EMPTY, pspec);
+
   pspec = g_param_spec_boolean ("collapse-on-focus",
                                 "Collapse On Focus",
                                 "Collapse items before the focused item.",
@@ -1142,6 +1154,10 @@ mex_column_controller_changed (GController          *controller,
   MexColumnPrivate *priv = column->priv;
   gint i, n_indices;
   MexContent *content;
+  gboolean was_empty, is_empty;
+
+  was_empty = mex_column_is_empty (column);
+  is_empty = was_empty;
 
   n_indices = g_controller_reference_get_n_indices (ref);
 
@@ -1155,6 +1171,7 @@ mex_column_controller_changed (GController          *controller,
 
           mex_column_add_content (column, content, content_index);
         }
+      is_empty = mex_column_is_empty (column);
       break;
 
     case G_CONTROLLER_REMOVE:
@@ -1172,6 +1189,7 @@ mex_column_controller_changed (GController          *controller,
           clutter_actor_destroy (lnk->data);
           priv->children = g_list_delete_link (priv->children, lnk);
         }
+      is_empty = mex_column_is_empty (column);
       break;
 
     case G_CONTROLLER_UPDATE:
@@ -1179,11 +1197,13 @@ mex_column_controller_changed (GController          *controller,
 
     case G_CONTROLLER_CLEAR:
       mex_column_clear (column);
+      is_empty = mex_column_is_empty (column);
       break;
 
     case G_CONTROLLER_REPLACE:
       mex_column_clear (column);
       mex_column_populate (column);
+      is_empty = mex_column_is_empty (column);
       break;
 
     case G_CONTROLLER_INVALID_ACTION:
@@ -1194,6 +1214,9 @@ mex_column_controller_changed (GController          *controller,
       g_warning (G_STRLOC ": Unhandled action");
       break;
     }
+
+  if (is_empty != was_empty)
+    g_object_notify (G_OBJECT (column), "empty");
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (column));
 }
@@ -1285,11 +1308,14 @@ mex_column_set_model (MexColumn *column,
 {
   MexColumnPrivate *priv;
   GController *controller;
+  gboolean was_empty, is_empty;
 
   g_return_if_fail (MEX_IS_COLUMN (column));
   g_return_if_fail (model == NULL || MEX_IS_MODEL (model));
 
   priv = column->priv;
+
+  was_empty = mex_column_is_empty (column);
 
   if (priv->model)
     {
@@ -1319,6 +1345,10 @@ mex_column_set_model (MexColumn *column,
     }
   else
     priv->model = NULL;
+
+  is_empty = mex_column_is_empty (column);
+  if (was_empty != is_empty)
+    g_object_notify (G_OBJECT (column), "empty");
 }
 
 /**
