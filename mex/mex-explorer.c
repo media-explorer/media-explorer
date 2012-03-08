@@ -30,6 +30,7 @@
 #include "mex-resizing-hbox.h"
 #include "mex-tile.h"
 #include "mex-music-grid-view.h"
+#include "mex-video-grid-view.h"
 #include "mex-grid.h"
 
 #include "mex-scene.h"
@@ -931,6 +932,10 @@ mex_explorer_push_model (MexExplorer *explorer,
       if (!g_strcmp0 (category, "music"))
         {
           page = mex_music_grid_view_new (model);
+        }
+      else if (!g_strcmp0 (category, "videos"))
+        {
+          page = mex_video_grid_view_new (model);
         }
       else
         {
