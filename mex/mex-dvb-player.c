@@ -66,6 +66,7 @@ struct _MexDvbPlayerPrivate
 {
   GstElement *pipeline;
   GstElement *dvbbasebin;
+  GstElement *demuxer;
   GstElement *decoder;
 
   gchar *uri;
@@ -116,6 +117,12 @@ tune_dvbt_channel (MexDvbPlayer   *player,
                    MexDVBTChannel *channel)
 {
   MexDvbPlayerPrivate *priv = player->priv;
+  gchar *program_numbers;
+
+  program_numbers = g_strdup_printf ("%u", mex_dvbt_channel_get_pmt (channel));
+
+  g_message ("Setting channels %s",
+             mex_channel_get_name (MEX_CHANNEL (channel)));
 
   g_object_set (priv->dvbbasebin,
                 "frequency", mex_dvbt_channel_get_frequency (channel),
@@ -127,8 +134,10 @@ tune_dvbt_channel (MexDvbPlayer   *player,
                 "trans-mode", mex_dvbt_channel_get_transmission_mode (channel),
                 "guard", mex_dvbt_channel_get_guard (channel),
                 "hierarchy", mex_dvbt_channel_get_hierarchy (channel),
-                "program-numbers", mex_dvbt_channel_get_pmt (channel),
+                "program-numbers", program_numbers,
                 NULL);
+
+  g_free (program_numbers);
 }
 
 static void
@@ -143,8 +152,10 @@ set_channel (MexDvbPlayer *player,
       priv->channel = NULL;
     }
 
-  if (channel)
-    priv->channel = g_object_ref (channel);
+  if (channel == NULL)
+    return;
+
+  priv->channel = g_object_ref (channel);
 
   if (MEX_IS_DVBT_CHANNEL (channel))
     tune_dvbt_channel (player, (MexDVBTChannel *) channel);
@@ -229,7 +240,7 @@ static void
 set_progress (MexDvbPlayer *player,
               gdouble       progress)
 {
-  g_message ("dvb-player: set uri %lf", progress);
+  g_message ("dvb-player: set progress %lf", progress);
 }
 
 static gdouble
@@ -242,7 +253,7 @@ static void
 set_audio_volume (MexDvbPlayer *player,
                   gdouble       volume)
 {
-  g_message ("dvb-player: set uri %lf", volume);
+  g_message ("dvb-player: set audio volume %lf", volume);
 }
 
 static gdouble
@@ -275,9 +286,22 @@ get_duration (MexDvbPlayer *player)
  */
 
 static void
-on_pad_added (GstElement   *element,
-              GstPad       *src_pad,
-              MexDvbPlayer *player)
+on_dvbbasebin_pad_added (GstElement   *element,
+                         GstPad       *src_pad,
+                         MexDvbPlayer *player)
+{
+  MexDvbPlayerPrivate *priv = player->priv;
+  GstPad *sink_pad;
+
+  sink_pad = gst_element_get_static_pad (priv->demuxer, "sink");
+  gst_pad_link (src_pad, sink_pad);
+  g_object_unref (sink_pad);
+}
+
+static void
+on_demuxer_pad_added (GstElement   *element,
+                      GstPad       *src_pad,
+                      MexDvbPlayer *player)
 {
   MexDvbPlayerPrivate *priv = player->priv;
   GstPad *sink_pad;
@@ -292,36 +316,41 @@ static void
 create_pipeline (MexDvbPlayer *player)
 {
   MexDvbPlayerPrivate *priv = player->priv;
-  GstElement *pipeline, *sink, *demuxer;
+  GstElement *pipeline, *sink, *demuxer, *decoder;
   gboolean result;
 
   pipeline = gst_pipeline_new (NULL);
 
   priv->dvbbasebin = gst_element_factory_make ("dvbbasebin", NULL);
+  g_signal_connect (priv->dvbbasebin, "pad-added",
+                    G_CALLBACK (on_dvbbasebin_pad_added), player);
 
   demuxer = gst_element_factory_make ("mpegtsdemux", NULL);
-  g_signal_connect (demuxer, "pad-added", G_CALLBACK (on_pad_added), player);
+  g_signal_connect (demuxer, "pad-added",
+                    G_CALLBACK (on_demuxer_pad_added), player);
 
-  priv->decoder = gst_element_factory_make ("mpeg2dec", NULL);
+  decoder = gst_element_factory_make ("mpeg2dec", NULL);
 
   sink = gst_element_factory_make ("cluttersink", NULL);
+  g_assert (sink);
   g_object_set (G_OBJECT (sink),
                 "texture", CLUTTER_TEXTURE (player),
                 "qos", TRUE,
 		NULL);
 
   gst_bin_add_many (GST_BIN (pipeline), priv->dvbbasebin, demuxer,
-                    priv->decoder, sink, NULL);
-  result = gst_element_link (priv->dvbbasebin, demuxer);
-  result &= gst_element_link (priv->decoder, sink);
+                    decoder, sink, NULL);
+  result = gst_element_link (decoder, sink);
 
   g_assert (priv->dvbbasebin);
   g_assert (demuxer);
-  g_assert (priv->decoder);
+  g_assert (decoder);
   g_assert (sink);
   g_assert (result);
 
   priv->pipeline = pipeline;
+  priv->demuxer = demuxer;
+  priv->decoder = decoder;
 }
 
 /* Clutter 1.4 has this symbol, we don't want to depend on 1.4 just for that

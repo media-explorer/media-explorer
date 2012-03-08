@@ -129,6 +129,10 @@ static gboolean mex_player_set_controls_visible (MexPlayer *player,
                                                  gboolean   visible);
 
 
+static void
+mex_player_set_content_uri_resolved (MexPlayer   *player,
+                                     MexContent  *content,
+                                     const gchar *uri);
 static void mex_get_stream_cb (MexProgram   *program,
                                const gchar  *url,
                                const GError *error,
@@ -174,7 +178,8 @@ static void
 mex_player_set_content (MexContentView *view,
                         MexContent     *content)
 {
-  MexPlayerPrivate *priv = MEX_PLAYER (view)->priv;
+  MexPlayer *player = MEX_PLAYER (view);
+  MexPlayerPrivate *priv = player->priv;
 
   if (priv->model)
     mex_media_controls_set_content (MEX_MEDIA_CONTROLS (priv->controls),
@@ -240,11 +245,7 @@ mex_player_set_content (MexContentView *view,
             }
         }
 
-      if (MEX_IS_DVBT_CHANNEL (content))
-        {
-          clutter_media_set_playing (priv->media, TRUE);
-        }
-      else if (MEX_IS_PROGRAM (content))
+      if (MEX_IS_PROGRAM (content))
         {
           mex_program_get_stream (MEX_PROGRAM (content),
                                   mex_get_stream_cb,
@@ -256,7 +257,7 @@ mex_player_set_content (MexContentView *view,
 
           uri = mex_content_get_metadata (content,
                                           MEX_CONTENT_METADATA_URL);
-          mex_get_stream_cb (NULL, uri, NULL, view);
+          mex_player_set_content_uri_resolved (player, content, uri);
         }
 
       if (priv->info_visible)
@@ -1049,33 +1050,20 @@ mex_player_get_clutter_media (MexPlayer *player)
 }
 
 static void
-mex_get_stream_cb (MexProgram   *program,
-                   const gchar  *url,
-                   const GError *error,
-                   gpointer      user_data)
+mex_player_set_content_uri_resolved (MexPlayer   *player,
+                                     MexContent  *content,
+                                     const gchar *uri)
 {
-  MexPlayer *player = user_data;
   MexPlayerPrivate *priv = player->priv;
-  MexGenericContent  *generic_content;
 #ifdef USE_PLAYER_CLUTTER_GST
   ClutterGstVideoTexture *video_texture;
 #endif
-
-  if (G_UNLIKELY (error))
-    {
-      g_warning ("Could not play content: %s (%s)", error->message, url);
-      return;
-    }
-
-  /* ensure that this callback is for the current content */
-  if (priv->content != (MexContent*) program)
-    return;
 
 #ifdef USE_PLAYER_CLUTTER_GST
   /* We seek at the precise time when the file is local, but we
    * seek to key frame when streaming */
   video_texture = CLUTTER_GST_VIDEO_TEXTURE (priv->media);
-  if (g_str_has_prefix (url, "file://"))
+  if (g_str_has_prefix (uri, "file://"))
     {
       clutter_gst_video_texture_set_seek_flags (video_texture,
                                                 CLUTTER_GST_SEEK_FLAG_ACCURATE);
@@ -1109,12 +1097,42 @@ mex_get_stream_cb (MexProgram   *program,
     }
 #endif
 
-  MEX_DEBUG ("set uri %s", url);
-  clutter_media_set_uri (CLUTTER_MEDIA (priv->media), url);
-  generic_content = MEX_GENERIC_CONTENT (priv->content);
-  if (mex_generic_content_get_last_position_start (generic_content))
-    clutter_media_set_progress (CLUTTER_MEDIA (priv->media), priv->position);
+  MEX_DEBUG ("set uri %s", uri);
+  clutter_media_set_uri (CLUTTER_MEDIA (priv->media), uri);
+
+  if (MEX_IS_GENERIC_CONTENT (priv->content))
+    {
+      MexGenericContent  *generic_content;
+
+      generic_content = MEX_GENERIC_CONTENT (priv->content);
+      if (mex_generic_content_get_last_position_start (generic_content))
+        clutter_media_set_progress (CLUTTER_MEDIA (priv->media),
+                                    priv->position);
+    }
+
   clutter_media_set_playing (CLUTTER_MEDIA (priv->media), TRUE);
+}
+
+static void
+mex_get_stream_cb (MexProgram   *program,
+                   const gchar  *url,
+                   const GError *error,
+                   gpointer      user_data)
+{
+  MexPlayer *player = user_data;
+  MexPlayerPrivate *priv = player->priv;
+
+  if (G_UNLIKELY (error))
+    {
+      g_warning ("Could not play content: %s (%s)", error->message, url);
+      return;
+    }
+
+  /* ensure that this callback is for the current content */
+  if (priv->content != (MexContent*) program)
+    return;
+
+  mex_player_set_content_uri_resolved (player, MEX_CONTENT (program), url);
 }
 
 void
