@@ -851,6 +851,11 @@ mex_grid_allocate (ClutterActor           *actor,
               child_box.x2 = avail_width;
             }
 
+          child_box.x1 = (int) child_box.x1;
+          child_box.x2 = (int) child_box.x2;
+          child_box.y1 = (int) child_box.y1;
+          child_box.y2 = (int) child_box.y2;
+
           clutter_actor_allocate (child, &child_box, flags);
         }
 
@@ -901,7 +906,7 @@ mex_grid_apply_transform (ClutterActor *actor,
 
   if (priv->vadjust)
     cogl_matrix_translate (matrix,
-                           0, -mx_adjustment_get_value (priv->vadjust), 0);
+                           0, (int) -mx_adjustment_get_value (priv->vadjust), 0);
 }
 
 static void
