@@ -82,10 +82,26 @@ mex_video_grid_view_constructed (GObject *object)
 {
   MexMenu *menu;
   MxAction *action;
+  MexModel *model;
 
   G_OBJECT_CLASS (mex_video_grid_view_parent_class)->constructed (object);
 
   menu = mex_grid_view_get_menu (MEX_GRID_VIEW (object));
+
+  /* check if the model is already filtered */
+  g_object_get (object, "model", &model, NULL);
+
+  if (model && MEX_IS_VIEW_MODEL (model)
+      && mex_view_model_get_is_filtered (MEX_VIEW_MODEL (model)))
+    {
+      /* if the model is already filtered, don't add new filter items */
+      g_object_unref (model);
+      return;
+    }
+
+  if (model)
+    g_object_unref (model);
+
 
   /* Add menu items */
   action = mx_action_new_full ("all-items",
@@ -173,9 +189,6 @@ mex_video_grid_view_new (MexModel *model)
   view = g_object_new (MEX_TYPE_VIDEO_GRID_VIEW, "model", model, NULL);
 
   view->priv->model = model;
-
-  /* show all albums by default */
-  mex_video_grid_view_show_all (NULL, view);
 
   return (ClutterActor *) view;
 }
