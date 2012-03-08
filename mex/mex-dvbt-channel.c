@@ -18,10 +18,18 @@
 
 #include "mex-private.h"
 #include "mex-enum-types.h"
+#include "mex-content.h"
 
 #include "mex-dvbt-channel.h"
 
-G_DEFINE_TYPE (MexDVBTChannel, mex_dvbt_channel, MEX_TYPE_CHANNEL)
+static void mex_content_iface_init (MexContentIface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (MexDVBTChannel,
+                         mex_dvbt_channel,
+                         MEX_TYPE_CHANNEL,
+                         G_IMPLEMENT_INTERFACE (MEX_TYPE_CONTENT,
+                                                mex_content_iface_init))
+
 
 #define DVBT_CHANNEL_PRIVATE(o)                         \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o),                    \
@@ -48,6 +56,8 @@ enum
 
 struct _MexDVBTChannelPrivate
 {
+  gchar *uri;
+
   guint frequency;  /* in kHz */
   MexDvbInversion inversion;
   MexDvbBandwidth bandwidth;
@@ -61,6 +71,52 @@ struct _MexDVBTChannelPrivate
   guint pmt;
 };
 
+static void
+on_service_id_changed (MexDVBTChannel *channel,
+                       GParamSpec     *spec,
+                       gpointer        data)
+{
+  MexDVBTChannelPrivate *priv = channel->priv;
+
+  g_free (priv->uri);
+  priv->uri = g_strdup_printf ("dvb://%s", priv->service_id);
+
+  g_object_notify (G_OBJECT (channel), "uri");
+}
+
+/*
+ * Content implementation
+ */
+
+static const char *
+mex_dvbt_channel_get_metadata (MexContent         *content,
+                               MexContentMetadata  key)
+{
+  MexDVBTChannel *channel = MEX_DVBT_CHANNEL (content);
+  MexDVBTChannelPrivate *priv = channel->priv;
+  MexContentIface *iface_class, *parent_iface_class;
+
+  switch (key)
+    {
+    case MEX_CONTENT_METADATA_URL:
+      return priv->uri;
+    default:
+      /* Chain up to the parent implementation of that method */
+      iface_class = MEX_CONTENT_GET_IFACE (channel);
+      parent_iface_class = g_type_interface_peek_parent (iface_class);
+
+      return parent_iface_class->get_metadata (content, key);
+    }
+}
+static void
+mex_content_iface_init (MexContentIface *iface)
+{
+  iface->get_metadata = mex_dvbt_channel_get_metadata;
+}
+
+/*
+ * GObject implementation
+ */
 
 static void
 mex_dvbt_channel_get_property (GObject    *object,
@@ -167,6 +223,7 @@ mex_dvbt_channel_finalize (GObject *object)
   MexDVBTChannelPrivate *priv = MEX_DVBT_CHANNEL (object)->priv;
 
   g_free (priv->service_id);
+  g_free (priv->uri);
 
   G_OBJECT_CLASS (mex_dvbt_channel_parent_class)->finalize (object);
 }
@@ -273,6 +330,9 @@ static void
 mex_dvbt_channel_init (MexDVBTChannel *self)
 {
   self->priv = DVBT_CHANNEL_PRIVATE (self);
+
+  g_signal_connect (self, "notify::service-id",
+                    G_CALLBACK (on_service_id_changed), NULL);
 }
 
 MexChannel *
