@@ -397,6 +397,7 @@ mex_grid_view_timeline_complete_cb (ClutterTimeline *timeline,
   else if (priv->state == STATE_OPENING)
     {
       priv->state = STATE_OPEN;
+      clutter_actor_show (priv->grid);
       clutter_actor_animate (priv->grid, CLUTTER_LINEAR, 250,
                              "opacity", 255,
                              NULL);
