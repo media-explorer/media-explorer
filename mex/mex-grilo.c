@@ -101,6 +101,7 @@ set_metadata_from_media (MexContent          *content,
   const gchar *cstring;
   GrlKeyID     grl_key = _get_grl_key_from_mex (mex_key);
   gint n;
+  gint year = 0;
 
   if (!grl_key)
     return;
@@ -126,7 +127,7 @@ set_metadata_from_media (MexContent          *content,
 
             if (g_str_has_prefix (mimetype, "video/"))
               {
-                mex_metadata_from_uri (cstring, &title, &showname, NULL,
+                mex_metadata_from_uri (cstring, &title, &showname, &year,
                                        &season, &episode);
               }
 
@@ -156,7 +157,14 @@ set_metadata_from_media (MexContent          *content,
                                       season_str);
             g_free (season_str);
 
-            g_free (replacement);
+            if (year)
+              {
+                replacement = g_strdup_printf ("%d", year);
+                mex_content_set_metadata (content, MEX_CONTENT_METADATA_YEAR,
+                                          replacement);
+
+                g_free (replacement);
+              }
           }
         else
           mex_content_set_metadata (content, mex_key, cstring);
