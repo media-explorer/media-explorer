@@ -40,7 +40,7 @@ typedef struct
 void mex_metadata_from_uri (const gchar *uri,
                             gchar      **title,
                             gchar      **showname,
-                            GDate      **date,
+                            gint        *year,
                             gint        *season,
                             gint        *episode);
 

@@ -99,7 +99,7 @@ void
 mex_metadata_from_uri (const gchar *uri,
                        gchar      **title,
                        gchar      **showname,
-                       GDate      **date,
+                       gint        *year,
                        gint        *season,
                        gint        *episode)
 {
@@ -118,12 +118,12 @@ mex_metadata_from_uri (const gchar *uri,
             g_strdelimit (*title, ".", ' ');
         }
 
-        if (date) {
-            gchar *year = g_match_info_fetch_named (info, "year");
+        if (year) {
+            gchar *year_str = g_match_info_fetch_named (info, "year");
 
-            *date = g_date_new ();
-            g_date_set_year (*date, atoi (year));
-            g_free (year);
+            *year = atoi (year_str);
+
+            g_free (year_str);
         }
 
         if (showname) {
@@ -192,8 +192,8 @@ mex_metadata_from_uri (const gchar *uri,
             g_free (e);
         }
 
-        if (date) {
-            *date = NULL;
+        if (year) {
+            *year = 0;
         }
 
         g_regex_unref (regex);
@@ -215,8 +215,8 @@ mex_metadata_from_uri (const gchar *uri,
         *showname = NULL;
     }
 
-    if (date) {
-        *date = NULL;
+    if (year) {
+        *year = 0;
     }
 
     if (season) {
