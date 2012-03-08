@@ -401,13 +401,7 @@ mex_explorer_class_init (MexExplorerClass *klass)
 static void
 mex_explorer_prune_children (MexExplorer *self)
 {
-  ClutterStage *stage;
-  MxActorManager *manager;
-
   MexExplorerPrivate *priv = self->priv;
-
-  stage = (ClutterStage *)clutter_actor_get_stage (CLUTTER_ACTOR (self));
-  manager = stage ? mx_actor_manager_get_for_stage (stage) : NULL;
 
   while (priv->to_destroy)
     {
@@ -431,13 +425,7 @@ mex_explorer_prune_children (MexExplorer *self)
                                                 self);
         }
 
-      if (manager && CLUTTER_IS_CONTAINER (page))
-        {
-          clutter_actor_set_opacity (page, 0);
-          mx_actor_manager_remove_container (manager, CLUTTER_CONTAINER (page));
-        }
-      else
-        clutter_actor_destroy (page);
+      clutter_actor_destroy (page);
 
       priv->to_destroy =
         g_list_delete_link (priv->to_destroy, priv->to_destroy);
