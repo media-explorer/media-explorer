@@ -1206,3 +1206,17 @@ mex_view_model_set_order_by (MexViewModel       *model,
 
   mex_view_model_refresh_external_items (model);
 }
+
+/**
+ * mex_view_model_get_is_filtered:
+ * @model: A #MexViewModel
+ *
+ * Determines whether the model has any filters set.
+ *
+ * Returns: #TRUE if any filters are set
+ */
+gboolean
+mex_view_model_get_is_filtered (MexViewModel *model)
+{
+  return (model->priv->filter_by != NULL);
+}

@@ -89,6 +89,7 @@ void mex_view_model_set_order_by (MexViewModel       *model,
                                   MexContentMetadata  metadata_key,
                                   gboolean            descending);
 
+gboolean mex_view_model_get_is_filtered (MexViewModel *model);
 
 G_END_DECLS
 
