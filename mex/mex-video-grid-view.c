@@ -80,6 +80,7 @@ mex_video_grid_view_show_films (MxAction         *action,
 static void
 mex_video_grid_view_constructed (GObject *object)
 {
+  MexVideoGridViewPrivate *priv = MEX_VIDEO_GRID_VIEW (object)->priv;
   MexMenu *menu;
   MxAction *action;
   MexModel *model;
@@ -91,17 +92,14 @@ mex_video_grid_view_constructed (GObject *object)
   /* check if the model is already filtered */
   g_object_get (object, "model", &model, NULL);
 
+  priv->model = model;
+
   if (model && MEX_IS_VIEW_MODEL (model)
       && mex_view_model_get_is_filtered (MEX_VIEW_MODEL (model)))
     {
       /* if the model is already filtered, don't add new filter items */
-      g_object_unref (model);
       return;
     }
-
-  if (model)
-    g_object_unref (model);
-
 
   /* Add menu items */
   action = mx_action_new_full ("all-items",
@@ -152,6 +150,10 @@ mex_video_grid_view_set_property (GObject      *object,
 static void
 mex_video_grid_view_dispose (GObject *object)
 {
+  MexVideoGridViewPrivate *priv = MEX_VIDEO_GRID_VIEW (object)->priv;
+
+  g_clear_object (&priv->model);
+
   G_OBJECT_CLASS (mex_video_grid_view_parent_class)->dispose (object);
 }
 
@@ -187,8 +189,6 @@ mex_video_grid_view_new (MexModel *model)
   MexVideoGridView *view;
 
   view = g_object_new (MEX_TYPE_VIDEO_GRID_VIEW, "model", model, NULL);
-
-  view->priv->model = model;
 
   return (ClutterActor *) view;
 }
