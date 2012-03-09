@@ -948,7 +948,7 @@ mex_explorer_push_model (MexExplorer *explorer,
 
   if (page)
     {
-      g_object_weak_ref (G_OBJECT (page), (GWeakNotify)g_object_unref, model);
+      g_object_weak_ref (G_OBJECT (page), (GWeakNotify)g_object_unref, g_object_ref (model));
       g_object_set_qdata (G_OBJECT (page), mex_explorer_model_quark, model);
 
       g_queue_push_tail (&priv->pages, page);
