@@ -212,6 +212,8 @@ mex_grid_view_dispose (GObject *object)
       priv->menu_layout = NULL;
     }
 
+  g_clear_object (&priv->model);
+
   G_OBJECT_CLASS (mex_grid_view_parent_class)->dispose (object);
 }
 
@@ -554,7 +556,10 @@ mex_grid_view_set_model (MexGridView *view,
   if (model == priv->model)
     return;
 
-  priv->model = model;
+  if (priv->model)
+    g_object_unref (priv->model);
+
+  priv->model = g_object_ref (model);
 
   g_object_get (model, "category", &category, NULL);
 
