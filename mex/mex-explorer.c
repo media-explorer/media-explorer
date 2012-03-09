@@ -213,6 +213,8 @@ static void
 mex_explorer_dispose (GObject *object)
 {
   MexExplorerPrivate *priv = MEX_EXPLORER (object)->priv;
+  GList *m;
+  const GList *models;
 
   if (priv->to_destroy)
     {
@@ -234,6 +236,14 @@ mex_explorer_dispose (GObject *object)
 
       if (MEX_IS_AGGREGATE_MODEL (model))
         {
+          models = mex_aggregate_model_get_models (MEX_AGGREGATE_MODEL (model));
+
+          for (m = (GList *)models; m; m = m->next)
+            mex_explorer_model_removed_cb (MEX_AGGREGATE_MODEL (model),
+                                           MEX_MODEL (m->data),
+                                           MEX_EXPLORER (object));
+
+
           g_signal_handlers_disconnect_by_func (model,
                                                 mex_explorer_model_added_cb,
                                                 object);
