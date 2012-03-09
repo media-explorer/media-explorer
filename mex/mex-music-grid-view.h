@@ -16,11 +16,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#ifndef _MEX_MUSIC_GRID_VIEW_H
-#define _MEX_MUSIC_GRID_VIEW_H
+#ifndef __MEX_MUSIC_GRID_VIEW_H__
+#define __MEX_MUSIC_GRID_VIEW_H__
 
 
-#include "mex-grid-view.h"
+#include <mex/mex-grid-view.h>
 
 G_BEGIN_DECLS
 
@@ -68,4 +68,4 @@ ClutterActor *mex_music_grid_view_new (MexModel *model);
 
 G_END_DECLS
 
-#endif /* _MEX_MUSIC_GRID_VIEW_H */
+#endif /* __MEX_MUSIC_GRID_VIEW_H__ */
