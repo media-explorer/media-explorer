@@ -1450,6 +1450,7 @@ mex_grid_clear (MexGrid *grid)
                                             0));
       g_array_remove_index_fast (priv->children, 0);
     }
+  priv->current_focus = NULL;
 }
 
 /**
@@ -1499,6 +1500,10 @@ mex_grid_controller_changed (GController          *controller,
 
           box = g_array_index (priv->children, ClutterActor*, content_index);
 
+
+          if (box == priv->current_focus)
+            priv->current_focus = NULL;
+
           clutter_actor_destroy (box);
           g_array_remove_index (priv->children, content_index);
         }
@@ -1543,12 +1548,7 @@ mex_grid_set_model (MexGrid *grid, MexModel *model)
   if (priv->model)
     {
       /* remove all children */
-      while (priv->children->len > 0)
-        {
-          clutter_actor_destroy (g_array_index (priv->children, ClutterActor*,
-                                                0));
-          g_array_remove_index_fast (priv->children, 0);
-        }
+      mex_grid_clear (grid);
 
       /* remove "changed" signal handler */
       controller = mex_model_get_controller (priv->model);
