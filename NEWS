@@ -1,4 +1,35 @@
 ===============================================================================
+Mex 0.3.8                                                            2012-03-09
+===============================================================================
+
+  • List of changes since media-explorer 0.3.6.1
+
+    » add tracker-sparql-0.14 support
+
+    » Improved compatibility with Clutter 1.10
+
+    » Sort items alphabetically by default
+
+    » Add support for GApplication
+
+    » Add alphabetical headers to the artist listing
+
+    » Music cover art items are now square
+
+    » Support negative filters in MexViewModel
+
+    » Add MexVideoGridView to display video listings and categories
+
+    » Many other bug fixes and improvements
+
+
+Contributors to this release:
+
+  Damien Lespiau, Dominique Leuenberger, Michael Wood, Thomas Wood
+
+
+
+===============================================================================
 Mex 0.3.6.1                                                          2012-02-02
 ===============================================================================
 
