@@ -26,6 +26,11 @@
 #include "settings.h"
 
 #include <mex/mex.h>
+#include "mex-log.h"
+
+#define MEX_LOG_DOMAIN_DEFAULT  webremote_log_domain
+MEX_LOG_DOMAIN(webremote_log_domain);
+
 
 /* TODO #ifdef HAVE_TRACKER etc split webserver into separate module */
 
@@ -87,8 +92,7 @@ send_response (SoupServer   *server,
       g_object_unref (info);
       g_object_unref (gfile);
 
-      if (self->opt_debug)
-        g_debug ("Requested: %s", uri);
+      MEX_DEBUG ("Requested: %s", uri);
 
       g_file_get_contents (uri, &processed_data, &data_size, &error);
 
@@ -101,8 +105,7 @@ send_response (SoupServer   *server,
 
       if (error || !uri)
         {
-          if (self->opt_debug)
-            g_debug ("404: No such file or directory: %s",
+          MEX_DEBUG ("404: No such file or directory: %s",
                      error ? error->message : path);
 
           if (error)
@@ -174,8 +177,7 @@ http_post (SoupServer   *server,
         {
           search_term = g_strdup (post_request + strlen ("trackersearch="));
 
-          if (self->opt_debug)
-            g_debug ("Got Search request: %s", search_term);
+          MEX_DEBUG ("Got Search request: %s", search_term);
 
           sparql_request =
             g_strdup_printf ("SELECT ?title ?url {"
@@ -199,8 +201,7 @@ http_post (SoupServer   *server,
        */
       self->data = result;
 
-      if (self->opt_debug)
-        g_debug ("Search result\n%s", result);
+      MEX_DEBUG ("Search result\n%s", result);
 
       send_response (server, msg, path, self, CUSTOM);
       return;
@@ -212,7 +213,9 @@ http_post (SoupServer   *server,
           g_strcmp0 (self->dbus_client->current_playing_uri,
                      self->current_playing_info[0]) == 0)
         {
-          g_debug ("using cache: %s %s", self->dbus_client->current_playing_uri, self->current_playing_info[0]);
+          MEX_DEBUG ("using cache: %s %s",
+                     self->dbus_client->current_playing_uri,
+                     self->current_playing_info[0]);
           self->data = g_strdup (self->current_playing_info[1]);
         }
       else
@@ -245,8 +248,7 @@ http_post (SoupServer   *server,
                              " }",
                              self->current_playing_info[0]);
 
-          if (self->opt_debug)
-            g_debug ("query: %s", sparql_request);
+          MEX_DEBUG ("query: %s", sparql_request);
 
           result = tracker_interface_query (self->tracker_interface,
                                             sparql_request);
@@ -264,8 +266,7 @@ http_post (SoupServer   *server,
         }
 
 
-      if (self->opt_debug)
-        g_debug ("Search result\n%s", self->data);
+      MEX_DEBUG ("Search result\n%s", self->data);
 
       send_response (server, msg, path, self, CUSTOM);
       return;
@@ -277,8 +278,7 @@ http_post (SoupServer   *server,
 
       media_uri = soup_uri_decode (post_request + strlen ("setmedia="));
 
-      if (self->opt_debug)
-        g_debug ("Resquesting setmedia = %s", media_uri);
+      MEX_DEBUG ("Resquesting setmedia = %s", media_uri);
 
       dbus_client_player_set (self->dbus_client, "seturi", media_uri);
 
@@ -291,14 +291,12 @@ http_post (SoupServer   *server,
 
       get = g_strdup (post_request + strlen ("mediaplayerget="));
 
-      if (self->opt_debug)
-        g_debug ("mediaplayerget = %s", get);
+      MEX_DEBUG ("mediaplayerget = %s", get);
 
       self->data = dbus_client_player_get (self->dbus_client, get);
       g_free (get);
 
-      if (self->opt_debug)
-        g_debug ("result \"%s\"", self->data);
+      MEX_DEBUG ("result \"%s\"", self->data);
 
       if (!self->data || strlen (self->data) == 0)
         self->data = g_strdup ("Unknown media");
@@ -313,8 +311,7 @@ http_post (SoupServer   *server,
 
       action = g_strdup (post_request + strlen ("playeraction="));
 
-      if (self->opt_debug)
-        g_debug ("playeraction = %s", action);
+      MEX_DEBUG ("playeraction = %s", action);
 
       dbus_client_player_action (self->dbus_client, action);
 
@@ -336,8 +333,7 @@ server_cb (SoupServer        *server,
 
   MexWebRemote *self = (MexWebRemote *)user_data;
 
-  if (self->opt_debug)
-    g_debug ("%s %s HTTP/1.%d", msg->method, path,
+  MEX_DEBUG ("%s %s HTTP/1.%d", msg->method, path,
              soup_message_get_http_version (msg));
 
   if (msg->method == SOUP_METHOD_POST)
@@ -381,15 +377,13 @@ auth_cb (SoupAuthDomain *domain,
 
   if (g_strcmp0 (temp, self->userpass) == 0)
     {
-      if (self->opt_debug)
-        g_debug ("Authentication success");
+      MEX_DEBUG ("Authentication success");
       g_free (temp);
       return TRUE;
     }
   else
     {
-      if (self->opt_debug)
-        g_debug ("Authentication failure");
+      MEX_DEBUG ("Authentication failure");
 
       remind_user_pass (self);
 
@@ -447,7 +441,7 @@ new_connection_cb (SoupSocket *sock, SoupSocket *new, MexWebRemote *webremote)
   remind_user_pass (webremote);
 
   if (webremote->opt_debug)
-    g_debug ("New connection %s", client_address_str);
+    MEX_DEBUG ("New connection %s", client_address_str);
 }
 
 void
@@ -486,9 +480,7 @@ int main (int argc, char **argv)
         { "bind", 'b', 0, G_OPTION_ARG_STRING, &webremote.opt_interface,
           "Bind to a particular ip address", NULL },
         { "port", 'p', 0, G_OPTION_ARG_INT, &webremote.opt_port,
-          "Port to listen to http requests on", NULL },
-        { "debug", 'd', 0, G_OPTION_ARG_NONE, &webremote.opt_debug,
-          "Dispay debugging info", NULL },
+          "Port to listen to http requests on", NULL }, 
         { "auth", 'a', 0, G_OPTION_ARG_STRING, &webremote.opt_auth,
           "username:password", NULL },
         { "noauth", 'n', 0, G_OPTION_ARG_NONE, &webremote.opt_noauth,
