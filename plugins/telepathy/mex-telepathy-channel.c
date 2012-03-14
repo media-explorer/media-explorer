@@ -749,6 +749,21 @@ mex_telepathy_channel_on_bus_watch (GstBus     *bus,
   return TRUE;
 }
 
+static gboolean
+pad_added_idle_cb (gpointer data)
+{
+  MexTelepathyChannel *self = data;
+  MexTelepathyChannelPrivate *priv = self->priv;
+
+  /* Upon pad added, clear the "in progress" box+padding */
+  clutter_actor_hide (CLUTTER_ACTOR (priv->busy_box));
+  clutter_actor_show (CLUTTER_ACTOR (priv->full_frame) );
+
+  mex_telepathy_channel_set_tool_mode (self, TOOL_MODE_FULL, 100);
+
+  return FALSE;
+}
+
 static void
 mex_telepathy_channel_on_src_pad_added (TfContent *content,
                                         TpHandle   handle,
@@ -765,12 +780,6 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
   GstPad *sinkpad;
   GstElement *element;
   GstStateChangeReturn ret;
-
-  /* Upon pad added, clear the "in progress" box+padding */
-  /* FIXME: This is in the streaming thread.. we need to push that
-   * to the main thread */
-  clutter_actor_hide (CLUTTER_ACTOR (priv->busy_box));
-  clutter_actor_show (CLUTTER_ACTOR (priv->full_frame) );
 
   MEX_DEBUG ("New src pad: %s", cstr);
   g_object_get (content, "media-type", &mtype, NULL);
@@ -813,7 +822,9 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
   g_object_unref (sinkpad);
 
   /* Start in FULL mode */
-  mex_telepathy_channel_set_tool_mode (self, TOOL_MODE_FULL, 100);
+  /* Upon pad added, clear the "in progress" box+padding */
+  /* But this nees to be done in the main loop */
+  g_idle_add (pad_added_idle_cb, self);
 }
 
 static void
