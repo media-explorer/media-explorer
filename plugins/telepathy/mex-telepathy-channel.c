@@ -1270,48 +1270,6 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
 }
 
 static void
-mex_telepathy_channel_on_ready (TpCallChannel *channel,
-  GParamSpec *spec, gpointer user_data)
-{
-  MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
-  MexTelepathyChannelPrivate *priv = self->priv; 
-  GPtrArray *contents;
-  guint i, j;
-
-  contents = tp_call_channel_get_contents (channel);
-
-  for (i = 0; i < contents->len; i++)
-    {
-      TpCallContent *content =
-          TP_CALL_CONTENT (g_ptr_array_index (contents, i));
-
-      if (tp_call_content_get_media_type (content) ==
-          TP_MEDIA_STREAM_TYPE_VIDEO)
-        {
-          GPtrArray *streams;
-
-          streams = tp_call_content_get_streams (content);
-
-          for (j = 0; j < streams->len; j++)
-            {
-              TpCallStream *stream =
-                  TP_CALL_STREAM (g_ptr_array_index (streams, j));
-              TpSendingState state;
-
-              state = tp_call_stream_get_local_sending_state (stream);
-              priv->sending_video = (state == TP_SENDING_STATE_PENDING_SEND
-                  || state == TP_SENDING_STATE_SENDING);
-              mex_telepathy_channel_set_camera_state (self, priv->sending_video);
-              return;
-            }
-        }
-    }
-
-  /* If we get there is that there is no video content */
-  mex_telepathy_channel_set_camera_state (self, FALSE);
-}
-
-static void
 mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
 {
   MexTelepathyChannelPrivate *priv = self->priv;
@@ -1319,7 +1277,8 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
   GstBus *bus;
   GstElement *pipeline;
   GstStateChangeReturn ret;
-  gboolean ready;
+  GPtrArray *contents;
+  guint i, j;
 
   TpHandle contactHandle = tp_channel_get_handle (priv->channel, NULL);
   TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
@@ -1360,9 +1319,7 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
   tp_call_channel_accept_async (TP_CALL_CHANNEL (priv->channel), NULL, NULL);
 
   priv->channel = g_object_ref (priv->channel);
-  g_signal_connect (priv->channel, "notify::ready",
-                    G_CALLBACK (mex_telepathy_channel_on_ready),
-                    self);
+
   g_signal_connect (priv->channel, "invalidated",
                     G_CALLBACK (mex_telepathy_channel_on_proxy_invalidated),
                     self);
@@ -1371,9 +1328,37 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
                     G_CALLBACK (mex_telepathy_channel_on_call_state_changed),
                     self);
 
-  g_object_get (priv->channel, "ready", &ready, NULL);
-  if (ready)
-    mex_telepathy_channel_on_ready (TP_CALL_CHANNEL (priv->channel), NULL, self);
+  contents = tp_call_channel_get_contents (TP_CALL_CHANNEL (priv->channel));
+
+  for (i = 0; i < contents->len; i++)
+    {
+      TpCallContent *content =
+          TP_CALL_CONTENT (g_ptr_array_index (contents, i));
+
+      if (tp_call_content_get_media_type (content) ==
+          TP_MEDIA_STREAM_TYPE_VIDEO)
+        {
+          GPtrArray *streams;
+
+          streams = tp_call_content_get_streams (content);
+
+          for (j = 0; j < streams->len; j++)
+            {
+              TpCallStream *stream =
+                  TP_CALL_STREAM (g_ptr_array_index (streams, j));
+              TpSendingState state;
+
+              state = tp_call_stream_get_local_sending_state (stream);
+              priv->sending_video = (state == TP_SENDING_STATE_PENDING_SEND
+                  || state == TP_SENDING_STATE_SENDING);
+              mex_telepathy_channel_set_camera_state (self, priv->sending_video);
+              return;
+            }
+        }
+    }
+
+  /* If we get there is that there is no video content */
+  mex_telepathy_channel_set_camera_state (self, FALSE);
 }
 
 static void
