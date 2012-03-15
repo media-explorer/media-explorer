@@ -881,39 +881,9 @@ mex_grid_paint (ClutterActor *actor)
   else
     y = 0;
 
-  /* Construct a clipping rectangle that goes around the focused child if
-   * it's visible.
-   */
-  clipped = FALSE;
-  if (priv->current_focus && priv->has_focus
-      && MEX_IS_CONTENT_BOX (priv->current_focus)
-      && mex_content_box_get_open (MEX_CONTENT_BOX (priv->current_focus)))
-    {
-      ClutterActorBox child_box;
-
-      clutter_actor_get_allocation_box (priv->current_focus, &child_box);
-      if (child_box.y2 > y && child_box.y1 < y + (box.y2 - box.y1))
-        {
-          gfloat child_y1, child_y2;
-
-          /* This path encloses the grid */
-          cogl_path_rectangle (0, y, box.x2 - box.x1, y + (box.y2 - box.y1));
-
-          /* This path excludes the currently focused actor */
-          child_y1 = MAX (y, child_box.y1);
-          child_y2 = MIN (child_box.y2, y + (box.y2 - box.y1));
-          cogl_path_rectangle (child_box.x1, child_y1, child_box.x2, child_y2);
-
-          cogl_clip_push_from_path ();
-
-          clipped = TRUE;
-        }
-    }
-
-  if (!clipped)
-    cogl_clip_push_rectangle (0, y,
-                              box.x2 - box.x1,
-                              y + box.y2 - box.y1);
+  cogl_clip_push_rectangle (0, y,
+                            box.x2 - box.x1,
+                            y + box.y2 - box.y1);
 
   draw_focus = FALSE;
   paint_opacity = clutter_actor_get_paint_opacity (actor);
@@ -936,11 +906,7 @@ mex_grid_paint (ClutterActor *actor)
   /* Draw the focused actor */
   if (draw_focus)
     {
-      /* Clip around the actor box */
-      cogl_clip_push_rectangle (0, y, box.x2 - box.x1,
-                                y + (box.y2 - box.y1));
       clutter_actor_paint (priv->current_focus);
-      cogl_clip_pop ();
     }
 
   /* Draw the highlight */

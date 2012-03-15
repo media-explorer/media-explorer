@@ -69,7 +69,6 @@ typedef struct
   ClutterActor *info_bar;
   ClutterActor *volume_control;
 
-  MexBackground *background;
   ClutterActor *player;
   ClutterMedia *media;
 
@@ -123,71 +122,6 @@ mex_header_activated_cb (MexExplorer *explorer,
                          MexData     *data);
 
 static void
-mex_activate_background (MexData *data, gboolean active)
-{
-  MexBackgroundManager *manager;
-
-  /* check to see if we actually have a background in place */
-  if (!data->background)
-    {
-      manager = mex_background_manager_get_default ();
-      /* return if we have no backgrounds available */
-      if (!(data->background = mex_background_manager_get_active (manager)))
-        return;
-    }
-
-  /* Starts or stops the background from actually "playing" */
-  mex_background_set_active (data->background, active);
-
-  if (!active)
-    clutter_actor_hide (CLUTTER_ACTOR (data->background));
-  else
-    clutter_actor_show (CLUTTER_ACTOR (data->background));
-}
-
-static void
-mex_background_changed_cb (MexBackgroundManager *manager,
-                           MexBackground        *new_background,
-                           MexData              *data)
-{
-  /* We want to maintain the previous hidden/shown state of the
-   * background so store it in bg_was_visible.
-   */
-  gboolean bg_was_visible;
-
-   if (data->background)
-    {
-      bg_was_visible =
-        CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (data->background));
-
-      clutter_container_remove_actor (CLUTTER_CONTAINER (data->stack),
-                                      CLUTTER_ACTOR (data->background));
-      clutter_actor_hide (CLUTTER_ACTOR (data->background));
-
-      /* Stop the old background */
-      mex_background_set_active (data->background, FALSE);
-    }
-   else
-     {
-       bg_was_visible = TRUE;
-     }
-
-  data->background = new_background;
-
-  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
-                               CLUTTER_ACTOR (data->background));
-  clutter_actor_lower_bottom (CLUTTER_ACTOR (data->background));
-
-
-  mex_background_set_active (data->background, bg_was_visible);
-
-  if (bg_was_visible)
-      clutter_actor_show (CLUTTER_ACTOR (data->background));
-  else
-      clutter_actor_hide (CLUTTER_ACTOR (data->background));
-}
-
-static void
 error_dialog_dismiss_action_cb (MxAction *action,
                                 MexData  *data)
 {
@@ -207,12 +141,6 @@ mex_player_media_error_cb (ClutterMedia *media,
 {
   gchar *error_msg;
   MxAction *action;
-
-  if (mex_background_manager_get_active (mex_background_manager_get_default ()))
-    {
-      g_warning ("Error playing content: %s", error->message);
-      return;
-    }
 
   if (!data->error_dialog)
     {
@@ -452,7 +380,6 @@ mex_show_cb (MxAction *action, MexData *data)
 
   /* stop any playing video, even in idle mode */
   clutter_actor_hide (data->player);
-  mex_activate_background (data, FALSE);
 
   /* show the slide show */
   run_play_transition (data, content, data->slide_show, FALSE);
@@ -716,12 +643,10 @@ mex_show_actor (MexData      *data,
       /* main menu view */
       mx_widget_set_disabled (MX_WIDGET (data->layout), FALSE);
       clutter_actor_set_opacity (data->layout, 0xff);
-      mex_activate_background (data, TRUE);
       clutter_actor_show (data->explorer);
     }
   else if (actor == data->player)
     {
-      mex_activate_background (data, FALSE);
     }
   else
     clutter_actor_animate (actor, ALPHA, DURATION,
@@ -767,7 +692,6 @@ mex_hide_actor (MexData      *data,
   else if (actor == data->player)
     {
       mex_player_stop (MEX_PLAYER (data->player));
-      mex_activate_background (data, TRUE);
       clutter_actor_hide (actor);
     }
   else
@@ -2253,7 +2177,6 @@ mex_startup (MxApplication *app,
              MexData       *data)
 {
   MexPluginManager *pmanager;
-  MexBackgroundManager *bmanager;
   MexModelManager *mmanager;
   gchar *tmp;
   gchar *web_settings_loc;
@@ -2464,11 +2387,6 @@ mex_startup (MxApplication *app,
   g_free (tmp);
 
 
-  /* Background manager */
-  bmanager = mex_background_manager_get_default ();
-  g_signal_connect (bmanager, "background-changed",
-                    G_CALLBACK (mex_background_changed_cb), data);
-
   /* Populate interface by loading plugins */
   pmanager = mex_plugin_manager_get_default ();
   g_signal_connect (pmanager, "plugin-loaded",
@@ -2537,9 +2455,6 @@ mex_startup (MxApplication *app,
 
   /* Out of the box experience */
   out_of_box (data);
-
-  /* Start with background video activated */
-  mex_activate_background (data, TRUE);
 
 #if MX_CHECK_VERSION(1,99,3)
   if (opt_file)
