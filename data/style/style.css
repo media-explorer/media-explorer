@@ -5,7 +5,7 @@ MxLabel, MxButton, MxIcon, MxComboBox, MxComboBox:disabled
   font-family: "Droid Sans";
   border-image: none;
   -mx-icon-size: 26;
-  color: white;
+  color: #2a3c4a;
 }
 
 MxMenu
@@ -36,7 +36,7 @@ MxComboBox:focus, MxButton:focus,
 MxMenu > MxButton:focus
 {
   border-image: url("highlight-bg.png") 0;
-  color: #464541;
+  color: white;
 }
 
 MxMenu > MxButton:focus
@@ -47,7 +47,7 @@ MxMenu > MxButton:focus
 MxButton:focus MxLabel,
 MxMenu > MxButton:hover > MxLabel
 {
-  color: #464541;
+  color: white;
 }
 
 MxButton#placeholder:focus
@@ -194,7 +194,7 @@ MexColumn
 
 .Header:focus MxLabel
 {
-  color: #464541;
+  color: white;
 }
 
 /* Content Box */
@@ -236,7 +236,7 @@ MexContentBox MexTile.Important:focus,
 MxDialog MexTile.Important:focus
 {
   x-mex-header-background: url("highlight-bg.png");
-  color: #464541;
+  color: white;
 }
 
 MexActionList {
@@ -918,5 +918,5 @@ MxBoxLayout#suggest-column > MxButton
 MxBoxLayout#suggest-column > MxButton:focus
 {
   border-image: url('highlight-bg.png') 0;
-  color: #464541;
+  color: white;
 }
