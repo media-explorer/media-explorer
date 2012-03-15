@@ -23,7 +23,6 @@
 #include "mex-content-view.h"
 #include "mex-scroll-view.h"
 #include "mex-tile.h"
-#include "mex-shadow.h"
 #include "mex-scrollable-container.h"
 
 enum
@@ -111,7 +110,6 @@ content_box_open_notify (MexContentBox *box,
 {
   MexColumnPrivate *priv = MEX_COLUMN (column)->priv;
   GList *l;
-  ClutterActorMeta *shadow;
 
   if (mex_content_box_get_open (box))
     {
@@ -121,10 +119,6 @@ content_box_open_notify (MexContentBox *box,
             clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
                                    "opacity", 56, NULL);
         }
-
-      shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (box),
-                                                             "shadow");
-      clutter_actor_meta_set_enabled (shadow, TRUE);
 
       /* Restore the opened box to full opacity */
       clutter_actor_animate (CLUTTER_ACTOR (box), CLUTTER_EASE_IN_OUT_QUAD, 200,
@@ -145,9 +139,6 @@ content_box_open_notify (MexContentBox *box,
           clutter_actor_animate (l->data, CLUTTER_EASE_IN_OUT_QUAD, 200,
                                  "opacity", 255, NULL);
         }
-      shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (box),
-                                                             "shadow");
-      clutter_actor_meta_set_enabled (shadow, FALSE);
     }
 
   g_object_notify (G_OBJECT (column), "opened");
@@ -166,8 +157,6 @@ mex_column_add_content (MexColumn  *column,
 {
   MexColumnPrivate *priv = column->priv;
   ClutterActor *box;
-  MexShadow *shadow;
-  ClutterColor shadow_color = { 0, 0, 0, 128 };
   GList *sibling;
 
   box = mex_content_box_new ();
@@ -177,17 +166,6 @@ mex_column_add_content (MexColumn  *column,
   sibling = g_list_nth (priv->children, position);
   priv->children = g_list_insert_before (priv->children, sibling, box);
   priv->n_items ++;
-
-  /* add shadow */
-  shadow = mex_shadow_new ();
-  mex_shadow_set_paint_flags (shadow,
-                              MEX_TEXTURE_FRAME_TOP
-                              | MEX_TEXTURE_FRAME_BOTTOM);
-  mex_shadow_set_radius_y (shadow, 25);
-  mex_shadow_set_color (shadow, &shadow_color);
-  clutter_actor_add_effect_with_name (CLUTTER_ACTOR (box), "shadow",
-                                      CLUTTER_EFFECT (shadow));
-  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (shadow), FALSE);
 
   g_signal_connect (box, "notify::open",
                     G_CALLBACK (content_box_open_notify), column);
@@ -712,8 +690,8 @@ mex_column_paint (ClutterActor *actor)
         clutter_actor_paint (c->data);
     }
 
-  /* paint the current focused actor last to ensure any shadow is drawn
-   * on top of other items */
+  /* paint the current focused actor last to ensure it is drawn on top of other
+   * items */
   if (priv->current_focus)
     clutter_actor_paint (priv->current_focus);
 
