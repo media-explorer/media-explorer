@@ -166,25 +166,29 @@ MexColumn
 }
 
 /* Headers */
-.Header
+.Header, .Header MxLabel
 {
   font-size: 22;
-  color: white;
+  color: #2a3c4a;
 }
 
 .Header, .Header:active, .Header:hover
 {
   -mx-spacing: 8;
-  border-image: url("panel-header-bg.png") 1 0;
+  background-color: #d4d5cf;
   padding: 15;
-  font-size: 22;
-  color: white;
+  color: #2a3c4a;
 }
 
 .Header:focus
 {
   border-image: url("highlight-bg.png") 0;
   color: white;
+}
+
+#menu-header
+{
+  background-color: #cdcec8;
 }
 
 /* Content Box */
