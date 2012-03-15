@@ -28,7 +28,6 @@
 #include "mex-queue-model.h"
 #include "mex-scene.h"
 #include "mex-scroll-view.h"
-#include "mex-shadow.h"
 
 /* defines */
 #define MENU_MIN_WIDTH 184.0
@@ -446,8 +445,6 @@ mex_grid_view_init (MexGridView *self)
 {
   MexGridViewPrivate *priv = self->priv = GRID_VIEW_PRIVATE (self);
   ClutterActor *scroll_view;
-  MexShadow *shadow;
-  ClutterColor shadow_color = { 0, 0, 0, 128 };
 
   priv->state = STATE_CLOSED;
 
@@ -474,12 +471,6 @@ mex_grid_view_init (MexGridView *self)
                                NULL);
 
   priv->menu = (ClutterActor*) mex_menu_get_layout (MEX_MENU (priv->menu_layout));
-
-  shadow = mex_shadow_new ();
-  mex_shadow_set_radius_y (shadow, 0);
-  mex_shadow_set_color (shadow, &shadow_color);
-  clutter_actor_add_effect_with_name (CLUTTER_ACTOR (priv->menu_layout), "shadow",
-                                      CLUTTER_EFFECT (shadow));
 
   clutter_actor_set_width (priv->menu, MENU_MIN_WIDTH);
   mx_box_layout_add_actor (MX_BOX_LAYOUT (priv->menu), priv->menu_header, 0);
