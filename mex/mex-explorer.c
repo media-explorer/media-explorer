@@ -633,7 +633,7 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
                                   mex_explorer_container_quark);
 
   /* Create a new column for this model */
-  column_view = mex_column_view_new (NULL, NULL);
+  column_view = mex_column_view_new (NULL);
   column = mex_column_view_get_column (MEX_COLUMN_VIEW (column_view));
 
   g_object_get (model, "display-item-count", &display_item_count,
@@ -667,10 +667,6 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
 
   g_signal_connect (model, "notify::length",
                     G_CALLBACK (model_length_changed_cb), column);
-
-  g_object_bind_property (model, "icon-name",
-                          column_view, "icon-name",
-                          G_BINDING_SYNC_CREATE);
 
   g_object_get (G_OBJECT (model),
                 "placeholder-text", &placeholder_text,

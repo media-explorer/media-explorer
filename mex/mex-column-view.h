@@ -68,18 +68,13 @@ struct _MexColumnViewClass
 
 GType mex_column_view_get_type (void) G_GNUC_CONST;
 
-ClutterActor *mex_column_view_new (const gchar *label,
-                                    const gchar *icon_name);
+ClutterActor *mex_column_view_new (const gchar *label);
 
 MexColumn    *mex_column_view_get_column (MexColumnView *column);
 
 const gchar  *mex_column_view_get_label (MexColumnView *column);
 void          mex_column_view_set_label (MexColumnView *column,
                                          const gchar   *label);
-
-const gchar * mex_column_view_get_icon_name (MexColumnView *column);
-void          mex_column_view_set_icon_name (MexColumnView *column,
-                                             const gchar   *name);
 
 ClutterActor* mex_column_view_get_placeholder_actor (MexColumnView *column);
 void          mex_column_view_set_placeholder_actor (MexColumnView *column,

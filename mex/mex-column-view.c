@@ -24,7 +24,6 @@ enum
 {
   PROP_0,
   PROP_LABEL,
-  PROP_ICON_NAME,
   PROP_PLACEHOLDER_ACTOR
 };
 
@@ -211,10 +210,6 @@ mex_column_view_get_property (GObject    *object,
       g_value_set_object (value, mex_column_view_get_placeholder_actor (self));
       break;
 
-    case PROP_ICON_NAME:
-      g_value_set_string (value, mex_column_view_get_icon_name (self));
-      break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     }
@@ -236,10 +231,6 @@ mex_column_view_set_property (GObject      *object,
 
     case PROP_PLACEHOLDER_ACTOR:
       mex_column_view_set_placeholder_actor (self, g_value_get_object (value));
-      break;
-
-    case PROP_ICON_NAME:
-      mex_column_view_set_icon_name (self, g_value_get_string (value));
       break;
 
     default:
@@ -545,14 +536,6 @@ mex_column_view_class_init (MexColumnViewClass *klass)
                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (o_class, PROP_PLACEHOLDER_ACTOR, pspec);
 
-  pspec = g_param_spec_string ("icon-name",
-                               "Icon Name",
-                               "Icon name used by the icon for this column.",
-                               NULL,
-                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
-                               G_PARAM_CONSTRUCT);
-  g_object_class_install_property (o_class, PROP_ICON_NAME, pspec);
-
   signals[ACTIVATED] = g_signal_new ("activated",
                                      G_TYPE_FROM_CLASS (klass),
                                      G_SIGNAL_RUN_LAST,
@@ -589,7 +572,6 @@ mex_column_view_opened_cb (MexColumn     *column,
 static void
 mex_column_view_init (MexColumnView *self)
 {
-  ClutterActor *box;
   MexColumnViewPrivate *priv = self->priv = COLUMN_VIEW_PRIVATE (self);
 
   /* Begin private children */
@@ -606,31 +588,11 @@ mex_column_view_init (MexColumnView *self)
 
   priv->button = mx_button_new ();
   mx_stylable_set_style_class (MX_STYLABLE (priv->button), "Header");
-  priv->icon = mx_icon_new ();
   priv->label = mx_label_new ();
   g_object_set (priv->label, "clip-to-allocation", TRUE, "fade-out", TRUE,
                 NULL);
 
-  box = mx_box_layout_new ();
-  mx_box_layout_set_spacing (MX_BOX_LAYOUT (box), 8);
-  clutter_container_add (CLUTTER_CONTAINER (box),
-                         priv->icon,
-                         priv->label,
-                         NULL);
-  clutter_container_child_set (CLUTTER_CONTAINER (box),
-                               priv->icon,
-                               "expand", FALSE,
-                               "y-align", MX_ALIGN_MIDDLE,
-                               "y-fill", FALSE,
-                               NULL);
-  clutter_container_child_set (CLUTTER_CONTAINER (box),
-                               priv->label,
-                               "expand", TRUE,
-                               "x-fill", TRUE,
-                               "x-align", MX_ALIGN_START,
-                               "y-fill", FALSE,
-                               NULL);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->button), box);
+  clutter_container_add_actor (CLUTTER_CONTAINER (priv->button), priv->label);
 
   mx_bin_set_fill (MX_BIN (priv->button), TRUE, FALSE);
   clutter_container_add_actor (CLUTTER_CONTAINER (priv->header), priv->button);
@@ -667,12 +629,10 @@ mex_column_view_init (MexColumnView *self)
 }
 
 ClutterActor *
-mex_column_view_new (const gchar *label,
-                     const gchar *icon_name)
+mex_column_view_new (const gchar *label)
 {
   return g_object_new (MEX_TYPE_COLUMN_VIEW,
                        "label", label,
-                       "icon-name", icon_name,
                        NULL);
 }
 
@@ -730,21 +690,6 @@ mex_column_view_set_placeholder_actor (MexColumnView *column,
     }
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (column));
-}
-
-
-const gchar *
-mex_column_view_get_icon_name (MexColumnView *column)
-{
-  g_return_val_if_fail (MEX_IS_COLUMN_VIEW (column), NULL);
-  return mx_icon_get_icon_name (MX_ICON (column->priv->icon));
-}
-
-void
-mex_column_view_set_icon_name (MexColumnView *column, const gchar *name)
-{
-  g_return_if_fail (MEX_IS_COLUMN_VIEW (column));
-  mx_icon_set_icon_name (MX_ICON (column->priv->icon), name);
 }
 
 void
