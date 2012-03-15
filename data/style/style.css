@@ -166,7 +166,7 @@ MexColumn
 }
 
 /* Headers */
-.Header MxLabel
+.Header
 {
   font-size: 22;
   color: white;
@@ -184,10 +184,6 @@ MexColumn
 .Header:focus
 {
   border-image: url("highlight-bg.png") 0;
-}
-
-.Header:focus MxLabel
-{
   color: white;
 }
 

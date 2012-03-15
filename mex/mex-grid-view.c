@@ -59,7 +59,6 @@ struct _MexGridViewPrivate
   ClutterActor *menu_header;
   ClutterActor *menu_layout;
   ClutterActor *menu_title;
-  ClutterActor *menu_icon;
   ClutterActor *order_by_layout;
 
   MexModel *model;
@@ -455,25 +454,13 @@ mex_grid_view_init (MexGridView *self)
   /* Add a title/icon */
   priv->menu_title = mx_label_new ();
 
-  priv->menu_icon = mx_icon_new ();
-
-  priv->menu_header = mx_box_layout_new ();
-  mx_stylable_set_style_class (MX_STYLABLE (priv->menu_header), "Header");
-  clutter_actor_set_name (priv->menu_header, "menu-header");
-
-  clutter_container_add (CLUTTER_CONTAINER (priv->menu_header), priv->menu_icon,
-                         priv->menu_title, NULL);
-  clutter_container_child_set (CLUTTER_CONTAINER (priv->menu_header),
-                               priv->menu_icon,
-                               "expand", FALSE,
-                               "y-align", MX_ALIGN_MIDDLE,
-                               "y-fill", FALSE,
-                               NULL);
+  mx_stylable_set_style_class (MX_STYLABLE (priv->menu_title), "Header");
+  clutter_actor_set_name (priv->menu_title, "menu-header");
 
   priv->menu = (ClutterActor*) mex_menu_get_layout (MEX_MENU (priv->menu_layout));
 
   clutter_actor_set_width (priv->menu, MENU_MIN_WIDTH);
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (priv->menu), priv->menu_header, 0);
+  mx_box_layout_add_actor (MX_BOX_LAYOUT (priv->menu), priv->menu_title, 0);
 
 
   /* Add the grid */
@@ -585,8 +572,6 @@ mex_grid_view_set_model (MexGridView *view,
       cat_info = mex_model_manager_get_category_info (mex_model_manager_get_default (),
                                                       category);
       mx_label_set_text (MX_LABEL (priv->menu_title), cat_info->display_name);
-
-      mx_icon_set_icon_name (MX_ICON (priv->menu_icon), cat_info->icon_name);
     }
 
   g_free (category);
