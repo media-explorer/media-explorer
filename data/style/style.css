@@ -160,12 +160,6 @@ MxIcon.Toggle:checked
 }
 
 /* Columns */
-MexResizingHBox
-{
-  x-mex-highlight: url('panel-highlight.png') 0;
-  x-mex-shadow: url('panel-shadow.png') 0;
-}
-
 MexColumn
 {
   padding: 6 0 0 0;
