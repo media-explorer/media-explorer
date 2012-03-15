@@ -893,24 +893,6 @@ mex_grid_apply_transform (ClutterActor *actor,
 }
 
 static void
-mex_grid_draw_child_with_lowlight (MexGrid      *self,
-                                   ClutterActor *child,
-                                   gint          row)
-{
-  gfloat opacity;
-  ClutterActorBox child_box;
-  MexGridPrivate *priv = self->priv;
-
-  clutter_actor_paint (child);
-
-  clutter_actor_get_allocation_box (child, &child_box);
-  opacity = (MIN (2.f, ABS (row - priv->animated_row)) / 2.f) * 0.5f;
-  cogl_set_source_color4f (0.f, 0.f, 0.f, opacity);
-  cogl_rectangle (child_box.x1, child_box.y1,
-                  child_box.x2, child_box.y2);
-}
-
-static void
 mex_grid_paint (ClutterActor *actor)
 {
   gint i;
@@ -975,14 +957,13 @@ mex_grid_paint (ClutterActor *actor)
   /* Draw children */
   for (i = priv->first_visible; i <= priv->last_visible; i++)
     {
-      gint row = i / priv->stride;
       ClutterActor *child = g_array_index (priv->children, ClutterActor *, i);
 
       /* Paint child */
       if (priv->has_focus && (child == priv->current_focus))
         draw_focus = TRUE;
       else
-        mex_grid_draw_child_with_lowlight (self, child, row);
+        clutter_actor_paint (child);
     }
 
   /* Unset the clip around the actor */
@@ -994,8 +975,7 @@ mex_grid_paint (ClutterActor *actor)
       /* Clip around the actor box */
       cogl_clip_push_rectangle (0, y, box.x2 - box.x1,
                                 y + (box.y2 - box.y1));
-      mex_grid_draw_child_with_lowlight (self, priv->current_focus,
-                                         priv->focused_row);
+      clutter_actor_paint (priv->current_focus);
       cogl_clip_pop ();
     }
 
