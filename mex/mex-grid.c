@@ -21,7 +21,6 @@
 #include "mex-content-box.h"
 #include "mex-content-view.h"
 #include "mex-scrollable-container.h"
-#include "mex-shadow.h"
 #include "mex-content-tile.h"
 #include <math.h>
 
@@ -95,21 +94,6 @@ enum
 };
 
 static void mex_grid_start_animation (MexGrid *self);
-
-/* ClutterContainerIface */
-
-static void
-mex_grid_child_add_shadow (ClutterActor *child)
-{
-  MexShadow *shadow = mex_shadow_new ();
-
-  clutter_actor_add_effect_with_name (child, "shadow", CLUTTER_EFFECT (shadow));
-
-  mex_shadow_set_radius_y (shadow, 24);
-  mex_shadow_set_paint_flags (shadow,
-                              MEX_TEXTURE_FRAME_TOP |
-                              MEX_TEXTURE_FRAME_BOTTOM);
-}
 
 
 /* MxScrollableIface */
@@ -315,30 +299,6 @@ mex_grid_move_focus (MxFocusable      *focusable,
        * having to iterate over all our children later on when
        * we're notified of the focus change.
        */
-
-      /* Update the shadow properties */
-      if (priv->current_focus)
-        {
-          MexShadow *shadow;
-          shadow = (MexShadow *) clutter_actor_get_effect (priv->current_focus,
-                                                           "shadow");
-          mex_shadow_set_radius_y (shadow, 24);
-          mex_shadow_set_paint_flags (shadow,
-                                      MEX_TEXTURE_FRAME_TOP |
-                                      MEX_TEXTURE_FRAME_BOTTOM);
-        }
-
-      if (child)
-        {
-          MexShadow *shadow;
-          shadow = (MexShadow *) clutter_actor_get_effect (child, "shadow");
-          mex_shadow_set_radius_y (shadow, 16);
-          mex_shadow_set_paint_flags (shadow,
-                                      MEX_TEXTURE_FRAME_TOP |
-                                      MEX_TEXTURE_FRAME_BOTTOM |
-                                      MEX_TEXTURE_FRAME_LEFT |
-                                      MEX_TEXTURE_FRAME_RIGHT);
-        }
 
       /* Update the focused child/row pointers */
       priv->current_focus = child;
@@ -808,7 +768,7 @@ mex_grid_allocate (ClutterActor           *actor,
     value = 0;
 
   /* Calculate our visible range - we buffer it by a few rows, for lingering
-   * animations/shadows/rounding errors.
+   * animations/rounding errors.
    */
   first_row = MAX (0, (value / (gint)(basic_height)) - 3);
   priv->first_visible = first_row * priv->stride;
@@ -1369,8 +1329,6 @@ mex_grid_add_content (MexGrid    *grid,
   ClutterActor *box;
 
   box = mex_content_box_new ();
-
-  mex_grid_child_add_shadow (box);
 
   mex_content_box_set_important (MEX_CONTENT_BOX (box), TRUE);
 
