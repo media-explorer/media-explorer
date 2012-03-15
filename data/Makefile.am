@@ -50,7 +50,6 @@ dist_style_DATA = \
 	style/icon-stop.png \
 	style/item-title-bg.png \
 	style/label-bg.png \
-	style/main-bg.png \
 	style/panel-bg.png \
 	style/panel-header-bg.png \
 	style/panel-header-grid-bg.png \

@@ -55,12 +55,6 @@ MxButton#placeholder:focus
   border-image: none;
 }
 
-/* Main Background */
-#main-layout
-{
-  border-image: url('main-bg.png') 0;
-}
-
 /* Main Spinner */
 MxSpinner#main-spinner
 {
@@ -858,11 +852,6 @@ MxIcon.ErrorInfo
 #search-page
 {
   padding: 78 0 0 39;
-
-  /* TODO: Replace this with a dedicated background, or set the background
-   * differently in the main app so that it shows underneath here.
-   */
-  border-image: url('main-bg.png') 0;
 }
 
 MxBoxLayout#search-suggestions

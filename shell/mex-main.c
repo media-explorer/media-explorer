@@ -2181,9 +2181,9 @@ mex_startup (MxApplication *app,
   gchar *tmp;
   gchar *web_settings_loc;
 #ifdef HAVE_CLUTTER_CEX100
-  const ClutterColor black = { 0x00, 0x00, 0x00, 0x00 };
+  const ClutterColor background_color = { 0x00, 0x00, 0x00, 0x00 };
 #else
-  const ClutterColor black = { 0x00, 0x00, 0x00, 0xff };
+  const ClutterColor background_color = { 0xe4, 0xe5, 0xdf, 0xff };
 #endif /* HAVE_CLUTTER_CEX100 */
 
 
@@ -2219,7 +2219,7 @@ mex_startup (MxApplication *app,
   on_fullscreen_set (data->stage, NULL, data);
 
   /* Must set color after set use_alpha */
-  clutter_stage_set_color (data->stage, &black);
+  clutter_stage_set_color (data->stage, &background_color);
 
   data->info_bar = mex_info_bar_get_default ();
 
