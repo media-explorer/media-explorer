@@ -507,9 +507,7 @@ mex_grid_get_allocation (MexScrollableContainer *self,
 
   if (row > 0)
     {
-      box->y1 = (row - 1) *
-                (basic_height / pow (1.5, 2.0));
-      box->y1 += basic_height / pow (1.5, 1.0);
+      box->y1 = row * basic_height;
     }
   else
     box->y1 = 0;
@@ -812,20 +810,19 @@ mex_grid_allocate (ClutterActor           *actor,
   /* Calculate our visible range - we buffer it by a few rows, for lingering
    * animations/shadows/rounding errors.
    */
-  first_row = MAX (0, (value / (gint)(basic_height / pow (1.5, 2))) - 3);
+  first_row = MAX (0, (value / (gint)(basic_height)) - 3);
   priv->first_visible = first_row * priv->stride;
-  last_row = ((value + avail_height) / (gint)(basic_height / pow (1.5, 2))) + 3;
+  last_row = ((value + avail_height) / (gint)(basic_height)) + 3;
   priv->last_visible = MIN (priv->children->len - 1, last_row * priv->stride);
 
   bottom = 0;
 
-  child_box.y1 = first_row * (basic_height / pow (1.5, 2));
+  child_box.y1 = first_row * basic_height;
 
   /* Allocate all the visible children */
   for (i = first_row; i <= last_row; i++)
     {
       gint j;
-      gdouble factor;
 
       for (j = i * priv->stride;
            j < MIN ((i + 1) * priv->stride, priv->children->len); j++)
@@ -862,32 +859,18 @@ mex_grid_allocate (ClutterActor           *actor,
       if (j >= priv->children->len)
         break;
 
-      /* The focused row is the only row that gets its full height - there
-       * is also an animation between switching rows, so we store a variable
-       * to keep track of what rows we're between.
-       *
-       * The focused row gets its full height, the two adjacent rows get a
-       * bit less height, then every other row gets even less height (but not
-       * increasingly so).
-       */
-      factor = ABS (priv->animated_row - i);
-      child_box.y1 += basic_height /
-                      pow (1.5, CLAMP (factor, 0.0, 2.0));
+      child_box.y1 += basic_height;
     }
 
   /* Set the adjustment values */
   if (priv->vadjust)
     {
-      /* This is only an estimate of the total height, but by the time the
-       * container is scrolled near it, it becomes visible and is more accurate.
-       */
       if (priv->last_visible != priv->children->len - 1)
-        bottom = ((priv->children->len - 1) / priv->stride + 1) *
-          (basic_height / pow (1.5, 2.0));
+        bottom = ((priv->children->len - 1) / priv->stride + 1) * basic_height;
 
       g_object_set (G_OBJECT (priv->vadjust),
                     "lower", 0.0,
-                    "upper", (gdouble)bottom,
+                    "upper", (gdouble) bottom,
                     "step-increment", (gdouble)basic_height,
                     "page-increment", floor (avail_height / basic_height) *
                                       basic_height,
