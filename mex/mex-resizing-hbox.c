@@ -1708,7 +1708,7 @@ mex_resizing_hbox_class_init (MexResizingHBoxClass *klass)
                               "The multiplier used to determine how much "
                               "children should shrink beyond the child "
                               "designated by the depth-index, horizontally.",
-                              0.f, 1.f, 0.667f,
+                              0.f, 1.f, 0.99f,
                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_HDEPTH_SCALE, pspec);
 
@@ -1814,7 +1814,7 @@ mex_resizing_hbox_init (MexResizingHBox *self)
   priv->alpha = clutter_alpha_new_full (priv->timeline, CLUTTER_EASE_OUT_QUAD);
   priv->resizing_enabled = TRUE;
   priv->depth_index = -1;
-  priv->hdepth = 0.667f;
+  priv->hdepth = 0.99f;
   priv->vdepth = 0.99f;
   priv->max_depth = 5;
   priv->fade = TRUE;
