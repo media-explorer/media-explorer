@@ -172,6 +172,11 @@ MexResizingHBox
   x-mex-shadow: url('panel-shadow.png') 0;
 }
 
+MexColumn
+{
+  padding: 6 0 0 0;
+}
+
 /* Headers */
 .Header MxLabel
 {

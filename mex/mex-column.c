@@ -25,6 +25,9 @@
 #include "mex-tile.h"
 #include "mex-scrollable-container.h"
 
+#define SPACING 6
+
+
 enum
 {
   PROP_0,
@@ -552,9 +555,11 @@ mex_column_get_preferred_height (ClutterActor *actor,
     }
 
   if (min_height_p)
-    *min_height_p = min_height + padding.top + padding.bottom;
+    *min_height_p = min_height + padding.top + padding.bottom
+      + (priv->n_items > 0) ? (SPACING * priv->n_items - 1) : 0;
   if (nat_height_p)
-    *nat_height_p += nat_height + padding.top + padding.bottom;
+    *nat_height_p += nat_height + padding.top + padding.bottom
+      + (priv->n_items > 0) ? (SPACING * priv->n_items - 1) : 0;
 }
 
 static void
@@ -630,7 +635,7 @@ mex_column_allocate (ClutterActor          *actor,
           clutter_actor_allocate (child, &child_box, flags);
 
           /* Set the top position of the next child box */
-          child_box.y1 = child_box.y2;
+          child_box.y1 = child_box.y2 + SPACING;
         }
     }
 
