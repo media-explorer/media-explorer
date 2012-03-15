@@ -236,7 +236,7 @@ MxDialog MexTile.Important:focus
 }
 
 MexActionList {
-  background-color: black;
+  background-color: white;
 }
 
 /* Placeholder Tile */
@@ -518,7 +518,7 @@ MxFrame.CallingFrameBorder
 MexInfoPanel
 {
   padding: 16;
-  background-color: black;
+  background-color: white;
 }
 
 MexInfoPanel.Full
