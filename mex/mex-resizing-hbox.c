@@ -45,6 +45,7 @@ G_DEFINE_TYPE_WITH_CODE (MexResizingHBox, mex_resizing_hbox, MX_TYPE_WIDGET,
 
 #define INACTIVE_OPACITY 64
 #define ANIMATION_DURATION 500
+#define SPACING 6
 
 enum
 {
@@ -1239,6 +1240,9 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
           else
             child_nat_width = (int) (child_nat_width * meta->target_width);
 
+          /* add spacing */
+          child_nat_width += SPACING;
+
           if (child == priv->current_focus)
             {
 
@@ -1338,7 +1342,7 @@ mex_resizing_hbox_allocate_children (MexResizingHBox        *self,
 
       clutter_actor_allocate (child, &child_box, flags);
 
-      child_box.x1 = (int)child_box.x2;
+      child_box.x1 = (int)child_box.x2 + SPACING;
     }
 
   clutter_alpha_set_timeline (priv->alpha, priv->timeline);
