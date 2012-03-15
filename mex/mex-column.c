@@ -32,7 +32,6 @@ enum
   PROP_EMPTY,
   PROP_HADJUST,
   PROP_VADJUST,
-  PROP_COLLAPSE_ON_FOCUS,
   PROP_OPENED
 };
 
@@ -40,15 +39,12 @@ struct _MexColumnPrivate
 {
   guint         has_focus_changed : 1;
   guint         has_focus : 1;
-  guint         collapse : 1;
 
   ClutterActor *current_focus;
 
-  ClutterTimeline *expand_timeline;
-
-  GList            *children;
-  guint             n_items;
-  gint              open_boxes;
+  GList        *children;
+  guint         n_items;
+  gint          open_boxes;
 
   MxAdjustment *adjustment;
   gdouble       adjustment_value;
@@ -71,37 +67,6 @@ G_DEFINE_TYPE_WITH_CODE (MexColumn, mex_column, MX_TYPE_WIDGET,
                                                 mx_stylable_iface_init)
                          G_IMPLEMENT_INTERFACE (MEX_TYPE_SCROLLABLE_CONTAINER,
                                                 mex_scrollable_iface_init))
-
-static void
-child_expand_complete_cb (ClutterAnimation *animation,
-                          ClutterActor     *child)
-{
-  /* child should now be at it's natural height */
-  clutter_actor_set_height (child, -1);
-}
-
-static void
-mex_column_expand_child (ClutterActor *child)
-{
-  ClutterActorClass *actor_class;
-  gfloat new_height, old_height;
-
-  /* get the preferred directly from the class, to avoid getting any fixed
-   * value */
-  actor_class = CLUTTER_ACTOR_GET_CLASS (child);
-  actor_class->get_preferred_height (child, -1, NULL, &new_height);
-
-  old_height = clutter_actor_get_height (child);
-
-  if (old_height == new_height)
-    return;
-
-  clutter_actor_animate (child, CLUTTER_EASE_OUT_CUBIC, 200,
-                         "height", new_height,
-                         "signal-after::completed", child_expand_complete_cb,
-                         child,
-                         NULL);
-}
 
 /* MexScrollableContainerInterface */
 static void
@@ -228,7 +193,7 @@ mex_column_add_content (MexColumn  *column,
                     G_CALLBACK (content_box_open_notify), column);
 
   /* set important if the column has focus */
-  mex_content_box_set_important (MEX_CONTENT_BOX (box), priv->has_focus);
+  mex_content_box_set_important (MEX_CONTENT_BOX (box), TRUE);
 
   clutter_actor_set_parent (box, CLUTTER_ACTOR (column));
 }
@@ -459,10 +424,6 @@ mex_column_set_property (GObject      *object,
                                   self->priv->adjustment);
       break;
 
-    case PROP_COLLAPSE_ON_FOCUS:
-      mex_column_set_collapse_on_focus (self, g_value_get_boolean (value));
-      break;
-
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -494,10 +455,6 @@ mex_column_get_property (GObject    *object,
       g_value_set_object (value, adjustment);
       break;
 
-    case PROP_COLLAPSE_ON_FOCUS:
-      g_value_set_boolean (value, mex_column_get_collapse_on_focus (self));
-      break;
-
     case PROP_OPENED:
       g_value_set_boolean (value, mex_column_get_opened (self));
 
@@ -526,12 +483,6 @@ mex_column_dispose (GObject *object)
                                             object);
       g_object_unref (priv->adjustment);
       priv->adjustment = NULL;
-    }
-
-  if (priv->expand_timeline)
-    {
-      g_object_unref (priv->expand_timeline);
-      priv->expand_timeline = NULL;
     }
 
   /* unset the model and remove children */
@@ -805,127 +756,10 @@ mex_column_pick (ClutterActor *actor, const ClutterColor *color)
 }
 
 static void
-mex_column_shrink_child (ClutterActor *child)
-{
-  ClutterActorClass *actor_class;
-  gfloat new_height;
-  ClutterAnimation *animation;
-
-  /* get the preferred directly from the class, to avoid getting any fixed
-   * value */
-  actor_class = CLUTTER_ACTOR_GET_CLASS (child);
-  actor_class->get_preferred_height (child, -1, &new_height, NULL);
-
-  animation = clutter_actor_get_animation (child);
-
-  /* prevent the completed signal being called if the child was expanding */
-  if (animation)
-    g_signal_handlers_disconnect_by_func (animation, child_expand_complete_cb,
-                                          child);
-
-  clutter_actor_animate (child, CLUTTER_EASE_OUT_CUBIC, 200,
-                         "height", new_height, NULL);
-}
-
-static void
-mex_column_expand_children (MexColumn    *column,
-                            ClutterActor *start_at)
-{
-  MexColumnPrivate *priv = column->priv;
-  guint offset, increment;
-  GList *c;
-  gchar **markers;
-  gint i;
-  gboolean start;
-
-  if (priv->n_items < 1)
-    return;
-
-  /* Open/close boxes as appropriate */
-  offset = 0;
-  increment = 150;
-
-  clutter_timeline_set_duration (priv->expand_timeline,
-                                 priv->n_items * increment);
-
-  clutter_timeline_set_delay (priv->expand_timeline, 350);
-
-  /* remove the previous markers */
-  markers = clutter_timeline_list_markers (priv->expand_timeline, -1, NULL);
-  if (markers)
-    {
-      for (i = 0; markers[i]; i++)
-        {
-          clutter_timeline_remove_marker (priv->expand_timeline,
-                                          markers[i]);
-        }
-    }
-  g_strfreev (markers);
-
-  /* start is TRUE if start_at is NULL, otherwise it is set to TRUE when the
-   * start_at item is found */
-  start = (start_at == NULL);
-
-  for (c = priv->children; c; c = g_list_next (c))
-    {
-      gchar signal_name[32+16];
-      ClutterActor *child = c->data;
-
-      if (!MEX_IS_CONTENT_BOX (child))
-        continue;
-
-      mex_content_box_set_important (MEX_CONTENT_BOX (child), TRUE);
-      mex_column_expand_child (child);
-
-      /* continue until the start item has been found */
-      if (child == start_at)
-        start = TRUE;
-
-      if (!start)
-        continue;
-
-      /* Note, 'marker-reached::' is 16 characters long */
-      g_snprintf (signal_name, G_N_ELEMENTS (signal_name),
-                  "marker-reached::%p", child);
-
-      /* stagger opening */
-      clutter_timeline_add_marker_at_time (priv->expand_timeline,
-                                           signal_name + 16, offset);
-      mex_g_signal_connect_object (priv->expand_timeline, signal_name,
-                                   G_CALLBACK (mex_column_expand_child),
-                                   child, G_CONNECT_SWAPPED);
-
-      offset += increment;
-
-    }
-
-    clutter_timeline_start (priv->expand_timeline);
-}
-
-static void
-mex_column_shrink_children (MexColumn *column)
-{
-  MexColumnPrivate *priv = column->priv;
-  GList *l;
-
-  if (priv->n_items < 1)
-    return;
-
-  clutter_timeline_stop (priv->expand_timeline);
-
-  for (l = priv->children; l; l = g_list_next (l))
-    {
-      mex_column_shrink_child (l->data);
-      mex_content_box_set_important (MEX_CONTENT_BOX (l->data), FALSE);
-    }
-}
-
-static void
 mex_column_notify_focused_cb (MxFocusManager *manager,
                               GParamSpec     *pspec,
                               MexColumn      *self)
 {
-  GList *c;
   ClutterActor *focused, *focused_cell;
   gboolean cell_has_focus;
 
@@ -964,24 +798,6 @@ mex_column_notify_focused_cb (MxFocusManager *manager,
   if (!cell_has_focus && priv->adjustment)
     mx_adjustment_interpolate (priv->adjustment, 0, 250,
                                CLUTTER_EASE_OUT_CUBIC);
-
-  if (cell_has_focus)
-    {
-      gboolean open;
-
-      open = FALSE;
-      for (c = priv->children; c; c = g_list_next (c))
-        {
-          ClutterActor *child = c->data;
-          if (priv->current_focus == child)
-            open = TRUE;
-
-          if (open)
-            mex_column_expand_child (child);
-          else
-            mex_column_shrink_child (child);
-        }
-    }
 
   priv->has_focus_changed = FALSE;
 }
@@ -1067,13 +883,6 @@ mex_column_class_init (MexColumnClass *klass)
                                 G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (o_class, PROP_EMPTY, pspec);
 
-  pspec = g_param_spec_boolean ("collapse-on-focus",
-                                "Collapse On Focus",
-                                "Collapse items before the focused item.",
-                                TRUE,
-                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-  g_object_class_install_property (o_class, PROP_COLLAPSE_ON_FOCUS, pspec);
-
   pspec = g_param_spec_boolean ("opened",
                                 "Opened",
                                 "Whether the column has at least one open item.",
@@ -1093,15 +902,9 @@ mex_column_class_init (MexColumnClass *klass)
 static void
 mex_column_init (MexColumn *self)
 {
-  MexColumnPrivate *priv = self->priv = GET_PRIVATE (self);
+  self->priv = GET_PRIVATE (self);
 
-  /* Set the column as reactive and enable collapsing */
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
-  priv->collapse = TRUE;
-
-  /* Create a timeline for the expand animation. The duration is calculated
-   * before the timeline is started. */
-  priv->expand_timeline = clutter_timeline_new (1);
 }
 
 /**
@@ -1234,59 +1037,6 @@ mex_column_is_empty (MexColumn *column)
 {
   g_return_val_if_fail (MEX_IS_COLUMN (column), TRUE);
   return (column->priv->children == NULL);
-}
-
-void
-mex_column_set_collapse_on_focus (MexColumn *column,
-                                  gboolean   collapse)
-{
-  MexColumnPrivate *priv;
-
-  g_return_if_fail (MEX_IS_COLUMN (column));
-
-  priv = column->priv;
-  if (priv->collapse != collapse)
-    {
-      ClutterActor *stage;
-
-      priv->collapse = collapse;
-      g_object_notify (G_OBJECT (column), "collapse-on-focus");
-
-      if ((stage = clutter_actor_get_stage (CLUTTER_ACTOR (column))))
-        {
-          MxFocusManager *manager =
-            mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
-          mex_column_notify_focused_cb (manager, NULL, column);
-        }
-    }
-}
-
-gboolean
-mex_column_get_collapse_on_focus (MexColumn *column)
-{
-  g_return_val_if_fail (MEX_IS_COLUMN (column), FALSE);
-  return column->priv->collapse;
-}
-
-void
-mex_column_set_focus (MexColumn *column, gboolean focus)
-{
-  MexColumnPrivate *priv;
-
-  g_return_if_fail (MEX_IS_COLUMN (column));
-
-  priv = column->priv;
-
-  if (priv->has_focus != focus)
-    {
-      priv->has_focus = focus;
-      priv->has_focus_changed = TRUE;
-
-      if (focus)
-        mex_column_expand_children (column, priv->current_focus);
-      else
-        mex_column_shrink_children (column);
-    }
 }
 
 gboolean

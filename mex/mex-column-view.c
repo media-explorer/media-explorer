@@ -756,6 +756,4 @@ mex_column_view_set_focus (MexColumnView *column, gboolean focus)
 
   priv = column->priv;
   priv->has_focus = focus;
-
-  mex_column_set_focus (MEX_COLUMN (priv->column), focus);
 }

@@ -70,12 +70,6 @@ ClutterActor *mex_column_new (void);
 
 gboolean mex_column_is_empty (MexColumn *column);
 
-void     mex_column_set_collapse_on_focus (MexColumn *column,
-                                           gboolean   collapse);
-gboolean mex_column_get_collapse_on_focus (MexColumn *column);
-
-void     mex_column_set_focus (MexColumn *column, gboolean focus);
-
 gboolean mex_column_get_opened (MexColumn *column);
 
 void      mex_column_set_model (MexColumn *column, MexModel *model);

@@ -635,8 +635,6 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   /* Create a new column for this model */
   column_view = mex_column_view_new (NULL, NULL);
   column = mex_column_view_get_column (MEX_COLUMN_VIEW (column_view));
-  if (priv->touch_mode)
-    mex_column_set_collapse_on_focus (column, FALSE);
 
   g_object_get (model, "display-item-count", &display_item_count,
                 "title", &title, NULL);
@@ -1403,10 +1401,7 @@ mex_explorer_set_touch_mode_recursive (GList    *children,
 
   for (l = children; l; l = l->next)
     {
-      if (MEX_IS_COLUMN_VIEW (l->data))
-        mex_column_set_collapse_on_focus (
-                  mex_column_view_get_column (MEX_COLUMN_VIEW (l->data)), !on);
-      else if (CLUTTER_IS_CONTAINER (l->data))
+      if (CLUTTER_IS_CONTAINER (l->data))
         {
           GList *sub_children = clutter_container_get_children (l->data);
           mex_explorer_set_touch_mode_recursive (sub_children, on);
