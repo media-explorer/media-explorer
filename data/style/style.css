@@ -223,7 +223,7 @@ MexColumnView.Search MexTile.Important:focus > MxIcon.Info
 
 MexTile.Important
 {
-  x-mex-header-background-color: #d4d5cf;
+  x-mex-header-background-color: #d4d5cfcc;
   color: #2a3c4a;
 }
 
