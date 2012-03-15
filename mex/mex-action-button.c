@@ -18,7 +18,6 @@
 
 
 #include "mex-action-button.h"
-#include "mex-shadow.h"
 
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 
@@ -30,8 +29,6 @@ G_DEFINE_TYPE_WITH_CODE (MexActionButton, mex_action_button, MX_TYPE_BUTTON,
 
 struct _MexActionButtonPrivate
 {
-  MexShadow *shadow;
-
   guint has_focus : 1;
 };
 
@@ -42,8 +39,6 @@ _move_focus (MxFocusable      *focusable,
 {
   MexActionButtonPrivate *priv = MEX_ACTION_BUTTON (focusable)->priv;
   MxFocusableIface *iface;
-
-  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (priv->shadow), FALSE);
 
   priv->has_focus = FALSE;
 
@@ -60,8 +55,6 @@ _accept_focus (MxFocusable *focusable,
   MxFocusableIface *iface;
 
   priv->has_focus = TRUE;
-
-  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (priv->shadow), TRUE);
 
   iface = g_type_interface_peek_parent (MX_FOCUSABLE_GET_INTERFACE (focusable));
   return iface->accept_focus (focusable, hint);
@@ -172,7 +165,6 @@ mex_action_button_class_init (MexActionButtonClass *klass)
 static void
 mex_action_button_init (MexActionButton *self)
 {
-  ClutterColor shadow_color = {0, 0, 0, 64};
   MexActionButtonPrivate *priv;
 
   priv = self->priv = ACTION_BUTTON_PRIVATE (self);
@@ -180,14 +172,6 @@ mex_action_button_init (MexActionButton *self)
   mx_button_set_icon_position (MX_BUTTON (self), MX_POSITION_RIGHT);
 
   mx_bin_set_fill (MX_BIN (self), TRUE, TRUE);
-
-  priv->shadow = mex_shadow_new ();
-  mex_shadow_set_radius_x (priv->shadow, 15);
-  mex_shadow_set_radius_y (priv->shadow, 15);
-  mex_shadow_set_color (priv->shadow, &shadow_color);
-  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (priv->shadow), FALSE);
-  clutter_actor_add_effect (CLUTTER_ACTOR (self),
-                            CLUTTER_EFFECT (priv->shadow));
 }
 
 ClutterActor *
