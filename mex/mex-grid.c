@@ -25,6 +25,7 @@
 #include <math.h>
 
 #define DEFAULT_TILE_RATIO (9.0 / 16.0)
+#define SPACING 6.0
 
 static void mx_scrollable_iface_init (MxScrollableIface *iface);
 static void mx_focusable_iface_init (MxFocusableIface *iface);
@@ -424,6 +425,9 @@ mex_grid_get_tile_size (MexGrid               *grid,
 
   clutter_actor_get_preferred_height (first_child, *basic_width, NULL,
                                       basic_height);
+
+  *basic_height -= SPACING;
+  *basic_width -= SPACING;
 }
 
 static void
@@ -463,11 +467,11 @@ mex_grid_get_allocation (MexScrollableContainer *self,
   mex_grid_get_tile_size (grid, &grid_box, &basic_width, &basic_height);
   avail_width = grid_box.x2 - grid_box.x1 - padding.left - padding.right;
 
-  box->x1 = column * basic_width;
+  box->x1 = column * (basic_width + SPACING);
 
   if (row > 0)
     {
-      box->y1 = row * basic_height;
+      box->y1 = row * (basic_height + SPACING);
     }
   else
     box->y1 = 0;
@@ -777,7 +781,7 @@ mex_grid_allocate (ClutterActor           *actor,
 
   bottom = 0;
 
-  child_box.y1 = first_row * basic_height;
+  child_box.y1 = first_row * (basic_height + SPACING);
 
   /* Allocate all the visible children */
   for (i = first_row; i <= last_row; i++)
@@ -790,7 +794,7 @@ mex_grid_allocate (ClutterActor           *actor,
           ClutterActor *child =
             g_array_index (priv->children, ClutterActor *, j);
 
-          child_box.x1 = (basic_width * (j % priv->stride)) + padding.left;
+          child_box.x1 = ((basic_width + SPACING) * (j % priv->stride)) + padding.left;
 
           /* Get the preferred size of the child */
           clutter_actor_get_preferred_size (child, NULL, NULL,
@@ -819,14 +823,14 @@ mex_grid_allocate (ClutterActor           *actor,
       if (j >= priv->children->len)
         break;
 
-      child_box.y1 += basic_height;
+      child_box.y1 += basic_height + SPACING * 2;
     }
 
   /* Set the adjustment values */
   if (priv->vadjust)
     {
       if (priv->last_visible != priv->children->len - 1)
-        bottom = ((priv->children->len - 1) / priv->stride + 1) * basic_height;
+        bottom = ((priv->children->len - 1) / priv->stride + 1) * (basic_height + SPACING);
 
       g_object_set (G_OBJECT (priv->vadjust),
                     "lower", 0.0,
