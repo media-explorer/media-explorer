@@ -223,13 +223,15 @@ MexColumnView.Search MexTile.Important:focus > MxIcon.Info
 
 MexTile.Important
 {
-  x-mex-header-background: url("item-title-bg.png") 0;
+  x-mex-header-background-color: #d4d5cf;
+  color: #2a3c4a;
 }
 
 MexContentBox MexTile.Important:focus,
 MxDialog MexTile.Important:focus
 {
   x-mex-header-background: url("highlight-bg.png");
+  x-mex-header-background-color: none;
   color: white;
 }
 

@@ -64,6 +64,8 @@ struct _MexTilePrivate
   CoglMaterial *material;
   MxPadding    *header_padding;
   gfloat        header_height;
+
+  ClutterColor *header_background_color;
 };
 
 /* MxStylableIface */
@@ -90,6 +92,13 @@ mx_stylable_iface_init (MxStylableIface *iface)
                                   "Header padding",
                                   "Padding inside the header",
                                   MX_TYPE_PADDING,
+                                  G_PARAM_READWRITE);
+      mx_stylable_iface_install_property (iface, MEX_TYPE_TILE, pspec);
+
+      pspec = g_param_spec_boxed ("x-mex-header-background-color",
+                                  "Header background color",
+                                  "Background color for the title header",
+                                  CLUTTER_TYPE_COLOR,
                                   G_PARAM_READWRITE);
       mx_stylable_iface_install_property (iface, MEX_TYPE_TILE, pspec);
     }
@@ -226,6 +235,14 @@ mex_tile_dispose (GObject *object)
 static void
 mex_tile_finalize (GObject *object)
 {
+  MexTile *self = MEX_TILE (object);
+
+  if (self->priv->header_background_color)
+    {
+      g_boxed_free (CLUTTER_TYPE_COLOR, self->priv->header_background_color);
+      self->priv->header_background_color = NULL;
+    }
+
   G_OBJECT_CLASS (mex_tile_parent_class)->finalize (object);
 }
 
@@ -449,6 +466,22 @@ mex_tile_paint (ClutterActor *actor)
 
   if (priv->header_visible)
     {
+      clutter_actor_get_allocation_box (actor, &box);
+
+
+      if (priv->header_background_color)
+        {
+          cogl_set_source_color4ub (priv->header_background_color->red,
+                                    priv->header_background_color->green,
+                                    priv->header_background_color->blue,
+                                    priv->header_background_color->alpha);
+
+          cogl_rectangle (padding.left, padding.top,
+                          box.x2 - box.x1 - padding.right,
+                          priv->header_height);
+        }
+
+
       if (cogl_material_get_n_layers (priv->material) > 0)
         {
           guint8 opacity;
@@ -458,8 +491,6 @@ mex_tile_paint (ClutterActor *actor)
           cogl_material_set_color4ub (priv->material, opacity, opacity, opacity,
                                       opacity);
           cogl_set_source (priv->material);
-
-          clutter_actor_get_allocation_box (actor, &box);
 
           cogl_rectangle (padding.left, padding.top,
                           box.x2 - box.x1 - padding.right,
@@ -623,8 +654,15 @@ mex_tile_style_changed_cb (MexTile *self, MxStyleChangedFlags flags)
       priv->header_padding = NULL;
     }
 
+  if (priv->header_background_color)
+    {
+      g_boxed_free (CLUTTER_TYPE_COLOR, priv->header_background_color);
+      priv->header_background_color = NULL;
+    }
+
   mx_stylable_get (MX_STYLABLE (self),
                    "x-mex-header-background", &image,
+                   "x-mex-header-background-color", &priv->header_background_color,
                    "x-mex-header-padding", &priv->header_padding,
                    NULL);
 
