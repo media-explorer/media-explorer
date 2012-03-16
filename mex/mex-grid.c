@@ -877,7 +877,7 @@ mex_grid_paint (ClutterActor *actor)
   clutter_actor_get_allocation_box (actor, &box);
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   if (priv->vadjust)
-    y = mx_adjustment_get_value (priv->vadjust);
+    y = (int) mx_adjustment_get_value (priv->vadjust);
   else
     y = 0;
 
