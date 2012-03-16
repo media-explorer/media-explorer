@@ -341,7 +341,7 @@ MxButton#rotate-button:focus
 /* Action Buttons */
 MexActionButton, MexActionButton:hover
 {
-  border-image: url("details-actions-separator.png") 0 15 1;
+  border-image: url("details-actions-separator.png") 0 0 1 0;
 }
 
 MexActionButton:focus:hover
@@ -595,9 +595,9 @@ MexScrollIndicator
 }
 
 /* Grid Menu Buttons */
-.Menu > MxButton
+MexMenu MxButton
 {
-  border-image: url("details-actions-separator.png") 0 15 1;
+  border-image: url("details-actions-separator.png") 0 0 1 0;
 }
 
 .Menu > MxButton:focus
