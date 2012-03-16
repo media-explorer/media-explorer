@@ -900,14 +900,15 @@ mex_grid_paint (ClutterActor *actor)
         clutter_actor_paint (child);
     }
 
-  /* Unset the clip around the actor */
-  cogl_clip_pop ();
-
   /* Draw the focused actor */
   if (draw_focus)
     {
       clutter_actor_paint (priv->current_focus);
     }
+
+  /* Unset the clip around the actor */
+  cogl_clip_pop ();
+
 
   /* Draw the highlight */
   if (priv->highlight_material)
