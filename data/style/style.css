@@ -201,9 +201,14 @@ MexTile
   font-family: "Droid Sans";
 }
 
+MexTile:focus
+{
+  x-mex-header-padding: 11 14;
+}
+
 MexTile.Important > MxIcon.Info
 {
-  -mx-icon-size: 22;
+  -mx-icon-size: 28;
 }
 
 MexTile.Important:focus > MxIcon.Info
