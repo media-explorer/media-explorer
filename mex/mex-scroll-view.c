@@ -894,7 +894,7 @@ mex_scroll_view_class_init (MexScrollViewClass *klass)
   pspec = g_param_spec_boolean ("indicators-hidden",
                                 "Indicators hidden",
                                 "Whether the scroll indicators are hidden.",
-                                FALSE,
+                                TRUE,
                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
   g_object_class_install_property (object_class, PROP_INDICATORS_HIDDEN, pspec);
 
@@ -974,6 +974,8 @@ mex_scroll_view_init (MexScrollView *self)
   /* Queue a relayout when the scroll-policy changes */
   g_signal_connect (self, "notify::scroll-policy",
                     G_CALLBACK (clutter_actor_queue_relayout), NULL);
+
+  priv->indicators_hidden = TRUE;
 }
 
 ClutterActor *
