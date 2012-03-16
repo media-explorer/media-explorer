@@ -574,6 +574,7 @@ MexMediaControls MexTile.Important:focus > MxTable.MexTile > MxLabel
 /* Grid View */
 MexScrollView.Grid
 {
+  padding: 20;
   border-image: url("grid-content-bg.png") 0;
 }
 
