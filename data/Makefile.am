@@ -25,6 +25,7 @@ dist_style_DATA = \
 	style/details-bg.png \
 	style/folder-tile-up.png \
 	style/folder-tile.png \
+	style/footer.png \
 	style/frame-bg.png \
 	style/graphic-network.png \
 	style/grid-content-bg.png \

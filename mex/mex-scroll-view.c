@@ -25,11 +25,14 @@
 /* This widget is mostly derived from MxScrollView */
 
 static void clutter_container_iface_init (ClutterContainerIface *iface);
+static void mx_stylable_iface_init (MxStylableIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexScrollView, mex_scroll_view,
                          MX_TYPE_KINETIC_SCROLL_VIEW,
                          G_IMPLEMENT_INTERFACE (CLUTTER_TYPE_CONTAINER,
-                                                clutter_container_iface_init))
+                                                clutter_container_iface_init)
+                         G_IMPLEMENT_INTERFACE (MX_TYPE_STYLABLE,
+                                                mx_stylable_iface_init))
 
 #define SCROLL_VIEW_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_SCROLL_VIEW, MexScrollViewPrivate))
@@ -52,6 +55,8 @@ struct _MexScrollViewPrivate
   guint           vscroll_hidden    : 1;
   guint           follow_recurse    : 1;
   guint           interpolate       : 1;
+  guint           top_shadow_visible : 1;
+  guint           bottom_shadow_visible : 1;
 
   ClutterGravity  scroll_gravity;
 
@@ -68,6 +73,10 @@ struct _MexScrollViewPrivate
   gdouble         vtarget;
 
   guint           scroll_indicator_timeout;
+
+
+  MxBorderImage  *scroll_shadow;
+  CoglHandle      scroll_shadow_texture;
 };
 
 static void
@@ -80,6 +89,28 @@ mex_scroll_view_delay_focus_allocation_cb (ClutterActor           *focus,
                                            ClutterActorBox        *box,
                                            ClutterAllocationFlags  flags,
                                            MexScrollView          *self);
+
+
+/* MxStylable implementation */
+static void
+mx_stylable_iface_init (MxStylableIface *iface)
+{
+  static gboolean is_initialized = FALSE;
+
+  if (G_UNLIKELY (!is_initialized))
+    {
+      GParamSpec *pspec;
+
+      is_initialized = TRUE;
+
+      pspec = g_param_spec_boxed ("x-mex-scroll-shadow",
+                                  "Scroll Shadow",
+                                  "Image to use for the scroll shadow.",
+                                  MX_TYPE_BORDER_IMAGE,
+                                  G_PARAM_READWRITE);
+      mx_stylable_iface_install_property (iface, MEX_TYPE_SCROLL_VIEW, pspec);
+    }
+}
 
 /* ClutterContainerIface implementation */
 
@@ -143,6 +174,8 @@ static void
 mex_scroll_view_adjustment_changed (MexScrollView *self)
 {
   MexScrollViewPrivate *priv = self->priv;
+  MxAdjustment *adjustment;
+  gdouble value, lower, upper, page_size;
 
   if (priv->hscroll)
     {
@@ -169,6 +202,24 @@ mex_scroll_view_adjustment_changed (MexScrollView *self)
         mex_scroll_view_focus_allocation_cb (priv->focus, &box, 0, self);
     }
 
+  /* set scroll shadow visibility */
+  adjustment = mex_scroll_indicator_get_adjustment (MEX_SCROLL_INDICATOR (priv->vscroll));
+
+  if (adjustment)
+    {
+      mx_adjustment_get_values (adjustment,
+                                &value,
+                                &lower,
+                                &upper,
+                                NULL,
+                                NULL,
+                                &page_size);
+
+      priv->top_shadow_visible = (value > lower);
+      priv->bottom_shadow_visible = (value + page_size < upper);
+
+      clutter_actor_queue_redraw (CLUTTER_ACTOR (self));
+    }
 
   if (priv->scroll_indicator_timeout)
     g_source_remove (priv->scroll_indicator_timeout);
@@ -458,6 +509,21 @@ mex_scroll_view_dispose (GObject *object)
 static void
 mex_scroll_view_finalize (GObject *object)
 {
+  MexScrollViewPrivate *priv = MEX_SCROLL_VIEW (object)->priv;
+
+  if (priv->scroll_shadow)
+    {
+      g_boxed_free (MX_TYPE_BORDER_IMAGE, priv->scroll_shadow);
+      priv->scroll_shadow = NULL;
+    }
+
+  if (priv->scroll_shadow_texture)
+    {
+      cogl_handle_unref (priv->scroll_shadow_texture);
+      priv->scroll_shadow_texture = NULL;
+    }
+
+
   G_OBJECT_CLASS (mex_scroll_view_parent_class)->finalize (object);
 }
 
@@ -623,6 +689,9 @@ static void
 mex_scroll_view_paint (ClutterActor *actor)
 {
   MexScrollViewPrivate *priv = MEX_SCROLL_VIEW (actor)->priv;
+  ClutterActorBox box;
+  MxPadding padding;
+  gfloat texture_height, texture_width;
 
   /* Chain up for background and child */
   CLUTTER_ACTOR_CLASS (mex_scroll_view_parent_class)->paint (actor);
@@ -632,6 +701,29 @@ mex_scroll_view_paint (ClutterActor *actor)
     clutter_actor_paint (priv->hscroll);
   if (priv->vscroll && clutter_actor_get_opacity (priv->vscroll) > 0)
     clutter_actor_paint (priv->vscroll);
+
+
+  clutter_actor_get_allocation_box (actor, &box);
+  mx_widget_get_padding (MX_WIDGET (actor), &padding);
+
+  texture_height = cogl_texture_get_height (priv->scroll_shadow_texture);
+  texture_width = box.x2 - box.x1 - padding.left - padding.right;
+
+  cogl_set_source_texture (priv->scroll_shadow_texture);
+
+  /* top shadow is the same as the bottom shadow, except it is drawn upside down
+   */
+  if (priv->top_shadow_visible)
+    cogl_rectangle (padding.left,
+                    padding.top + texture_height,
+                    padding.left + texture_width,
+                    padding.top);
+
+  if (priv->bottom_shadow_visible)
+    cogl_rectangle (padding.left,
+                    box.y2 - box.y1 - padding.bottom - texture_height,
+                    padding.left + texture_width,
+                    box.y2 - box.y1 - padding.bottom);
 }
 
 static void
@@ -939,6 +1031,22 @@ mex_scroll_view_style_changed_cb (MexScrollView       *self,
     mx_stylable_style_changed (MX_STYLABLE (priv->hscroll), flags);
   if (priv->vscroll)
     mx_stylable_style_changed (MX_STYLABLE (priv->vscroll), flags);
+
+  if (priv->scroll_shadow)
+    {
+      g_boxed_free (MX_TYPE_BORDER_IMAGE, priv->scroll_shadow);
+      priv->scroll_shadow = NULL;
+
+      cogl_handle_unref (priv->scroll_shadow_texture);
+      priv->scroll_shadow_texture = NULL;
+    }
+
+  mx_stylable_get (MX_STYLABLE (self), "x-mex-scroll-shadow", &priv->scroll_shadow,
+                   NULL);
+
+  if (priv->scroll_shadow)
+    priv->scroll_shadow_texture = cogl_texture_new_from_file (priv->scroll_shadow->uri,
+                                                              0, 0, NULL);
 }
 
 static void

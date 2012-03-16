@@ -50,6 +50,11 @@ MxButton#placeholder:focus
   border-image: none;
 }
 
+MexScrollView
+{
+  x-mex-scroll-shadow: url('footer.png');
+}
+
 /* Main Spinner */
 MxSpinner#main-spinner
 {
