@@ -24,7 +24,7 @@ MxButton, MxButton:checked, MxButton:hover, MxButton:active, MxButton:disabled,
 MxMenu > MxButton, MxMenu > MxButton:hover, MxMenu > MxButton:disabled
 {
   border-image: none;
-  padding: 11 15;
+  padding: 12 15;
 }
 
 MxEntry
@@ -37,11 +37,6 @@ MxMenu > MxButton:focus
 {
   border-image: url("highlight-bg.png") 0;
   color: white;
-}
-
-MxMenu > MxButton:focus
-{
-  padding: 11 15;
 }
 
 MxButton:focus MxLabel,
@@ -200,7 +195,7 @@ MexContentBox.open
 /* Content Box Headers */
 MexTile
 {
-  x-mex-header-padding: 13;
+  x-mex-header-padding: 14;
   color: white;
   font-size: 18;
   font-family: "Droid Sans";
@@ -341,6 +336,7 @@ MxButton#rotate-button:focus
 /* Action Buttons */
 MexActionButton, MexActionButton:hover
 {
+  font-size: 18;
   border-image: url("details-actions-separator.png") 0 0 1 0;
 }
 
