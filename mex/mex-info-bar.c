@@ -332,13 +332,11 @@ mex_info_bar_show_buttons (MexInfoBar *self, gboolean visible)
   if (!visible)
     {
       clutter_actor_hide (priv->settings_button);
-      clutter_actor_hide (priv->power_button);
       clutter_actor_show (priv->back_button);
     }
   else
     {
       clutter_actor_show (priv->settings_button);
-      clutter_actor_show (priv->power_button);
       clutter_actor_hide (priv->back_button);
     }
 }

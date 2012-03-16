@@ -13,15 +13,6 @@
         "children" : [
           {
             "type" : "MxButton",
-            "id" : "power-button",
-            "icon-size" : 26,
-            "style-class" : "Power",
-            "label-visible" : false,
-            "child::x-fill" : false,
-            "child::y-fill" : false
-          },
-          {
-            "type" : "MxButton",
             "id" : "settings-button",
             "icon-size" : 26,
             "style-class" : "Settings",
@@ -49,6 +40,16 @@
       {
         "type" : "MexClockBin",
         "id" : "clock",
+        "child::x-fill" : false,
+        "child::y-fill" : false,
+        "child::x-align" : "middle"
+      },
+      {
+        "type" : "MxButton",
+        "id" : "power-button",
+        "icon-size" : 26,
+        "style-class" : "Power",
+        "label-visible" : false,
         "child::x-fill" : false,
         "child::y-fill" : false,
         "child::x-align" : "end"
