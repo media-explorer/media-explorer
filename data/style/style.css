@@ -665,15 +665,9 @@ MxDialog.MexInfoBarDialog MexTile MxButton
 }
 
 /* Search Column */
-MexColumnView.Search MexTile.Important
+MexColumnView.Search MexTile
 {
-  border-image: none;
-  x-mex-header-background: none;
-}
-
-MexColumnView.Search MexTile.Important:focus
-{
-  x-mex-header-background: url("highlight-bg.png");
+  x-mex-header-background-color: none;
 }
 
 /* Volume Control */
