@@ -232,8 +232,7 @@ MexTile.Important
   color: #2a3c4a;
 }
 
-MexContentBox MexTile.Important:focus,
-MxDialog MexTile.Important:focus
+MexTile.Important:focus
 {
   x-mex-header-background: url("highlight-bg.png");
   x-mex-header-background-color: none;
@@ -374,6 +373,8 @@ MxButton.Watch:hover, MxButton.Watch:focus
 MexMediaControls MxSlider
 {
   -mx-trough-height: 10;
+  -mx-handle-height: 28;
+  background-color: #cdcec8;
 }
 
 MxSlider > #trough-background,
@@ -431,46 +432,51 @@ MexQueueButton:focus MxSpinner
   -mx-spinner-image: url('queue-spinner-highlight.png');
 }
 
-MexMediaControls MexQueueButton, MexMediaControls MexQueueButton:checked
-{
-  border-image: url("header-vr.png") 0 0 0 2;
-}
-
 MexQueueButton:checked:focus
 {
   border-image: url("highlight-bg.png") 0;
 }
 
 /* Media Controls */
-MexMediaControls MxBoxLayout.MexMediaControlsTitle
+
+MexMediaControls MexScrollView
 {
-  padding: 0 0 0 16;
+  x-mex-scroll-shadow: none;
 }
 
-MexSlideShow MxBoxLayout.MexMediaControlsTitle
+MxLabel#title-label
 {
-  padding: 0 16;
+  font-weight: bold;
 }
 
 MexMediaControls, *#MexSlideShowControls
 {
-  padding: 16;
+  padding: 25 0 0 0;
   border-image: url('controls-bg.png') 0;
 }
 
-MxBoxLayout.MexMediaTimeline
-{
-  -mx-spacing: 16;
-  padding: 15 18;
-  border-image: url('panel-bg.png') 0;
-}
-
+MxBoxLayout.MexMediaControls,
 MxBoxLayout.MexMediaControlsTitle,
 MxBoxLayout.MexSlideShowControlsTitle,
 MxBoxLayout.MexCallControlsTitle
 {
-  -mx-spacing: 16;
-  border-image: url('item-title-bg.png') 1 0 0;
+  border-image: url('controls-container.png') 1;
+  padding: 15;
+}
+
+MxBoxLayout.MexMediaControls
+{
+  padding: 15 20 10 20;
+}
+
+MxBoxLayout#related-box
+{
+  padding: 16;
+}
+
+MxIcon#info-icon-dark
+{
+  -mx-content-image: url("icon-info-dark.png");
 }
 
 /* Tool frame ui */
@@ -551,7 +557,7 @@ MexInfoPanel.Full MxBoxLayout.MexInfoPanelMeta
 }
 
 /* Related Panel */
-MexMediaControls MexContentTile, MexSlideShow MexContentTile
+MexSlideShow MexContentTile
 {
   padding: 4;
 }
@@ -561,20 +567,9 @@ MexSlideShow MexContentTile.Important:active
   border-image: url("highlight-bg-white.png") 0;
 }
 
-MexMediaControls MexContentTile.Important:focus,
 MexSlideShow MexContentTile.Important:focus
 {
   border-image: url("highlight-bg.png") 0;
-}
-
-MexMediaControls MexTile.Important:focus > MxTable.MexTile
-{
-  border-image: url("item-title-bg.png") 1 0 0;
-}
-
-MexMediaControls MexTile.Important:focus > MxTable.MexTile > MxLabel
-{
-  color: white;
 }
 
 /* Grid View */

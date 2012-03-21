@@ -21,6 +21,7 @@ dist_style_DATA = \
 	style/button-bg.png \
         style/call-window-border.png \
 	style/controls-bg.png \
+	style/controls-container.png \
 	style/details-actions-separator.png \
 	style/details-bg.png \
 	style/folder-tile-up.png \
@@ -41,6 +42,7 @@ dist_style_DATA = \
 	style/icon-fullscreen.png \
 	style/icon-home.png \
 	style/icon-info.png \
+	style/icon-info-dark.png \
 	style/icon-pause-highlight.png \
 	style/icon-pause.png \
 	style/icon-play-highlight.png \

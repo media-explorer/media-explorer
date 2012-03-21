@@ -54,7 +54,6 @@ struct _MexMediaControlsPrivate
 
   ClutterActor *vbox;
   ClutterActor *slider;
-  ClutterActor *queue_button;
 
   ClutterScript *script;
 
@@ -63,9 +62,6 @@ struct _MexMediaControlsPrivate
   MxAction *add_to_queue_action;
 
   MexContent *content;
-
-  ClutterEffect *vertical_effect;
-  ClutterEffect *horizontal_effect;
 
   guint key_press_timeout;
   guint long_press_activated : 1;
@@ -486,96 +482,17 @@ slider_captured_event (MxSlider         *slider,
 }
 
 static void
-notify_vertical_changed_cb (MxAdjustment     *adjustment,
-                            MexMediaControls *controls)
-{
-  MexMediaControlsPrivate *priv = controls->priv;
-  gint bottom;
-  gdouble value, max, page_size;
-
-  max = mx_adjustment_get_upper (adjustment);
-  value = mx_adjustment_get_value (adjustment);
-  page_size = mx_adjustment_get_page_size (adjustment);
-
-  bottom = MIN (50, (max - value - page_size));
-
-  mx_fade_effect_set_border (MX_FADE_EFFECT (priv->vertical_effect),
-                             0, 0, bottom, 0);
-}
-
-static void
-notify_vertical_value_cb (MxAdjustment     *adjustment,
-                          GParamSpec       *pspec,
-                          MexMediaControls *controls)
-{
-  notify_vertical_changed_cb (adjustment, controls);
-}
-
-
-static void
-notify_horizontal_changed_cb (MxAdjustment     *adjustment,
-                              MexMediaControls *controls)
-{
-  MexMediaControlsPrivate *priv = controls->priv;
-  gint left, right;
-  gdouble value, min, max, page_size;
-
-  min = mx_adjustment_get_lower (adjustment);
-  max = mx_adjustment_get_upper (adjustment);
-  value = mx_adjustment_get_value (adjustment);
-  page_size = mx_adjustment_get_page_size (adjustment);
-
-  left = MIN (136, (value - min));
-  right = MIN (136, (max - value - page_size));
-
-  mx_fade_effect_set_border (MX_FADE_EFFECT (priv->horizontal_effect),
-                             0, right, 0, left);
-}
-
-static void
-notify_horizontal_value_cb (MxAdjustment     *adjustment,
-                            GParamSpec       *pspec,
-                            MexMediaControls *controls)
-{
-  notify_horizontal_changed_cb (adjustment, controls);
-}
-
-static void
 mex_media_controls_update_header (MexMediaControls *self)
 {
   MexMediaControlsPrivate *priv = self->priv;
-  ClutterActor *label, *image;
-  const gchar *logo_url;
-  GError *err = NULL;
+  ClutterActor *label;
 
   label = (ClutterActor*) clutter_script_get_object (priv->script,
                                                      "title-label");
-  image = (ClutterActor*) clutter_script_get_object (priv->script, "logo");
 
   mx_label_set_text (MX_LABEL (label),
                      mex_content_get_metadata (priv->content,
                                                MEX_CONTENT_METADATA_TITLE));
-
-  logo_url = mex_content_get_metadata (priv->content,
-                                       MEX_CONTENT_METADATA_STATION_LOGO);
-  if (!logo_url)
-    {
-      clutter_actor_hide (image);
-    }
-  else
-    {
-      clutter_actor_show (image);
-
-      if (g_str_has_prefix (logo_url, "file://"))
-        logo_url = logo_url + 7;
-
-      mx_image_set_from_file (MX_IMAGE (image), logo_url, &err);
-      if (err)
-        {
-          g_warning ("Could not load logo: %s", err->message);
-          g_clear_error (&err);
-        }
-    }
 }
 
 static void
@@ -600,8 +517,6 @@ mex_media_controls_replace_content (MexMediaControls *self,
     g_object_unref (priv->content);
   priv->content = g_object_ref_sink (content);
   mex_media_controls_update_header (self);
-  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->queue_button),
-                                content);
 
   mex_push_focus ((MxFocusable*) clutter_script_get_object (priv->script,
                                               "play-pause-button"));
@@ -653,45 +568,12 @@ button_release_event_cb (ClutterActor       *actor,
 }
 
 static void
-tile_focus_in_cb (MxBin *actor)
-{
-  ClutterActorMeta *shadow;
-
-  shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (actor),
-                                                         "shadow");
-  clutter_actor_meta_set_enabled (shadow, TRUE);
-
-  shadow =
-    (ClutterActorMeta*) clutter_actor_get_effect (mx_bin_get_child (actor),
-                                                  "shadow");
-  clutter_actor_meta_set_enabled (shadow, FALSE);
-}
-
-static void
-tile_focus_out_cb (MxBin *actor)
-{
-  ClutterActorMeta *shadow;
-
-  shadow = (ClutterActorMeta*) clutter_actor_get_effect (CLUTTER_ACTOR (actor),
-                                                         "shadow");
-  clutter_actor_meta_set_enabled (shadow, FALSE);
-
-  shadow =
-    (ClutterActorMeta*) clutter_actor_get_effect (mx_bin_get_child (actor),
-                                                  "shadow");
-  clutter_actor_meta_set_enabled (shadow, TRUE);
-
-}
-
-static void
 tile_created_cb (MexProxy *proxy,
                  GObject  *content,
                  GObject  *object,
                  gpointer  controls)
 {
   const gchar *mime_type;
-  ClutterEffect *effect;
-  ClutterColor color = { 0, 0, 0, 60 };
 
   /* filter out folders */
   mime_type = mex_content_get_metadata (MEX_CONTENT (content),
@@ -713,35 +595,13 @@ tile_created_cb (MexProxy *proxy,
                     controls);
   g_signal_connect (object, "button-release-event",
                     G_CALLBACK (button_release_event_cb), controls);
-
-  effect = g_object_new (MEX_TYPE_SHADOW,
-                         "radius-x", 15,
-                         "radius-y", 15,
-                         "color", &color,
-                         "enabled", FALSE,
-                         NULL);
-  clutter_actor_add_effect_with_name (CLUTTER_ACTOR (object), "shadow", effect);
-
-  effect = g_object_new (MEX_TYPE_SHADOW,
-                         "radius-x", 15,
-                         "radius-y", 15,
-                         "color", &color,
-                         NULL);
-  clutter_actor_add_effect_with_name (mx_bin_get_child (MX_BIN (object)),
-                                      "shadow", effect);
-
-  g_signal_connect (object, "focus-in", G_CALLBACK (tile_focus_in_cb), NULL);
-  g_signal_connect (object, "focus-out", G_CALLBACK (tile_focus_out_cb), NULL);
-  tile_focus_out_cb (MX_BIN (object));
 }
 
 static void
 mex_media_controls_init (MexMediaControls *self)
 {
-  ClutterActor *actor;
   ClutterScript *script;
   GError *err = NULL;
-  MxAdjustment *adjustment;
   ClutterActor *related_box;
   gchar *tmp;
 
@@ -761,34 +621,6 @@ mex_media_controls_init (MexMediaControls *self)
     (ClutterActor*) clutter_script_get_object (script, "media-controls");
   clutter_actor_set_parent (priv->vbox, CLUTTER_ACTOR (self));
 
-  /* add shadow to media controls box */
-  actor = (ClutterActor *) clutter_script_get_object (script,
-                                                      "media-controls-box");
-  clutter_actor_add_effect (actor, CLUTTER_EFFECT (mex_shadow_new ()));
-
-
-  /* vertical fade effect */
-  priv->vertical_effect = mx_fade_effect_new ();
-  clutter_actor_add_effect (priv->vbox, priv->vertical_effect);
-  mx_scrollable_get_adjustments (MX_SCROLLABLE (mx_bin_get_child (MX_BIN (priv->vbox))),
-                                 NULL, &adjustment);
-  g_signal_connect (adjustment, "changed",
-                    G_CALLBACK (notify_vertical_changed_cb), self);
-  g_signal_connect (adjustment, "notify::value",
-                    G_CALLBACK (notify_vertical_value_cb), self);
-
-  /* horizontal fade effect */
-  priv->horizontal_effect = mx_fade_effect_new ();
-  related_box = (ClutterActor *) clutter_script_get_object (priv->script,
-                                                            "related-box");
-  clutter_actor_add_effect (related_box, priv->horizontal_effect);
-  mx_scrollable_get_adjustments (MX_SCROLLABLE (related_box), &adjustment,
-                                 NULL);
-  g_signal_connect (adjustment, "changed",
-                    G_CALLBACK (notify_horizontal_changed_cb), self);
-  g_signal_connect (adjustment, "notify::value",
-                    G_CALLBACK (notify_horizontal_value_cb), self);
-
 
   /* slider setup */
   priv->slider = (ClutterActor*) clutter_script_get_object (script, "slider");
@@ -805,9 +637,6 @@ mex_media_controls_init (MexMediaControls *self)
 
   priv->add_to_queue_action =
    (MxAction*) clutter_script_get_object (script, "add-to-queue-action");
-
-  priv->queue_button =
-    (ClutterActor *) clutter_script_get_object (script, "add-to-queue-button");
 
   g_signal_connect (priv->play_pause_action, "activated",
                     G_CALLBACK (mex_media_controls_play_cb), self);
@@ -826,6 +655,8 @@ mex_media_controls_init (MexMediaControls *self)
    */
   mex_view_model_set_limit (priv->proxy_model, 200);
 
+  related_box = (ClutterActor *) clutter_script_get_object (priv->script,
+                                                            "related-box");
   priv->proxy = mex_content_proxy_new (MEX_MODEL (priv->proxy_model),
                                        CLUTTER_CONTAINER (related_box),
                                        MEX_TYPE_CONTENT_TILE);
@@ -879,8 +710,7 @@ mex_media_controls_show_description (MexMediaControls *self,
 {
   MexMediaControlsPrivate *priv = self->priv;
   MxLabel *label;
-  ClutterActor *play_pause_button, *stop_button, *placeholder,
-               *add_to_queue_button;
+  ClutterActor *play_pause_button, *stop_button;
   const gchar *text;
 
   label = (MxLabel*) clutter_script_get_object (priv->script, "progress-label");
@@ -892,22 +722,11 @@ mex_media_controls_show_description (MexMediaControls *self,
     (ClutterActor*) clutter_script_get_object (priv->script,
                                                "stop-button");
 
-  add_to_queue_button =
-    (ClutterActor*) clutter_script_get_object (priv->script,
-                                               "add-to-queue-button");
-
-  /* the placeholder actor will accept focus so that the title and description
-   * become visible as the user navigates up and down */
-  placeholder =
-    (ClutterActor*) clutter_script_get_object (priv->script, "placeholder");
-
   if (show)
     {
       clutter_actor_hide (priv->slider);
       clutter_actor_hide (play_pause_button);
       clutter_actor_hide (stop_button);
-      clutter_actor_hide (add_to_queue_button);
-      clutter_actor_show (placeholder);
 
       if (priv->content)
         text = mex_content_get_metadata (priv->content,
@@ -923,8 +742,6 @@ mex_media_controls_show_description (MexMediaControls *self,
       clutter_actor_show (priv->slider);
       clutter_actor_show (play_pause_button);
       clutter_actor_show (stop_button);
-      clutter_actor_show (add_to_queue_button);
-      clutter_actor_hide (placeholder);
     }
 
   priv->show_description = show;
@@ -1122,10 +939,6 @@ mex_media_controls_set_content (MexMediaControls *self,
             priv->is_queue_model = TRUE;
         }
     }
-  /* Update content on the queue button */
-  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->queue_button),
-                                priv->content);
-
   /* show the description rather than the seek bar for certain content */
   show_description = !g_strcmp0 ("x-mex/tv",
                                  mex_content_get_metadata (priv->content,

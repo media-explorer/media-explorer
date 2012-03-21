@@ -8,49 +8,61 @@
     "id" : "stop-action"
   },
   {
-    "type" : "MxAction",
-    "id" : "add-to-queue-action",
-    "display-name" : "Add to queue"
-  },
-  {
     "type" : "MexScrollView",
     "id" : "media-controls",
     "indicators-hidden" : true,
     "scroll-policy" : "vertical",
-    "height" : 150,
+    "height" : 178,
+    "clip-to-allocation" : true,
     "children" : [
       {
         "type" : "MxBoxLayout",
         "orientation" : "vertical",
-        "spacing" : 21,
         "children" : [
           {
             "type" : "MxBoxLayout",
-            "id" : "media-controls-box",
+            "style-class" : "MexMediaControlsTitle",
+            "spacing" : 20,
+            "child::x-fill" : false,
+            "width" : 980,
+            "children" : [
+              {
+                "type" : "MxLabel",
+                "id" : "title-label",
+                "name" : "title-label",
+                "text" : "Episode Name",
+                "y-align" : "middle"
+              },
+              {
+                "type" : "MxLabel",
+                "id" : "subtitle-label",
+                "name" : "subtitle-label",
+                "text" : "Season 1, Episode 1",
+                "y-align" : "middle"
+              },
+              {
+                "type" : "MxIcon",
+                "name" : "info-icon-dark",
+                "child::y-fill" : false,
+                "child::x-fill" : false,
+                "child::x-align" : "end",
+                "child::expand" : true
+              }
+            ]
+          },
+          {
+            "type" : "MxBoxLayout",
             "orientation" : "vertical",
+            "style-class" : "MexMediaControls",
+            "width" : 980,
             "child::x-fill" : false,
             "children" : [
               {
                 "type" : "MxBoxLayout",
-                "style-class" : "MexMediaControlsTitle",
-                "width" : 980,
-                "height" : 48,
-                "child::expand" : false,
-                "spacing" : 16,
+                "child::y-fill" : false,
+                "child::x-fill" : true,
+                "spacing" : 6,
                 "children" : [
-                  {
-                    "type" : "MxImage",
-                    "id" : "logo",
-                    "child::expand" : false,
-                    "child::x-align" : "start"
-                  },
-                  {
-                    "type" : "MxLabel",
-                    "id" : "title-label",
-                    "text" : "Content Title",
-                    "y-align" : "middle",
-                    "width" : 440
-                  },
                   {
                     "type" : "MxButton",
                     "id" : "play-pause-button",
@@ -67,38 +79,8 @@
                     "action" : "stop-action",
                     "label-visible" : false,
                     "child::x-fill" : false,
-                    "child::y-fill" : false
-                  },
-                  {
-                    "type" : "MexQueueButton",
-                    "name" : "add-to-queue-button",
-                    "id" : "add-to-queue-button",
-                    "min-width" : 240.0,
-                    "child::expand" : true,
-                    "child::x-align" : "end",
-                    "child::x-fill" : false
-                  },
-                  {
-                    "type" : "MxButton",
-                    "visible" : false,
-                    "id" : "placeholder",
-                    "name" : "placeholder",
-                    "child::expand" : true,
-                    "child::x-align" : "end",
-                    "child::x-fill" : false
-                  }
-                ]
-              },
-              {
-                "type" : "MxBoxLayout",
-                "style-class" : "MexMediaTimeline",
-                "spacing" : 8,
-                "width" : 980,
-                "child::expand" : false,
-                "children" : [
-                  {
-                    "type" : "MxSlider",
-                    "id" : "slider",
+                    "child::y-fill" : false,
+                    "child::x-align" : "start",
                     "child::expand" : true
                   },
                   {
@@ -107,9 +89,16 @@
                     "text" : "00:00 / 00:00"
                   }
                 ]
+              },
+              {
+                "type" : "MxSlider",
+                "id" : "slider",
+                "name" : "slider",
+                "child::x-fill" : false,
+                "width" : 980
               }
             ]
-          },
+          }
           {
             "type" : "MexScrollView",
             "indicators-hidden" : true,
@@ -118,6 +107,7 @@
               {
                 "type" : "MxBoxLayout",
                 "id" : "related-box",
+                "name" : "related-box",
                 "style-class" : "MexTimeline",
                 "spacing" : 44,
                 "scroll-to-focused" : false

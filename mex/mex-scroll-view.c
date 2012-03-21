@@ -706,24 +706,27 @@ mex_scroll_view_paint (ClutterActor *actor)
   clutter_actor_get_allocation_box (actor, &box);
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
 
-  texture_height = cogl_texture_get_height (priv->scroll_shadow_texture);
-  texture_width = box.x2 - box.x1 - padding.left - padding.right;
+  if (priv->scroll_shadow_texture)
+    {
+      texture_height = cogl_texture_get_height (priv->scroll_shadow_texture);
+      texture_width = box.x2 - box.x1 - padding.left - padding.right;
 
-  cogl_set_source_texture (priv->scroll_shadow_texture);
+      cogl_set_source_texture (priv->scroll_shadow_texture);
 
-  /* top shadow is the same as the bottom shadow, except it is drawn upside down
-   */
-  if (priv->top_shadow_visible)
-    cogl_rectangle (padding.left,
-                    padding.top + texture_height,
-                    padding.left + texture_width,
-                    padding.top);
+      /* top shadow is the same as the bottom shadow, except it is drawn upside down
+      */
+      if (priv->top_shadow_visible)
+        cogl_rectangle (padding.left,
+                        padding.top + texture_height,
+                        padding.left + texture_width,
+                        padding.top);
 
-  if (priv->bottom_shadow_visible)
-    cogl_rectangle (padding.left,
-                    box.y2 - box.y1 - padding.bottom - texture_height,
-                    padding.left + texture_width,
-                    box.y2 - box.y1 - padding.bottom);
+      if (priv->bottom_shadow_visible)
+        cogl_rectangle (padding.left,
+                        box.y2 - box.y1 - padding.bottom - texture_height,
+                        padding.left + texture_width,
+                        box.y2 - box.y1 - padding.bottom);
+    }
 }
 
 static void
@@ -1044,9 +1047,14 @@ mex_scroll_view_style_changed_cb (MexScrollView       *self,
   mx_stylable_get (MX_STYLABLE (self), "x-mex-scroll-shadow", &priv->scroll_shadow,
                    NULL);
 
-  if (priv->scroll_shadow)
+  if (priv->scroll_shadow && priv->scroll_shadow->uri)
     priv->scroll_shadow_texture = cogl_texture_new_from_file (priv->scroll_shadow->uri,
                                                               0, 0, NULL);
+  else if (priv->scroll_shadow)
+    {
+      g_boxed_free (MX_TYPE_BORDER_IMAGE, priv->scroll_shadow);
+      priv->scroll_shadow = NULL;
+    }
 }
 
 static void
