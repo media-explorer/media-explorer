@@ -45,7 +45,7 @@ G_DEFINE_TYPE_WITH_CODE (MexResizingHBox, mex_resizing_hbox, MX_TYPE_WIDGET,
 
 #define INACTIVE_OPACITY 64
 #define ANIMATION_DURATION 500
-#define SPACING 6
+#define SPACING 20
 
 enum
 {
