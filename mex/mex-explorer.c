@@ -495,6 +495,7 @@ mex_explorer_should_column_be_visible (MexColumn *column)
   MexModel *view_model, *model;
   gchar *placeholder_text;
   gboolean always_visible;
+  const MexModelCategoryInfo *c_info;
 
   view_model = mex_column_get_model (column);
   if (view_model == NULL)
@@ -504,9 +505,10 @@ mex_explorer_should_column_be_visible (MexColumn *column)
   if (model == NULL)
     return FALSE;
 
+  always_visible = c_info->always_visible;
+
   g_object_get (G_OBJECT (model),
                 "placeholder-text", &placeholder_text,
-                "always-visible", &always_visible,
                 NULL);
 
   if (always_visible)
@@ -638,8 +640,9 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   if (priv->touch_mode)
     mex_column_set_collapse_on_focus (column, FALSE);
 
-  g_object_get (model, "display-item-count", &display_item_count,
-                "title", &title, NULL);
+  display_item_count = c_info->display_item_count;
+
+  g_object_get (model, "title", &title, NULL);
 
   /* Cross reference column_view <-> model */
   g_object_set_qdata (G_OBJECT (column_view),
@@ -673,16 +676,16 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   g_object_bind_property (model, "icon-name",
                           column_view, "icon-name",
                           G_BINDING_SYNC_CREATE);
-
-  g_object_get (G_OBJECT (model),
-                "placeholder-text", &placeholder_text,
-                "always-visible", &always_visible,
-                NULL);
+  
+  always_visible = c_info->always_visible;
+    
+  g_object_get (model,"placeholder-text", &placeholder_text, NULL);
 
   /* placeholder actor for when there are no items */
   label = g_object_new (MX_TYPE_LABEL,
                         "style-class",
-                        (placeholder_text && placeholder_text[0]) ? "placeholder-label" : "",
+                        (placeholder_text && placeholder_text[0]) ? 
+                        "placeholder-label" : "",
                         "natural-width", 426.0,
                         "natural-height", 239.0,
                         "line-wrap", TRUE,

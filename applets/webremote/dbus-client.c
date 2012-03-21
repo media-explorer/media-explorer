@@ -182,9 +182,40 @@ dbus_client_input_set_message (DBusClient  *dbus_client,
 }
 
 void
+dbus_client_player_volume_set (DBusClient  *dbus_client,
+			const gchar *action,
+                        gdouble       *value)
+
+{
+  GError *error=NULL;
+
+  if (!verify_dbus_player_proxy (dbus_client))
+    return;
+
+  if (g_strcmp0 (action, "setvolume") == 0)
+      {
+        g_dbus_proxy_call_sync (dbus_client->mex_player,
+                                "SetAudioVolume",
+                                g_variant_new ("(d)", value),
+                                0,
+                                -1,
+                                NULL,
+                                &error);
+      }
+
+  if (error)
+    {
+      g_warning ("Problem calling %s: %s", action, error->message);
+      g_error_free (error);
+    }
+}
+
+
+void
 dbus_client_player_set (DBusClient  *dbus_client,
                         const gchar *action,
                         gchar       *value)
+
 {
   GError *error=NULL;
 

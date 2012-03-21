@@ -113,10 +113,8 @@ mex_model_manager_add_model_for_category (MexModelManager *manager,
   /* prevent the length display in the search column */
   if (!g_strcmp0 (c_info->name, "search"))
     {
-      g_object_set (aggregate,
-                    "display-item-count", FALSE,
-                    "always-visible", TRUE,
-                    NULL);
+      c_info->display_item_count = FALSE;
+      c_info->always_visible = FALSE;
     }
 
   g_object_set (G_OBJECT (aggregate),

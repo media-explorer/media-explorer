@@ -73,6 +73,8 @@ typedef struct
   gchar            *placeholder_text;
   gint              primary_group_by_key;
   gint              secondary_group_by_key;
+  gboolean          display_item_count;
+  gboolean          always_visible;
 
   gboolean          show_length;
 
