@@ -224,6 +224,8 @@ mex_plugin_manager_open_plugin (MexPluginManager *manager,
       return;
     }
 
+  g_free (plugin_name);
+
   /* Unloading modules usually has bad effects - don't allow it */
   g_module_make_resident (module);
 
