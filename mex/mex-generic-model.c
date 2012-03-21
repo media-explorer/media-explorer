@@ -29,10 +29,8 @@ enum {
   PROP_ICON_NAME,
   PROP_LENGTH,
   PROP_PLACEHOLDER_TEXT,
-  PROP_DISPLAY_ITEM_COUNT,
   PROP_SORT_FUNC,
   PROP_SORT_DATA,
-  PROP_ALWAYS_VISIBLE,
   PROP_CATEGORY,
   PROP_PRIORITY,
   PROP_SORT_FUNCTIONS,
@@ -61,8 +59,6 @@ struct _MexGenericModelPrivate {
   gchar    *alt_model_string;
   guint     alt_model_active : 1;
 
-  guint  display_item_count : 1;
-  guint  always_visible     : 1;
 };
 
 #define GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj),           \
@@ -449,15 +445,7 @@ mex_generic_model_set_property (GObject      *object,
     g_free (priv->icon_name);
     priv->icon_name = g_value_dup_string (value);
     break;
-
-  case PROP_DISPLAY_ITEM_COUNT:
-    priv->display_item_count = g_value_get_boolean (value);
-    break;
-
-  case PROP_ALWAYS_VISIBLE:
-    priv->always_visible = g_value_get_boolean (value);
-    break;
-
+ 
   case PROP_CATEGORY:
     g_free (priv->category);
     priv->category = g_value_dup_string (value);
@@ -518,20 +506,12 @@ mex_generic_model_get_property (GObject    *object,
     g_value_set_int (value, priv->items->len);
     break;
 
-  case PROP_DISPLAY_ITEM_COUNT:
-    g_value_set_boolean (value, priv->display_item_count);
-    break;
-
   case PROP_SORT_FUNC:
     g_value_set_pointer (value, priv->sort_func);
     break;
 
   case PROP_SORT_DATA:
     g_value_set_pointer (value, priv->sort_data);
-    break;
-
-  case PROP_ALWAYS_VISIBLE:
-    g_value_set_boolean (value, priv->always_visible);
     break;
 
   case PROP_CATEGORY:
@@ -579,20 +559,6 @@ mex_generic_model_class_init (MexGenericModelClass *klass)
                                G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
   g_object_class_install_property (o_class, PROP_PLACEHOLDER_TEXT, pspec);
 
-  pspec = g_param_spec_boolean ("display-item-count",
-                                "Display item count",
-                                "Whether to display the number of items",
-                                TRUE,
-                                G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
-  g_object_class_install_property (o_class, PROP_DISPLAY_ITEM_COUNT, pspec);
-
-  pspec = g_param_spec_boolean ("always-visible",
-                                "Always Visible",
-                                "Whether to always display this model",
-                                FALSE,
-                                G_PARAM_STATIC_STRINGS | G_PARAM_READWRITE);
-  g_object_class_install_property (o_class, PROP_ALWAYS_VISIBLE, pspec);
-
   /* MexModel properties */
   g_object_class_override_property (o_class, PROP_TITLE, "title");
   g_object_class_override_property (o_class, PROP_SORT_FUNC, "sort-function");
@@ -626,8 +592,6 @@ mex_generic_model_init (MexGenericModel *self)
   g_array_unref (priv->items);
 
   priv->placeholder_text = g_strdup ("");
-
-  priv->display_item_count = TRUE;
 
   /* add default sort functions */
   priv->sort_functions = g_ptr_array_sized_new (5);

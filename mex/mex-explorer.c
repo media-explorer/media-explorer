@@ -495,6 +495,8 @@ mex_explorer_should_column_be_visible (MexColumn *column)
   MexModel *view_model, *model;
   gchar *placeholder_text;
   gboolean always_visible;
+  const MexModelCategoryInfo *c_info;
+  gchar *category;
 
   view_model = mex_column_get_model (column);
   if (view_model == NULL)
@@ -504,9 +506,15 @@ mex_explorer_should_column_be_visible (MexColumn *column)
   if (model == NULL)
     return FALSE;
 
+  /* get the category information for this model */
+  g_object_get (model, "category", &category, NULL);
+  c_info = mex_model_manager_get_category_info (mex_model_manager_get_default (),
+                                                category);
+  always_visible = c_info->always_visible;
+  g_free (category);
+
   g_object_get (G_OBJECT (model),
                 "placeholder-text", &placeholder_text,
-                "always-visible", &always_visible,
                 NULL);
 
   if (always_visible)
@@ -636,8 +644,9 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   column_view = mex_column_view_new (NULL);
   column = mex_column_view_get_column (MEX_COLUMN_VIEW (column_view));
 
-  g_object_get (model, "display-item-count", &display_item_count,
-                "title", &title, NULL);
+  display_item_count = c_info->display_item_count;
+
+  g_object_get (model, "title", &title, NULL);
 
   /* Cross reference column_view <-> model */
   g_object_set_qdata (G_OBJECT (column_view),
@@ -668,15 +677,15 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
   g_signal_connect (model, "notify::length",
                     G_CALLBACK (model_length_changed_cb), column);
 
-  g_object_get (G_OBJECT (model),
-                "placeholder-text", &placeholder_text,
-                "always-visible", &always_visible,
-                NULL);
+  g_object_get (model, "placeholder-text", &placeholder_text, NULL);
+
+  always_visible = c_info->always_visible;
 
   /* placeholder actor for when there are no items */
   label = g_object_new (MX_TYPE_LABEL,
                         "style-class",
-                        (placeholder_text && placeholder_text[0]) ? "placeholder-label" : "",
+                        (placeholder_text && placeholder_text[0]) ? 
+                        "placeholder-label" : "",
                         "natural-width", 426.0,
                         "natural-height", 239.0,
                         "line-wrap", TRUE,
