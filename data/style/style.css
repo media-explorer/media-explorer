@@ -75,7 +75,8 @@ MxButton:focus MxIcon, MxButton.MexSearchBoxOpen MxIcon
 /* Clock */
 .MexClockBin > MxLabel
 {
-  color: #d0d0cc;
+  color: #666666;
+  font-size: 16;
 }
 
 /* Notifications */
@@ -106,6 +107,11 @@ MxButton.Back
 {
   -mx-icon-name: "icon-back";
   padding: 4;
+}
+
+MexInfoBar MxButton:focus
+{
+  border-image: none;
 }
 
 /* Icons */
