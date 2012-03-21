@@ -202,9 +202,6 @@ mex_metadata_from_uri (const gchar *uri,
         return;
     }
 
-    g_regex_unref (regex);
-    g_match_info_free (info);
-
     /* The filename doesn't look like a movie or a TV show, just use the
        filename without extension as the title */
     if (title) {
@@ -225,6 +222,10 @@ mex_metadata_from_uri (const gchar *uri,
     if (episode) {
         *episode = 0;
     }
+
+    g_regex_unref (regex);
+    g_match_info_free (info);
+    g_free (metadata);
 
     return;
 }
