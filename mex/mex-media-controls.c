@@ -485,7 +485,7 @@ static void
 mex_media_controls_update_header (MexMediaControls *self)
 {
   MexMediaControlsPrivate *priv = self->priv;
-  ClutterActor *label;
+  ClutterActor *label, *info;
 
   label = (ClutterActor*) clutter_script_get_object (priv->script,
                                                      "title-label");
@@ -493,6 +493,13 @@ mex_media_controls_update_header (MexMediaControls *self)
   mx_label_set_text (MX_LABEL (label),
                      mex_content_get_metadata (priv->content,
                                                MEX_CONTENT_METADATA_TITLE));
+
+  info = (ClutterActor *) clutter_script_get_object (priv->script,
+                                                     "description-label");
+
+  mx_label_set_text (MX_LABEL (info),
+                     mex_content_get_metadata (priv->content,
+                                               MEX_CONTENT_METADATA_SYNOPSIS));
 }
 
 static void
@@ -533,6 +540,51 @@ mex_media_controls_replace_content (MexMediaControls *self,
   mx_scrollable_set_adjustments (MX_SCROLLABLE (related_box),
                                  adjustment,
                                  NULL);
+}
+
+static gboolean
+mex_media_controls_key_press_event (ClutterActor    *actor,
+                                    ClutterKeyEvent *event,
+                                    gpointer         user_data)
+{
+  MexMediaControls *self = MEX_MEDIA_CONTROLS (actor);
+
+  if (self->priv->key_press_timeout)
+    return FALSE;
+
+  if (MEX_KEY_INFO (event->keyval))
+    {
+      ClutterActor *info_box;
+      gfloat info_box_h, info_box_w, controls_h;
+
+      info_box = (ClutterActor*) clutter_script_get_object (self->priv->script,
+                                                            "info-box");
+
+      controls_h = clutter_actor_get_height (actor);
+      info_box_w = clutter_actor_get_width (info_box);
+
+      CLUTTER_ACTOR_CLASS (G_OBJECT_GET_CLASS (info_box))->get_preferred_height (info_box,
+                                                                                 info_box_w,
+                                                                                 NULL,
+                                                                                 &info_box_h);
+
+      if (clutter_actor_get_height (info_box) > 0)
+        {
+          clutter_actor_set_opacity (info_box, 0);
+          clutter_actor_set_height (info_box, 0);
+          clutter_actor_set_height (actor, controls_h - info_box_h);
+        }
+      else
+        {
+          clutter_actor_set_opacity (info_box, 0xff);
+          clutter_actor_set_height (info_box, info_box_h);
+          clutter_actor_set_height (actor, controls_h + info_box_h);
+        }
+
+      return TRUE;
+    }
+
+  return FALSE;
 }
 
 static gboolean
@@ -606,6 +658,9 @@ mex_media_controls_init (MexMediaControls *self)
   gchar *tmp;
 
   MexMediaControlsPrivate *priv = self->priv = MEDIA_CONTROLS_PRIVATE (self);
+
+  g_signal_connect (self, "key-press-event",
+                    G_CALLBACK (mex_media_controls_key_press_event), NULL);
 
   priv->script = script = clutter_script_new ();
 

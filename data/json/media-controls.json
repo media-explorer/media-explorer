@@ -51,6 +51,37 @@
             ]
           },
           {
+            "type" : "MxTable",
+            "id" : "info-box",
+            "name" : "info-box",
+            "opacity" : 0,
+            "height" : 0,
+            "style-class" : "MexMediaControls",
+            "width" : 980,
+            "child::x-fill" : false,
+            "children" : [
+              {
+                "type" : "MxLabel",
+                "id" : "description-label",
+                "name" : "description-label",
+                "line-wrap" : true,
+                "child::x-expand" : true
+              },
+              {
+                "type" : "MexActionButton",
+                "label" : "Select Subtitles",
+                "icon-name" : "player-subtitles",
+                "icon-size" : 28,
+                "icon-position" : "right",
+                "child::y-fill" : true,
+                "child::y-align" : "start",
+                "child::x-expand" : false,
+                "child::column" : 1,
+                "width" : 228
+              }
+            ]
+          },
+          {
             "type" : "MxBoxLayout",
             "orientation" : "vertical",
             "style-class" : "MexMediaControls",

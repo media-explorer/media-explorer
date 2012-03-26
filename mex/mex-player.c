@@ -48,7 +48,6 @@
 #include "mex-content-tile.h"
 #include "mex-media-controls.h"
 #include "mex-screensaver.h"
-#include "mex-info-panel.h"
 #include "mex-log.h"
 #include "mex-utils.h"
 
@@ -83,13 +82,10 @@ struct _MexPlayerPrivate
 
   ClutterActor *controls;
   ClutterActor *related_tile;
-  ClutterActor *info_panel;
 
   guint hide_controls_source;
 
-  guint info_visible : 1;
   guint controls_visible : 1;
-  guint controls_prev_visible : 1;
 
   guint at_eos : 1;
 
@@ -245,14 +241,6 @@ mex_player_set_content (MexContentView *view,
           mex_get_stream_cb (NULL, uri, NULL, view);
         }
 
-      if (priv->info_visible)
-        {
-          clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
-                                 250, "opacity", 0x00, NULL);
-          mx_widget_set_disabled (MX_WIDGET (priv->info_panel), TRUE);
-          priv->info_visible = FALSE;
-        }
-
       mex_player_set_controls_visible (MEX_PLAYER (view), TRUE);
     }
   else
@@ -398,9 +386,6 @@ mex_hide_controls_cb (MexPlayer *player)
 
   /* timer no longer running */
   priv->hide_controls_source = 0;
-  /* if we've timed out then don't bring the controls
-     up after the info panel has been visible */
-  priv->controls_prev_visible = 0;
 
   /* hide the controls unless the video is at the end */
   if (!priv->at_eos)
@@ -436,7 +421,7 @@ mex_player_captured_event (ClutterActor *actor,
     {
     case CLUTTER_BUTTON_PRESS:
     case CLUTTER_MOTION:
-      if (!priv->controls_visible && !priv->info_visible)
+      if (!priv->controls_visible)
         mex_player_set_controls_visible (self, TRUE);
       else
         mex_player_restart_timer (MEX_PLAYER (actor));
@@ -470,76 +455,11 @@ mex_player_key_press_event (ClutterActor    *actor,
   stage = (ClutterStage*) clutter_actor_get_stage (actor);
   fmanager = mx_focus_manager_get_for_stage (stage);
 
-  if (MEX_KEY_INFO (event->keyval))
-    {
-      MexContent *content;
-
-      content = priv->content;
-
-      if (priv->info_visible)
-        {
-          /* hide the info panel */
-          clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
-                                 250, "opacity", 0x00, NULL);
-
-          mx_widget_set_disabled (MX_WIDGET (priv->info_panel), TRUE);
-          mx_widget_set_disabled (MX_WIDGET (priv->controls), FALSE);
-
-          priv->info_visible = FALSE;
-
-          if (priv->controls_prev_visible)
-            mex_player_set_controls_visible (player, TRUE);
-        }
-      else
-        {
-          MxFocusable *focusable;
-
-          /* if you're pressing info button while the media controls are up
-             set them as previously visible */
-          if (priv->controls_visible)
-            priv->controls_prev_visible = TRUE;
-
-          focusable = mx_focus_manager_get_focused (fmanager);
-          if (MEX_IS_CONTENT_TILE (focusable) &&
-              priv->controls_prev_visible == TRUE)
-            {
-              content =
-                mex_content_view_get_content (MEX_CONTENT_VIEW (focusable));
-
-              /* to avoid any accidental leak */
-              if (priv->related_tile)
-                {
-                  g_object_unref (priv->related_tile);
-                  priv->related_tile = NULL;
-                }
-              priv->related_tile = g_object_ref (focusable);
-            }
-
-          mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel),
-                                        content);
-
-          /* show the info panel */
-          clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
-                                 250, "opacity", 0xff, NULL);
-
-          mx_widget_set_disabled (MX_WIDGET (priv->info_panel), FALSE);
-          mx_widget_set_disabled (MX_WIDGET (priv->controls), TRUE);
-
-          priv->info_visible = TRUE;
-
-          mex_player_set_controls_visible (player, FALSE);
-
-          mex_push_focus (MX_FOCUSABLE (priv->info_panel));
-        }
-
-      return TRUE;
-    }
-
   switch (event->keyval)
     {
     case CLUTTER_KEY_Down:
         {
-          if (!priv->controls_visible && !priv->info_visible)
+          if (!priv->controls_visible)
             return mex_player_set_controls_visible (player, TRUE);
           break;
         }
@@ -612,7 +532,6 @@ mex_player_set_controls_visible (MexPlayer *player,
   pos = clutter_actor_get_height (priv->controls);
   if (visible)
     {
-      priv->controls_prev_visible = FALSE;
       priv->controls_visible = TRUE;
 
       mx_widget_set_disabled (MX_WIDGET (priv->controls), FALSE);
@@ -693,8 +612,6 @@ media_eos_cb (ClutterMedia *media,
                                      priv->content);
 
   /* set the control visible */
-  clutter_actor_animate (priv->info_panel, CLUTTER_EASE_IN_SINE,
-                         250, "opacity", 0x00, NULL);
   mex_player_set_controls_visible (player, TRUE);
 
   if (enqueued_content)
@@ -858,16 +775,6 @@ mex_player_init (MexPlayer *self)
       }
   }
 #endif
-
-  /* add info panel */
-  priv->info_panel = mex_info_panel_new (MEX_INFO_PANEL_MODE_FULL);
-  mx_widget_set_disabled (MX_WIDGET (priv->info_panel), TRUE);
-  clutter_container_add_actor (CLUTTER_CONTAINER (self), priv->info_panel);
-  clutter_container_child_set (CLUTTER_CONTAINER (self), priv->info_panel,
-                               "y-fill", FALSE, "y-align", MX_ALIGN_END,
-                               NULL);
-  clutter_actor_set_opacity (priv->info_panel, 0);
-  mex_info_panel_set_media (MEX_INFO_PANEL (priv->info_panel), priv->media);
 
   /* add media controls */
   priv->controls = mex_media_controls_new ();

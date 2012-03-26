@@ -461,13 +461,23 @@ MexMediaControls, *#MexSlideShowControls
   border-image: url('controls-bg.png') 0;
 }
 
-MxBoxLayout.MexMediaControls,
+.MexMediaControls,
 MxBoxLayout.MexMediaControlsTitle,
 MxBoxLayout.MexSlideShowControlsTitle,
 MxBoxLayout.MexCallControlsTitle
 {
   border-image: url('controls-container.png') 1;
   padding: 15;
+}
+
+#info-box
+{
+  padding: 0;
+}
+
+#description-label
+{
+  padding: 20;
 }
 
 MxBoxLayout.MexMediaControls
