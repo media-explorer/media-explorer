@@ -51,33 +51,48 @@
             ]
           },
           {
-            "type" : "MxTable",
-            "id" : "info-box",
+            "type" : "MxStack",
             "name" : "info-box",
-            "opacity" : 0,
+            "id" : "info-box",
             "height" : 0,
-            "style-class" : "MexMediaControls",
+            "opacity" : 0,
             "width" : 980,
             "child::x-fill" : false,
+            "style-class" : "MexMediaControls",
             "children" : [
               {
-                "type" : "MxLabel",
-                "id" : "description-label",
-                "name" : "description-label",
-                "line-wrap" : true,
-                "child::x-expand" : true
+                "type" : "MxTable",
+                "children" : [
+                  {
+                    "type" : "MxLabel",
+                    "id" : "description-label",
+                    "name" : "description-label",
+                    "line-wrap" : true,
+                    "child::x-expand" : true,
+                    "min-height" : 140
+                  },
+                  {
+                    "type" : "MexActionButton",
+                    "id" : "select-subtitles",
+                    "label" : "Select Subtitles",
+                    "icon-name" : "player-subtitles",
+                    "icon-size" : 28,
+                    "icon-position" : "right",
+                    "child::y-fill" : false,
+                    "child::y-align" : "start",
+                    "child::x-expand" : false,
+                    "child::column" : 1,
+                    "width" : 228
+                  }
+                ]
               },
               {
-                "type" : "MexActionButton",
-                "label" : "Select Subtitles",
-                "icon-name" : "player-subtitles",
-                "icon-size" : 28,
-                "icon-position" : "right",
-                "child::y-fill" : true,
-                "child::y-align" : "start",
-                "child::x-expand" : false,
-                "child::column" : 1,
-                "width" : 228
+                "type" : "MxTable",
+                "id" : "subtitle-selector",
+                "name" : "subtitle-selector",
+                "visible" : false,
+                "child::x-align" : "end",
+                "child::x-fill" : false
               }
             ]
           },

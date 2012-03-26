@@ -30,6 +30,13 @@
 #include "mex-player.h"
 #include "mex-content-proxy.h"
 #include "mex-aggregate-model.h"
+#ifdef USE_PLAYER_CLUTTER_GST
+#include <clutter-gst/clutter-gst.h>
+#include <clutter-gst/clutter-gst-player.h>
+#include <gst/gst.h>
+#include <gst/tag/tag.h>
+#endif
+#include <glib/gi18n-lib.h>
 
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 
@@ -650,11 +657,29 @@ tile_created_cb (MexProxy *proxy,
 }
 
 static void
+show_hide_subtitle_selector (MxButton         *button,
+                             MexMediaControls *controls)
+{
+  MexMediaControlsPrivate *priv = controls->priv;
+  ClutterActor *table;
+
+  table = (ClutterActor *) clutter_script_get_object (priv->script, "subtitle-selector");
+
+  if (CLUTTER_ACTOR_IS_VISIBLE (table))
+    clutter_actor_hide (table);
+  else
+    {
+      clutter_actor_show (table);
+      mex_push_focus (table);
+    }
+}
+
+static void
 mex_media_controls_init (MexMediaControls *self)
 {
   ClutterScript *script;
   GError *err = NULL;
-  ClutterActor *related_box;
+  ClutterActor *related_box, *subtitle_button;
   gchar *tmp;
 
   MexMediaControlsPrivate *priv = self->priv = MEDIA_CONTROLS_PRIVATE (self);
@@ -720,6 +745,12 @@ mex_media_controls_init (MexMediaControls *self)
                     self);
 
   priv->is_disabled = TRUE;
+
+  /* subtitles */
+  subtitle_button = (ClutterActor *) clutter_script_get_object (priv->script,
+                                                                "select-subtitles");
+  g_signal_connect (subtitle_button, "clicked", G_CALLBACK (show_hide_subtitle_selector),
+                    self);
 }
 
 ClutterActor *
@@ -845,6 +876,159 @@ mex_media_controls_notify_progress_cb (ClutterMedia     *media,
   label = (MxLabel*) clutter_script_get_object (priv->script, "progress-label");
   mx_label_set_text (label, text);
   g_free (text);
+}
+
+static void
+free_string_list (GList *l)
+{
+  while (l)
+    {
+      g_free (l->data);
+      l = g_list_delete_link (l, l);
+    }
+}
+
+static gchar *
+get_stream_description (GstTagList *tags,
+                        gint        track_num)
+{
+  gchar *description = NULL;
+
+  if (tags)
+    {
+      gst_tag_list_get_string (tags, GST_TAG_LANGUAGE_CODE, &description);
+
+      if (description)
+        {
+          const gchar *language = gst_tag_get_language_name (description);
+
+          if (language)
+            {
+              g_free (description);
+              description = g_strdup (language);
+            }
+        }
+
+      if (!description)
+        gst_tag_list_get_string (tags, GST_TAG_CODEC, &description);
+    }
+
+  if (!description)
+    {
+      /* In this context Tracks is either an audio track or a subtitles
+       * track */
+      description = g_strdup_printf (_("Track %d"), track_num);
+    }
+
+  return description;
+}
+
+static GList *
+get_streams_descriptions (GList *tags_list)
+{
+  GList *descriptions = NULL, *l;
+  gint track_num = 1;
+
+  for (l = tags_list; l; l = g_list_next (l))
+    {
+      GstTagList *tags = l->data;
+      gchar *description;
+
+      description = get_stream_description (tags, track_num);
+      track_num++;
+
+      descriptions = g_list_prepend (descriptions, description);
+    }
+
+  return g_list_reverse (descriptions);
+}
+
+static void
+set_subtitle (MxButton         *button,
+              MexMediaControls *self)
+{
+  gint i;
+
+  i = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (button),
+                                          "subtitle-track"));
+
+  clutter_gst_player_set_subtitle_track (CLUTTER_GST_PLAYER (self->priv->media),
+                                         i);
+  clutter_actor_hide ((ClutterActor *) clutter_script_get_object (self->priv->script,
+                                                                  "subtitle-selector"));
+}
+
+static void
+on_media_subtitle_tracks_changed (ClutterMedia     *media,
+                                  GParamSpec       *pspsec,
+                                  MexMediaControls *self)
+{
+#ifdef USE_PLAYER_CLUTTER_GST
+  ClutterGstPlayer *player = CLUTTER_GST_PLAYER (media);
+  MexMediaControlsPrivate *priv = self->priv;
+  GList *tracks, *l, *descriptions;
+  gint n_tracks;
+  ClutterActor *table, *subtitle_button, *button;
+  gint row, column, i;
+
+  table = (ClutterActor *) clutter_script_get_object (priv->script, "subtitle-selector");
+  subtitle_button = (ClutterActor *) clutter_script_get_object (priv->script,
+                                                                "select-subtitles");
+
+  tracks = clutter_gst_player_get_subtitle_tracks (player);
+
+  clutter_container_foreach (CLUTTER_CONTAINER (table),
+                             (ClutterCallback) clutter_actor_destroy, NULL);
+
+  /* no need to display the subtitle combo box if there's no subtitles */
+  n_tracks = g_list_length (tracks);
+  if (n_tracks == 0)
+    {
+      clutter_actor_hide (subtitle_button);
+      return;
+    }
+
+  /* Add a "None" option to disable subtitles */
+  /* TRANSLATORS: In this context, None is used to disable subtitles in the
+   * list of choices for subtitles */
+  button = mx_button_new_with_label (_("None"));
+  g_object_set_data (G_OBJECT (button), "subtitle-track", GINT_TO_POINTER (0));
+  g_signal_connect (button, "clicked", G_CALLBACK (set_subtitle), self);
+  g_object_set (button, "min-width", 180.0, NULL);
+  mx_bin_set_alignment (MX_BUTTON (button), MX_ALIGN_START, MX_ALIGN_START);
+  mx_bin_set_fill (MX_BUTTON (button), FALSE, FALSE);
+
+  clutter_container_add_actor (CLUTTER_CONTAINER (table), button);
+
+  /* TRANSLATORS: In this context, track is a subtitles track */
+  descriptions = get_streams_descriptions (tracks);
+  row = 1;
+  column = 0;
+  i = 0;
+  for (l = descriptions; l; l = g_list_next (l))
+    {
+      gchar *description = l->data;
+
+      button = mx_button_new_with_label (description);
+      g_object_set (button, "min-width", 180.0, NULL);
+      mx_bin_set_alignment (MX_BUTTON (button), MX_ALIGN_START, MX_ALIGN_START);
+      mx_bin_set_fill (MX_BUTTON (button), FALSE, FALSE);
+      mx_table_add_actor (MX_TABLE (table), button, row, column);
+      g_object_set_data (G_OBJECT (button), "subtitle-track",
+                         GINT_TO_POINTER (i));
+      g_signal_connect (button, "clicked", G_CALLBACK (set_subtitle), self);
+
+      if (++row > 2)
+        {
+          column++;
+          row = 0;
+        }
+      i++;
+    }
+  free_string_list (descriptions);
+
+  clutter_actor_show (subtitle_button);
+#endif
 }
 
 static void
@@ -1102,6 +1286,9 @@ mex_media_controls_set_disabled (MexMediaControls *self,
                                             mex_media_controls_notify_download_cb,
                                             self);
 #endif /* !USE_PLAYER_DBUS */
+      g_signal_handlers_disconnect_by_func (priv->media,
+                                            on_media_subtitle_tracks_changed,
+                                            self);
     }
   else
     {
@@ -1120,10 +1307,14 @@ mex_media_controls_set_disabled (MexMediaControls *self,
                         self);
 #endif /* !USE_PLAYER_DBUS */
 
+      g_signal_connect (priv->media, "notify::subtitle-tracks",
+                        G_CALLBACK (on_media_subtitle_tracks_changed), self);
+
       mex_media_controls_notify_can_seek_cb (priv->media, NULL, self);
       mex_media_controls_notify_playing_cb (priv->media, NULL, self);
       mex_media_controls_notify_progress_cb (priv->media, NULL, self);
       mex_media_controls_notify_download_cb (priv->media, 0.0, 0.0, self);
+      on_media_subtitle_tracks_changed (priv->media, NULL, self);
     }
 
   priv->is_disabled = disabled;
