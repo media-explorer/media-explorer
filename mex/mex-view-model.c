@@ -713,7 +713,8 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                       FilterKeyValue *filter2;
                       gint group_key;
 
-                      if (priv->filter_by)
+                      if (priv->filter_by
+                          && ((FilterKeyValue*) priv->filter_by->data)->condition != MEX_FILTER_NOT)
                         filter2 = priv->filter_by->data;
                       else
                         filter2 = NULL;
@@ -730,8 +731,8 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                                                           /* filter key, value */
                                                           priv->group_by_key, g,
                                                           /* second filter key, value*/
-                                                          (priv->filter_by) ? filter2->key : 0,
-                                                          (priv->filter_by) ? filter2->value : NULL,
+                                                          (filter2) ? filter2->key : 0,
+                                                          (filter2) ? filter2->value : NULL,
                                                           /* group key */
                                                           group_key);
 
