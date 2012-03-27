@@ -27,6 +27,8 @@
 #include "mex-os.h"
 #include "mex-marshal.h"
 
+#include <stdlib.h>
+
 gchar *
 mex_get_thumbnail_path_for_uri (const gchar *uri)
 {
@@ -120,18 +122,54 @@ mex_internal_thumbnail_start (ThumbnailData *data,
   if (g_str_has_prefix (data->mime, "image/")
       || g_str_has_prefix (data->mime, "video/"))
     {
-      argv[0] = LIBEXECDIR "/mex-thumbnailer";
-      argv[1] = data->mime;
-      argv[2] = data->uri;
-      argv[3] = data->thumbnail_path;
-      argv[4] = NULL;
+      argv[0] = g_build_filename (LIBEXECDIR, "mex-thumbnailer", NULL);
 
-      g_spawn_sync (NULL, argv, NULL, 0, NULL, NULL, NULL, &output, &status,
-                    &err);
-      if (err)
+      /* if mex-thumbnailer is not in LIBEXECDIR, search the PATH */
+      if (!g_file_test (argv[0], G_FILE_TEST_EXISTS))
         {
-          g_warning ("Error: %s", err->message);
-          g_clear_error (&err);
+          gchar *path = g_strdup (getenv ("PATH"));
+          gchar **paths;
+          int i;
+
+          g_free (argv[0]);
+
+          paths = g_strsplit (path, G_SEARCHPATH_SEPARATOR_S, -1);
+
+          for (i = 0; paths[i]; i++)
+            {
+              argv[0] = g_build_filename (paths[i], "mex-thumbnailer", NULL);
+
+              if (g_file_test (argv[0], G_FILE_TEST_EXISTS))
+                break;
+
+              g_free (argv[0]);
+              argv[0] = NULL;
+            }
+
+          g_free (path);
+          g_strfreev (paths);
+        }
+
+      if (!argv[0])
+        {
+          g_warning ("Could not locate mex-thumbnailer");
+        }
+      else
+        {
+          argv[1] = data->mime;
+          argv[2] = data->uri;
+          argv[3] = data->thumbnail_path;
+          argv[4] = NULL;
+
+          g_spawn_sync (NULL, argv, NULL, 0, NULL, NULL, NULL, &output, &status,
+                        &err);
+          if (err)
+            {
+              g_warning ("Error: %s", err->message);
+              g_clear_error (&err);
+            }
+
+          g_free (argv[0]);
         }
     }
 
