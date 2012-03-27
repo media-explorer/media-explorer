@@ -79,6 +79,7 @@ void mex_player_rewind (MexPlayer *player);
 void mex_player_next (MexPlayer *player);
 void mex_player_previous (MexPlayer *player);
 void mex_player_set_uri (MexPlayer *player, const gchar *uri);
+void mex_player_seek_us (MexPlayer *player, gint64 seek_offset_us);
 
 /**/
 
