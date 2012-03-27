@@ -146,6 +146,26 @@ mex_dbusinput_la_CFLAGS  = 			\
 mex_dbusinput_la_LIBADD  = $(_libadd)
 endif
 
+if USE_PLUGIN_MPRIS
+plugins_LTLIBRARIES += mex-mpris.la
+
+mex_mprisdir = $(plugin_datadir)/mpris
+dist_mex_mpris_DATA =
+
+mex_mpris_la_SOURCES =			\
+	mpris/mex-mpris-plugin.c	\
+	mpris/mex-mpris-plugin.h	\
+	mpris/mpris-spec.h		\
+	$(NULL)
+mex_mpris_la_CFLAGS  = 			\
+	-DG_LOG_DOMAIN=\"Mex-Mpris\"	\
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_mprisdir)\"
+mex_mpris_la_LIBADD  = $(_libadd)
+endif
+
+
+
+
 if USE_PLUGIN_OPTICALDISC
 plugins_LTLIBRARIES += mex-opticaldisc.la
 
