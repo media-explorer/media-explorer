@@ -493,6 +493,8 @@ int main (int argc, char **argv)
 
   g_type_init ();
 
+  MEX_LOG_DOMAIN_INIT (webremote_log_domain, "webremote");
+
   context = g_option_context_new ("- Media explorer web remote");
 
   g_option_context_add_main_entries (context, entries, NULL);
