@@ -176,7 +176,7 @@ mex_channel_manager_init (MexChannelManager *self)
 
   priv->channels = g_ptr_array_new_with_free_func (g_object_unref);
   priv->service_to_channel = g_hash_table_new (g_str_hash, g_str_equal);
-  priv->pmt_to_channel = g_hash_table_new (g_int_hash, g_int_equal);
+  priv->pmt_to_channel = g_hash_table_new (NULL, NULL);
 
   manager = mex_model_manager_get_default ();
 
@@ -244,7 +244,7 @@ add_channels_from_ptr_array (MexChannelManager *manager,
 
               pmt = mex_dvbt_channel_get_pmt (MEX_DVBT_CHANNEL (channel));
               g_hash_table_insert (priv->pmt_to_channel,
-                                   &pmt,
+                                   pmt,
                                    channel);
             }
         }
@@ -357,5 +357,5 @@ mex_channel_manager_get_channel_by_pmt (MexChannelManager *manager,
 
   g_return_val_if_fail (MEX_IS_CHANNEL_MANAGER (manager), NULL);
 
-  return g_hash_table_lookup (priv->pmt_to_channel, &pmt);
+  return g_hash_table_lookup (priv->pmt_to_channel, GINT_TO_POINTER (pmt));
 }
