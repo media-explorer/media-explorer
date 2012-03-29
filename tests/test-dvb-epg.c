@@ -22,12 +22,17 @@
 
 #define PIPELINE "dvbsrc name=dvbsrc pids=0:16:17:18 stats-reporting-interval=0 ! mpegtsparse ! fakesink silent=true"
 
+static MexChannelManager *manager;
+
 static gboolean
 bus_func (GstBus     *bus,
           GstMessage *message,
           gpointer    data)
 {
   const GValue *value_list;
+  guint sid;
+  MexChannel *channel;
+  const gchar *channel_name;
 
   if (message->type != GST_MESSAGE_ELEMENT)
     return TRUE;
@@ -36,6 +41,16 @@ bus_func (GstBus     *bus,
     return TRUE;
 
   value_list = gst_structure_get_value (message->structure, "events");
+
+  gst_structure_get_uint (message->structure, "service-id", &sid);
+
+  channel = mex_channel_manager_get_channel_by_pmt (manager, sid);
+
+
+  if (channel && MEX_IS_DVBT_CHANNEL (channel))
+    channel_name = mex_dvbt_channel_get_service_id (MEX_DVBT_CHANNEL (channel));
+  else
+    channel_name = "(unknown)";
 
   if (value_list)
     {
@@ -81,8 +96,8 @@ bus_func (GstBus     *bus,
                                  NULL);
             }
 
-          printf ("Event %d = %02d/%02d/%02d %02d:%02d %s \n\t(%s)\n", event_id,
-                   day, month, year, hour, minute, name, description);
+          printf ("%-12.12s|%02d/%02d/%02d|%02d:%02d|%-22.22s|%.27s\n",
+                  channel_name, day, month, year, hour, minute, name, description);
 
           g_free (name);
           g_free (description);
@@ -99,7 +114,6 @@ main (int argc, char **argv)
   GMainLoop *loop;
   GError *err = NULL;
   GstBus *bus;
-  MexChannelManager *manager;
   MexPluginManager *pmanager;
   const GPtrArray *array;
   gint i;
