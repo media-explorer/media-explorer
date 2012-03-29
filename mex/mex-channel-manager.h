@@ -83,6 +83,8 @@ gint                mex_channel_manager_get_channel_position  (MexChannelManager
                                                                MexChannel        *channel);
 MexChannel *        mex_channel_manager_get_channel_by_service (MexChannelManager *manager,
                                                                 const gchar       *service_name);
+MexChannel *        mex_channel_manager_get_channel_by_pmt     (MexChannelManager *manager,
+                                                                gint               pmt);
 
 G_END_DECLS
 

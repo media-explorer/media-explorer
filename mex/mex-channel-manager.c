@@ -42,6 +42,7 @@ struct _MexChannelManagerPrivate
   GHashTable *service_to_channel; /* FIXME: There's no guarantees the service
                                      name is unique, so we need to do better
                                      than that */
+  GHashTable *pmt_to_channel;
 
   MexLogoProvider *logo_provider; /* For now a single logo provider */
 };
@@ -147,6 +148,7 @@ mex_channel_manager_finalize (GObject *object)
 
   g_ptr_array_free (priv->channels, TRUE);
   g_hash_table_unref (priv->service_to_channel);
+  g_hash_table_unref (priv->pmt_to_channel);
 
   G_OBJECT_CLASS (mex_channel_manager_parent_class)->finalize (object);
 }
@@ -174,6 +176,7 @@ mex_channel_manager_init (MexChannelManager *self)
 
   priv->channels = g_ptr_array_new_with_free_func (g_object_unref);
   priv->service_to_channel = g_hash_table_new (g_str_hash, g_str_equal);
+  priv->pmt_to_channel = g_hash_table_new (g_int_hash, g_int_equal);
 
   manager = mex_model_manager_get_default ();
 
@@ -232,8 +235,19 @@ add_channels_from_ptr_array (MexChannelManager *manager,
       if (g_hash_table_lookup (priv->service_to_channel, service))
         g_warning ("2 channels have the same service id/name");
       else
-        g_hash_table_insert (priv->service_to_channel,
-                             (gpointer) service, channel);
+        {
+          g_hash_table_insert (priv->service_to_channel,
+                               (gpointer) service, channel);
+          if (MEX_IS_DVBT_CHANNEL (channel))
+            {
+              gint pmt;
+
+              pmt = mex_dvbt_channel_get_pmt (MEX_DVBT_CHANNEL (channel));
+              g_hash_table_insert (priv->pmt_to_channel,
+                                   &pmt,
+                                   channel);
+            }
+        }
 
       mex_model_add_content (priv->channels_model, MEX_CONTENT (channel));
     }
@@ -333,4 +347,15 @@ mex_channel_manager_get_channel_by_service (MexChannelManager *manager,
   g_return_val_if_fail (MEX_IS_CHANNEL_MANAGER (manager), NULL);
 
   return g_hash_table_lookup (priv->service_to_channel, service_name);
+}
+
+MexChannel *
+mex_channel_manager_get_channel_by_pmt (MexChannelManager *manager,
+                                        gint               pmt)
+{
+  MexChannelManagerPrivate *priv = manager->priv;
+
+  g_return_val_if_fail (MEX_IS_CHANNEL_MANAGER (manager), NULL);
+
+  return g_hash_table_lookup (priv->pmt_to_channel, &pmt);
 }
