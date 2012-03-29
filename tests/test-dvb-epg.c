@@ -122,6 +122,9 @@ main (int argc, char **argv)
   manager = mex_channel_manager_get_default ();
   array = mex_channel_manager_get_channels (manager);
 
+  if (array->len < 1)
+    g_error ("No Channels");
+
   for (i = 0; i < array->len; i++)
     {
       MexChannel *channel = array->pdata[i];
@@ -138,6 +141,8 @@ main (int argc, char **argv)
           MexDvbGuard guard;
           MexDvbHierarchy hierarchy;
           GstElement *element;
+
+          printf ("Tuning to %s\n", mex_channel_get_name (channel));
 
           g_object_get (channel,
                         "modulation", &modulation,
