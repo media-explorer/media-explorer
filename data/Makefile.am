@@ -17,6 +17,7 @@ endif
 
 styledir = $(pkgdatadir)/style
 dist_style_DATA = \
+	style/bg-gradient.png \
 	style/button-bg-highlight.png \
 	style/button-bg.png \
         style/call-window-border.png \

@@ -2183,7 +2183,7 @@ mex_startup (MxApplication *app,
 #ifdef HAVE_CLUTTER_CEX100
   const ClutterColor background_color = { 0x00, 0x00, 0x00, 0x00 };
 #else
-  const ClutterColor background_color = { 0xe4, 0xe5, 0xdf, 0xff };
+  const ClutterColor background_color = { 0x00, 0x00, 0x00, 0xff };
 #endif /* HAVE_CLUTTER_CEX100 */
 
 
@@ -2277,6 +2277,7 @@ mex_startup (MxApplication *app,
 
   /* A stack is the top level actor in the window */
   data->stack = mx_stack_new ();
+  clutter_actor_set_name (data->stack, "top-level");
 
   /* It's possible that MexPlayer does not provide an actor that will display
    * the video. This happens on STB hardware when the video is displayed in

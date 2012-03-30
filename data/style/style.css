@@ -1,3 +1,9 @@
+MxStack#top-level
+{
+  border-image: url("bg-gradient.png");
+  background-color: #e4e5df;
+}
+
 /* Default Styles */
 MxLabel, MxButton, MxIcon, MxComboBox, MxComboBox:disabled
 {
