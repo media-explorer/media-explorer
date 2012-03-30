@@ -881,7 +881,7 @@ mex_view_model_refresh_external_items (MexViewModel *model)
                   ref = g_controller_create_reference (priv->controller,
                                                        G_CONTROLLER_REMOVE,
                                                        G_TYPE_UINT, 1,
-                                                       priv->limit -1);
+                                                       priv->limit);
                   g_controller_emit_changed (priv->controller, ref);
                 }
             }
