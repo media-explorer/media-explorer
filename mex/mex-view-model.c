@@ -400,6 +400,9 @@ mex_view_model_index (MexModel *model, MexContent *content)
   gint start = 0, idx = 0, position;
   gboolean found;
 
+  if (!content)
+    return -1;
+
   /* find the start content's index */
   if (priv->start_content)
     {
