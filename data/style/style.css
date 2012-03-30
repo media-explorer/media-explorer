@@ -70,7 +70,7 @@ MxSpinner#main-spinner
 /* Home and column view */
 MexResizingHBox.column-view
 {
-  padding: 34 50 0 39;
+  padding: 34 50 40 39;
 }
 
 MxButton:focus MxIcon, MxButton.MexSearchBoxOpen MxIcon
