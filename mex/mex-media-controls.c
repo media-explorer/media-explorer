@@ -1090,6 +1090,15 @@ mex_media_controls_set_content (MexMediaControls *self,
       mex_view_model_set_start_content (priv->proxy_model, priv->content);
       mex_view_model_set_loop (priv->proxy_model, TRUE);
 
+      if (g_str_has_prefix (mex_content_get_metadata (priv->content,
+                                                      MEX_CONTENT_METADATA_MIMETYPE),
+                            "audio/"))
+        {
+          /* treat models with audio in them as queue models, i.e. advance to
+           * the next item automatically */
+          priv->is_queue_model = TRUE;
+        }
+
       /* Work out if the context was a queue FIXME unreliable */
       /* From coloumn context = MexViewModel MexAggregateModel MexQueueModel */
       /* From grid  context = MexViewModel MexQueueModel */
