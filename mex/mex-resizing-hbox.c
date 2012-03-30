@@ -303,6 +303,9 @@ mex_resizing_hbox_add (ClutterContainer *container,
 
   clutter_actor_set_parent (actor, CLUTTER_ACTOR (self));
 
+  clutter_actor_add_effect_with_name (actor, "desaturate",
+                                      clutter_desaturate_effect_new (1.0));
+
   g_signal_emit_by_name (self, "actor-added", actor);
 }
 
@@ -1569,14 +1572,22 @@ mex_resizing_hbox_notify_focused_cb (MxFocusManager  *manager,
         {
           if (parent == (ClutterActor *)self)
             {
+              ClutterEffect *effect;
+
               if (priv->current_focus == focused)
                 return;
 
+
               if (priv->fade && priv->current_focus)
-                clutter_actor_animate (priv->current_focus,
-                                       CLUTTER_EASE_OUT_QUAD, 250,
-                                       "opacity", INACTIVE_OPACITY,
-                                       NULL);
+                {
+                  clutter_actor_animate (priv->current_focus,
+                                         CLUTTER_EASE_OUT_QUAD, 250,
+                                         "opacity", INACTIVE_OPACITY, NULL);
+
+                  effect = clutter_actor_get_effect (priv->current_focus,
+                                                     "desaturate");
+                  clutter_actor_meta_set_enabled ((effect), TRUE);
+                }
 
               if (MEX_IS_COLUMN_VIEW (priv->current_focus))
                 mex_column_view_set_focus (MEX_COLUMN_VIEW (priv->current_focus),
@@ -1592,10 +1603,15 @@ mex_resizing_hbox_notify_focused_cb (MxFocusManager  *manager,
                                                 &priv->old_box);
 
               if (priv->fade)
-                clutter_actor_animate (priv->current_focus,
-                                       CLUTTER_EASE_OUT_QUAD, 250,
-                                       "opacity", 0xff,
-                                       NULL);
+                {
+                  clutter_actor_animate (priv->current_focus,
+                                         CLUTTER_EASE_OUT_QUAD, 250,
+                                         "opacity", 0xff,
+                                         NULL);
+                  effect = clutter_actor_get_effect (priv->current_focus,
+                                                     "desaturate");
+                  clutter_actor_meta_set_enabled ((effect), FALSE);
+                }
 
               mex_resizing_hbox_start_animation (self);
 
