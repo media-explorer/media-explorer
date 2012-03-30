@@ -1,4 +1,22 @@
 ===============================================================================
+Mex 0.4.0                                                            2012-03-30
+===============================================================================
+
+  • List of changes since media-explorer 0.3.8
+
+    » telepathy: Port to Call1 and Farstream
+
+    » Add an MPRIS plugin
+
+    » Many other bug fixes and improvements
+
+
+Contributors to this release:
+
+  Chirag Harendra, Igor Tarasov, Michael Wood, Olivier Crête, Thomas Wood
+
+
+===============================================================================
 Mex 0.3.8                                                            2012-03-09
 ===============================================================================
 
