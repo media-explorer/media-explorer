@@ -20,14 +20,11 @@
 #include "mex-telepathy-channel.h"
 
 #include <clutter-gst/clutter-gst.h>
-#include <gst/farsight/fs-element-added-notifier.h>
-#include <gst/farsight/fs-utils.h>
+#include <farstream/fs-element-added-notifier.h>
+#include <farstream/fs-utils.h>
 #include <gst/gstelement.h>
-#include <telepathy-farstream/channel.h>
-#include <telepathy-farstream/content.h>
-#include <telepathy-glib/channel.h>
-#include <telepathy-yell/call-channel.h>
-#include <telepathy-yell/cli-call.h>
+#include <telepathy-farstream/telepathy-farstream.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include <mex/mex.h>
 
@@ -82,6 +79,9 @@ struct _MexTelepathyChannelPrivate
   guint framerate;
   gfloat scene_width;
   gfloat scene_height;
+
+  TpCallContent *audio_content;
+  TpCallContent *video_content;
 };
 
 enum
@@ -230,11 +230,43 @@ mex_telepathy_channel_toggle_camera (MxAction *action,
 {
   MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
   MexTelepathyChannelPrivate *priv = self->priv;
-  TpyCallChannel *channel = TPY_CALL_CHANNEL (self->priv->channel);
+  TpCallChannel *channel = TP_CALL_CHANNEL (self->priv->channel);
+  GPtrArray *streams;
+  guint j;
 
   priv->sending_video = !priv->sending_video;
 
-  tpy_call_channel_send_video (channel, priv->sending_video);
+  if (priv->video_content != NULL)
+    {
+      /* If there is no video content, request one
+       * Also, we should put the camera indicator in an intermediate state,
+       * maybe with some kind of spinner, until this is done
+       */
+
+      tp_call_channel_add_content_async (channel,
+          "Video Channel", TP_MEDIA_STREAM_TYPE_VIDEO,
+          TP_MEDIA_STREAM_DIRECTION_BIDIRECTIONAL,
+          NULL, NULL);
+      goto done;
+    }
+
+  streams = tp_call_content_get_streams (priv->video_content);
+
+  for (j = 0; j < streams->len; j++)
+    {
+      TpCallStream *stream =
+          TP_CALL_STREAM (g_ptr_array_index (streams, j));
+
+      /* FIXME
+       * Ideally while requesting to send video, the stream UI
+       * should show some spinner until we actually start sending
+       */
+      tp_call_stream_set_sending_async (stream, priv->sending_video,
+          NULL, NULL);
+    }
+
+ done:
+
   mex_telepathy_channel_set_camera_state (self, priv->sending_video);
 }
 
@@ -717,6 +749,21 @@ mex_telepathy_channel_on_bus_watch (GstBus     *bus,
   return TRUE;
 }
 
+static gboolean
+pad_added_idle_cb (gpointer data)
+{
+  MexTelepathyChannel *self = data;
+  MexTelepathyChannelPrivate *priv = self->priv;
+
+  /* Upon pad added, clear the "in progress" box+padding */
+  clutter_actor_hide (CLUTTER_ACTOR (priv->busy_box));
+  clutter_actor_show (CLUTTER_ACTOR (priv->full_frame) );
+
+  mex_telepathy_channel_set_tool_mode (self, TOOL_MODE_FULL, 100);
+
+  return FALSE;
+}
+
 static void
 mex_telepathy_channel_on_src_pad_added (TfContent *content,
                                         TpHandle   handle,
@@ -733,10 +780,6 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
   GstPad *sinkpad;
   GstElement *element;
   GstStateChangeReturn ret;
-
-  /* Upon pad added, clear the "in progress" box+padding */
-  clutter_actor_hide (CLUTTER_ACTOR (priv->busy_box));
-  clutter_actor_show (CLUTTER_ACTOR (priv->full_frame) );
 
   MEX_DEBUG ("New src pad: %s", cstr);
   g_object_get (content, "media-type", &mtype, NULL);
@@ -779,7 +822,9 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
   g_object_unref (sinkpad);
 
   /* Start in FULL mode */
-  mex_telepathy_channel_set_tool_mode (self, TOOL_MODE_FULL, 100);
+  /* Upon pad added, clear the "in progress" box+padding */
+  /* But this nees to be done in the main loop */
+  g_idle_add (pad_added_idle_cb, self);
 }
 
 static void
@@ -956,7 +1001,7 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
 }
 
 static void
-mex_telepathy_channel_on_content_added (TfChannel *channel,
+mex_telepathy_channel_on_tf_content_added (TfChannel *channel,
                                         TfContent *content,
                                         gpointer   user_data)
 {
@@ -1105,20 +1150,20 @@ mex_telepathy_channel_new_tf_channel (GObject      *source,
                     G_CALLBACK (mex_telepathy_channel_conference_added), self);
 
   g_signal_connect (priv->tf_channel, "content-added",
-                    G_CALLBACK (mex_telepathy_channel_on_content_added), self);
+                    G_CALLBACK (mex_telepathy_channel_on_tf_content_added), self);
 }
 
 static void
-mex_telepathy_channel_on_call_state_changed (TpyCallChannel *channel,
-                                             TpyCallState    state,
-                                             TpyCallFlags    flags,
-                                             GValueArray    *state_reason,
+mex_telepathy_channel_on_call_state_changed (TpCallChannel *channel,
+                                             TpCallState    state,
+                                             TpCallFlags    flags,
+                                             TpCallStateReason *reason,
                                              GHashTable     *state_details,
                                              gpointer        user_data)
 {
   MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
 
-  if (state == TPY_CALL_STATE_ENDED)
+  if (state == TP_CALL_STATE_ENDED)
     {
       tp_channel_close_async (self->priv->channel, NULL, NULL);
     }
@@ -1223,19 +1268,133 @@ mex_telepathy_channel_on_contact_fetched (TpConnection     *connection,
     }
 }
 
+
 static void
-mex_telepathy_channel_on_ready (TpyCallChannel *channel,
-  GParamSpec *spec, gpointer user_data)
+stream_prepared_cb (GObject *source_object, GAsyncResult *res,
+    gpointer user_data)
 {
+  TpCallStream *stream = TP_CALL_STREAM (source_object);
   MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
   MexTelepathyChannelPrivate *priv = self->priv;
-  TpySendingState state = tpy_call_channel_get_video_state (channel);
+  TpCallContent *content = NULL;
 
-  priv->sending_video = (state == TPY_SENDING_STATE_PENDING_SEND
-    || state == TPY_SENDING_STATE_SENDING);
+  g_object_get (stream, "content", &content, NULL);
 
-  mex_telepathy_channel_set_camera_state (self, priv->sending_video);
+  if (content == priv->video_content)
+    {
+      TpSendingState state;
+
+      state = tp_call_stream_get_local_sending_state (stream);
+      priv->sending_video = (state == TP_SENDING_STATE_PENDING_SEND
+          || state == TP_SENDING_STATE_SENDING);
+      mex_telepathy_channel_set_camera_state (self, priv->sending_video);
+    }
+
+  g_object_unref (content);
+
+  g_object_unref (self);
 }
+
+static void
+mex_telepathy_channel_on_streams_added (TpCallContent *content,
+    GPtrArray *streams, MexTelepathyChannel *self)
+{
+  TpCallStream *stream;
+
+  if (streams->len > 1)
+    {
+      /* We don't support multi-party calls, so only one stream */
+      tp_call_content_remove_async (content, NULL, NULL);
+      return;
+    }
+
+  stream = TP_CALL_STREAM (g_ptr_array_index (streams, 0));
+  tp_proxy_prepare_async (stream, NULL, stream_prepared_cb,
+      g_object_ref (self));
+}
+
+static void
+content_prepared_cb (GObject *source_object, GAsyncResult *res,
+    gpointer user_data)
+{
+  TpCallContent *content = TP_CALL_CONTENT (source_object);
+  MexTelepathyChannel *self = MEX_TELEPATHY_CHANNEL (user_data);
+  MexTelepathyChannelPrivate *priv = self->priv;
+  GPtrArray *streams;
+  TpCallStream *stream;
+
+  /* Allow only one content */
+  if (tp_call_content_get_media_type (content) ==
+      TP_MEDIA_STREAM_TYPE_VIDEO)
+    {
+      if (priv->video_content != NULL &&
+          priv->video_content != content)
+        {
+          tp_call_content_remove_async (content, NULL, NULL);
+          return;
+        }
+
+      priv->video_content = content;
+    }
+  else if (tp_call_content_get_media_type (content) ==
+      TP_MEDIA_STREAM_TYPE_AUDIO)
+    {
+      if (priv->audio_content != NULL &&
+          priv->audio_content != content)
+        {
+          tp_call_content_remove_async (content, NULL, NULL);
+          return;
+        }
+
+      priv->audio_content = content;
+    }
+
+
+  streams = tp_call_content_get_streams (content);
+
+  if (streams->len > 1)
+    {
+      /* We don't support multi-party calls, so only one stream */
+      tp_call_content_remove_async (content, NULL, NULL);
+      return;
+    }
+
+  /* No streams means it will come later */
+  if (streams->len == 0)
+    {
+      g_signal_connect (content, "streams-added",
+          G_CALLBACK (mex_telepathy_channel_on_streams_added), self);
+      return;
+    }
+
+  stream = TP_CALL_STREAM (g_ptr_array_index (streams, 0));
+  tp_proxy_prepare_async (stream, NULL, stream_prepared_cb,
+      g_object_ref (self));
+}
+
+static void
+mex_telepathy_channel_on_content_added (TpCallChannel *channel,
+    TpCallContent *content,
+    MexTelepathyChannel *self)
+{
+  tp_proxy_prepare_async (content, NULL, content_prepared_cb,
+      g_object_ref (self));
+}
+
+static void
+mex_telepathy_channel_on_content_removed (TpCallChannel *channel,
+    TpCallContent *content,
+    TpCallStateReason *reason,
+    MexTelepathyChannel *self)
+{
+  MexTelepathyChannelPrivate *priv = self->priv;
+
+  if (priv->video_content == content)
+    priv->video_content = NULL;
+  else if (priv->audio_content == content)
+    priv->audio_content = NULL;
+}
+
 
 static void
 mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
@@ -1245,7 +1404,8 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
   GstBus *bus;
   GstElement *pipeline;
   GstStateChangeReturn ret;
-  gboolean ready;
+  GPtrArray *contents;
+  guint i;
 
   TpHandle contactHandle = tp_channel_get_handle (priv->channel, NULL);
   TpContactFeature features[] = { TP_CONTACT_FEATURE_ALIAS,
@@ -1283,24 +1443,38 @@ mex_telepathy_channel_initialize_channel (MexTelepathyChannel *self)
   tf_channel_new_async (priv->channel, mex_telepathy_channel_new_tf_channel,
                         self);
 
-  tpy_cli_channel_type_call_call_accept (TP_PROXY (priv->channel), -1,
-                                         NULL, NULL, NULL, NULL);
+  tp_call_channel_accept_async (TP_CALL_CHANNEL (priv->channel), NULL, NULL);
 
   priv->channel = g_object_ref (priv->channel);
-  g_signal_connect (priv->channel, "notify::ready",
-                    G_CALLBACK (mex_telepathy_channel_on_ready),
-                    self);
+
   g_signal_connect (priv->channel, "invalidated",
                     G_CALLBACK (mex_telepathy_channel_on_proxy_invalidated),
                     self);
 
-  g_signal_connect (TPY_CALL_CHANNEL (priv->channel), "state-changed",
+  g_signal_connect (TP_CALL_CHANNEL (priv->channel), "state-changed",
                     G_CALLBACK (mex_telepathy_channel_on_call_state_changed),
                     self);
 
-  g_object_get (priv->channel, "ready", &ready, NULL);
-  if (ready)
-    mex_telepathy_channel_on_ready (TPY_CALL_CHANNEL (priv->channel), NULL, self);
+  contents = tp_call_channel_get_contents (TP_CALL_CHANNEL (priv->channel));
+
+  for (i = 0; i < contents->len; i++)
+    {
+      TpCallContent *content =
+          TP_CALL_CONTENT (g_ptr_array_index (contents, i));
+
+      tp_proxy_prepare_async (content, NULL, content_prepared_cb,
+          g_object_ref (self));
+    }
+
+  g_signal_connect_object (priv->channel, "content-added",
+      G_CALLBACK (mex_telepathy_channel_on_content_added),
+      G_OBJECT (self), 0);
+  g_signal_connect_object (priv->channel, "content-removed",
+      G_CALLBACK (mex_telepathy_channel_on_content_removed),
+      G_OBJECT (self), 0);
+
+  /* If we get there is that there is no video content */
+  mex_telepathy_channel_set_camera_state (self, FALSE);
 }
 
 static void

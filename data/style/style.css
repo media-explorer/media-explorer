@@ -371,7 +371,8 @@ MexMediaControls MxSlider
   -mx-trough-height: 10;
 }
 
-MxSlider > #trough-background
+MxSlider > #trough-background,
+MxSlider > #trough-background:disabled
 {
   border-image: url("timeline-bg.png") 4 5;
 }

@@ -26,24 +26,9 @@
 
 #include "mex-contact.h"
 #include "mex-telepathy-channel.h"
-#include "tpy-client-factory.h"
 
-#include <telepathy-glib/account.h>
-#include <telepathy-glib/account-channel-request.h>
-#include <telepathy-glib/account-manager.h>
-#include <telepathy-glib/connection.h>
-#include <telepathy-glib/connection-contact-list.h>
-#include <telepathy-glib/contact.h>
-#include <telepathy-glib/contact-operations.h>
-#include <telepathy-glib/interfaces.h>
-#include <telepathy-glib/simple-client-factory.h>
-#include <telepathy-glib/util.h>
 #include <telepathy-glib/telepathy-glib.h>
-
 #include <telepathy-farstream/telepathy-farstream.h>
-
-#include <telepathy-yell/extensions.h>
-#include <telepathy-yell/interfaces.h>
 
 #include <glib/gi18n.h>
 
@@ -92,7 +77,7 @@ struct _MexTelepathyPluginPrivate
   TpChannelDispatchOperation *dispatch_operation;
   ClutterActor               *dialog;
   ClutterActor               *prompt_label;
-  TpyAutomaticClientFactory  *factory;
+  TpAutomaticClientFactory   *factory;
 
   gboolean building_contact_list;
 };
@@ -302,7 +287,7 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
   request = tp_asv_new (
     TP_PROP_CHANNEL_CHANNEL_TYPE,
     G_TYPE_STRING,
-    TPY_IFACE_CHANNEL_TYPE_CALL,
+    TP_IFACE_CHANNEL_TYPE_CALL,
 
     TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
     G_TYPE_UINT,
@@ -312,11 +297,11 @@ mex_telepathy_plugin_craft_channel_request (MexTelepathyPlugin *self,
     G_TYPE_STRING,
     tp_contact_get_identifier (contact),
 
-    TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+    TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
     G_TYPE_BOOLEAN,
     audio,
 
-    TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+    TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
     G_TYPE_BOOLEAN,
     video,
 
@@ -593,7 +578,6 @@ mex_telepathy_plugin_on_account_status_changed (TpAccount  *account,
   GList *removed = NULL;
   MexContact *mex_contact;
   TpContact *contact;
-  TpConnection *contact_connection;
   TpAccount *contact_account;
 
   if (old_status == TP_CONNECTION_STATUS_CONNECTED)
@@ -1038,13 +1022,13 @@ mex_telepathy_plugin_create_approver (MexTelepathyPlugin *self)
                                        tp_asv_new (
                                          TP_PROP_CHANNEL_CHANNEL_TYPE,
                                          G_TYPE_STRING,
-                                         TPY_IFACE_CHANNEL_TYPE_CALL,
+                                         TP_IFACE_CHANNEL_TYPE_CALL,
 
                                          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
                                          G_TYPE_UINT,
                                          TP_HANDLE_TYPE_CONTACT,
 
-                                         TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+                                         TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
                                          G_TYPE_BOOLEAN,
                                          TRUE,
 
@@ -1054,13 +1038,13 @@ mex_telepathy_plugin_create_approver (MexTelepathyPlugin *self)
                                        tp_asv_new (
                                          TP_PROP_CHANNEL_CHANNEL_TYPE,
                                          G_TYPE_STRING,
-                                         TPY_IFACE_CHANNEL_TYPE_CALL,
+                                         TP_IFACE_CHANNEL_TYPE_CALL,
 
                                          TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
                                          G_TYPE_UINT,
                                          TP_HANDLE_TYPE_CONTACT,
 
-                                         TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+                                         TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
                                          G_TYPE_BOOLEAN,
                                          TRUE,
 
@@ -1088,13 +1072,13 @@ mex_telepathy_plugin_create_handler (MexTelepathyPlugin *self)
                                       tp_asv_new (
                                         TP_PROP_CHANNEL_CHANNEL_TYPE,
                                         G_TYPE_STRING,
-                                        TPY_IFACE_CHANNEL_TYPE_CALL,
+                                        TP_IFACE_CHANNEL_TYPE_CALL,
 
                                         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
                                         G_TYPE_UINT,
                                         TP_HANDLE_TYPE_CONTACT,
 
-                                        TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
+                                        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_AUDIO,
                                         G_TYPE_BOOLEAN,
                                         TRUE,
 
@@ -1104,13 +1088,13 @@ mex_telepathy_plugin_create_handler (MexTelepathyPlugin *self)
                                       tp_asv_new (
                                         TP_PROP_CHANNEL_CHANNEL_TYPE,
                                         G_TYPE_STRING,
-                                        TPY_IFACE_CHANNEL_TYPE_CALL,
+                                        TP_IFACE_CHANNEL_TYPE_CALL,
 
                                         TP_PROP_CHANNEL_TARGET_HANDLE_TYPE,
                                         G_TYPE_UINT,
                                         TP_HANDLE_TYPE_CONTACT,
 
-                                        TPY_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
+                                        TP_PROP_CHANNEL_TYPE_CALL_INITIAL_VIDEO,
                                         G_TYPE_BOOLEAN,
                                         TRUE,
 
@@ -1118,13 +1102,13 @@ mex_telepathy_plugin_create_handler (MexTelepathyPlugin *self)
 
   tp_base_client_add_handler_capabilities_varargs (
     priv->client,
-    TPY_IFACE_CHANNEL_TYPE_CALL
+    TP_IFACE_CHANNEL_TYPE_CALL
     "/video/h264",
-    TPY_IFACE_CHANNEL_TYPE_CALL
+    TP_IFACE_CHANNEL_TYPE_CALL
     "/shm",
-    TPY_IFACE_CHANNEL_TYPE_CALL
+    TP_IFACE_CHANNEL_TYPE_CALL
     "/ice",
-    TPY_IFACE_CHANNEL_TYPE_CALL
+    TP_IFACE_CHANNEL_TYPE_CALL
     "/gtalk-p2p",
     NULL);
 
@@ -1159,8 +1143,6 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
 
 
   tp_debug_set_flags (g_getenv ("TP_DEBUG"));
-  tf_init ();
-  tpy_cli_init ();
 
   priv = self->priv = TELEPATHY_PLUGIN_PRIVATE (self);
   priv->actions = NULL;
@@ -1212,7 +1194,7 @@ mex_telepathy_plugin_init (MexTelepathyPlugin *self)
   priv->info_bar = MEX_INFO_BAR (mex_info_bar_get_default ());
 
   tp_daemon = tp_dbus_daemon_dup (NULL);
-  priv->factory = tpy_automatic_client_factory_new (tp_daemon);
+  priv->factory = tp_automatic_client_factory_new (tp_daemon);
   tp_simple_client_factory_add_account_features (TP_SIMPLE_CLIENT_FACTORY (
                                                    priv->factory),
                                                  account_features);

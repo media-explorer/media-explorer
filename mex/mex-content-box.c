@@ -80,6 +80,8 @@ struct _MexContentBoxPrivate
 
   gint   thumb_width;
   gfloat thumb_ratio;
+
+  gint action_list_width;
 };
 
 static void mex_content_box_toggle_open (MexContentBox *box);
@@ -98,7 +100,9 @@ mex_content_box_set_content (MexContentView *view,
 
   priv->content = g_object_ref (content);
   mex_content_view_set_content (MEX_CONTENT_VIEW (priv->tile), content);
-  mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel), content);
+
+  if (priv->info_panel)
+    mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel), content);
 
   /* setting the content on action_list is delayed until the box is opened to
    * ensure any additional actions registered after set_content is called are
@@ -125,9 +129,14 @@ mex_content_box_set_context (MexContentView *view,
     g_object_unref (priv->context);
 
   priv->context = g_object_ref (context);
-  mex_content_view_set_context (MEX_CONTENT_VIEW (priv->action_list), context);
+
+  if (priv->action_list)
+    mex_content_view_set_context (MEX_CONTENT_VIEW (priv->action_list), context);
+
+  if (priv->info_panel)
+    mex_content_view_set_context (MEX_CONTENT_VIEW (priv->info_panel), context);
+
   mex_content_view_set_context (MEX_CONTENT_VIEW (priv->tile), context);
-  mex_content_view_set_context (MEX_CONTENT_VIEW (priv->info_panel), context);
 }
 
 static MexModel*
@@ -223,7 +232,7 @@ mex_content_box_get_property (GObject    *object,
       break;
 
     case PROP_ACTION_LIST_WIDTH:
-      g_value_set_int (value, clutter_actor_get_width (priv->action_list));
+      g_value_set_int (value, priv->action_list_width);
       break;
 
     case PROP_THUMB_RATIO:
@@ -271,7 +280,10 @@ mex_content_box_set_property (GObject      *object,
       break;
 
     case PROP_ACTION_LIST_WIDTH:
-      clutter_actor_set_width (priv->action_list, g_value_get_int (value));
+      priv->action_list_width = g_value_get_int (value);
+      if (priv->action_list)
+        clutter_actor_set_width (priv->action_list, (priv->action_list_width) ?
+                                 priv->action_list_width : -1);
       break;
 
     default:
@@ -336,6 +348,40 @@ mex_content_box_finalize (GObject *object)
 }
 
 static void
+mex_content_box_ensure_extras (MexContentBox *self)
+{
+  MexContentBoxPrivate *priv = self->priv;
+
+  clutter_actor_push_internal (CLUTTER_ACTOR (self));
+
+  if (!priv->info_panel)
+    {
+      priv->info_panel = mex_info_panel_new (MEX_INFO_PANEL_MODE_SIMPLE);
+      clutter_actor_set_parent (priv->info_panel, CLUTTER_ACTOR (self));
+
+      mex_content_view_set_context (MEX_CONTENT_VIEW (priv->info_panel),
+                                    priv->context);
+      mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel),
+                                    priv->content);
+    }
+
+  if (!priv->action_list)
+    {
+      /* Create the action list */
+      priv->action_list = mex_action_list_new ();
+      clutter_actor_set_parent (priv->action_list, CLUTTER_ACTOR (self));
+
+      if (priv->action_list_width)
+        clutter_actor_set_width (priv->action_list, priv->action_list_width);
+
+      mex_content_view_set_context (MEX_CONTENT_VIEW (priv->action_list),
+                                    priv->context);
+    }
+
+  clutter_actor_pop_internal (CLUTTER_ACTOR (self));
+}
+
+static void
 mex_content_box_toggle_open (MexContentBox *box)
 {
   MexContentBoxPrivate *priv = box->priv;
@@ -359,6 +405,8 @@ mex_content_box_toggle_open (MexContentBox *box)
 
   if (next_is_open)
     {
+      mex_content_box_ensure_extras (box);
+
       /* opening */
       clutter_timeline_set_direction (priv->timeline,
                                       CLUTTER_TIMELINE_FORWARD);
@@ -584,7 +632,6 @@ mex_content_box_allocate (ClutterActor           *actor,
       child_box.y2 = tile_h;
       clutter_actor_allocate (priv->action_list, &child_box, flags);
 
-
       child_box.x1 = 0;
       child_box.x2 = tile_w + pref_w;
       child_box.y1 = tile_h;
@@ -712,7 +759,7 @@ mex_content_box_timeline_completed (ClutterTimeline *timeline,
       g_object_notify_by_pspec (G_OBJECT (box), properties[PROP_OPEN]);
     }
 
-  if (!priv->is_open)
+  if (!priv->is_open && priv->action_list)
     mex_content_view_set_content (MEX_CONTENT_VIEW (priv->action_list),
                                   NULL);
 }
@@ -724,9 +771,6 @@ mex_content_box_init (MexContentBox *self)
   ClutterActor *icon;
 
   clutter_actor_push_internal (CLUTTER_ACTOR (self));
-
-  priv->info_panel = mex_info_panel_new (MEX_INFO_PANEL_MODE_SIMPLE);
-  clutter_actor_set_parent (priv->info_panel, CLUTTER_ACTOR (self));
 
   /* monitor key press events */
   g_signal_connect (self, "key-press-event",
@@ -747,10 +791,6 @@ mex_content_box_init (MexContentBox *self)
   clutter_actor_set_reactive (priv->tile, TRUE);
   g_signal_connect (priv->tile, "button-release-event",
                     G_CALLBACK (mex_content_box_tile_clicked_cb), self);
-
-  /* Create the action list */
-  priv->action_list = mex_action_list_new ();
-  clutter_actor_set_parent (priv->action_list, CLUTTER_ACTOR (self));
 
   clutter_actor_pop_internal (CLUTTER_ACTOR (self));
 

@@ -1,6 +1,6 @@
 m4_define([mex_major], [0])
-m4_define([mex_minor], [3])
-m4_define([mex_micro], [9])
+m4_define([mex_minor], [5])
+m4_define([mex_micro], [0])
 
 m4_define([mex_version], [mex_major.mex_minor.mex_micro])
 
@@ -97,7 +97,7 @@ AC_SUBST(CLUTTER_GST_REQ_VERSION)
 AC_SUBST(GSTREAMER_REQ_VERSION)
 
 # telepathy plugin
-TELEPATHY_GLIB_REQ_VERSION=0.15.5
+TELEPATHY_GLIB_REQ_VERSION=0.17.5
 
 AC_SUBST(TELEPATHY_GLIB_REQ_VERSION)
 
@@ -448,7 +448,7 @@ AS_CASE([$profile],
 )
 
 # Default list of plugins to compile
-WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,opticaldisc,bg-video"
+WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,opticaldisc,bg-video,mpris"
 
 # the debug plugin is enabled in debug mode
 AS_IF([test "x$enable_debug" = "xyes"],
@@ -479,13 +479,13 @@ AS_MEX_PLUGIN(telepathy,
               [telepathy-glib >= $TELEPATHY_GLIB_REQ_VERSION  \
                gstreamer-0.10                                 \
                telepathy-farstream                            \
-               telepathy-yell                                 \
-               farsight2-0.10])
+               farstream-0.1])
 AS_MEX_PLUGIN(debug-buddy)
 AS_MEX_PLUGIN(gnome-dvb)
 AS_MEX_PLUGIN(opticaldisc)
 AS_MEX_PLUGIN(twitter-send, [libsocialweb-client])
 AS_MEX_PLUGIN(apps, [webkit-clutter-mx])
+AS_MEX_PLUGIN(mpris)
 
 # The debug plugin needs libunwind that does not provide a pkg-config file
 AS_IF([test "x$mex_use_debug_buddy_plugin" = "xyes"],

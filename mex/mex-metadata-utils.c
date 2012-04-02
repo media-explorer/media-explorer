@@ -226,7 +226,7 @@ mex_metadata_from_uri (const gchar *uri,
     g_regex_unref (regex);
     g_match_info_free (info);
     g_free (metadata);
-    
+
     return;
 }
 

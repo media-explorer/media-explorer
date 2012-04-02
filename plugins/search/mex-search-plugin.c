@@ -339,6 +339,7 @@ mex_search_plugin_search (MexSearchPlugin *self,
   GList *l, *list;
   MexSearchPluginPrivate *priv = self->priv;
   MexModelManager *manager = mex_model_manager_get_default ();
+  gboolean have_tracker = FALSE;
 
   if (!priv->search_model)
     {
@@ -364,15 +365,43 @@ mex_search_plugin_search (MexSearchPlugin *self,
     {
       GrlMetadataSource *meta_src = l->data;
       const gchar *name = grl_metadata_source_get_name (meta_src);
+      const gchar *source_id;
 
       if (!GRL_IS_METADATA_SOURCE (meta_src))
         continue;
+
+      source_id = grl_media_plugin_get_id (GRL_MEDIA_PLUGIN (meta_src));
+
+      if (source_id && g_str_equal (source_id, "grl-tracker"))
+        have_tracker = TRUE;
 
       if (name && !strcmp (name, "Local files"))
         {
           list = g_list_remove_link (list, l);
           list = g_list_concat (list, l);
           break;
+        }
+    }
+
+  /* prefer tracker over the filesystem plugin by removing it from the list if
+   * tracker is available */
+  if (have_tracker)
+    {
+      for (l = list; l; l = l->next)
+        {
+          GrlMetadataSource *meta_src = l->data;
+          const gchar *source_id;
+
+          if (!GRL_IS_METADATA_SOURCE (meta_src))
+            continue;
+
+          source_id = grl_media_plugin_get_id (GRL_MEDIA_PLUGIN (meta_src));
+
+          if (source_id && g_str_equal (source_id, "grl-filesystem"))
+            {
+              list = g_list_delete_link (list, l);
+              break;
+            }
         }
     }
 

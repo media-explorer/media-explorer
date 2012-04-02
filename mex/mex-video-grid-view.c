@@ -103,7 +103,7 @@ mex_video_grid_view_constructed (GObject *object)
 
   /* Add menu items */
   action = mx_action_new_full ("all-items",
-                               _("All Items"),
+                               _("All Videos"),
                                G_CALLBACK (mex_video_grid_view_show_all),
                                object);
   mex_menu_add_action (menu, action, MEX_MENU_NONE);

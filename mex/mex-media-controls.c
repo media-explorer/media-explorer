@@ -1085,17 +1085,35 @@ mex_media_controls_set_content (MexMediaControls *self,
     {
       MexModel *orig_model = NULL;
 
+      /* disconnect the proxy while the view model sorts it's data, since the
+       * proxy cannot re-sort */
+      mex_proxy_set_model (priv->proxy, NULL);
+
       g_object_set (G_OBJECT (priv->proxy_model), "model", context, NULL);
 
       mex_view_model_set_start_content (priv->proxy_model, priv->content);
       mex_view_model_set_loop (priv->proxy_model, TRUE);
 
+      /* reset the model on proxy to ensure all items are in the correct order */
+      mex_proxy_set_model (priv->proxy, MEX_MODEL (priv->proxy_model));
+
+      if (g_str_has_prefix (mex_content_get_metadata (priv->content,
+                                                      MEX_CONTENT_METADATA_MIMETYPE),
+                            "audio/"))
+        {
+          /* treat models with audio in them as queue models, i.e. advance to
+           * the next item automatically */
+          priv->is_queue_model = TRUE;
+        }
+
       /* Work out if the context was a queue FIXME unreliable */
       /* From coloumn context = MexViewModel MexAggregateModel MexQueueModel */
-      /* From grid  context = MexProxyModel MexProxyModel MexQueueModel */
+      /* From grid  context = MexViewModel MexQueueModel */
 
       orig_model = mex_model_get_model (context);
-      if (MEX_IS_AGGREGATE_MODEL (orig_model))
+      if (MEX_IS_QUEUE_MODEL (orig_model))
+        priv->is_queue_model = TRUE;
+      else if (MEX_IS_AGGREGATE_MODEL (orig_model))
         {
           MexModel *real_model;
           real_model =

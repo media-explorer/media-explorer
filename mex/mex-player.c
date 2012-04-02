@@ -1070,6 +1070,25 @@ mex_player_previous (MexPlayer *player)
 }
 
 void
+mex_player_seek_us (MexPlayer *player, gint64 seek_offset_us)
+{
+  MexPlayerPrivate *priv = player->priv;
+  gdouble duration_us, progress, new_progress;
+
+  duration_us = clutter_media_get_duration (priv->media) * 1000000;
+  progress = clutter_media_get_progress (priv->media) * duration_us;
+
+  new_progress = (progress + seek_offset_us) / duration_us;
+
+  if (new_progress < 0.0)
+    mex_player_previous (player);
+  else if (new_progress > 1.0)
+    mex_player_next (player);
+  else
+    clutter_media_set_progress (priv->media, new_progress);
+}
+
+void
 mex_player_set_uri (MexPlayer *player, const gchar *uri)
 {
   MexPlayerPrivate *priv = player->priv;
