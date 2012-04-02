@@ -62,16 +62,6 @@ dist_style_DATA = \
         style/pip-border.png \
 	style/queue-spinner-highlight.png \
 	style/queue-spinner.png \
-	style/remote-back-error.png \
-	style/remote-back-hl.png \
-	style/remote-back.png \
-	style/remote-home-error.png \
-	style/remote-home-hl.png \
-	style/remote-home.png \
-	style/remote-info-error.png \
-	style/remote-info-hl.png \
-	style/remote-info.png \
-	style/remote.png \
 	style/scroll-bar.png \
 	style/scroll-bg.png \
 	style/spinner.png \
