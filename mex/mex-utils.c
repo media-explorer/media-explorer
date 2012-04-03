@@ -673,10 +673,10 @@ const char*
 mex_get_data_dir (void)
 {
   static char* datadir = NULL;
-  GPtrArray* array = g_ptr_array_sized_new (3);
 
   if (!datadir)
     {
+      GPtrArray* array = g_ptr_array_sized_new (3);
       gint i;
 
       static const gchar* const * system_data_dirs;
@@ -703,11 +703,11 @@ mex_get_data_dir (void)
             }
         }
 
+      g_free (g_ptr_array_free (array, FALSE));
+
       if (!datadir)
         g_warning ("Could not find application data directory.");
     }
-
-  g_free (g_ptr_array_free (array, FALSE));
 
   return datadir;
 }
