@@ -43,6 +43,7 @@ MxMenu > MxButton:focus
 {
   border-image: url("highlight-bg.png") 0;
   color: white;
+  text-shadow: 0 -1 #2a3c4a;
 }
 
 MxButton:focus MxLabel,
@@ -184,6 +185,11 @@ MexColumn
   color: #2a3c4a;
 }
 
+.Header:focus MxLabel
+{
+  text-shadow: 0 -1 #2a3c4a;
+}
+
 .Header, .Header:active, .Header:hover
 {
   -mx-spacing: 8;
@@ -248,6 +254,7 @@ MexTile.Important:focus
 {
   x-mex-header-background: url("highlight-bg.png");
   x-mex-header-background-color: none;
+  text-shadow: 0 -1 #2a3c4a;
   color: white;
 }
 
@@ -447,6 +454,11 @@ MexQueueButton:focus MxSpinner
 MexQueueButton:checked:focus
 {
   border-image: url("highlight-bg.png") 0;
+}
+
+MexQueueButton:focus MxLabel
+{
+  text-shadow: 0 -1 #2a3c4a;
 }
 
 /* Media Controls */
