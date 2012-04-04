@@ -703,7 +703,7 @@ mex_get_data_dir (void)
             }
         }
 
-      g_free (g_ptr_array_free (array, FALSE));
+      g_ptr_array_free (array, TRUE);
 
       if (!datadir)
         g_warning ("Could not find application data directory.");
