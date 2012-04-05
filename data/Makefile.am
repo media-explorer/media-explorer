@@ -36,9 +36,8 @@ dist_style_DATA = \
 	style/highlight-bg-white.png \
 	style/highlight-bg.png \
 	style/highlight.png \
-	style/icon-actualsize-highlight.png \
-	style/icon-actualsize.png \
 	style/icon-back.png \
+	style/icon-fullscreen-active.png \
 	style/icon-fullscreen-highlight.png \
 	style/icon-fullscreen.png \
 	style/icon-home.png \

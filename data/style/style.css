@@ -343,12 +343,12 @@ MxButton#fit-to-screen-button:focus
 
 MxButton#fit-to-screen-button:checked
 {
-  -mx-content-image: url("icon-actualsize.png");
+  -mx-content-image: url("icon-fullscreen-active.png");
 }
 
 MxButton#fit-to-screen-button:checked:focus
 {
-  -mx-content-image: url("icon-actualsize-highlight.png");
+  -mx-content-image: url("icon-fullscreen-highlight.png");
 }
 
 MxButton#rotate-button
