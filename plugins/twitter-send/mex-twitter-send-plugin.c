@@ -243,25 +243,25 @@ mex_twitter_send_plugin_on_share_action (MxAction *action,
   mx_box_layout_set_orientation (MX_BOX_LAYOUT (layout),
                                  MX_ORIENTATION_VERTICAL);
 
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
-                           priv->prompt_label,
-                           0);
+  mx_box_layout_insert_actor (MX_BOX_LAYOUT (layout),
+                              priv->prompt_label,
+                              0);
 
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
-                           awesome_button,
-                           1);
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
-                           decent_button,
-                           2);
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
-                           pretty_bad_button,
-                           3);
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
-                           horrible_button,
-                           4);
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout),
-                           dontshare_button,
-                           5);
+  mx_box_layout_insert_actor (MX_BOX_LAYOUT (layout),
+                              awesome_button,
+                              1);
+  mx_box_layout_insert_actor (MX_BOX_LAYOUT (layout),
+                              decent_button,
+                              2);
+  mx_box_layout_insert_actor (MX_BOX_LAYOUT (layout),
+                              pretty_bad_button,
+                              3);
+  mx_box_layout_insert_actor (MX_BOX_LAYOUT (layout),
+                              horrible_button,
+                              4);
+  mx_box_layout_insert_actor (MX_BOX_LAYOUT (layout),
+                              dontshare_button,
+                              5);
 
   clutter_actor_set_width (layout, 600.0);
 

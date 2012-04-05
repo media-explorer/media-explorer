@@ -91,7 +91,7 @@ _row_added (MtnServiceModel  *model,
                             MTN_SERVICE_MODEL_COL_WIDGET, &actor,
                             -1);
 
-    mx_box_layout_add_actor (MX_BOX_LAYOUT (view), actor, index);
+    mx_box_layout_insert_actor (MX_BOX_LAYOUT (view), actor, index);
     g_signal_connect (actor, "clicked",
                       G_CALLBACK (_tile_clicked), view);
 }

@@ -776,8 +776,8 @@ mex_search_plugin_init (MexSearchPlugin *self)
   priv->search_entry = mx_entry_new ();
   priv->spinner = mx_spinner_new ();
 
-  mx_table_add_actor (MX_TABLE (frame), priv->search_entry, 0, 0);
-  mx_table_add_actor (MX_TABLE (frame), priv->spinner, 0, 1);
+  mx_table_insert_actor (MX_TABLE (frame), priv->search_entry, 0, 0);
+  mx_table_insert_actor (MX_TABLE (frame), priv->spinner, 0, 1);
   mx_table_child_set_x_fill (MX_TABLE (frame), priv->spinner, FALSE);
   mx_table_child_set_x_expand (MX_TABLE (frame), priv->spinner, FALSE);
   mx_table_child_set_y_fill (MX_TABLE (frame), priv->spinner, FALSE);

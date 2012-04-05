@@ -366,44 +366,44 @@ mex_telepathy_channel_create_toolbar (MexTelepathyChannel *self)
   mx_stylable_set_style_class (MX_STYLABLE (toolbar),
                                "MexCallControlsTitle");
   // Put the buttons in the toolbar
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
-                                           priv->avatar_image,
-                                           0,
-                                           "expand",
-                                           FALSE,
-                                           "x-align",
-                                           MX_ALIGN_END,
-                                           "x-fill",
-                                           FALSE,
-                                           NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                              priv->avatar_image,
+                                              0,
+                                              "expand",
+                                              FALSE,
+                                              "x-align",
+                                              MX_ALIGN_END,
+                                              "x-fill",
+                                              FALSE,
+                                              NULL);
 
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
-                                           priv->title_label,
-                                           1,
-                                           "expand",
-                                           TRUE,
-                                           NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                              priv->title_label,
+                                              1,
+                                              "expand",
+                                              TRUE,
+                                              NULL);
 
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
-                                           priv->camera_button,
-                                           2,
-                                           "expand",
-                                           TRUE,
-                                           NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                              priv->camera_button,
+                                              2,
+                                              "expand",
+                                              TRUE,
+                                              NULL);
 
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
-                                           priv->mute_button,
-                                           3,
-                                           "expand",
-                                           TRUE,
-                                           NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                              priv->mute_button,
+                                              3,
+                                              "expand",
+                                              TRUE,
+                                              NULL);
 
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (toolbar),
-                                           priv->end_button,
-                                           4,
-                                           "expand",
-                                           TRUE,
-                                           NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (toolbar),
+                                              priv->end_button,
+                                              4,
+                                              "expand",
+                                              TRUE,
+                                              NULL);
 
   priv->toolbar_area = mx_frame_new ();
   mx_bin_set_child (MX_BIN (priv->toolbar_area), toolbar);
@@ -508,27 +508,27 @@ mex_telepathy_channel_create_busy_box (MexTelepathyChannel *self)
 
   calling_box = mx_box_layout_new ();
 
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
-                                           priv->busy_label,
-                                           0,
-                                           "expand",
-                                           TRUE,
-                                           "x-align",
-                                           MX_ALIGN_START,
-                                           "x-fill",
-                                           TRUE,
-                                           NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (calling_box),
+                                              priv->busy_label,
+                                              0,
+                                              "expand",
+                                              TRUE,
+                                              "x-align",
+                                              MX_ALIGN_START,
+                                              "x-fill",
+                                              TRUE,
+                                              NULL);
 
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (calling_box),
-                                           spinner,
-                                           1,
-                                           "expand",
-                                           TRUE,
-                                           "x-align",
-                                           MX_ALIGN_END,
-                                           "x-fill",
-                                           FALSE,
-                                           NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (calling_box),
+                                              spinner,
+                                              1,
+                                              "expand",
+                                              TRUE,
+                                              "x-align",
+                                              MX_ALIGN_END,
+                                              "x-fill",
+                                              FALSE,
+                                              NULL);
 
   priv->busy_box = mx_frame_new ();
   clutter_actor_set_width (CLUTTER_ACTOR (priv->busy_box), 475);

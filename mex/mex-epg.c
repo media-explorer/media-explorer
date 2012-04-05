@@ -223,7 +223,8 @@ mex_epg_add_channel (MexEpg     *epg,
                         MX_ALIGN_MIDDLE);
   clutter_actor_set_height (channel_frame, CHANNEL_HEIGHT);
 
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (priv->channel_box), channel_frame, position);
+  mx_box_layout_insert_actor (MX_BOX_LAYOUT (priv->channel_box), channel_frame,
+                              position);
 
   /* keep a weak pointer to the channel for the channel h/l following what's
    * focused in the grid */

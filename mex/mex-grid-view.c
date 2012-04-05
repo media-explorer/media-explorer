@@ -460,7 +460,7 @@ mex_grid_view_init (MexGridView *self)
   priv->menu = (ClutterActor*) mex_menu_get_layout (MEX_MENU (priv->menu_layout));
 
   clutter_actor_set_width (priv->menu, MENU_MIN_WIDTH);
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (priv->menu), priv->menu_title, 0);
+  mx_box_layout_insert_actor (MX_BOX_LAYOUT (priv->menu), priv->menu_title, 0);
 
 
   /* Add the grid */
@@ -479,9 +479,9 @@ mex_grid_view_init (MexGridView *self)
   mx_kinetic_scroll_view_set_scroll_policy (MX_KINETIC_SCROLL_VIEW (scroll_view),
                                             MX_SCROLL_POLICY_VERTICAL);
   mx_stylable_set_style_class (MX_STYLABLE (scroll_view), "Grid");
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (priv->grid_layout),
-                                           scroll_view, 1,
-                                           "expand", TRUE, NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (priv->grid_layout),
+                                              scroll_view, 1,
+                                              "expand", TRUE, NULL);
 
   /* grid */
   priv->grid = mex_grid_new ();

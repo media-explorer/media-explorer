@@ -729,10 +729,10 @@ mex_finish_home_screen (MexData *data)
   MexModelManager *mmanager = mex_model_manager_get_default ();
 
   clutter_actor_set_opacity (data->explorer, 0);
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (data->layout),
-                                           data->explorer,
-                                           1, "expand", TRUE,
-                                           NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (data->layout),
+                                              data->explorer,
+                                              1, "expand", TRUE,
+                                              NULL);
 
   clutter_actor_animate (data->explorer, CLUTTER_LINEAR, 350, "opacity", 255, NULL);
 
@@ -1872,10 +1872,10 @@ check_resolution (MexData *data)
 
   title = mx_label_new_with_text ("Screen Too Small");
   mx_stylable_set_style_class (MX_STYLABLE (title), "DialogHeader");
-  mx_table_add_actor (MX_TABLE (layout), CLUTTER_ACTOR (title), 0, 0);
+  mx_table_insert_actor (MX_TABLE (layout), CLUTTER_ACTOR (title), 0, 0);
 
   label = mx_label_new_with_text (_("This application requires at least 600 vertical pixels."));
-  mx_table_add_actor (MX_TABLE (layout), CLUTTER_ACTOR (label), 1, 0);
+  mx_table_insert_actor (MX_TABLE (layout), CLUTTER_ACTOR (label), 1, 0);
 
   action = mx_action_new_full ("close", _("Close"),
                                G_CALLBACK (_close_screen_dialog_cb),
@@ -2268,11 +2268,11 @@ mex_startup (MxApplication *app,
 
 
   /* Pack info bar into layout */
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (data->layout),
-                                           data->info_bar,
-                                           0, "expand", FALSE,
-                                           "x-fill", TRUE,
-                                           "y-fill", FALSE, NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (data->layout),
+                                              data->info_bar,
+                                              0, "expand", FALSE,
+                                              "x-fill", TRUE,
+                                              "y-fill", FALSE, NULL);
 
 
   /* A stack is the top level actor in the window */

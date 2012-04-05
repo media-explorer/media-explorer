@@ -80,7 +80,7 @@ mex_music_grid_view_show_artists (MxAction         *action,
   header = mx_label_new_with_text (_("Artist"));
   mx_stylable_set_style_class (MX_STYLABLE (header), "Header");
   mx_label_set_y_align (MX_LABEL (header), MX_ALIGN_MIDDLE);
-  mx_box_layout_add_actor (MX_BOX_LAYOUT (layout), header, 0);
+  mx_box_layout_insert_actor (MX_BOX_LAYOUT (layout), header, 0);
 
   /* create the model to get artists */
   model = mex_view_model_new (mex_model_get_model (priv->model));

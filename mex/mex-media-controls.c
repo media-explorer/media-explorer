@@ -1013,7 +1013,7 @@ on_media_subtitle_tracks_changed (ClutterMedia     *media,
       g_object_set (button, "min-width", 180.0, NULL);
       mx_bin_set_alignment (MX_BUTTON (button), MX_ALIGN_START, MX_ALIGN_START);
       mx_bin_set_fill (MX_BUTTON (button), FALSE, FALSE);
-      mx_table_add_actor (MX_TABLE (table), button, row, column);
+      mx_table_insert_actor (MX_TABLE (table), button, row, column);
       g_object_set_data (G_OBJECT (button), "subtitle-track",
                          GINT_TO_POINTER (i));
       g_signal_connect (button, "clicked", G_CALLBACK (set_subtitle), self);

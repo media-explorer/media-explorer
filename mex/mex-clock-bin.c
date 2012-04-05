@@ -321,18 +321,18 @@ mex_clock_bin_init (MexClockBin *self)
   priv->time_label = mx_label_new ();
   priv->icon = mx_icon_new ();
 
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (priv->clock_hbox),
-                                           priv->time_label, 0,
-                                           "x-fill", FALSE,
-                                           "y-fill", FALSE,
-                                           "x-align", MX_ALIGN_START,
-                                           "expand", TRUE,
-                                           NULL);
-  mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (priv->clock_hbox),
-                                           priv->icon, 1,
-                                           "x-fill", FALSE,
-                                           "y-fill", FALSE,
-                                           NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (priv->clock_hbox),
+                                              priv->time_label, 0,
+                                              "x-fill", FALSE,
+                                              "y-fill", FALSE,
+                                              "x-align", MX_ALIGN_START,
+                                              "expand", TRUE,
+                                              NULL);
+  mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (priv->clock_hbox),
+                                              priv->icon, 1,
+                                              "x-fill", FALSE,
+                                              "y-fill", FALSE,
+                                              NULL);
 
   mex_clock_update_cb (self);
 }

@@ -1106,35 +1106,35 @@ mtn_app_get_connected_page (MtnApp *self)
     page = mx_box_layout_new ();
 
     box = mx_box_layout_new ();
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (page),
-                                             box,
-                                             -1,
-                                             "expand", TRUE,
-                                             "y-fill", FALSE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (page),
+                                                box,
+                                                -1,
+                                                "expand", TRUE,
+                                                "y-fill", FALSE,
+                                                NULL);
 
     priv->connected_icon = mx_icon_new ();
     mx_icon_set_icon_size (MX_ICON (priv->connected_icon), 26);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (box),
-                                             self->priv->connected_icon,
-                                             -1,
-                                             "expand", FALSE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (box),
+                                                self->priv->connected_icon,
+                                                -1,
+                                                "expand", FALSE,
+                                                NULL);
 
     priv->connected_label = mx_label_new ();
     txt = mx_label_get_clutter_text (MX_LABEL (priv->connected_label));
     clutter_text_set_ellipsize (CLUTTER_TEXT (txt),
                                 PANGO_ELLIPSIZE_NONE);
     clutter_text_set_line_wrap (CLUTTER_TEXT (txt), TRUE);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (box),
-                                             priv->connected_label,
-                                             -1,
-                                             "expand", TRUE,
-                                             "y-fill", FALSE,
-                                             "x-fill", FALSE,
-                                             "x-align", MX_ALIGN_START,
-                                             "y-align", MX_ALIGN_MIDDLE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (box),
+                                                priv->connected_label,
+                                                -1,
+                                                "expand", TRUE,
+                                                "y-fill", FALSE,
+                                                "x-fill", FALSE,
+                                                "x-align", MX_ALIGN_START,
+                                                "y-align", MX_ALIGN_MIDDLE,
+                                                NULL);
 
     return page;
 }
@@ -1150,34 +1150,34 @@ mtn_app_get_connecting_page (MtnApp *self)
     page = mx_box_layout_new ();
 
     box = mx_box_layout_new ();
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (page),
-                                             box,
-                                             -1,
-                                             "expand", TRUE,
-                                             "y-fill", FALSE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (page),
+                                                box,
+                                                -1,
+                                                "expand", TRUE,
+                                                "y-fill", FALSE,
+                                                NULL);
 
     spinner = mx_spinner_new ();
     clutter_actor_set_name (spinner, "mtn-connecting-spinner");
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (box), spinner, -1,
-                                             "expand", TRUE,
-                                             "x-fill", FALSE,
-                                             "x-align", MX_ALIGN_END,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (box), spinner, -1,
+                                                "expand", TRUE,
+                                                "x-fill", FALSE,
+                                                "x-align", MX_ALIGN_END,
+                                                NULL);
 
     priv->connecting_label = mx_label_new ();
     txt = mx_label_get_clutter_text (MX_LABEL (priv->connecting_label));
     clutter_text_set_ellipsize (CLUTTER_TEXT (txt),
                                 PANGO_ELLIPSIZE_NONE);
     clutter_text_set_line_wrap (CLUTTER_TEXT (txt), TRUE);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (box),
-                                             priv->connecting_label,
-                                             -1,
-                                             "expand", TRUE,
-                                             "y-fill", FALSE,
-                                             "x-align", MX_ALIGN_START,
-                                             "y-align", MX_ALIGN_MIDDLE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (box),
+                                                priv->connecting_label,
+                                                -1,
+                                                "expand", TRUE,
+                                                "y-fill", FALSE,
+                                                "x-align", MX_ALIGN_START,
+                                                "y-align", MX_ALIGN_MIDDLE,
+                                                NULL);
 
     return page;
 }
@@ -1194,42 +1194,42 @@ mtn_app_get_passphrase_page (MtnApp *self)
 
     table = mx_table_new ();
     mx_table_set_column_spacing (MX_TABLE (table), MTN_APP_COL_SPACE);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (page),
-                                             table,
-                                             -1,
-                                             "expand", TRUE,
-                                             "y-fill", FALSE,
-                                             "x-fill", TRUE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (page),
+                                                table,
+                                                -1,
+                                                "expand", TRUE,
+                                                "y-fill", FALSE,
+                                                "x-fill", TRUE,
+                                                NULL);
 
     priv->service_label = mx_label_new ();
     txt = mx_label_get_clutter_text (MX_LABEL (priv->service_label));
     clutter_text_set_ellipsize (CLUTTER_TEXT (txt),
                                 PANGO_ELLIPSIZE_NONE);
     clutter_text_set_line_wrap (CLUTTER_TEXT (txt), TRUE);
-    mx_table_add_actor_with_properties (MX_TABLE (table),
-                                        priv->service_label,
-                                        0, 0,
-                                        "x-align", MX_ALIGN_START,
-                                        "x-expand", TRUE,
-                                        "x-fill", TRUE,
-                                        "y-expand", FALSE,
-                                        "y-fill", FALSE,
-                                        "column-span", 2,
-                                        NULL);
+    mx_table_insert_actor_with_properties (MX_TABLE (table),
+                                           priv->service_label,
+                                           0, 0,
+                                           "x-align", MX_ALIGN_START,
+                                           "x-expand", TRUE,
+                                           "x-fill", TRUE,
+                                           "y-expand", FALSE,
+                                           "y-fill", FALSE,
+                                           "column-span", 2,
+                                           NULL);
 
 
     /* TRANSLATORS: label to the left of a password entry. Max length 
        is around 28 characters */
     label = mx_label_new_with_text (_("Password:"));
-    mx_table_add_actor_with_properties (MX_TABLE (table),
-                                        label,
-                                        1, 0,
-                                        "y-expand", FALSE,
-                                        "y-fill", FALSE,
-                                        "y-align", MX_ALIGN_MIDDLE,
-                                        "x-expand", FALSE,
-                                        NULL);
+    mx_table_insert_actor_with_properties (MX_TABLE (table),
+                                           label,
+                                           1, 0,
+                                           "y-expand", FALSE,
+                                           "y-fill", FALSE,
+                                           "y-align", MX_ALIGN_MIDDLE,
+                                           "x-expand", FALSE,
+                                           NULL);
 
     priv->passphrase_entry = mx_entry_new ();
     clutter_actor_set_size (priv->passphrase_entry, 
@@ -1237,14 +1237,14 @@ mtn_app_get_passphrase_page (MtnApp *self)
                             -1);
     g_signal_connect (priv->passphrase_entry, "key-release-event",
                       G_CALLBACK (_entry_key_release), self);
-    mx_table_add_actor_with_properties (MX_TABLE (table),
-                                        priv->passphrase_entry,
-                                        1, 1,
-                                        "x-fill", FALSE,
-                                        "x-align", MX_ALIGN_START,
-                                        "y-expand", FALSE,
-                                        "y-fill", FALSE,
-                                        NULL);
+    mx_table_insert_actor_with_properties (MX_TABLE (table),
+                                           priv->passphrase_entry,
+                                           1, 1,
+                                           "x-fill", FALSE,
+                                           "x-align", MX_ALIGN_START,
+                                           "y-expand", FALSE,
+                                           "y-fill", FALSE,
+                                           NULL);
 
     return page;
 }
@@ -1262,13 +1262,13 @@ mtn_app_get_security_page (MtnApp *self)
     box = mx_box_layout_new ();
     mx_box_layout_set_orientation (MX_BOX_LAYOUT (box),
                                    MX_ORIENTATION_VERTICAL);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (page),
-                                             box,
-                                             -1,
-                                             "expand", TRUE,
-                                             "y-fill", FALSE,
-                                             "x-fill", TRUE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (page),
+                                                box,
+                                                -1,
+                                                "expand", TRUE,
+                                                "y-fill", FALSE,
+                                                "x-fill", TRUE,
+                                                NULL);
 
     /* TRANSLATORS: label above the buttons for selecting security 
        method ('None', 'WEP', 'WPA'). */
@@ -1277,9 +1277,9 @@ mtn_app_get_security_page (MtnApp *self)
     clutter_text_set_ellipsize (CLUTTER_TEXT (txt),
                                 PANGO_ELLIPSIZE_NONE);
     clutter_text_set_line_wrap (CLUTTER_TEXT (txt), TRUE);
-    mx_box_layout_add_actor (MX_BOX_LAYOUT (box),
-                             label,
-                             -1);
+    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
+                                label,
+                                -1);
 
     /* TRANSLATORS: Button for selecting the security method
        for hidden network. 'None' means no security. */
@@ -1291,9 +1291,9 @@ mtn_app_get_security_page (MtnApp *self)
                           MX_ALIGN_MIDDLE);
     g_signal_connect (priv->none_button, "clicked",
                       G_CALLBACK (_connect_security_clicked), self);
-    mx_box_layout_add_actor (MX_BOX_LAYOUT (box),
-                             priv->none_button,
-                             -1);
+    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
+                                priv->none_button,
+                                -1);
 
     /* TRANSLATORS: Button for selecting the security method
        for hidden network. 'WEP' probably needs no translation. */
@@ -1304,9 +1304,9 @@ mtn_app_get_security_page (MtnApp *self)
                           MX_ALIGN_MIDDLE);
     g_signal_connect (priv->wep_button, "clicked",
                       G_CALLBACK (_connect_security_clicked), self);
-    mx_box_layout_add_actor (MX_BOX_LAYOUT (box),
-                             priv->wep_button,
-                             -1);
+    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
+                                priv->wep_button,
+                                -1);
 
     /* TRANSLATORS: Button for selecting the security method
        for hidden network. 'WPA' probably needs no translation. */
@@ -1317,9 +1317,9 @@ mtn_app_get_security_page (MtnApp *self)
                           MX_ALIGN_MIDDLE);
     g_signal_connect (priv->wpa_button, "clicked",
                       G_CALLBACK (_connect_security_clicked), self);
-    mx_box_layout_add_actor (MX_BOX_LAYOUT (box),
-                             priv->wpa_button,
-                             -1);
+    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
+                                priv->wpa_button,
+                                -1);
 
     return page;
 }
@@ -1336,36 +1336,36 @@ mtn_app_get_ssid_page (MtnApp *self)
 
     table = mx_table_new ();
     mx_table_set_column_spacing (MX_TABLE (table), MTN_APP_COL_SPACE);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (page),
-                                             table,
-                                             -1,
-                                             "expand", TRUE,
-                                             "y-fill", FALSE,
-                                             "x-fill", TRUE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (page),
+                                                table,
+                                                -1,
+                                                "expand", TRUE,
+                                                "y-fill", FALSE,
+                                                "x-fill", TRUE,
+                                                NULL);
 
     /* TRANSLATORS: label to the left of a SSID entry. Max length is
        around 27 characters */
     label = mx_label_new_with_text (_("Enter network name:"));
-    mx_table_add_actor_with_properties (MX_TABLE (table),
-                                        label,
-                                        0, 0,
-                                        "y-expand", TRUE,
-                                        "y-fill", FALSE,
-                                        "y-align", MX_ALIGN_MIDDLE,
-                                        "x-expand", FALSE,
-                                        NULL);
+    mx_table_insert_actor_with_properties (MX_TABLE (table),
+                                           label,
+                                           0, 0,
+                                           "y-expand", TRUE,
+                                           "y-fill", FALSE,
+                                           "y-align", MX_ALIGN_MIDDLE,
+                                           "x-expand", FALSE,
+                                           NULL);
 
     priv->ssid_entry = mx_entry_new ();
     clutter_actor_set_size (priv->ssid_entry, MTN_APP_ENTRY_WIDTH, -1);
     g_signal_connect (priv->ssid_entry, "key-release-event",
                       G_CALLBACK (_entry_key_release), self);
-    mx_table_add_actor_with_properties (MX_TABLE (table),
-                                        priv->ssid_entry,
-                                        0, 1,
-                                        "x-fill", FALSE,
-                                        "x-align", MX_ALIGN_START,
-                                        NULL);
+    mx_table_insert_actor_with_properties (MX_TABLE (table),
+                                           priv->ssid_entry,
+                                           0, 1,
+                                           "x-fill", FALSE,
+                                           "x-align", MX_ALIGN_START,
+                                           NULL);
 
     return page;
 }
@@ -1386,18 +1386,18 @@ mtn_app_get_main_page (MtnApp *self)
     mx_box_layout_set_orientation (MX_BOX_LAYOUT (box),
                                    MX_ORIENTATION_VERTICAL);
     mx_box_layout_set_spacing (MX_BOX_LAYOUT (box), 15);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (page),
-                                             box,
-                                             -1,
-                                             "expand", TRUE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (page),
+                                                box,
+                                                -1,
+                                                "expand", TRUE,
+                                                NULL);
 
     stack = mx_stack_new ();
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (box),
-                                             stack,
-                                             -1,
-                                             "expand", TRUE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (box),
+                                                stack,
+                                                -1,
+                                                "expand", TRUE,
+                                                NULL);
 
     scroll = mex_scroll_view_new ();
     /* FIXME: need this size setting because of clutter bug 2461 */
@@ -1438,26 +1438,26 @@ mtn_app_get_main_page (MtnApp *self)
 
     icon = mx_icon_new ();
     mx_stylable_set_style_class (MX_STYLABLE (icon), "mtn-info");
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (error_box),
-                                             icon,
-                                             -1,
-                                             "expand", FALSE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (error_box),
+                                                icon,
+                                                -1,
+                                                "expand", FALSE,
+                                                NULL);
 
     label = mx_label_new_with_text (_("Sorry, we can't find any networks."));
     txt = mx_label_get_clutter_text (MX_LABEL (label));
     clutter_text_set_ellipsize (CLUTTER_TEXT (txt),
                                 PANGO_ELLIPSIZE_NONE);
     clutter_text_set_line_wrap (CLUTTER_TEXT (txt), TRUE);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (error_box),
-                                             label,
-                                             -1,
-                                             "expand", TRUE,
-                                             "x-fill", FALSE,
-                                             "y-fill", FALSE,
-                                             "x-align", MX_ALIGN_START,
-                                             "y-align", MX_ALIGN_MIDDLE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (error_box),
+                                                label,
+                                                -1,
+                                                "expand", TRUE,
+                                                "x-fill", FALSE,
+                                                "y-fill", FALSE,
+                                                "x-align", MX_ALIGN_START,
+                                                "y-align", MX_ALIGN_MIDDLE,
+                                                NULL);
 
    /* TRANSLATORS: Button on main page. Opens the input page for 
       hidden connection details input.*/
@@ -1465,13 +1465,13 @@ mtn_app_get_main_page (MtnApp *self)
     priv->connect_hidden_button = mx_button_new_with_label (str);
     g_signal_connect (priv->connect_hidden_button, "clicked",
                       G_CALLBACK (_connect_hidden_clicked), self);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (box), 
-                                             priv->connect_hidden_button,
-                                             -1,
-                                             "expand", FALSE,
-                                             "x-fill", FALSE,
-                                             "x-align", MX_ALIGN_START,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (box), 
+                                                priv->connect_hidden_button,
+                                                -1,
+                                                "expand", FALSE,
+                                                "x-fill", FALSE,
+                                                "x-align", MX_ALIGN_START,
+                                                NULL);
 
     return page;
 }
@@ -1514,32 +1514,32 @@ mtn_app_init (MtnApp *self)
                             MTN_APP_CONTENT_HEIGHT);
     mx_box_layout_set_orientation (MX_BOX_LAYOUT (box),
                                    MX_ORIENTATION_VERTICAL);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (stage_box),
-                                             box,
-                                             -1,
-                                             "expand", TRUE,
-                                             "x-fill", FALSE,
-                                             "y-fill", FALSE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (stage_box),
+                                                box,
+                                                -1,
+                                                "expand", TRUE,
+                                                "x-fill", FALSE,
+                                                "y-fill", FALSE,
+                                                NULL);
 
     priv->title = mx_label_new ();
     clutter_actor_set_name (priv->title, "mtn-app-title");
-    mx_box_layout_add_actor (MX_BOX_LAYOUT (box), priv->title, -1);
+    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box), priv->title, -1);
 
     book_box = mx_box_layout_new ();
     clutter_actor_set_name (book_box, "mtn-notebook-box");
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (box),
-                                             book_box,
-                                             -1,
-                                             "expand", TRUE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (box),
+                                                book_box,
+                                                -1,
+                                                "expand", TRUE,
+                                                NULL);
 
     priv->book = mx_notebook_new ();
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (book_box),
-                                             priv->book,
-                                             -1,
-                                             "expand", TRUE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (book_box),
+                                                priv->book,
+                                                -1,
+                                                "expand", TRUE,
+                                                NULL);
 
     priv->main_page = mtn_app_get_main_page (self);
     clutter_container_add_actor (CLUTTER_CONTAINER (priv->book),
@@ -1562,7 +1562,7 @@ mtn_app_init (MtnApp *self)
 
     /* button area at the bottom */
     hbox = mtn_button_box_new ();
-    mx_box_layout_add_actor (MX_BOX_LAYOUT (box), hbox, -1);
+    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box), hbox, -1);
 
     self->priv->back_button = mx_button_new ();
     clutter_actor_set_size (self->priv->back_button,
@@ -1570,9 +1570,9 @@ mtn_app_init (MtnApp *self)
                             -1);
     g_signal_connect (self->priv->back_button, "clicked",
                       G_CALLBACK (_back_clicked), self);
-    mx_box_layout_add_actor (MX_BOX_LAYOUT (hbox), 
-                             self->priv->back_button,
-                             -1);
+    mx_box_layout_insert_actor (MX_BOX_LAYOUT (hbox), 
+                                self->priv->back_button,
+                                -1);
 
     priv->forward_button = mx_button_new ();
     clutter_actor_set_size (priv->forward_button,
@@ -1580,13 +1580,13 @@ mtn_app_init (MtnApp *self)
                             -1);
     g_signal_connect (priv->forward_button, "clicked",
                       G_CALLBACK (_forward_clicked), self);
-    mx_box_layout_add_actor_with_properties (MX_BOX_LAYOUT (hbox),
-                                             priv->forward_button,
-                                             -1,
-                                             "x-align", MX_ALIGN_END,
-                                             "expand", TRUE,
-                                             "x-fill", FALSE,
-                                             NULL);
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (hbox),
+                                                priv->forward_button,
+                                                -1,
+                                                "x-align", MX_ALIGN_END,
+                                                "expand", TRUE,
+                                                "x-fill", FALSE,
+                                                NULL);
 }
 
 MtnApp*

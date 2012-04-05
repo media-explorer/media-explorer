@@ -472,8 +472,8 @@ _create_settings_dialog (MexInfoBar *self)
   mx_table_set_column_spacing (MX_TABLE (dialog_layout), 10);
   mx_table_set_row_spacing (MX_TABLE (dialog_layout), 30);
 
-  mx_table_add_actor (MX_TABLE (dialog_layout),
-                      CLUTTER_ACTOR (dialog_label), 0, 0);
+  mx_table_insert_actor (MX_TABLE (dialog_layout),
+                         CLUTTER_ACTOR (dialog_label), 0, 0);
 
   if (network_settings)
     {
@@ -498,8 +498,8 @@ _create_settings_dialog (MexInfoBar *self)
       mx_bin_set_child (MX_BIN (network_tile), network_button);
       mx_bin_set_child (MX_BIN (network_button), network_graphic);
 
-      mx_table_add_actor (MX_TABLE (dialog_layout),
-                          CLUTTER_ACTOR (network_tile), 1, 1);
+      mx_table_insert_actor (MX_TABLE (dialog_layout),
+                             CLUTTER_ACTOR (network_tile), 1, 1);
     }
 
   if (!network_settings)
@@ -509,8 +509,8 @@ _create_settings_dialog (MexInfoBar *self)
 
       clutter_actor_destroy (priv->settings_button);
 
-      mx_table_add_actor (MX_TABLE (dialog_layout),
-                          CLUTTER_ACTOR (no_settings), 1, 0);
+      mx_table_insert_actor (MX_TABLE (dialog_layout),
+                             CLUTTER_ACTOR (no_settings), 1, 0);
     }
 
 
