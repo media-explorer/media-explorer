@@ -182,6 +182,22 @@ mex_opticaldisc_la_CFLAGS  = 			\
 mex_opticaldisc_la_LIBADD  = $(_libadd)
 endif
 
+if USE_PLUGIN_DIRECTORYSEARCH
+plugins_LTLIBRARIES += mex-directorysearch.la
+
+mex_directorysearchdir = $(plugin_datadir)/directorysearch
+dist_mex_directorysearch_DATA =
+
+mex_directorysearch_la_SOURCES =			\
+	directory-search/mex-directorysearch-plugin.c	\
+	directory-search/mex-directorysearch-plugin.h	\
+	$(NULL)
+mex_directorysearch_la_CFLAGS  = 			\
+	-DG_LOG_DOMAIN=\"Mex-Directorysearch\"	\
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_directorysearchdir)\"
+mex_directorysearch_la_LIBADD  = $(_libadd)
+endif
+
 if USE_PLUGIN_BLIPTV
 plugins_LTLIBRARIES += mex-bliptv.la
 
