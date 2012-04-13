@@ -9,6 +9,15 @@ DISTCLEANFILES =
 EXTRA_DIST =
 BUILT_SOURCES =
 
+
+mex-resource.c: $(top_srcdir)/data/media-explorer.gresource.xml
+	glib-compile-resources --target=$@ --sourcedir=$(top_srcdir)/data \
+		--generate-source --c-name mex $(top_srcdir)/data/media-explorer.gresource.xml
+
+mex-resource.h: $(top_srcdir)/data/media-explorer.gresource.xml
+	glib-compile-resources --target=$@  --sourcedir=$(top_srcdir)/data \
+		--generate-header --c-name mex $(top_srcdir)/data/media-explorer.gresource.xml
+
 glib_marshal_list = mex-marshal.list
 glib_marshal_prefix = mex_marshal
 include $(top_srcdir)/build/Makefile.am.marshal
@@ -21,7 +30,7 @@ glib_enum_c = mex-enum-types.c
 glib_enum_headers = $(filter-out gbinding.h, $(mex_headers))
 include $(top_srcdir)/build/Makefile.am.enums
 
-BUILT_SOURCES += $(MARSHAL_SOURCES)
+BUILT_SOURCES += $(MARSHAL_SOURCES) mex-resource.c mex-resource.h
 
 mex_headers =							\
 	$(top_srcdir)/mex/mex.h					\
@@ -242,6 +251,9 @@ libmex_@MEX_API_VERSION@_la_SOURCES =	\
 	$(mex_built_sources)		\
 	$(mex_private_headers)		\
 	$(NULL)
+
+nodist_libmex_@MEX_API_VERSION@_la_SOURCES =	\
+	mex-resource.c mex-resouce.h
 
 common_includes =					\
 	-I$(top_srcdir)					\

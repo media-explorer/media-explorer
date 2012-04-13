@@ -1048,8 +1048,7 @@ mex_scroll_view_style_changed_cb (MexScrollView       *self,
                    NULL);
 
   if (priv->scroll_shadow && priv->scroll_shadow->uri)
-    priv->scroll_shadow_texture = cogl_texture_new_from_file (priv->scroll_shadow->uri,
-                                                              0, 0, NULL);
+    priv->scroll_shadow_texture = mx_texture_cache_get_cogl_texture (mx_texture_cache_get_default (), priv->scroll_shadow->uri);
   else if (priv->scroll_shadow)
     {
       g_boxed_free (MX_TYPE_BORDER_IMAGE, priv->scroll_shadow);

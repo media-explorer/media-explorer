@@ -15,8 +15,24 @@ extradir = $(pkgdatadir)
 dist_extra_DATA = mex-lircrc
 endif
 
+
 styledir = $(pkgdatadir)/style
 dist_style_DATA = \
+	style/folder-tile-up.png \
+	style/folder-tile.png \
+	style/thumb-app.png \
+	style/thumb-bg.png \
+	style/thumb-call-avatar-small.png \
+	style/thumb-call-avatar.png \
+	style/thumb-call-pip-off.png \
+	style/thumb-disc.png \
+	style/thumb-image.png \
+	style/thumb-music.png \
+	style/thumb-tv.png \
+	style/thumb-video.png
+
+EXTRA_DIST = \
+	media-explorer.gresource.xml \
 	style/bg-gradient.png \
 	style/button-bg-highlight.png \
 	style/button-bg.png \
@@ -25,8 +41,6 @@ dist_style_DATA = \
 	style/controls-container.png \
 	style/details-actions-separator.png \
 	style/details-bg.png \
-	style/folder-tile-up.png \
-	style/folder-tile.png \
 	style/footer.png \
 	style/frame-bg.png \
 	style/graphic-network.png \
@@ -66,17 +80,7 @@ dist_style_DATA = \
 	style/spinner.png \
 	style/style.css \
 	style/text-input-bg.png \
-	style/thumb-app.png \
-	style/thumb-bg.png \
-        style/thumb-call-avatar.png \
-        style/thumb-call-avatar-small.png \
-        style/thumb-call-pip-off.png \
-	style/thumb-disc.png \
-	style/thumb-image.png \
-	style/thumb-music.png \
 	style/thumb-no-content.png \
-	style/thumb-tv.png \
-	style/thumb-video.png \
 	style/timeline-bg.png \
 	style/timeline-buffer.png \
 	style/timeline-highlight-white.png \
@@ -98,7 +102,7 @@ dist_style_DATA = \
 
 
 if ENABLE_IDLE_VIDEO
-dist_style_DATA +=style/background-loop.mkv
+EXTRA_DIST +=style/background-loop.mkv
 endif
 
 icondir = $(pkgdatadir)/icons/mex
