@@ -47,7 +47,7 @@ G_DEFINE_TYPE_WITH_CODE (MexDirectorySearchManager,
                                                 action_provider_iface_init))
 
 #define DIRECTORY_SEARCH_MANAGER_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_DIRECTORY_SEARCH_MANAGER, MexDirectorySearchManagerPrivate))
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_DIRECTORY_SEARCH_MANAGER, MexDirectorySearchManagerPrivate))
 
 static void _volume_monitor_mount_added_cb (GVolumeMonitor           *volume_monitor,
                                             GMount                   *mount,
@@ -80,27 +80,27 @@ dir_iterate (const gchar *dir_path)
   GDir *dir;
   gchar *test_path;
   const gchar *entry;
-  
+
 
   dir = g_dir_open (dir_path, 0, &errormsg);
-  
+
   if (errormsg != NULL)
     g_warning("Error! %s", errormsg->message);
 
-    
+
   if (dir != NULL)
     {
-     while ((entry = g_dir_read_name (dir)) != NULL)
-       {
-         test_path = g_strconcat (dir_path, G_DIR_SEPARATOR_S, entry, NULL);
-         if (g_file_test (test_path, G_FILE_TEST_IS_DIR) == TRUE)
-           {
-             dir_list = g_list_append (dir_list, test_path);
-           }
-         else if (g_file_test (test_path, (G_FILE_TEST_IS_REGULAR
-                                           & ~G_FILE_TEST_IS_SYMLINK) == TRUE))
-           file_list = g_list_append (file_list, test_path);
-       }
+      while ((entry = g_dir_read_name (dir)) != NULL)
+        {
+          test_path = g_strconcat (dir_path, G_DIR_SEPARATOR_S, entry, NULL);
+          if (g_file_test (test_path, G_FILE_TEST_IS_DIR) == TRUE)
+            {
+              dir_list = g_list_append (dir_list, test_path);
+            }
+          else if (g_file_test (test_path, (G_FILE_TEST_IS_REGULAR
+                                            & ~G_FILE_TEST_IS_SYMLINK) == TRUE))
+            file_list = g_list_append (file_list, test_path);
+        }
     }
   g_dir_close (dir);
 }
@@ -117,7 +117,7 @@ static void directory_list(MexDirectorySearchManager *self)
   dir_iterate (dir_music_path);
   dir_iterate (dir_pictures_path);
   dir_iterate (dir_videos_path);
-  
+
   for (list_iterate = dir_list; list_iterate != NULL;
        list_iterate = list_iterate->next)
     {
@@ -231,7 +231,7 @@ mex_directory_search_thumbnail (MexContent *content, const gchar *mime_type,
 
   old_thumb_url = mex_content_get_metadata (content,
                                             MEX_CONTENT_METADATA_STILL);
- 
+
   thumb_path = mex_get_thumbnail_path_for_uri (uri_path);
 
   if (g_file_test (thumb_path, G_FILE_TEST_EXISTS))
@@ -258,20 +258,33 @@ set_metadata_from_media (MexContent *content,
   MexDirectorySearchManagerPrivate *priv;
   gchar *showname = NULL, *title, *season_str;
   gint season, episode, year = 0;
-  gchar *replacement;
+  gchar *filename, *replacement;
   const gchar *mimetype;
 
   if (uri_path)
     {
       if (mex_key == MEX_CONTENT_METADATA_TITLE)
         {
-          mimetype = mex_content_get_metadata (content,
+          GRegex *regex;
+              g_print ("GRegex being run\n");
+
+              replacement = g_filename_from_uri (uri_path, NULL, NULL);
+              title = g_path_get_basename (replacement);
+              regex = g_regex_new ("\\.....?$", 0, 0, NULL);
+              filename = g_regex_replace (regex, title, -1, 0, "", 0, NULL);
+              g_print ("Title: %s\n", filename);
+              mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, filename);
+
+              g_regex_unref (regex);
+
+          /*mimetype = mex_content_get_metadata (content,
                                                MEX_CONTENT_METADATA_MIMETYPE);
           if (!mimetype)
             mimetype = "";
 
           if (g_str_has_prefix (mimetype, "video/"))
             {
+              g_print ("Extracting Video metadata\n");
               mex_metadata_from_uri (uri_path, &title, &showname, &year,
                                      &season, &episode);
             }
@@ -283,8 +296,9 @@ set_metadata_from_media (MexContent *content,
           else
             {
               GRegex *regex;
+              g_print ("GRegex being run\n");
 
-              /* strip off any file extensions */
+              /* strip off any file extensions *//*
               regex = g_regex_new ("\\.....?$", 0, 0, NULL);
               replacement = g_regex_replace (regex, uri_path, -1, 0, "", 0, NULL);
 
@@ -312,13 +326,16 @@ set_metadata_from_media (MexContent *content,
             }
         }
       else
-        mex_content_set_metadata (content, mex_key, uri_path);
+        {
+          //mex_content_set_metadata (content, mex_key, uri_path);
+        } */
     }
+}
 }
 
 void
 mex_update_content_from_media (MexContent *content,
-                              const gchar *uri_path)
+                               const gchar *uri_path)
 {
   MexDirectorySearchManagerPrivate *priv;
   //g_return_if_fail (MEX_IS_CONTENT (content));
@@ -329,7 +346,7 @@ mex_update_content_from_media (MexContent *content,
    *        to use that.
    */
   set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_TITLE);
-  set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_SYNOPSIS);
+  /*set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_SYNOPSIS);
   set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_MIMETYPE);
   set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_STILL);
   set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_STREAM);
@@ -347,7 +364,7 @@ mex_update_content_from_media (MexContent *content,
   set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_ISO_SPEED);
   set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_CREATION_DATE);
   set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_ALBUM);
-  set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_ARTIST);
+  set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_ARTIST);*/
 }
 
 
@@ -369,21 +386,23 @@ _new_file_added (MexDirectorySearchManager *self, const gchar *file_path)
   priv->content = mex_content_from_uri (uri_path);
   mimetype = mex_content_get_metadata (priv->content,
                                        MEX_CONTENT_METADATA_MIMETYPE);
+  mex_directory_search_thumbnail (priv->content, mimetype, uri_path);
+
+  mex_update_content_from_media (priv->content, uri_path);
   g_print ("Mimetype: %s\n", mimetype);
 
-  mex_directory_search_thumbnail (priv->content, mimetype, uri_path);
+
    if (g_str_has_prefix (mimetype, "video/"))
-     {
-    mex_model_add_content (priv->videos_model, priv->content);
-    g_print ("GDB: Video added %p\n", priv->content);
-     }
+    {
+      mex_model_add_content (priv->videos_model, priv->content);
+      g_print ("GDB: Video added %p\n", priv->content);
+    }
   else if (g_str_has_prefix (mimetype, "image/"))
     mex_model_add_content (priv->pictures_model, priv->content);
   else if (g_str_has_prefix (mimetype, "audio/"))
     mex_model_add_content (priv->music_model, priv->content);
 
-  mex_update_content_from_media (priv->content, uri_path);
-
+  priv->content = NULL;
   g_free (uri_path);
 
 }
@@ -403,16 +422,16 @@ _content_type_resolved (GObject               *mount,
    * x-content/video-bluray;
    * x-content/video-hddvd;
    * x-content/video-svcd;
-   
-  if (content_types)
-    {
-      if (g_strcmp0 (content_types[0], "x-content/video-dvd") == 0
-          || g_strcmp0 (content_types[0], "x-content/video-vcd") == 0)
-        {
-          _new_disc_added (self, G_MOUNT (mount), content_types[0]);
-        }
-    }
-  g_strfreev (content_types);*/
+
+   if (content_types)
+   {
+   if (g_strcmp0 (content_types[0], "x-content/video-dvd") == 0
+   || g_strcmp0 (content_types[0], "x-content/video-vcd") == 0)
+   {
+   _new_disc_added (self, G_MOUNT (mount), content_types[0]);
+   }
+   }
+   g_strfreev (content_types);*/
 }
 
 static void
@@ -461,12 +480,12 @@ _eject_disc (MxAction *action, MexDirectorySearchManager *self)
   MexDirectorySearchManagerPrivate *priv = MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
 
   /*g_volume_eject_with_operation (priv->volume,
-                                 0,
-                                 NULL,
-                                 NULL,
-                                 (GAsyncReadyCallback)_eject_ready_cb,
-                                 self);
-*/
+    0,
+    NULL,
+    NULL,
+    (GAsyncReadyCallback)_eject_ready_cb,
+    self);
+    */
 }
 
 
@@ -478,13 +497,13 @@ mex_directory_search_manager_init (MexDirectorySearchManager *self)
   priv = self->priv = DIRECTORY_SEARCH_MANAGER_PRIVATE (self);
 
   priv->videos_model = mex_generic_model_new (_("Directory Searchs"),
-                                                     "icon-panelheader-videos");
-  
+                                              "icon-panelheader-videos");
+
   priv->pictures_model = mex_generic_model_new (_("Directory Searchs"),
-                                                     "icon-panelheader-pictures");
- 
+                                                "icon-panelheader-pictures");
+
   priv->music_model = mex_generic_model_new (_("Directory Searchs"),
-                                                     "icon-panelheader-music");
+                                             "icon-panelheader-music");
 
   g_object_set (G_OBJECT (priv->videos_model),
                 "category", "videos",
@@ -548,11 +567,11 @@ mex_directorysearch_get_type (void)
 
 
 MEX_DEFINE_PLUGIN ("Directory Search",
-		   "DVD integration",
-		   PACKAGE_VERSION,
-		   "LGPLv2.1+",
+                   "DVD integration",
+                   PACKAGE_VERSION,
+                   "LGPLv2.1+",
                    "Michael Wood <michael.g.wood@linux.intel.com>,"
                    "Thomas Wood <thomas.wood@intel.com>",
-		   MEX_API_MAJOR, MEX_API_MINOR,
-		   mex_directorysearch_get_type,
-		   MEX_PLUGIN_PRIORITY_NORMAL)
+                   MEX_API_MAJOR, MEX_API_MINOR,
+                   mex_directorysearch_get_type,
+                   MEX_PLUGIN_PRIORITY_NORMAL)
