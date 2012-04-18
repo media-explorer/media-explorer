@@ -53,7 +53,6 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-column.h				\
 	$(top_srcdir)/mex/mex-column-view.h			\
 	$(top_srcdir)/mex/mex-content-box.h			\
-	$(top_srcdir)/mex/mex-content-button.h			\
 	$(top_srcdir)/mex/mex-content-proxy.h			\
 	$(top_srcdir)/mex/mex-content-tile.h			\
 	$(top_srcdir)/mex/mex-content-view.h			\
@@ -161,7 +160,6 @@ mex_sources =					\
 	mex-column.c				\
 	mex-column-view.c			\
 	mex-content-box.c			\
-	mex-content-button.c			\
 	mex-content-proxy.c			\
 	mex-content-tile.c			\
 	mex-content-view.c			\

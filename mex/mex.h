@@ -40,7 +40,6 @@
 #include <mex/mex-column-view.h>
 #include <mex/mex-content.h>
 #include <mex/mex-content-box.h>
-#include <mex/mex-content-button.h>
 #include <mex/mex-content-proxy.h>
 #include <mex/mex-content-tile.h>
 #include <mex/mex-content-view.h>

@@ -113,7 +113,6 @@
       <xi:include href="xml/mex-clock-bin.xml"/>
       <xi:include href="xml/mex-content-box.xml"/>
       <xi:include href="xml/mex-content-tile.xml"/>
-      <xi:include href="xml/mex-content-button.xml"/>
       <xi:include href="xml/mex-info-bar.xml"/>
       <xi:include href="xml/mex-info-panel.xml"/>
       <xi:include href="xml/mex-media-controls.xml"/>
