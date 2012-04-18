@@ -473,15 +473,14 @@ MxLabel#title-label
   font-weight: bold;
 }
 
-MexMediaControls, *#MexSlideShowControls
+MexMediaControls, #MexSlideShowControls
 {
   padding: 25 0 0 0;
   border-image: url('controls-bg.png') 0;
 }
 
 .MexMediaControls,
-MxBoxLayout.MexMediaControlsTitle,
-MxBoxLayout.MexSlideShowControlsTitle,
+.MexMediaControlsTitle,
 MxBoxLayout.MexCallControlsTitle
 {
   border-image: url('controls-container.png') 1;

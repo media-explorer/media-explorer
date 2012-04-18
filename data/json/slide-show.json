@@ -33,7 +33,7 @@
         "child::y-align" : "end",
         "child::y-fill" : false,
         "orientation" : "vertical",
-        "spacing" : 21,
+        "spacing" : 20,
         "name" : "MexSlideShowControls",
         "children" : [
           {
@@ -42,20 +42,20 @@
             "child::x-fill" : false,
             "children" : [
               {
+                "type" : "MxLabel",
+                "id" : "title-label",
+                "style-class" : "MexMediaControlsTitle",
+                "text" : "Content Title",
+                "y-align" : "middle",
+                "width" : 440
+              },
+              {
                 "type" : "MxBoxLayout",
                 "style-class" : "MexMediaControlsTitle",
                 "width" : 980,
-                "height" : 48,
                 "child::expand" : false,
                 "spacing" : 16,
                 "children" : [
-                  {
-                    "type" : "MxLabel",
-                    "id" : "title-label",
-                    "text" : "Content Title",
-                    "y-align" : "middle",
-                    "width" : 440
-                  },
                   {
                     "type" : "MxButton",
                     "id" : "play-pause-button",
