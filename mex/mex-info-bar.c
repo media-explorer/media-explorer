@@ -43,7 +43,6 @@ G_DEFINE_TYPE_WITH_CODE (MexInfoBar, mex_info_bar, MX_TYPE_WIDGET,
 struct _MexInfoBarPrivate
 {
   ClutterActor *group;
-  ClutterActor *power_dialog;
   ClutterActor *settings_dialog;
   ClutterActor *settings_button;
   ClutterActor *power_button;
@@ -52,7 +51,6 @@ struct _MexInfoBarPrivate
 
   ClutterScript *script;
 
-  gboolean power_dialog_parented;
   gboolean settings_dialog_parented;
 
   MexGenericNotificationSource *notification_source;
@@ -196,8 +194,6 @@ mex_info_bar_pick (ClutterActor       *actor,
 
 static gboolean
 _create_settings_dialog (MexInfoBar *self);
-static gboolean
-_create_power_dialog (MexInfoBar *self);
 
 static void
 mex_info_bar_map (ClutterActor *actor)
@@ -224,12 +220,6 @@ mex_info_bar_dispose (GObject *object)
 {
   MexInfoBar *self = MEX_INFO_BAR (object);
   MexInfoBarPrivate *priv = self->priv;
-
-  if (priv->power_dialog)
-    {
-      clutter_actor_destroy (priv->power_dialog);
-      priv->power_dialog = NULL;
-    }
 
   if (priv->settings_dialog)
     {
@@ -290,9 +280,6 @@ _close_dialog_cb (gpointer unused, MexInfoBar *self)
 {
   MexInfoBarPrivate *priv = self->priv;
 
-  if (CLUTTER_ACTOR_IS_VISIBLE (priv->power_dialog))
-    clutter_actor_hide (priv->power_dialog);
-
   if (CLUTTER_ACTOR_IS_VISIBLE (priv->settings_dialog))
     clutter_actor_hide (priv->settings_dialog);
 
@@ -320,8 +307,7 @@ gboolean mex_info_bar_dialog_visible (MexInfoBar *self)
 {
   MexInfoBarPrivate *priv = self->priv;
 
-  return (CLUTTER_ACTOR_IS_VISIBLE (priv->power_dialog)
-      || CLUTTER_ACTOR_IS_VISIBLE (priv->settings_dialog));
+  return CLUTTER_ACTOR_IS_VISIBLE (priv->settings_dialog);
 }
 
 void
@@ -411,38 +397,6 @@ _action_new_from_desktop_file (const gchar *desktop_file_id)
   return NULL;
 }
 #endif
-
-static gboolean
-_create_power_dialog (MexInfoBar *self)
-{
-  MexInfoBarPrivate *priv = self->priv;
-
-  ClutterActor *dialog, *dialog_label;
-  MxAction *cancel_action, *shutdown_action;
-
-  dialog = mx_dialog_new ();
-  mx_stylable_set_style_class (MX_STYLABLE (dialog), "MexInfoBarDialog");
-
-  dialog_label = mx_label_new_with_text (_("Close Media Explorer?"));
-  mx_stylable_set_style_class (MX_STYLABLE (dialog_label), "DialogHeader");
-  mx_bin_set_child (MX_BIN (dialog), dialog_label);
-
-  shutdown_action = mx_action_new_full ("yes", _("Yes"),
-                                       G_CALLBACK (_close_request_cb), self);
-
-  cancel_action = mx_action_new_full ("no", _("No"),
-                                     G_CALLBACK (_close_dialog_cb), self);
-
-  mx_dialog_add_action (MX_DIALOG (dialog), shutdown_action);
-  mx_dialog_add_action (MX_DIALOG (dialog), cancel_action);
-
-  priv->power_dialog = g_object_ref (dialog);
-
-  clutter_actor_show (dialog);
-
-  return TRUE;
-}
-
 
 static gboolean
 _create_settings_dialog (MexInfoBar *self)
@@ -541,25 +495,6 @@ _show_settings_dialog_cb (ClutterActor *actor, MexInfoBar *self)
   return TRUE;
 }
 
-static gboolean
-_show_power_dialog_cb (ClutterActor *actor, MexInfoBar *self)
-{
-  MexInfoBarPrivate *priv = self->priv;
-
-  if (!priv->power_dialog_parented)
-    {
-      ClutterActor *stage;
-
-      stage = clutter_actor_get_stage (CLUTTER_ACTOR (self));
-      mx_dialog_set_transient_parent (MX_DIALOG (priv->power_dialog), stage);
-      priv->power_dialog_parented = TRUE;
-    }
-
-  clutter_actor_show (priv->power_dialog);
-
-  return TRUE;
-}
-
 static void
 _back_button_cb (ClutterActor *actor,
                  MexInfoBar   *bar)
@@ -641,13 +576,12 @@ mex_info_bar_init (MexInfoBar *self)
 
   g_signal_connect (priv->power_button,
                     "clicked",
-                    G_CALLBACK (_show_power_dialog_cb), self);
+                    G_CALLBACK (_close_request_cb), self);
 
   g_signal_connect (priv->back_button,
                     "clicked",
                     G_CALLBACK (_back_button_cb), self);
 
-  _create_power_dialog (MEX_INFO_BAR (self));
   _create_settings_dialog (MEX_INFO_BAR (self));
 }
 
