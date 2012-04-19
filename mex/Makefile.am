@@ -60,12 +60,9 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-debug.h				\
 	$(top_srcdir)/mex/mex-download-queue.h			\
 	$(top_srcdir)/mex/mex-explorer.h			\
-	$(top_srcdir)/mex/mex-epg.h				\
 	$(top_srcdir)/mex/mex-epg-event.h			\
-	$(top_srcdir)/mex/mex-epg-grid.h			\
 	$(top_srcdir)/mex/mex-epg-manager.h			\
 	$(top_srcdir)/mex/mex-epg-radiotimes.h			\
-	$(top_srcdir)/mex/mex-epg-tile.h			\
 	$(top_srcdir)/mex/mex-epg-provider.h			\
 	$(top_srcdir)/mex/mex-feed.h				\
 	$(top_srcdir)/mex/mex-generic-notification-source.h	\
@@ -166,13 +163,10 @@ mex_sources =					\
 	mex-content.c				\
 	mex-debug.c				\
 	mex-download-queue.c			\
-	mex-epg.c				\
 	mex-epg-event.c				\
-	mex-epg-grid.c				\
 	mex-epg-manager.c			\
 	mex-epg-provider.c			\
 	mex-epg-radiotimes.c			\
-	mex-epg-tile.c				\
 	mex-explorer.c				\
 	mex-feed.c				\
 	mex-generic-notification-source.c 	\

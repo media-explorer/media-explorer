@@ -46,13 +46,10 @@
 #include <mex/mex-debug.h>
 #include <mex/mex-download-queue.h>
 #include <mex/mex-explorer.h>
-#include <mex/mex-epg.h>
 #include <mex/mex-epg-event.h>
-#include <mex/mex-epg-grid.h>
 #include <mex/mex-epg-manager.h>
 #include <mex/mex-epg-provider.h>
 #include <mex/mex-epg-radiotimes.h>
-#include <mex/mex-epg-tile.h>
 #include <mex/mex-generic-model.h>
 #include <mex/mex-generic-proxy.h>
 #include <mex/mex-grid.h>

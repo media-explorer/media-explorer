@@ -22,9 +22,6 @@
 
 G_BEGIN_DECLS
 
-/* mex-epg.c */
-void mex_test_epg_round_30min (void);
-
 /* mex-metadata-utils.c */
 void mex_test_metadata_humanise_date (void);
 

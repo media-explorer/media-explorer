@@ -55,6 +55,9 @@ MEX_LOG_DOMAIN(MEX_LOG_DOMAIN_DEFAULT);
 
 MEX_LOG_DOMAIN(log_log_domain);
 
+/* define the epg log domain */
+MEX_LOG_DOMAIN(epg_log_domain);
+
 static MexLogDomain *
 mex_log_domain_find_by_name (const gchar *name)
 {
