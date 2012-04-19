@@ -61,6 +61,7 @@ EXTRA_DIST = \
 	style/queue-spinner-highlight.png \
 	style/queue-spinner.png \
 	style/spinner.png \
+	style/style.css \
 	style/text-input-bg.png \
 	style/timeline-bg.png \
 	style/timeline-highlight.png \
