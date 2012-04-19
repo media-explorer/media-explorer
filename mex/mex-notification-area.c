@@ -119,7 +119,7 @@ _make_notification_actor (MexNotification *notification)
       icon = mx_icon_new ();
       clutter_actor_set_size (icon, 26, 26);
       mx_icon_set_icon_name (MX_ICON (icon), notification->icon);
-      clutter_container_add_actor (CLUTTER_CONTAINER (box), icon);
+      clutter_actor_add_child (box, icon);
 
       mx_box_layout_child_set_y_align (MX_BOX_LAYOUT (box),
                                        icon,
@@ -130,7 +130,7 @@ _make_notification_actor (MexNotification *notification)
 
   mx_label_set_y_align (MX_LABEL (label), MX_ALIGN_MIDDLE);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (box), label);
+  clutter_actor_add_child (box, label);
 
   return box;
 }
@@ -234,8 +234,7 @@ _source_notification_added_cb (MexNotificationSource *source,
                        notification,
                        actor);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (area),
-                               actor);
+  clutter_actor_add_child (CLUTTER_ACTOR (area), actor);
   mx_stack_child_set_x_fill (MX_STACK (area), actor, FALSE);
   mx_stack_child_set_y_fill (MX_STACK (area), actor, FALSE);
   mx_stack_child_set_x_align (MX_STACK (area), actor, MX_ALIGN_MIDDLE);

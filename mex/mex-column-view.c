@@ -592,10 +592,10 @@ mex_column_view_init (MexColumnView *self)
   g_object_set (priv->label, "clip-to-allocation", TRUE, "fade-out", TRUE,
                 NULL);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->button), priv->label);
+  mx_bin_set_child (MX_BIN (priv->button), priv->label);
 
   mx_bin_set_fill (MX_BIN (priv->button), TRUE, FALSE);
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->header), priv->button);
+  clutter_actor_add_child (priv->header, priv->button);
   clutter_container_child_set (CLUTTER_CONTAINER (priv->header), priv->button,
                                "expand", TRUE,
                                "x-fill", TRUE,
@@ -615,8 +615,7 @@ mex_column_view_init (MexColumnView *self)
   clutter_actor_set_parent (priv->scroll, CLUTTER_ACTOR (self));
 
   priv->column = mex_column_new ();
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->scroll),
-                               priv->column);
+  mx_bin_set_child (MX_BIN (priv->scroll), priv->column);
 
   g_signal_connect (priv->column, "notify::opened",
                     G_CALLBACK (mex_column_view_opened_cb), self);

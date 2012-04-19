@@ -285,8 +285,8 @@ mex_resizing_hbox_notify_visible_cb (ClutterActor    *child,
 }
 
 static void
-mex_resizing_hbox_add (ClutterContainer *container,
-                       ClutterActor     *actor)
+mex_resizing_hbox_actor_added (ClutterContainer *container,
+                               ClutterActor     *actor)
 {
   MexResizingHBox *self = MEX_RESIZING_HBOX (container);
   MexResizingHBoxPrivate *priv = self->priv;
@@ -301,126 +301,33 @@ mex_resizing_hbox_add (ClutterContainer *container,
   if (priv->fade)
     clutter_actor_set_opacity (actor, INACTIVE_OPACITY);
 
-  clutter_actor_set_parent (actor, CLUTTER_ACTOR (self));
-
   clutter_actor_add_effect_with_name (actor, "desaturate",
                                       clutter_desaturate_effect_new (1.0));
-
-  g_signal_emit_by_name (self, "actor-added", actor);
 }
 
 static void
-mex_resizing_hbox_remove (ClutterContainer *container,
-                          ClutterActor     *actor)
-{
-  GList *c;
-
-  MexResizingHBox *self = MEX_RESIZING_HBOX (container);
-  MexResizingHBoxPrivate *priv = self->priv;
-
-  for (c = priv->children; c; c = c->next)
-    {
-      MexResizingHBoxChild *meta;
-
-      if (c->data != actor)
-        continue;
-
-      meta = MEX_RESIZING_HBOX_CHILD (
-        clutter_container_get_child_meta (container, actor));
-
-      g_signal_handlers_disconnect_by_func (actor,
-                                            mex_resizing_hbox_notify_visible_cb,
-                                            self);
-
-        {
-          priv->children = g_list_delete_link (priv->children, c);
-          g_object_unref (meta);
-          clutter_actor_unparent (actor);
-
-          return;
-        }
-
-      /* Remove the old actor */
-      g_object_ref (actor);
-
-      g_object_set_qdata (G_OBJECT (actor), mex_resizing_hbox_meta_quark, NULL);
-      clutter_actor_unparent (actor);
-
-      if (priv->current_focus == actor)
-        {
-          priv->current_focus = NULL;
-          priv->has_focus = FALSE;
-        }
-
-      g_signal_emit_by_name (self, "actor-removed", actor);
-
-      g_object_unref (actor);
-
-      mex_resizing_hbox_start_animation (self);
-
-      return;
-    }
-
-  g_warning (G_STRLOC ": Trying to remove an unknown child");
-}
-
-static void
-mex_resizing_hbox_foreach (ClutterContainer *container,
-                           ClutterCallback   callback,
-                           gpointer          user_data)
+mex_resizing_hbox_actor_removed (ClutterContainer *container,
+                                 ClutterActor     *actor)
 {
   MexResizingHBox *self = MEX_RESIZING_HBOX (container);
   MexResizingHBoxPrivate *priv = self->priv;
 
-  g_list_foreach (priv->children, (GFunc) callback, user_data);
-}
+  g_signal_handlers_disconnect_by_func (actor,
+                                        mex_resizing_hbox_notify_visible_cb,
+                                        self);
 
-static void
-mex_resizing_hbox_reorder (ClutterContainer *container,
-                           ClutterActor     *actor,
-                           ClutterActor     *sibling,
-                           gboolean          after)
-{
-  ClutterActor *child;
-  GList *l, *sibling_link;
-  MexResizingHBoxPrivate *priv = MEX_RESIZING_HBOX (container)->priv;
+  g_object_set_qdata (G_OBJECT (actor), mex_resizing_hbox_meta_quark, NULL);
+  clutter_actor_unparent (actor);
 
-  l = g_list_find (priv->children, actor);
-  sibling_link = g_list_find (priv->children, sibling);
+  priv->children = g_list_remove (priv->children, actor);
 
-  if (!l || !sibling_link)
+  if (priv->current_focus == actor)
     {
-      g_warning (G_STRLOC ": Children not found in internal child list");
-      return;
+      priv->current_focus = NULL;
+      priv->has_focus = FALSE;
     }
 
-  if (after)
-    sibling_link = g_list_next (sibling_link);
-
-  if (l == sibling_link)
-    return;
-
-  child = l->data;
-  priv->children = g_list_delete_link (priv->children, l);
-  priv->children = g_list_insert_before (priv->children, sibling_link, child);
-
-  clutter_actor_queue_relayout (CLUTTER_ACTOR (container));
-}
-
-static void
-mex_resizing_hbox_raise (ClutterContainer *container,
-                         ClutterActor     *actor,
-                         ClutterActor     *sibling)
-{
-  mex_resizing_hbox_reorder (container, actor, sibling, TRUE);
-}
-
-static void
-mex_resizing_hbox_lower (ClutterContainer *container,
-                         ClutterActor     *actor,
-                         ClutterActor     *sibling)
-{
-  mex_resizing_hbox_reorder (container, actor, sibling, FALSE);
+  mex_resizing_hbox_start_animation (self);
 }
 
 static void
@@ -477,11 +384,8 @@ mex_resizing_hbox_get_child_meta (ClutterContainer *container,
 static void
 clutter_container_iface_init (ClutterContainerIface *iface)
 {
-  iface->add = mex_resizing_hbox_add;
-  iface->remove = mex_resizing_hbox_remove;
-  iface->foreach = mex_resizing_hbox_foreach;
-  iface->raise = mex_resizing_hbox_raise;
-  iface->lower = mex_resizing_hbox_lower;
+  iface->actor_added = mex_resizing_hbox_actor_added;
+  iface->actor_removed = mex_resizing_hbox_actor_removed;
 
   iface->create_child_meta = mex_resizing_hbox_create_child_meta;
   iface->destroy_child_meta = NULL;
@@ -1520,7 +1424,8 @@ mex_resizing_hbox_notify_focused_cb (MxFocusManager  *manager,
 
                   effect = clutter_actor_get_effect (priv->current_focus,
                                                      "desaturate");
-                  clutter_actor_meta_set_enabled ((effect), TRUE);
+                  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (effect),
+                                                  TRUE);
                 }
 
               if (MEX_IS_COLUMN_VIEW (priv->current_focus))
@@ -1544,7 +1449,8 @@ mex_resizing_hbox_notify_focused_cb (MxFocusManager  *manager,
                                          NULL);
                   effect = clutter_actor_get_effect (priv->current_focus,
                                                      "desaturate");
-                  clutter_actor_meta_set_enabled ((effect), FALSE);
+                  clutter_actor_meta_set_enabled (CLUTTER_ACTOR_META (effect),
+                                                  FALSE);
                 }
 
               mex_resizing_hbox_start_animation (self);

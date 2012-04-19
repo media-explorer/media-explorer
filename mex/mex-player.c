@@ -449,12 +449,6 @@ mex_player_key_press_event (ClutterActor    *actor,
   MexPlayer *player = MEX_PLAYER (actor);
   MexPlayerPrivate *priv = player->priv;
 
-  ClutterStage *stage;
-  MxFocusManager *fmanager;
-
-  stage = (ClutterStage*) clutter_actor_get_stage (actor);
-  fmanager = mx_focus_manager_get_for_stage (stage);
-
   switch (event->keyval)
     {
     case CLUTTER_KEY_Down:
@@ -728,8 +722,7 @@ mex_player_init (MexPlayer *self)
    */
   g_object_ref_sink (priv->media);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (self),
-                               CLUTTER_ACTOR (priv->media));
+  clutter_actor_add_child (CLUTTER_ACTOR (self), CLUTTER_ACTOR (priv->media));
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->media), TRUE);
   clutter_container_child_set (CLUTTER_CONTAINER (self),
                                CLUTTER_ACTOR (priv->media),
@@ -782,7 +775,7 @@ mex_player_init (MexPlayer *self)
                     self);
   mex_media_controls_set_media (MEX_MEDIA_CONTROLS (priv->controls),
                                 priv->media);
-  clutter_container_add_actor (CLUTTER_CONTAINER (self), priv->controls);
+  clutter_actor_add_child (CLUTTER_ACTOR (self), priv->controls);
   clutter_container_child_set (CLUTTER_CONTAINER (self), priv->controls,
                                "y-fill", FALSE, "y-align", MX_ALIGN_END,
                                NULL);

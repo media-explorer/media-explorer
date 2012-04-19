@@ -514,7 +514,7 @@ _create_settings_dialog (MexInfoBar *self)
     }
 
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (dialog), dialog_layout);
+  mx_bin_set_child (MX_BIN (dialog), dialog_layout);
   mx_dialog_add_action (MX_DIALOG (dialog), close_dialog);
 
   priv->settings_dialog = g_object_ref (dialog);

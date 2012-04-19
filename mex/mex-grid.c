@@ -864,7 +864,7 @@ mex_grid_paint (ClutterActor *actor)
   MxPadding padding;
   ClutterActorBox box;
   guint8 paint_opacity;
-  gboolean clipped, draw_focus;
+  gboolean draw_focus;
 
   MexGrid *self = MEX_GRID (actor);
   MexGridPrivate *priv = self->priv;

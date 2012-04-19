@@ -602,7 +602,7 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
 {
   MexModel *view_model;
   gchar *placeholder_text;
-  ClutterContainer *container;
+  ClutterActor *container;
   ClutterActor *column_view, *label;
   gboolean display_item_count, always_visible;
   gchar *title;
@@ -708,7 +708,7 @@ mex_explorer_model_added_cb (MexAggregateModel *aggregate,
                     G_CALLBACK (mex_explorer_column_activated_cb),
                     explorer);
 
-  clutter_container_add_actor (container, column_view);
+  clutter_actor_add_child (container, column_view);
 
   g_object_weak_ref (G_OBJECT (column_view), mex_explorer_unset_container_cb, model);
 
@@ -740,7 +740,7 @@ mex_explorer_model_removed_cb (MexAggregateModel *aggregate,
   g_object_set_qdata (G_OBJECT (model), mex_explorer_explorer_quark, NULL);
 
   /* Remove the column representing this model */
-  clutter_container_remove_actor (CLUTTER_CONTAINER (parent), column_view);
+  clutter_actor_remove_child (parent, column_view);
 }
 
 static void
@@ -956,7 +956,7 @@ mex_explorer_push_model (MexExplorer *explorer,
       g_object_set_qdata (G_OBJECT (page), mex_explorer_model_quark, model);
 
       g_queue_push_tail (&priv->pages, page);
-      clutter_container_add_actor (CLUTTER_CONTAINER (explorer), page);
+      clutter_actor_add_child (CLUTTER_ACTOR (explorer), page);
 
       g_object_notify (G_OBJECT (explorer), "model");
       g_object_notify (G_OBJECT (explorer), "depth");

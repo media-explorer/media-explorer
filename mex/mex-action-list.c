@@ -401,8 +401,7 @@ mex_action_list_refresh (MexActionList *action_list)
           mex_action_set_context (action, priv->model);
         }
 
-        clutter_container_add_actor (CLUTTER_CONTAINER (priv->layout),
-                                     button);
+        clutter_actor_add_child (priv->layout, button);
         g_object_set (G_OBJECT (button), "min-width", 240.0, NULL);
     }
 

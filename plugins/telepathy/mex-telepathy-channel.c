@@ -576,8 +576,7 @@ mex_telepathy_channel_create_incoming_video (MexTelepathyChannel *self)
   clutter_actor_add_effect (priv->full_frame,
                             CLUTTER_EFFECT (
                               mex_telepathy_channel_create_shadow ()));
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->full_frame),
-                               video_incoming_area);
+  mx_bin_set_child (priv->full_frame, video_incoming_area);
 
   priv->incoming_sink =
     clutter_gst_video_sink_new (CLUTTER_TEXTURE (priv->incoming_texture));

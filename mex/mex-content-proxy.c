@@ -181,13 +181,11 @@ mex_content_proxy_object_created (MexProxy   *proxy,
     {
       MxActorManager *manager =
         mx_actor_manager_get_for_stage (stage);
-      mx_actor_manager_add_actor (manager,
-                                  (ClutterContainer *)priv->view,
+      mx_actor_manager_add_actor (manager, priv->view,
                                   (ClutterActor *)content_view);
     }
   else
-    clutter_container_add_actor ((ClutterContainer *) priv->view,
-                                 (ClutterActor *) content_view);
+    clutter_actor_add_child (priv->view, (ClutterActor *) content_view);
 }
 
 static void
@@ -211,13 +209,11 @@ mex_content_proxy_object_removed_cb (MexProxy       *proxy,
     {
       MxActorManager *manager =
         mx_actor_manager_get_for_stage (stage);
-      mx_actor_manager_remove_actor (manager,
-                                     (ClutterContainer *) priv->view,
+      mx_actor_manager_remove_actor (manager, priv->view,
                                      (ClutterActor *) content_view);
     }
   else
-    clutter_container_remove_actor ((ClutterContainer *) priv->view,
-                                    (ClutterActor *) content_view);
+    clutter_actor_remove_child (priv->view, (ClutterActor *) content_view);
 }
 
 static void

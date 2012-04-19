@@ -15,7 +15,7 @@
         "type" : "MxFrame",
         "y-fill" : true,
         "x-fill" : true,
-        "children" : [
+        "child" :
           {
             "type" : "MxImage",
             "scale-mode" : "fit",
@@ -25,7 +25,6 @@
             "transition-duration": 1000,
             "id" : "viewer"
           }
-        ]
       },
       {
         "type" : "MxBoxLayout",
@@ -104,7 +103,7 @@
                 "border-right" : 136
               }
             ],
-            "children" : [
+            "child" :
               {
                 "type" : "MxBoxLayout",
                 "id" : "photo-strip",
@@ -115,7 +114,6 @@
                   "clamp-value" : false
                 }
               }
-            ]
           }
         ]
       },

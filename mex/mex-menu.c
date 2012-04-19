@@ -409,7 +409,7 @@ mex_menu_item_new (MexMenu *self, MxAction *action, MexMenuActionType type)
     {
       arrow = mx_icon_new ();
       mx_stylable_set_style_class (MX_STYLABLE (arrow), "Left");
-      clutter_container_add_actor (CLUTTER_CONTAINER (layout), arrow);
+      clutter_actor_add_child (layout, arrow);
 
     }
 
@@ -421,16 +421,16 @@ mex_menu_item_new (MexMenu *self, MxAction *action, MexMenuActionType type)
   mx_stylable_set_style_class (MX_STYLABLE (label), "Action");
   g_object_bind_property (action, "display-name", label, "text",
                           G_BINDING_SYNC_CREATE);
-  clutter_container_add_actor (CLUTTER_CONTAINER (vbox), label);
+  clutter_actor_add_child (vbox, label);
 
   label = mx_label_new ();
   mx_label_set_fade_out (MX_LABEL (label), TRUE);
   mx_stylable_set_style_class (MX_STYLABLE (label), "Detail");
-  clutter_container_add_actor (CLUTTER_CONTAINER (vbox), label);
+  clutter_actor_add_child (vbox, label);
   clutter_actor_hide (label);
   g_object_set_data (G_OBJECT (button), "detail-label", label);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (layout), vbox);
+  clutter_actor_add_child (layout, vbox);
   clutter_container_child_set (CLUTTER_CONTAINER (layout), vbox,
                                "expand", TRUE,
                                "x-fill", FALSE,
@@ -441,19 +441,19 @@ mex_menu_item_new (MexMenu *self, MxAction *action, MexMenuActionType type)
   icon = mx_icon_new ();
   g_object_bind_property (action, "icon", icon, "icon-name",
                           G_BINDING_SYNC_CREATE);
-  clutter_container_add_actor (CLUTTER_CONTAINER (layout), icon);
+  clutter_actor_add_child (layout, icon);
 
   if (type == MEX_MENU_RIGHT)
     {
       arrow = mx_icon_new ();
       mx_stylable_set_style_class (MX_STYLABLE (arrow), "Right");
-      clutter_container_add_actor (CLUTTER_CONTAINER (layout), arrow);
+      clutter_actor_add_child (layout, arrow);
     }
   else if (type == MEX_MENU_TOGGLE)
     {
       ClutterActor *toggle = mx_icon_new ();
       mx_stylable_set_style_class (MX_STYLABLE (toggle), "Toggle");
-      clutter_container_add_actor (CLUTTER_CONTAINER (layout), toggle);
+      clutter_actor_add_child (layout, toggle);
       g_object_set_data (G_OBJECT (button), "toggle-icon", toggle);
     }
 
@@ -494,7 +494,7 @@ mex_menu_create_layout (MexMenu *menu, gboolean lower)
                                  MX_ORIENTATION_VERTICAL);
   mx_stylable_set_style_class (MX_STYLABLE (layout), "Menu");
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (menu), layout);
+  clutter_actor_add_child (CLUTTER_ACTOR (menu), layout);
 
 
   priv->action_layout = mx_box_layout_new ();
@@ -502,8 +502,8 @@ mex_menu_create_layout (MexMenu *menu, gboolean lower)
 
   scroll = mex_scroll_view_new ();
   clutter_actor_set_clip_to_allocation (CLUTTER_ACTOR (scroll), TRUE);
-  clutter_container_add_actor (CLUTTER_CONTAINER (scroll), priv->action_layout);
-  clutter_container_add_actor (CLUTTER_CONTAINER (layout), scroll);
+  mx_bin_set_child (MX_BIN (scroll), priv->action_layout);
+  clutter_actor_add_child (layout, scroll);
 
   g_object_set_data (G_OBJECT (layout), "action-layout", priv->action_layout);
 
@@ -577,7 +577,7 @@ mex_menu_add_action (MexMenu           *menu,
   item = mex_menu_item_new (menu, action, type);
   g_hash_table_insert (priv->action_to_item, action, item);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->action_layout), item);
+  clutter_actor_add_child (priv->action_layout, item);
 
   if (priv->focus_on_add)
     {
@@ -606,7 +606,7 @@ mex_menu_add_section_header (MexMenu     *menu,
 
   item = mx_label_new_with_text (title);
   mx_stylable_set_style_class (MX_STYLABLE (item), "MexMenuSectionHeader");
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->action_layout), item);
+  clutter_actor_add_child (priv->action_layout, item);
 }
 
 /**
@@ -861,8 +861,8 @@ mex_menu_push (MexMenu *menu)
       priv->layout = l->next->data;
       priv->action_layout = g_object_get_data (G_OBJECT (priv->layout),
                                                "action-layout");
-      clutter_container_remove_actor (CLUTTER_CONTAINER (menu),
-                                      CLUTTER_ACTOR (l->data));
+      clutter_actor_remove_child (CLUTTER_ACTOR (menu),
+                                  CLUTTER_ACTOR (l->data));
       g_list_free (children);
 
       priv->depth ++;
@@ -912,8 +912,8 @@ mex_menu_pop (MexMenu *menu)
 
       l = g_list_find (children, priv->layout);
       priv->layout = l->prev->data;
-      clutter_container_remove_actor (CLUTTER_CONTAINER (menu),
-                                      CLUTTER_ACTOR (l->data));
+      clutter_actor_remove_child (CLUTTER_ACTOR (menu),
+                                  CLUTTER_ACTOR (l->data));
       g_list_free (children);
 
       priv->depth --;
@@ -964,7 +964,7 @@ mex_menu_clear_all (MexMenu *menu)
        l = direction ? l->next : l->prev)
     {
       ClutterActor *child = l->data;
-      clutter_container_remove_actor (CLUTTER_CONTAINER (menu), child);
+      clutter_actor_remove_child (CLUTTER_ACTOR (menu), child);
       if (--priv->depth == 0)
         break;
     }

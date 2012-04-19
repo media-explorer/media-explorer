@@ -265,7 +265,7 @@ mex_twitter_send_plugin_on_share_action (MxAction *action,
 
   clutter_actor_set_width (layout, 600.0);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->dialog), layout);
+  mx_bin_set_child (MX_BIN (priv->dialog), layout);
 
   clutter_actor_show (priv->dialog);
   mex_push_focus (MX_FOCUSABLE (priv->dialog));

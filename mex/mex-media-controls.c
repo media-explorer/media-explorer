@@ -670,7 +670,7 @@ show_hide_subtitle_selector (MxButton         *button,
   else
     {
       clutter_actor_show (table);
-      mex_push_focus (table);
+      mex_push_focus (MX_FOCUSABLE (table));
     }
 }
 
@@ -995,10 +995,10 @@ on_media_subtitle_tracks_changed (ClutterMedia     *media,
   g_object_set_data (G_OBJECT (button), "subtitle-track", GINT_TO_POINTER (0));
   g_signal_connect (button, "clicked", G_CALLBACK (set_subtitle), self);
   g_object_set (button, "min-width", 180.0, NULL);
-  mx_bin_set_alignment (MX_BUTTON (button), MX_ALIGN_START, MX_ALIGN_START);
-  mx_bin_set_fill (MX_BUTTON (button), FALSE, FALSE);
+  mx_bin_set_alignment (MX_BIN (button), MX_ALIGN_START, MX_ALIGN_START);
+  mx_bin_set_fill (MX_BIN (button), FALSE, FALSE);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (table), button);
+  clutter_actor_add_child (table, button);
 
   /* TRANSLATORS: In this context, track is a subtitles track */
   descriptions = get_streams_descriptions (tracks);
@@ -1011,8 +1011,8 @@ on_media_subtitle_tracks_changed (ClutterMedia     *media,
 
       button = mx_button_new_with_label (description);
       g_object_set (button, "min-width", 180.0, NULL);
-      mx_bin_set_alignment (MX_BUTTON (button), MX_ALIGN_START, MX_ALIGN_START);
-      mx_bin_set_fill (MX_BUTTON (button), FALSE, FALSE);
+      mx_bin_set_alignment (MX_BIN (button), MX_ALIGN_START, MX_ALIGN_START);
+      mx_bin_set_fill (MX_BIN (button), FALSE, FALSE);
       mx_table_insert_actor (MX_TABLE (table), button, row, column);
       g_object_set_data (G_OBJECT (button), "subtitle-track",
                          GINT_TO_POINTER (i));

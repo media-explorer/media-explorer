@@ -943,8 +943,7 @@ mex_telepathy_plugin_incoming_call_prompt (MexTelepathyPlugin *self,
   mx_dialog_add_action (MX_DIALOG (priv->dialog), deny_action);
 
   priv->prompt_label = mx_label_new ();
-  clutter_container_add_actor (CLUTTER_CONTAINER (
-                                 priv->dialog), priv->prompt_label);
+  mx_bin_set_child (MX_BIN (priv->dialog), priv->prompt_label);
 
   contactHandle = tp_channel_get_handle (channel, NULL);
   if (contactHandle)

@@ -166,8 +166,7 @@ mex_player_media_error_cb (ClutterMedia *media,
     {
       data->error_label = mx_label_new_with_text (error_msg);
       clutter_actor_set_name (data->error_dialog, "mex-player-error-label");
-      clutter_container_add_actor (CLUTTER_CONTAINER (data->error_dialog),
-                                   data->error_label);
+      mx_bin_set_child (MX_BIN (data->error_dialog), data->error_label);
     }
   else
     mx_label_set_text (MX_LABEL (data->error_label), error_msg);
@@ -862,8 +861,7 @@ mex_go_back (MexData *data)
       clutter_actor_set_position (transition, width / 2, height / 2);
       clutter_actor_set_opacity (transition, 0);
 
-      clutter_container_add_actor (CLUTTER_CONTAINER (data->stage),
-                                   transition);
+      clutter_actor_add_child (CLUTTER_ACTOR (data->stage), transition);
       clutter_actor_raise_top (transition);
 
       clutter_actor_animate (transition, CLUTTER_EASE_OUT_CUBIC, 200,
@@ -1273,7 +1271,7 @@ mex_applet_present_actor_cb (MexApplet                  *applet,
   clutter_actor_set_opacity (actor, 0x00);
 
   if (!clutter_actor_get_parent (actor))
-    clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), actor);
+    clutter_actor_add_child (data->stack, actor);
 
   mex_show_actor (data, actor);
 }
@@ -1375,9 +1373,8 @@ mex_tool_setup_frame (ClutterActor *actor,
 {
   ClutterActor *frame = mx_frame_new ();
   mx_stylable_set_style_class (MX_STYLABLE (frame), style_class);
-  clutter_container_add_actor (CLUTTER_CONTAINER (frame), actor);
-  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
-                               frame);
+  mx_bin_set_child (MX_BIN (frame), actor);
+  clutter_actor_add_child (data->stack, frame);
 }
 
 static void
@@ -1544,8 +1541,7 @@ mex_plugin_loaded_cb (MexPluginManager *plugin_manager,
       for (t = (GList *)tools; t; t = t->next)
         {
           ClutterActor *tool = t->data;
-          clutter_container_add_actor (CLUTTER_CONTAINER (data->tool_area),
-                                       tool);
+          clutter_actor_add_child (data->tool_area, tool);
         }
 
       g_signal_connect (plugin, "present-actor",
@@ -2290,8 +2286,7 @@ mex_startup (MxApplication *app,
                             data);
 
   clutter_actor_hide (data->player);
-  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
-                               data->player);
+  clutter_actor_add_child (data->stack, data->player);
 
   data->media = mex_player_get_clutter_media (MEX_PLAYER (data->player));
   g_signal_connect (data->media, "error",
@@ -2299,10 +2294,10 @@ mex_startup (MxApplication *app,
   g_signal_connect (data->media, "notify::buffer-fill",
                     G_CALLBACK (mex_player_media_notify_buffer_fill_cb), data);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), data->layout);
+  clutter_actor_add_child (data->stack, data->layout);
 
   /* Pack spinner into stack */
-  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), data->spinner);
+  clutter_actor_add_child (data->stack, data->spinner);
   mx_stack_child_set_x_fill (MX_STACK (data->stack), data->spinner, FALSE);
   mx_stack_child_set_y_fill (MX_STACK (data->stack), data->spinner, FALSE);
   mx_stack_child_set_x_align (MX_STACK (data->stack), data->spinner,
@@ -2314,7 +2309,7 @@ mex_startup (MxApplication *app,
   clutter_actor_set_opacity (data->volume_control, 0x00);
 
   /* Pack volume control into stack */
-  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), data->volume_control);
+  clutter_actor_add_child (data->stack, data->volume_control);
   mx_stack_child_set_x_fill (MX_STACK (data->stack), data->volume_control, FALSE);
   mx_stack_child_set_y_fill (MX_STACK (data->stack), data->volume_control, FALSE);
   mx_stack_child_set_x_align (MX_STACK (data->stack), data->volume_control,
@@ -2331,7 +2326,7 @@ mex_startup (MxApplication *app,
   data->slide_show = mex_slide_show_new ();
   g_signal_connect_swapped (data->slide_show, "close-request",
                             G_CALLBACK (mex_go_back), data);
-  clutter_container_add_actor (CLUTTER_CONTAINER (data->stack), data->slide_show);
+  clutter_actor_add_child (data->stack, data->slide_show);
   clutter_actor_hide (data->slide_show);
 
   if (opt_show_version == TRUE)
@@ -2339,8 +2334,7 @@ mex_startup (MxApplication *app,
       /* Pack the version in the stack and align it to the bottom left */
       data->version = mx_label_new_with_text ("v" MEX_VERSION_GIT);
 
-      clutter_container_add_actor (CLUTTER_CONTAINER (data->stack),
-                                   data->version);
+      clutter_actor_add_child (data->stack, data->version);
       mx_stack_child_set_x_fill (MX_STACK (data->stack), data->version, FALSE);
       mx_stack_child_set_y_fill (MX_STACK (data->stack), data->version, FALSE);
       mx_stack_child_set_x_align (MX_STACK (data->stack), data->version,

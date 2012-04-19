@@ -693,24 +693,24 @@ mex_action_provider_iface_init (MexActionProviderInterface *iface)
 static const gchar *search_mimetypes[] = { "x-mex/search", NULL };
 
 static void
-mex_search_proxy_add_cb (MexProxy         *proxy,
-                         MexContent       *content,
-                         ClutterActor     *button,
-                         ClutterContainer *layout)
+mex_search_proxy_add_cb (MexProxy     *proxy,
+                         MexContent   *content,
+                         ClutterActor *button,
+                         ClutterActor *layout)
 {
-  clutter_container_add_actor (layout, button);
+  clutter_actor_add_child (layout, button);
   mx_bin_set_alignment (MX_BIN (button), MX_ALIGN_START, MX_ALIGN_MIDDLE);
   g_signal_connect_swapped (button, "clicked",
                             G_CALLBACK (mex_search_activate_content), content);
 }
 
 static void
-mex_search_proxy_remove_cb (MexProxy         *proxy,
-                            MexContent       *content,
-                            ClutterActor     *label,
-                            ClutterContainer *layout)
+mex_search_proxy_remove_cb (MexProxy     *proxy,
+                            MexContent   *content,
+                            ClutterActor *label,
+                            ClutterActor *layout)
 {
-  clutter_container_remove_actor (layout, label);
+  clutter_actor_remove_child (layout, label);
 }
 
 static void
@@ -830,8 +830,8 @@ mex_search_plugin_init (MexSearchPlugin *self)
   hbox = mex_resizing_hbox_new ();
   mex_resizing_hbox_set_resizing_enabled (MEX_RESIZING_HBOX (hbox), FALSE);
   box = mx_box_layout_new ();
-  clutter_container_add_actor (CLUTTER_CONTAINER (priv->search_page), hbox);
-  clutter_container_add_actor (CLUTTER_CONTAINER (hbox), box);
+  mx_bin_set_child (MX_BIN (priv->search_page), hbox);
+  clutter_actor_add_child (hbox, box);
   mx_box_layout_set_orientation (MX_BOX_LAYOUT (box),
                                  MX_ORIENTATION_VERTICAL);
   clutter_container_add (CLUTTER_CONTAINER (box),

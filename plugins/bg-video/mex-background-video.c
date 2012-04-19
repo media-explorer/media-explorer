@@ -91,8 +91,7 @@ mex_background_video_constructed (GObject *object)
   if (G_OBJECT_CLASS (mex_background_video_parent_class)->constructed)
     G_OBJECT_CLASS (mex_background_video_parent_class)->constructed (object);
 
-  clutter_container_add_actor (CLUTTER_CONTAINER (object),
-                               CLUTTER_ACTOR (priv->media));
+  clutter_actor_add_child (CLUTTER_ACTOR (object), CLUTTER_ACTOR (priv->media));
   clutter_texture_set_keep_aspect_ratio (CLUTTER_TEXTURE (priv->media), TRUE);
   clutter_container_child_set (CLUTTER_CONTAINER (object),
                                CLUTTER_ACTOR (priv->media),
