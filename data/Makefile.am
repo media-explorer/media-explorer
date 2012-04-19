@@ -21,7 +21,6 @@ dist_style_DATA = \
 	style/folder-tile-up.png \
 	style/folder-tile.png \
 	style/thumb-app.png \
-	style/thumb-bg.png \
 	style/thumb-call-avatar-small.png \
 	style/thumb-call-avatar.png \
 	style/thumb-call-pip-off.png \
@@ -34,29 +33,22 @@ dist_style_DATA = \
 EXTRA_DIST = \
 	media-explorer.gresource.xml \
 	style/bg-gradient.png \
-	style/button-bg-highlight.png \
-	style/button-bg.png \
-        style/call-window-border.png \
+	style/call-window-border.png \
 	style/controls-bg.png \
 	style/controls-container.png \
 	style/details-actions-separator.png \
-	style/details-bg.png \
 	style/footer.png \
 	style/frame-bg.png \
-	style/graphic-network.png \
-	style/grid-content-bg.png \
 	style/harderror-bg.png \
-	style/header-vr.png \
-	style/highlight-bg-white.png \
 	style/highlight-bg.png \
+	style/highlight-bg-white.png \
 	style/highlight.png \
 	style/icon-back.png \
 	style/icon-fullscreen-active.png \
 	style/icon-fullscreen-highlight.png \
 	style/icon-fullscreen.png \
-	style/icon-home.png \
-	style/icon-info.png \
 	style/icon-info-dark.png \
+	style/icon-info.png \
 	style/icon-pause-highlight.png \
 	style/icon-pause.png \
 	style/icon-play-highlight.png \
@@ -65,30 +57,18 @@ EXTRA_DIST = \
 	style/icon-rotate.png \
 	style/icon-stop-highlight.png \
 	style/icon-stop.png \
-	style/item-title-bg.png \
-	style/label-bg.png \
-	style/panel-bg.png \
-	style/panel-header-bg.png \
-	style/panel-header-grid-bg.png \
-	style/panel-highlight.png \
-	style/panel-shadow.png \
-        style/pip-border.png \
+	style/pip-border.png \
 	style/queue-spinner-highlight.png \
 	style/queue-spinner.png \
-	style/scroll-bar.png \
-	style/scroll-bg.png \
 	style/spinner.png \
-	style/style.css \
 	style/text-input-bg.png \
-	style/thumb-no-content.png \
 	style/timeline-bg.png \
-	style/timeline-buffer.png \
-	style/timeline-highlight-white.png \
 	style/timeline-highlight.png \
+	style/timeline-highlight-white.png \
 	style/timeline-playhead.png \
 	style/volume-0.png \
-	style/volume-1.png \
 	style/volume-10.png \
+	style/volume-1.png \
 	style/volume-2.png \
 	style/volume-3.png \
 	style/volume-4.png \

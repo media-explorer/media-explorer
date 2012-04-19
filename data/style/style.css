@@ -209,12 +209,6 @@ MexColumn
   background-color: #cdcec8;
 }
 
-/* Content Box */
-MexContentBox.open
-{
-  border-image: url('details-bg.png') 0;
-}
-
 /* Content Box Headers */
 MexTile
 {
@@ -412,11 +406,6 @@ MxSlider:focus > #fill
   border-image: url("timeline-highlight.png") 4 5;
 }
 
-MxSlider > #buffer
-{
-  border-image: url("timeline-buffer.png") 4 5;
-}
-
 MxSlider > #handle
 {
   -mx-content-image: none;
@@ -576,22 +565,15 @@ MexInfoPanel.Full
   border-image: url('controls-bg.png') 0;
 }
 
-MexInfoPanel.Full MxBoxLayout.MexInfoPanelButtons
-{
-  border-image: url('details-bg.png') 0;
-}
-
 MexInfoPanel.Full MxBoxLayout.MexInfoPanelTitle
 {
   -mx-spacing: 16;
-  border-image: url('item-title-bg.png') 1 0 0;
   padding: 0 16;
 }
 
 MexInfoPanel.Full MxBoxLayout.MexInfoPanelMeta
 {
   padding: 5 8 6 8;
-  border-image: url('details-bg.png') 0;
 }
 
 /* Related Panel */
@@ -614,13 +596,6 @@ MexSlideShow MexContentTile.Important:focus
 MexScrollView.Grid
 {
   padding: 20;
-  border-image: url("grid-content-bg.png") 0;
-}
-
-MexScrollIndicator
-{
-  border-image: url("scroll-bg.png") 8;
-  x-mex-scroll-handle-image: url("scroll-bar.png") 8;
 }
 
 #grid-page
@@ -655,12 +630,6 @@ MxDialog.MexErrorDialog > MxLabel
 {
   font-size: 18;
   color: white;
-}
-
-MxDialog MxButton,
-MxDialog MxButton:hover
-{
-  border-image: url("item-title-bg.png") 1 0 0;
 }
 
 MxDialog MxButton:hover:focus
@@ -800,7 +769,6 @@ MxTable#search-entry-frame MxSpinner
 MxBoxLayout#search-header
 {
   padding: 11 15;
-  border-image: url("panel-header-bg.png") 1 0;
 }
 
 MxBoxLayout#search-header:focus
@@ -819,11 +787,6 @@ MxBoxLayout#search-header:focus > MxIcon.Search
 }
 
 /* suggestions column */
-MxBoxLayout#suggest-column
-{
-  border-image: url('panel-highlight.png') 1;
-}
-
 MxBoxLayout#suggest-column > MxButton
 {
   border-image: none;
