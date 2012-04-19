@@ -206,6 +206,11 @@ play_transition_complete (ClutterAnimation *animation,
   content = g_object_get_data (fade, "mex-content");
   data = g_object_get_data (fade, "mex-data");
 
+
+  /* set he top level actor name so that it has a different style when content
+   * is playing */
+  clutter_actor_set_name (data->stack, "top-level-playing");
+
   clutter_actor_destroy (CLUTTER_ACTOR (fade));
 
   mex_show_actor (data, actor);
@@ -823,6 +828,8 @@ mex_go_back (MexData *data)
   ClutterActor *transition;
   gfloat width, height;
 
+  /* reset the top level actor name */
+  clutter_actor_set_name (data->stack, "top-level");
 
   /* if the current actor is the explorer, try to move up the hierarchy */
   if (clutter_actor_get_opacity (data->layout) == 0xff)
