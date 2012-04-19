@@ -19,147 +19,14 @@
 
 #include "mex-action-button.h"
 
-static void mx_focusable_iface_init (MxFocusableIface *iface);
-
-G_DEFINE_TYPE_WITH_CODE (MexActionButton, mex_action_button, MX_TYPE_BUTTON,
-                         G_IMPLEMENT_INTERFACE (MX_TYPE_FOCUSABLE, mx_focusable_iface_init))
+G_DEFINE_TYPE (MexActionButton, mex_action_button, MX_TYPE_BUTTON)
 
 #define ACTION_BUTTON_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_ACTION_BUTTON, MexActionButtonPrivate))
 
-struct _MexActionButtonPrivate
-{
-  guint has_focus : 1;
-};
-
-static MxFocusable *
-_move_focus (MxFocusable      *focusable,
-             MxFocusDirection  direction,
-             MxFocusable      *old_focus)
-{
-  MexActionButtonPrivate *priv = MEX_ACTION_BUTTON (focusable)->priv;
-  MxFocusableIface *iface;
-
-  priv->has_focus = FALSE;
-
-
-  iface = g_type_interface_peek_parent (MX_FOCUSABLE_GET_INTERFACE (focusable));
-  return iface->move_focus (focusable, direction, old_focus);
-}
-
-static MxFocusable *
-_accept_focus (MxFocusable *focusable,
-               MxFocusHint  hint)
-{
-  MexActionButtonPrivate *priv = MEX_ACTION_BUTTON (focusable)->priv;
-  MxFocusableIface *iface;
-
-  priv->has_focus = TRUE;
-
-  iface = g_type_interface_peek_parent (MX_FOCUSABLE_GET_INTERFACE (focusable));
-  return iface->accept_focus (focusable, hint);
-}
-
-static void
-mx_focusable_iface_init (MxFocusableIface *iface)
-{
-  iface->move_focus = _move_focus;
-  iface->accept_focus = _accept_focus;
-}
-
-
-static void
-mex_action_button_get_property (GObject    *object,
-                                guint       property_id,
-                                GValue     *value,
-                                GParamSpec *pspec)
-{
-  switch (property_id)
-    {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    }
-}
-
-static void
-mex_action_button_set_property (GObject      *object,
-                                guint         property_id,
-                                const GValue *value,
-                                GParamSpec   *pspec)
-{
-  switch (property_id)
-    {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
-    }
-}
-
-static void
-mex_action_button_dispose (GObject *object)
-{
-  G_OBJECT_CLASS (mex_action_button_parent_class)->dispose (object);
-}
-
-static void
-mex_action_button_finalize (GObject *object)
-{
-  G_OBJECT_CLASS (mex_action_button_parent_class)->finalize (object);
-}
-
-/* FIXME: This scales the background, which is an effect we want, but often it
- * ends up just causing the background to paint underneath other actors and look
- * weird. Disabling this for now, until we figure out a better way of doing
- * this.
- */
-#if 0
-static void
-mex_action_button_paint_background (MxWidget *widget,
-                                    ClutterActor *background,
-                                    const ClutterColor *color)
-{
-  MexActionButtonPrivate *priv = MEX_ACTION_BUTTON (widget)->priv;
-  gfloat width, height;
-  gfloat factor_x, factor_y;
-
-  cogl_push_matrix ();
-
-  if (priv->has_focus)
-    {
-      clutter_actor_get_size (background, &width, &height);
-
-      factor_x = (width + 4) / width;
-      factor_y = (height + 4) / height;
-
-      cogl_translate (width/2, height/2, 0);
-      cogl_scale (factor_x, factor_y, 1);
-      cogl_translate (-width/2, -height/2, 0);
-    }
-
-  MX_WIDGET_CLASS(mex_action_button_parent_class)->paint_background (widget,
-                                                                     background,
-                                                                     color);
-  cogl_pop_matrix ();
-}
-#endif
-
 static void
 mex_action_button_class_init (MexActionButtonClass *klass)
 {
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  g_type_class_add_private (klass, sizeof (MexActionButtonPrivate));
-
-  object_class->get_property = mex_action_button_get_property;
-  object_class->set_property = mex_action_button_set_property;
-  object_class->dispose = mex_action_button_dispose;
-  object_class->finalize = mex_action_button_finalize;
-
-#if 0
-  {
-    MxWidgetClass *widget_class = MX_WIDGET_CLASS (klass);
-    widget_class->paint_background = mex_action_button_paint_background;
-  }
-#endif
 }
 
 static void
