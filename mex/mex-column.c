@@ -40,7 +40,6 @@ enum
 struct _MexColumnPrivate
 {
   guint         has_focus_changed : 1;
-  guint         has_focus : 1;
 
   ClutterActor *current_focus;
 
@@ -715,10 +714,6 @@ mex_column_pick (ClutterActor *actor, const ClutterColor *color)
   MexColumnPrivate *priv = self->priv;
 
   CLUTTER_ACTOR_CLASS (mex_column_parent_class)->pick (actor, color);
-
-  /* Don't pick children when we don't have focus */
-  if (!priv->has_focus)
-    return;
 
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
   clutter_actor_get_allocation_box (actor, &box);
