@@ -968,6 +968,16 @@ tile_focus_in_cb (ClutterActor *actor,
   return FALSE;
 }
 
+static gboolean
+tile_button_press_event_cb (ClutterActor *actor,
+                            ClutterEvent *event,
+                            gpointer      user_data)
+{
+  mex_push_focus (MX_FOCUSABLE (actor));
+
+  return TRUE;
+}
+
 static void
 notify_pseudo_class (MxBin *actor)
 {
@@ -1016,6 +1026,9 @@ tile_created_cb (MexProxy *proxy,
 
   g_signal_connect (object, "focus-in", G_CALLBACK (tile_focus_in_cb),
                     slideshow);
+  clutter_actor_set_reactive (object, TRUE);
+  g_signal_connect (object, "button-release-event",
+                    G_CALLBACK (tile_button_press_event_cb), slideshow);
 
   shadow = g_object_new (MEX_TYPE_SHADOW,
                          "radius-x", 15,
