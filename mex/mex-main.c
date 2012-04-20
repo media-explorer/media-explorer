@@ -52,7 +52,7 @@ static const MexModelCategoryInfo pictures = {
 };
 static const MexModelCategoryInfo music = {
     "music", N_("Music"), "icon-panelheader-music", 40,
-    N_("Connect an external drive or upate your network settings to see Music"
+    N_("Connect an external drive or update your network settings to see Music"
        " here."), MEX_CONTENT_METADATA_ALBUM
 };
 static const MexModelCategoryInfo queue = {

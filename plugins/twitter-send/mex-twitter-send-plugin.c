@@ -197,7 +197,7 @@ mex_twitter_send_plugin_on_share_action (MxAction *action,
   stack = mx_window_get_child (mex_get_main_window ());
   mx_dialog_set_transient_parent (MX_DIALOG (priv->dialog), stack);
 
-  label_text = g_strdup_printf (_("Whatd do you think of: %s?"),
+  label_text = g_strdup_printf (_("What do you think of: %s?"),
                                 priv->last_title);
 
   priv->prompt_label = mx_label_new_with_text (label_text);
