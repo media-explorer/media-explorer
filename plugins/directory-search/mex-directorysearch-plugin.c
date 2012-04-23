@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <gst/gst.h>
+#include <glib-object.h>
 
 #include "mex-directorysearch-plugin.h"
 
@@ -36,6 +37,8 @@
 static void model_provider_iface_init (MexModelProviderInterface *interface);
 static void action_provider_iface_init (MexActionProviderInterface *iface);
 static void _new_file_added (MexDirectorySearchManager *self, const gchar *file_path);
+static void _volume_monitor (MexDirectorySearchManager *self);
+
 
 
 G_DEFINE_TYPE_WITH_CODE (MexDirectorySearchManager,
@@ -49,13 +52,18 @@ G_DEFINE_TYPE_WITH_CODE (MexDirectorySearchManager,
 #define DIRECTORY_SEARCH_MANAGER_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_DIRECTORY_SEARCH_MANAGER, MexDirectorySearchManagerPrivate))
 
-static void _volume_monitor_mount_added_cb (GVolumeMonitor           *volume_monitor,
-                                            GMount                   *mount,
-                                            MexDirectorySearchManager *self);
+static void
+_volume_monitor_mount_added_cb (GVolumeMonitor        *volume_monitor,
+                                GMount                *mount,
+                                MexDirectorySearchManager *self);
+
 
 static void _volume_monitor_mount_removed_cb (GVolumeMonitor           *volume_monitor,
                                               GMount                   *mount,
                                               MexDirectorySearchManager *self);
+static void
+dir_iterate (MexDirectorySearchManager *self, const gchar *dir_path);
+
 
 static const gchar *mex_disc_mimetypes[] = { "video/dvd" , "video/vcd", NULL };
 
@@ -73,26 +81,51 @@ struct _MexDirectorySearchManagerPrivate
 
 GList *dir_list = NULL, *file_list = NULL;
 
+static void 
+directory_list (MexDirectorySearchManager *self)
+{
+  GList *list_iterate;
+  
+  for (list_iterate = dir_list; list_iterate != NULL;
+       list_iterate = list_iterate->next)
+    {
+      dir_iterate (self, list_iterate->data);
+    }
+  for (list_iterate = file_list; list_iterate != NULL;
+       list_iterate = list_iterate->next)
+    {
+      //g_print("File: %s\n", (gchar *)list_iterate->data);
+      _new_file_added (self, list_iterate->data);
+      g_print("\nNew file added\n");
+    }
+  g_list_free_full (dir_list, g_free);
+  dir_list = NULL;
+  g_list_free_full (file_list, g_free);
+  file_list = NULL;
+}
+
+
 static void
-dir_iterate (const gchar *dir_path)
+dir_iterate (MexDirectorySearchManager *self, const gchar *dir_path)
 {
   GError *errormsg = NULL;
   GDir *dir;
   gchar *test_path;
   const gchar *entry;
 
+  g_print ("This is dir-iterates dir_path: %s\n", dir_path);
 
   dir = g_dir_open (dir_path, 0, &errormsg);
 
   if (errormsg != NULL)
     g_warning("Error! %s", errormsg->message);
 
-
   if (dir != NULL)
     {
       while ((entry = g_dir_read_name (dir)) != NULL)
         {
           test_path = g_strconcat (dir_path, G_DIR_SEPARATOR_S, entry, NULL);
+          g_print ("Entry path: %s \n Test path: %s\n", entry, test_path);
           if (g_file_test (test_path, G_FILE_TEST_IS_DIR) == TRUE)
             {
               dir_list = g_list_append (dir_list, test_path);
@@ -104,36 +137,6 @@ dir_iterate (const gchar *dir_path)
     }
   g_dir_close (dir);
 }
-
-static void directory_list(MexDirectorySearchManager *self)
-{
-  GList *list_iterate;
-  const gchar *dir_music_path, *dir_pictures_path, *dir_videos_path;
-
-  dir_music_path = g_get_user_special_dir (G_USER_DIRECTORY_MUSIC);
-  dir_pictures_path = g_get_user_special_dir (G_USER_DIRECTORY_PICTURES);
-  dir_videos_path = g_get_user_special_dir (G_USER_DIRECTORY_VIDEOS);
-
-  dir_iterate (dir_music_path);
-  dir_iterate (dir_pictures_path);
-  dir_iterate (dir_videos_path);
-
-  for (list_iterate = dir_list; list_iterate != NULL;
-       list_iterate = list_iterate->next)
-    {
-      dir_iterate (list_iterate->data);
-    }
-  for (list_iterate = file_list; list_iterate != NULL;
-       list_iterate = list_iterate->next)
-    {
-      //g_print("File: %s\n", (gchar *)list_iterate->data);
-      _new_file_added (self, list_iterate->data);
-    }
-  g_list_free_full (dir_list, g_free);
-  g_list_free_full (file_list, g_free);
-}
-
-
 
 
 static void
@@ -198,18 +201,11 @@ thumbnail_cb (const char *uri, gpointer user_data)
   if (g_file_test (thumb_path, G_FILE_TEST_EXISTS))
     {
       gchar *thumb_uri = g_filename_to_uri (thumb_path, NULL, NULL);
-
-      //priv->in_update = TRUE;
-
       mex_content_set_metadata (content,
                                 MEX_CONTENT_METADATA_STILL,
                                 thumb_uri);
-
-      //priv->in_update = FALSE;
-
       g_free (thumb_uri);
     }
-
   g_free (thumb_path);
 }
 
@@ -277,59 +273,7 @@ set_metadata_from_media (MexContent *content,
 
               g_regex_unref (regex);
 
-          /*mimetype = mex_content_get_metadata (content,
-                                               MEX_CONTENT_METADATA_MIMETYPE);
-          if (!mimetype)
-            mimetype = "";
-
-          if (g_str_has_prefix (mimetype, "video/"))
-            {
-              g_print ("Extracting Video metadata\n");
-              mex_metadata_from_uri (uri_path, &title, &showname, &year,
-                                     &season, &episode);
-            }
-
-          if (showname)
-            {
-              replacement = g_strdup_printf (_("Episode %d"), episode);
-            }
-          else
-            {
-              GRegex *regex;
-              g_print ("GRegex being run\n");
-
-              /* strip off any file extensions *//*
-              regex = g_regex_new ("\\.....?$", 0, 0, NULL);
-              replacement = g_regex_replace (regex, uri_path, -1, 0, "", 0, NULL);
-
-              g_regex_unref (regex);
-            }
-
-          if (!replacement)
-            replacement = g_strdup (uri_path);
-
-          mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, replacement);
-          mex_content_set_metadata (content, MEX_CONTENT_METADATA_SERIES_NAME,
-                                    showname);
-          season_str = g_strdup_printf (_("Season %d"), season);
-          mex_content_set_metadata (content, MEX_CONTENT_METADATA_SEASON,
-                                    season_str);
-          g_free (season_str);
-
-          if (year)
-            {
-              replacement = g_strdup_printf ("%d", year);
-              mex_content_set_metadata (content, MEX_CONTENT_METADATA_YEAR,
-                                        replacement);
-
-              g_free (replacement);
-            }
         }
-      else
-        {
-          //mex_content_set_metadata (content, mex_key, uri_path);
-        } */
-    }
 }
 }
 
@@ -367,6 +311,54 @@ mex_update_content_from_media (MexContent *content,
   set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_ARTIST);*/
 }
 
+static void _volume_monitor (MexDirectorySearchManager *self)
+{
+  gchar *drive_name;
+  const gchar *mount_path, *dir_music_path, *dir_pictures_path, *dir_videos_path;
+  GList *volumelist;
+  GVolumeMonitor *volumemonitor;
+  GDrive *drive;
+  GMount *mount;
+  GVolume *volume;
+
+  dir_music_path = g_get_user_special_dir (G_USER_DIRECTORY_MUSIC);
+  dir_pictures_path = g_get_user_special_dir (G_USER_DIRECTORY_PICTURES);
+  dir_videos_path = g_get_user_special_dir (G_USER_DIRECTORY_VIDEOS);
+
+  dir_iterate (self, dir_music_path);
+  dir_iterate (self, dir_pictures_path);
+  dir_iterate (self, dir_videos_path);
+
+  volumemonitor = g_volume_monitor_get ();
+
+  volumelist = g_volume_monitor_get_volumes (volumemonitor);
+  drive_name = g_volume_get_name (volumelist->data);
+  mount = g_volume_get_mount (volumelist->data);
+  
+  //dir_iterate (mount_path);
+
+  if (drive_name != "")
+    {
+      _volume_monitor_mount_added_cb (volumemonitor, mount, self);
+      //directory_list (self);
+    }
+  else
+    {
+      g_signal_connect (volumemonitor, "mount-added", 
+                        G_CALLBACK(_volume_monitor_mount_added_cb), 
+                        self);
+
+      //directory_list (self);
+    }
+
+  g_signal_connect (volumemonitor, "mount-removed",
+                    G_CALLBACK(_volume_monitor_mount_removed_cb), self);
+  //g_print ("Volumes: %s\n Mount path: %s\n", drive_name, mount_path);
+  g_list_free (volumelist);
+  //g_list_free_full (dir_list, g_free);
+  //g_list_free_full (file_list, g_free);
+
+}
 
 static void
 _new_file_added (MexDirectorySearchManager *self, const gchar *file_path)
@@ -378,8 +370,6 @@ _new_file_added (MexDirectorySearchManager *self, const gchar *file_path)
 
   uri_path = g_filename_to_uri (file_path, NULL, &errormsg);
 
-  //g_print ("Uri-path:%s\n", uri_path);
-
   if (errormsg != NULL)
     g_warning("Error! %s", errormsg->message);
 
@@ -390,7 +380,6 @@ _new_file_added (MexDirectorySearchManager *self, const gchar *file_path)
 
   mex_update_content_from_media (priv->content, uri_path);
   g_print ("Mimetype: %s\n", mimetype);
-
 
    if (g_str_has_prefix (mimetype, "video/"))
     {
@@ -404,13 +393,12 @@ _new_file_added (MexDirectorySearchManager *self, const gchar *file_path)
 
   priv->content = NULL;
   g_free (uri_path);
-
 }
 
 static void
-_content_type_resolved (GObject               *mount,
-                        GAsyncResult          *result,
-                        MexDirectorySearchManager *self)
+_content_type_resolved (GObject                             *mount,
+                        GAsyncResult                        *result,
+                        MexDirectorySearchManager           *self)
 {
   GError *error = NULL;
   gchar **content_types;
@@ -418,20 +406,24 @@ _content_type_resolved (GObject               *mount,
   content_types =
     g_mount_guess_content_type_finish (G_MOUNT (mount), result, &error);
 
-  /* Possible types we could consider when gstreamer supports them:
-   * x-content/video-bluray;
-   * x-content/video-hddvd;
-   * x-content/video-svcd;
+  if (content_types)
+    {
+      if (g_strcmp0 (content_types[0], "x-content/video-dvd") != 0
+          || g_strcmp0 (content_types[0], "x-content/video-vcd") != 0)
+        {
+          gchar *mount_path;
+          GFile *mount_file;
 
-   if (content_types)
-   {
-   if (g_strcmp0 (content_types[0], "x-content/video-dvd") == 0
-   || g_strcmp0 (content_types[0], "x-content/video-vcd") == 0)
-   {
-   _new_disc_added (self, G_MOUNT (mount), content_types[0]);
-   }
-   }
-   g_strfreev (content_types);*/
+          mount_file = g_mount_get_default_location (mount);
+          mount_path = g_file_get_path (mount_file);
+          g_print ("Mount added Callback executing, this is mount path %s", mount_path);
+
+          dir_iterate (self, mount_path);
+          directory_list (self);
+        }
+    }
+  g_strfreev (content_types);
+  g_clear_error (&error);
 }
 
 static void
@@ -524,7 +516,7 @@ mex_directory_search_manager_init (MexDirectorySearchManager *self)
   priv->models = g_list_append (priv->models, priv->pictures_model);
   priv->models = g_list_append (priv->models, priv->music_model);
 
-  directory_list(self);
+  _volume_monitor (self);
 }
 
 static const GList *
@@ -567,11 +559,11 @@ mex_directorysearch_get_type (void)
 
 
 MEX_DEFINE_PLUGIN ("Directory Search",
-                   "DVD integration",
+                   "Media integration",
                    PACKAGE_VERSION,
                    "LGPLv2.1+",
-                   "Michael Wood <michael.g.wood@linux.intel.com>,"
-                   "Thomas Wood <thomas.wood@intel.com>",
+                   "Chirag Harendra <chirag.harendra@intel.com>,"
+                   "Michael Wood <michael.g.wood@intel.com>",
                    MEX_API_MAJOR, MEX_API_MINOR,
                    mex_directorysearch_get_type,
                    MEX_PLUGIN_PRIORITY_NORMAL)
