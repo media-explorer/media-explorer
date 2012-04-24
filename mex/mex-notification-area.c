@@ -111,6 +111,7 @@ _make_notification_actor (MexNotification *notification)
   ClutterActor *label, *icon;
 
   box = mx_box_layout_new ();
+  mx_stylable_set_style_class (MX_STYLABLE (box), "notifications");
   mx_box_layout_set_orientation (MX_BOX_LAYOUT (box),
                                  MX_ORIENTATION_HORIZONTAL);
 

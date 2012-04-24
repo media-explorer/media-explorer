@@ -567,6 +567,10 @@ mex_info_bar_init (MexInfoBar *self)
     CLUTTER_ACTOR (clutter_script_get_object (priv->script,
                                               "notification-area"));
 
+  /* ensure the notification area is above any other actors */
+  clutter_actor_set_child_above_sibling (clutter_actor_get_parent (notification_area),
+                                         notification_area, NULL);
+
   mex_notification_area_add_source (MEX_NOTIFICATION_AREA (notification_area),
                                     MEX_NOTIFICATION_SOURCE (priv->notification_source));
 

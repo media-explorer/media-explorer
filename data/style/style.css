@@ -87,6 +87,12 @@ MxButton:focus MxIcon, MxButton.MexSearchBoxOpen MxIcon
 }
 
 /* Notifications */
+.notifications
+{
+  background-color: white;
+  padding: 4 8;
+}
+
 MexInfoBar
 {
   padding: 10 45 0 45;
