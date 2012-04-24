@@ -78,8 +78,6 @@ struct _MexSlideShowPrivate
   guint controls_timeout;
 
   guint playing : 1;
-  guint info_visible : 1;
-  guint controls_prev_visible : 1;
 
   gpointer download_id;
 };
@@ -626,41 +624,13 @@ captured_event_cb (ClutterActor *actor,
     return FALSE;
 
 
-  if (MEX_KEY_INFO (event->key.keyval))
+  if (MEX_KEY_INFO (event->key.keyval) && priv->controls_timeout)
     {
-      mex_slide_show_set_playing (MEX_SLIDE_SHOW (actor), FALSE);
-
       /* toggle the info panel */
-      if (g_str_equal (clutter_state_get_state (priv->state), "info"))
-        {
-          ClutterActor *stage = clutter_actor_get_stage (CLUTTER_ACTOR (priv->controls));
-          MxFocusManager *manager =
-            mx_focus_manager_get_for_stage (CLUTTER_STAGE (stage));
-
-          if (manager)
-            priv->last_focused_item = mx_focus_manager_get_focused (manager);
-
-          if (priv->controls_prev_visible)
-            clutter_state_set_state (priv->state, "controls");
-          else
-            {
-              clutter_state_set_state (priv->state, "slideshow");
-              priv->last_focused_item = NULL;
-            }
-        }
+      if (CLUTTER_ACTOR_IS_VISIBLE (priv->info_panel))
+        clutter_actor_hide (priv->info_panel);
       else
-        {
-          if (g_str_equal (clutter_state_get_state (priv->state),
-                          "controls"))
-            priv->controls_prev_visible = TRUE;
-          else
-            priv->controls_prev_visible = FALSE;
-
-          mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel),
-                                        priv->content);
-
-          clutter_state_set_state (priv->state, "info");
-        }
+        clutter_actor_show (priv->info_panel);
 
       return TRUE;
     }
@@ -788,6 +758,9 @@ state_notify_cb (ClutterState *state,
           g_source_remove (priv->controls_timeout);
           priv->controls_timeout = 0;
         }
+
+      /* hide the info box */
+      clutter_actor_hide (priv->info_panel);
     }
 }
 
@@ -1026,7 +999,7 @@ tile_created_cb (MexProxy *proxy,
 
   g_signal_connect (object, "focus-in", G_CALLBACK (tile_focus_in_cb),
                     slideshow);
-  clutter_actor_set_reactive (object, TRUE);
+  clutter_actor_set_reactive (CLUTTER_ACTOR (object), TRUE);
   g_signal_connect (object, "button-release-event",
                     G_CALLBACK (tile_button_press_event_cb), slideshow);
 

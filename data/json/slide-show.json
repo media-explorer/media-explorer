@@ -41,12 +41,48 @@
             "child::x-fill" : false,
             "children" : [
               {
-                "type" : "MxLabel",
-                "id" : "title-label",
+                "type" : "MxBoxLayout",
                 "style-class" : "MexMediaControlsTitle",
-                "text" : "Content Title",
-                "y-align" : "middle",
-                "width" : 440
+                "children" : [
+                  {
+                    "type" : "MxLabel",
+                    "id" : "title-label",
+                    "text" : "Content Title",
+                    "y-align" : "middle",
+                    "width" : 440
+                  },
+                  {
+                    "type" : "MxIcon",
+                    "name" : "info-icon-dark",
+                    "child::y-fill" : false,
+                    "child::x-fill" : false,
+                    "child::x-align" : "end",
+                    "child::expand" : true
+                  }
+                ]
+              },
+              {
+                "type" : "MxBoxLayout",
+                "style-class" : "MexMediaControlsTitle",
+                "id" : "info-panel",
+                "width" : 440,
+                "visible" : false,
+                "children" : [
+                  {
+                    "type" : "MxLabel",
+                    "id" : "info-label-1",
+                    "use-markup" : true,
+                    "text" : "<b>Date taken:\nLocation:</b>",
+                    "child::expand" : true
+                  },
+                  {
+                    "type" : "MxLabel",
+                    "id" : "info-label-2",
+                    "use-markup" : true,
+                    "text" : "<b>Camera:</b>",
+                    "child::expand" : true
+                  }
+                ]
               },
               {
                 "type" : "MxBoxLayout",
@@ -116,14 +152,6 @@
               }
           }
         ]
-      },
-      {
-        "type" : "MexInfoPanel",
-        "id" : "info-panel",
-        "child::y-align" : "end",
-        "child::y-fill" : false,
-        "opacity" : 0,
-        "visible" : false
       }
     ]
   },
@@ -139,21 +167,7 @@
         "keys" : [
           [ "controls", "opacity", "ease-in-sine", 255 ],
           [ "controls", "visible", "linear", true, -1.0, 0.0 ],
-          [ "controls", "anchor-y", "ease-in-sine", 0 ],
-          [ "info-panel", "opacity", "ease-in-sine", 0 ],
-          [ "info-panel", "visible", "linear", false, 1.0, 0.0 ]
-        ]
-      },
-      {
-        "source" : null,
-        "target" : "info",
-
-        "keys" : [
-          [ "controls", "opacity", "ease-in-sine", 0 ],
-          [ "controls", "visible", "linear", false, 1.0, 0.0 ],
-          [ "controls", "anchor-y", "ease-in-sine", -200 ],
-          [ "info-panel", "opacity", "ease-in-sine", 255 ],
-          [ "info-panel", "visible", "linear", true, -1.0, 0.0 ]
+          [ "controls", "anchor-y", "ease-in-sine", 0 ]
         ]
       },
       {
@@ -163,9 +177,7 @@
         "keys" : [
           [ "controls", "opacity", "ease-in-sine", 0 ],
           [ "controls", "visible", "linear", false, 1.0, 0.0 ],
-          [ "controls", "anchor-y", "ease-in-sine", -200 ],
-          [ "info-panel", "opacity", "ease-in-sine", 0 ],
-          [ "info-panel", "visible", "linear", false, 1.0, 0.0 ]
+          [ "controls", "anchor-y", "ease-in-sine", -200 ]
         ]
       }
     ]
