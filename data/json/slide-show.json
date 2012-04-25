@@ -47,6 +47,7 @@
                   {
                     "type" : "MxLabel",
                     "id" : "title-label",
+                    "use-markup" : true,
                     "text" : "Content Title",
                     "y-align" : "middle",
                     "width" : 440

@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <glib/gi18n.h>
+
 static void mx_focusable_iface_init (MxFocusableIface *iface);
 static void mex_slide_show_content_view_iface_init (MexContentViewIface *iface);
 
@@ -203,12 +205,14 @@ mex_slide_show_real_set_content (MexSlideShow *show,
                                  MexContent   *content)
 {
   MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (show)->priv;
-  ClutterActor *title;
+  gpointer title, info_label_1, info_label_2;
   GError *err = NULL;
   const gchar *url;
   GList *list, *l;
   ClutterContainer *container;
   MexDownloadQueue *queue;
+  gchar *title_str, *info_str_1, *info_str_2;
+  const gchar *camera, *date, *location;
 
   if (content == priv->content)
     return;
@@ -245,12 +249,35 @@ mex_slide_show_real_set_content (MexSlideShow *show,
       g_clear_error (&err);
     }
 
-  title = (ClutterActor*) clutter_script_get_object (priv->script,
-                                                     "title-label");
+  /* display information */
+  title = clutter_script_get_object (priv->script, "title-label");
+  info_label_1 = clutter_script_get_object (priv->script, "info-label-1");
+  info_label_2 = clutter_script_get_object (priv->script, "info-label-2");
 
-  mx_label_set_text (MX_LABEL (title),
-                     mex_content_get_metadata (content,
-                                               MEX_CONTENT_METADATA_TITLE));
+
+  title_str = g_strdup_printf ("<b>%s</b>",
+                               mex_content_get_metadata (content,
+                                                         MEX_CONTENT_METADATA_TITLE));
+  mx_label_set_text (title, title_str);
+  g_free (title_str);
+
+  camera = mex_content_get_metadata (content, MEX_CONTENT_METADATA_CAMERA_MODEL);
+  camera = (camera) ? camera : _("Unknown");
+
+  date = mex_content_get_metadata (content, MEX_CONTENT_METADATA_DATE);
+  date = (date) ? date : _("Unknown");
+
+  location = _("Unknown");
+
+  info_str_1 = g_strdup_printf (_("<b>Date taken:</b> %s\n<b>Location:</b> %s"),
+                                date, location);
+  info_str_2 = g_strdup_printf (_("<b>Camera:</b> %s"), camera);
+
+  mx_label_set_text (info_label_1, info_str_1);
+  mx_label_set_text (info_label_2, info_str_2);
+
+  g_free (info_str_1);
+  g_free (info_str_2);
 
   container = CLUTTER_CONTAINER (clutter_script_get_object (priv->script,
                                                             "photo-strip"));
