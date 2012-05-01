@@ -56,8 +56,6 @@
 #include <mex/mex-program.h>
 #include <mex/mex-settings.h>
 
-#include "mex-resource.h"
-
 #ifdef HAVE_COGL_GLES2
 
 #define GLES2_VARS \
@@ -146,7 +144,6 @@ mex_style_load_default (void)
 
   /* Load the style */
   mx_style_load_from_resource (mx_style_get_default (),
-                               mex_get_resource (),
                                "/org/media-explorer/MediaExplorer/style/style.css",
                                &error);
 
