@@ -36,7 +36,9 @@
 
 static void model_provider_iface_init (MexModelProviderInterface *interface);
 static void action_provider_iface_init (MexActionProviderInterface *iface);
-static void _new_file_added (MexDirectorySearchManager *self, const gchar *file_path);
+static void _new_file_added (MexDirectorySearchManager *self,
+                             const gchar *file_path,
+                             gchar *mount_name);
 static void _volume_monitor (MexDirectorySearchManager *self);
 
 
@@ -77,12 +79,14 @@ struct _MexDirectorySearchManagerPrivate
   MexModel *music_model;
 
   MexContent *content;
+
+  GHashTable *drive_list_table;
 };
 
 GList *dir_list = NULL, *file_list = NULL;
 
 static void 
-directory_list (MexDirectorySearchManager *self)
+directory_list (MexDirectorySearchManager *self, gchar *mount_name)
 {
   GList *list_iterate;
   
@@ -95,7 +99,7 @@ directory_list (MexDirectorySearchManager *self)
        list_iterate = list_iterate->next)
     {
       //g_print("File: %s\n", (gchar *)list_iterate->data);
-      _new_file_added (self, list_iterate->data);
+      _new_file_added (self, list_iterate->data, mount_name);
       g_print("\nNew file added\n");
     }
   g_list_free_full (dir_list, g_free);
@@ -165,6 +169,11 @@ mex_directory_search_manager_dispose (GObject *object)
       g_free (info);
 
       priv->actions = g_list_delete_link (priv->actions, priv->actions);
+    }
+  if (priv->drive_list_table)
+    {
+      g_hash_table_destroy (priv->drive_list_table);
+      priv->drive_list_table = NULL;
     }
 }
 
@@ -315,11 +324,12 @@ static void _volume_monitor (MexDirectorySearchManager *self)
 {
   gchar *drive_name;
   const gchar *mount_path, *dir_music_path, *dir_pictures_path, *dir_videos_path;
-  GList *volumelist;
+  GList *mountlist;
   GVolumeMonitor *volumemonitor;
   GDrive *drive;
   GMount *mount;
   GVolume *volume;
+  gchar mount_name;
 
   dir_music_path = g_get_user_special_dir (G_USER_DIRECTORY_MUSIC);
   dir_pictures_path = g_get_user_special_dir (G_USER_DIRECTORY_PICTURES);
@@ -331,41 +341,45 @@ static void _volume_monitor (MexDirectorySearchManager *self)
 
   volumemonitor = g_volume_monitor_get ();
 
-  volumelist = g_volume_monitor_get_volumes (volumemonitor);
-  drive_name = g_volume_get_name (volumelist->data);
-  mount = g_volume_get_mount (volumelist->data);
-  
-  //dir_iterate (mount_path);
+  mountlist = g_volume_monitor_get_mounts (volumemonitor);
+  //drive_name = g_volume_get_name (volumelist->data);
+  //mount = g_volume_get_mount (volumelist->data);
 
-  if (drive_name != "")
+  g_print ("Mount is %p", mountlist);
+
+  directory_list (self, NULL);
+
+  if ((g_list_length (mountlist) > 0))
     {
-      _volume_monitor_mount_added_cb (volumemonitor, mount, self);
-      //directory_list (self);
+      GList *iter = NULL;
+      for (iter = mountlist; iter != NULL; iter = iter->next)
+        {
+          //mount = g_volume_get_mount (iter->data);
+          _volume_monitor_mount_added_cb (volumemonitor, G_MOUNT (iter->data), self);
+          //directory_list (self);
+        }
     }
-  else
-    {
       g_signal_connect (volumemonitor, "mount-added", 
                         G_CALLBACK(_volume_monitor_mount_added_cb), 
                         self);
 
       //directory_list (self);
-    }
 
   g_signal_connect (volumemonitor, "mount-removed",
                     G_CALLBACK(_volume_monitor_mount_removed_cb), self);
   //g_print ("Volumes: %s\n Mount path: %s\n", drive_name, mount_path);
-  g_list_free (volumelist);
-  //g_list_free_full (dir_list, g_free);
-  //g_list_free_full (file_list, g_free);
+  g_list_free (mountlist);
 
 }
 
 static void
-_new_file_added (MexDirectorySearchManager *self, const gchar *file_path)
+_new_file_added (MexDirectorySearchManager *self, const gchar *file_path,
+                 gchar *mount_name)
 {
   GError *errormsg = NULL;
-  gchar *uri_path, *name, *filename, *basename, *p;
+  gchar *uri_path, *name, *filename, *basename;
   const gchar *mimetype;
+  GQueue *mount_queue;
   MexDirectorySearchManagerPrivate *priv = MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
 
   uri_path = g_filename_to_uri (file_path, NULL, &errormsg);
@@ -374,11 +388,13 @@ _new_file_added (MexDirectorySearchManager *self, const gchar *file_path)
     g_warning("Error! %s", errormsg->message);
 
   priv->content = mex_content_from_uri (uri_path);
+
   mimetype = mex_content_get_metadata (priv->content,
                                        MEX_CONTENT_METADATA_MIMETYPE);
   mex_directory_search_thumbnail (priv->content, mimetype, uri_path);
 
   mex_update_content_from_media (priv->content, uri_path);
+
   g_print ("Mimetype: %s\n", mimetype);
 
    if (g_str_has_prefix (mimetype, "video/"))
@@ -391,6 +407,12 @@ _new_file_added (MexDirectorySearchManager *self, const gchar *file_path)
   else if (g_str_has_prefix (mimetype, "audio/"))
     mex_model_add_content (priv->music_model, priv->content);
 
+  if (mount_name)
+    {
+      mount_queue = g_hash_table_lookup (priv->drive_list_table, mount_name);
+      g_queue_push_tail (mount_queue, priv->content);
+    }
+
   priv->content = NULL;
   g_free (uri_path);
 }
@@ -401,7 +423,9 @@ _content_type_resolved (GObject                             *mount,
                         MexDirectorySearchManager           *self)
 {
   GError *error = NULL;
-  gchar **content_types;
+  gchar **content_types, *mount_name;
+  GQueue *mount_queue;
+  MexDirectorySearchManagerPrivate *priv = MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
 
   content_types =
     g_mount_guess_content_type_finish (G_MOUNT (mount), result, &error);
@@ -414,14 +438,19 @@ _content_type_resolved (GObject                             *mount,
           gchar *mount_path;
           GFile *mount_file;
 
+          mount_queue = g_queue_new ();
+          mount_name = g_mount_get_name (G_MOUNT (mount));
+          g_hash_table_insert (priv->drive_list_table, mount_name, mount_queue);
+
           mount_file = g_mount_get_default_location (mount);
           mount_path = g_file_get_path (mount_file);
           g_print ("Mount added Callback executing, this is mount path %s", mount_path);
 
           dir_iterate (self, mount_path);
-          directory_list (self);
+          directory_list (self, mount_name);
         }
     }
+
   g_strfreev (content_types);
   g_clear_error (&error);
 }
@@ -439,15 +468,34 @@ _volume_monitor_mount_added_cb (GVolumeMonitor        *volume_monitor,
 }
 
 static void
+remove_queue_item (gpointer data, gpointer user_data)
+{
+  MexDirectorySearchManagerPrivate *priv =
+    MEX_DIRECTORY_SEARCH_MANAGER (user_data)->priv;
+
+  g_object_unref (G_OBJECT(data));
+  mex_model_remove_content (priv->videos_model, MEX_CONTENT (data));
+  mex_model_remove_content (priv->pictures_model, MEX_CONTENT (data));
+  mex_model_remove_content (priv->music_model, MEX_CONTENT (data));
+  //peace out
+}
+static void
 _volume_monitor_mount_removed_cb (GVolumeMonitor        *volume_monitor,
                                   GMount                *mount,
                                   MexDirectorySearchManager *self)
 {
-  g_mount_guess_content_type (mount,
-                              FALSE,
-                              NULL,
-                              (GAsyncReadyCallback)_content_type_resolved,
-                              self);
+  MexDirectorySearchManagerPrivate *priv = MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
+  gchar *mount_name;
+  GQueue *mount_queue;
+
+  mount_name = g_mount_get_name (G_MOUNT (mount));
+
+  mount_queue = g_hash_table_lookup (priv->drive_list_table, mount_name);
+
+  g_queue_foreach (mount_queue, remove_queue_item, self);
+
+  g_queue_free (mount_queue);
+  //mex_model_index (takes model & content, returns a number);
 }
 
 static void
@@ -487,6 +535,9 @@ mex_directory_search_manager_init (MexDirectorySearchManager *self)
   MexDirectorySearchManagerPrivate *priv;
 
   priv = self->priv = DIRECTORY_SEARCH_MANAGER_PRIVATE (self);
+
+  priv->drive_list_table = g_hash_table_new_full (g_str_hash, g_str_equal,
+                                                  g_free, g_queue_free);
 
   priv->videos_model = mex_generic_model_new (_("Directory Searchs"),
                                               "icon-panelheader-videos");
