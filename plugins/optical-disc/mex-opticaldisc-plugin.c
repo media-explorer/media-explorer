@@ -205,6 +205,7 @@ _content_type_resolved (GObject               *mount,
         }
     }
   g_strfreev (content_types);
+  g_clear_error (&error);
 }
 
 static void
