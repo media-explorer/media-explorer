@@ -52,7 +52,8 @@ G_DEFINE_TYPE_WITH_CODE (MexDirectorySearchManager,
                                                 action_provider_iface_init))
 
 #define DIRECTORY_SEARCH_MANAGER_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_DIRECTORY_SEARCH_MANAGER, MexDirectorySearchManagerPrivate))
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_DIRECTORY_SEARCH_MANAGER,\
+                                MexDirectorySearchManagerPrivate))
 
 static void
 _volume_monitor_mount_added_cb (GVolumeMonitor        *volume_monitor,
@@ -60,8 +61,8 @@ _volume_monitor_mount_added_cb (GVolumeMonitor        *volume_monitor,
                                 MexDirectorySearchManager *self);
 
 
-static void _volume_monitor_mount_removed_cb (GVolumeMonitor           *volume_monitor,
-                                              GMount                   *mount,
+static void _volume_monitor_mount_removed_cb (GVolumeMonitor  *volume_monitor,
+                                              GMount          *mount,
                                               MexDirectorySearchManager *self);
 static void
 dir_iterate (MexDirectorySearchManager *self, const gchar *dir_path);
@@ -85,6 +86,12 @@ struct _MexDirectorySearchManagerPrivate
 
 GList *dir_list = NULL, *file_list = NULL;
 
+/*
+ * Add media contents to GList, dir_list for list of directories, file_list for
+ * list of files. Send file list to new_file_added to add to contents.
+ *
+ */
+
 static void 
 directory_list (MexDirectorySearchManager *self, gchar *mount_name)
 {
@@ -98,9 +105,7 @@ directory_list (MexDirectorySearchManager *self, gchar *mount_name)
   for (list_iterate = file_list; list_iterate != NULL;
        list_iterate = list_iterate->next)
     {
-      //g_print("File: %s\n", (gchar *)list_iterate->data);
       _new_file_added (self, list_iterate->data, mount_name);
-      g_print("\nNew file added\n");
     }
   g_list_free_full (dir_list, g_free);
   dir_list = NULL;
@@ -108,6 +113,11 @@ directory_list (MexDirectorySearchManager *self, gchar *mount_name)
   file_list = NULL;
 }
 
+/*
+ * Use directory path to determine the file path, test path is used to separate
+ * and add directories within a directory.
+ *
+ */
 
 static void
 dir_iterate (MexDirectorySearchManager *self, const gchar *dir_path)
@@ -116,8 +126,6 @@ dir_iterate (MexDirectorySearchManager *self, const gchar *dir_path)
   GDir *dir;
   gchar *test_path;
   const gchar *entry;
-
-  g_print ("This is dir-iterates dir_path: %s\n", dir_path);
 
   dir = g_dir_open (dir_path, 0, &errormsg);
 
@@ -129,7 +137,6 @@ dir_iterate (MexDirectorySearchManager *self, const gchar *dir_path)
       while ((entry = g_dir_read_name (dir)) != NULL)
         {
           test_path = g_strconcat (dir_path, G_DIR_SEPARATOR_S, entry, NULL);
-          g_print ("Entry path: %s \n Test path: %s\n", entry, test_path);
           if (g_file_test (test_path, G_FILE_TEST_IS_DIR) == TRUE)
             {
               dir_list = g_list_append (dir_list, test_path);
@@ -146,8 +153,10 @@ dir_iterate (MexDirectorySearchManager *self, const gchar *dir_path)
 static void
 mex_directory_search_manager_dispose (GObject *object)
 {
-  MexDirectorySearchManager *directory_search_manager = MEX_DIRECTORY_SEARCH_MANAGER (object);
-  MexDirectorySearchManagerPrivate *priv = MEX_DIRECTORY_SEARCH_MANAGER (directory_search_manager)->priv;
+  MexDirectorySearchManager *directory_search_manager =
+    MEX_DIRECTORY_SEARCH_MANAGER (object);
+  MexDirectorySearchManagerPrivate *priv =
+    MEX_DIRECTORY_SEARCH_MANAGER (directory_search_manager)->priv;
 
   if (priv->content)
     {
@@ -255,6 +264,11 @@ mex_directory_search_thumbnail (MexContent *content, const gchar *mime_type,
   g_free (thumb_path);
 }
 
+/*
+ * Apply metadata to filename from media, this will deduce the filename from
+ * displaying as a file path to displaying only the name of the file in MEX
+ */
+
 static void
 set_metadata_from_media (MexContent *content,
                          const gchar *uri_path,
@@ -271,16 +285,24 @@ set_metadata_from_media (MexContent *content,
       if (mex_key == MEX_CONTENT_METADATA_TITLE)
         {
           GRegex *regex;
-              g_print ("GRegex being run\n");
+          replacement = g_filename_from_uri (uri_path, NULL, NULL);
+          title = g_path_get_basename (replacement);
+          regex = g_regex_new ("\\.....?$",
+                               0,
+                               0,
+                               NULL);
+          filename = g_regex_replace (regex,
+                                      title,
+                                      -1,
+                                      0,
+                                      "",
+                                      0,
+                                      NULL);
+          mex_content_set_metadata (content,
+                                    MEX_CONTENT_METADATA_TITLE,
+                                    filename);
 
-              replacement = g_filename_from_uri (uri_path, NULL, NULL);
-              title = g_path_get_basename (replacement);
-              regex = g_regex_new ("\\.....?$", 0, 0, NULL);
-              filename = g_regex_replace (regex, title, -1, 0, "", 0, NULL);
-              g_print ("Title: %s\n", filename);
-              mex_content_set_metadata (content, MEX_CONTENT_METADATA_TITLE, filename);
-
-              g_regex_unref (regex);
+          g_regex_unref (regex);
 
         }
 }
@@ -320,6 +342,12 @@ mex_update_content_from_media (MexContent *content,
   set_metadata_from_media (content, uri_path, MEX_CONTENT_METADATA_ARTIST);*/
 }
 
+/*
+ * Volume monitor determines the drives connected to the current system, it will
+ * search the files in the systems local pictures/videos/music locations first,
+ * then externally discover items from mounted drives. 
+ */
+
 static void _volume_monitor (MexDirectorySearchManager *self)
 {
   gchar *drive_name;
@@ -342,10 +370,6 @@ static void _volume_monitor (MexDirectorySearchManager *self)
   volumemonitor = g_volume_monitor_get ();
 
   mountlist = g_volume_monitor_get_mounts (volumemonitor);
-  //drive_name = g_volume_get_name (volumelist->data);
-  //mount = g_volume_get_mount (volumelist->data);
-
-  g_print ("Mount is %p", mountlist);
 
   directory_list (self, NULL);
 
@@ -354,23 +378,28 @@ static void _volume_monitor (MexDirectorySearchManager *self)
       GList *iter = NULL;
       for (iter = mountlist; iter != NULL; iter = iter->next)
         {
-          //mount = g_volume_get_mount (iter->data);
-          _volume_monitor_mount_added_cb (volumemonitor, G_MOUNT (iter->data), self);
-          //directory_list (self);
+          _volume_monitor_mount_added_cb (volumemonitor, 
+                                          G_MOUNT (iter->data), self);
         }
     }
-      g_signal_connect (volumemonitor, "mount-added", 
-                        G_CALLBACK(_volume_monitor_mount_added_cb), 
-                        self);
 
-      //directory_list (self);
+  g_signal_connect (volumemonitor, "mount-added", 
+                    G_CALLBACK(_volume_monitor_mount_added_cb), 
+                    self);
 
   g_signal_connect (volumemonitor, "mount-removed",
                     G_CALLBACK(_volume_monitor_mount_removed_cb), self);
-  //g_print ("Volumes: %s\n Mount path: %s\n", drive_name, mount_path);
   g_list_free (mountlist);
 
 }
+
+/*
+ * File path sent from directory search function is then used to obtain contents
+ * contents are then checked for mimetype in order to separate into necessary
+ * models. Thumbnail and metadata are extracted using the uri path. Also, if
+ * content is from mounted drive, then content is stored in hash table for quick
+ * removal upon removal of respective media.
+ */
 
 static void
 _new_file_added (MexDirectorySearchManager *self, const gchar *file_path,
@@ -380,7 +409,8 @@ _new_file_added (MexDirectorySearchManager *self, const gchar *file_path,
   gchar *uri_path, *name, *filename, *basename;
   const gchar *mimetype;
   GQueue *mount_queue;
-  MexDirectorySearchManagerPrivate *priv = MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
+  MexDirectorySearchManagerPrivate *priv =
+    MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
 
   uri_path = g_filename_to_uri (file_path, NULL, &errormsg);
 
@@ -395,12 +425,9 @@ _new_file_added (MexDirectorySearchManager *self, const gchar *file_path,
 
   mex_update_content_from_media (priv->content, uri_path);
 
-  g_print ("Mimetype: %s\n", mimetype);
-
    if (g_str_has_prefix (mimetype, "video/"))
     {
       mex_model_add_content (priv->videos_model, priv->content);
-      g_print ("GDB: Video added %p\n", priv->content);
     }
   else if (g_str_has_prefix (mimetype, "image/"))
     mex_model_add_content (priv->pictures_model, priv->content);
@@ -417,6 +444,10 @@ _new_file_added (MexDirectorySearchManager *self, const gchar *file_path,
   g_free (uri_path);
 }
 
+/*
+ * The mounted content is now added to the hashtable, as well as added to the
+ * models via directory list function
+ */
 static void
 _content_type_resolved (GObject                             *mount,
                         GAsyncResult                        *result,
@@ -425,7 +456,8 @@ _content_type_resolved (GObject                             *mount,
   GError *error = NULL;
   gchar **content_types, *mount_name;
   GQueue *mount_queue;
-  MexDirectorySearchManagerPrivate *priv = MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
+  MexDirectorySearchManagerPrivate *priv =
+    MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
 
   content_types =
     g_mount_guess_content_type_finish (G_MOUNT (mount), result, &error);
@@ -444,7 +476,6 @@ _content_type_resolved (GObject                             *mount,
 
           mount_file = g_mount_get_default_location (mount);
           mount_path = g_file_get_path (mount_file);
-          g_print ("Mount added Callback executing, this is mount path %s", mount_path);
 
           dir_iterate (self, mount_path);
           directory_list (self, mount_name);
@@ -467,6 +498,9 @@ _volume_monitor_mount_added_cb (GVolumeMonitor        *volume_monitor,
                               self);
 }
 
+/*
+ * Removes content added from mounted drives, from the models
+ */
 static void
 remove_queue_item (gpointer data, gpointer user_data)
 {
@@ -477,14 +511,15 @@ remove_queue_item (gpointer data, gpointer user_data)
   mex_model_remove_content (priv->videos_model, MEX_CONTENT (data));
   mex_model_remove_content (priv->pictures_model, MEX_CONTENT (data));
   mex_model_remove_content (priv->music_model, MEX_CONTENT (data));
-  //peace out
 }
+
 static void
 _volume_monitor_mount_removed_cb (GVolumeMonitor        *volume_monitor,
                                   GMount                *mount,
                                   MexDirectorySearchManager *self)
 {
-  MexDirectorySearchManagerPrivate *priv = MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
+  MexDirectorySearchManagerPrivate *priv =
+    MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
   gchar *mount_name;
   GQueue *mount_queue;
 
@@ -495,39 +530,7 @@ _volume_monitor_mount_removed_cb (GVolumeMonitor        *volume_monitor,
   g_queue_foreach (mount_queue, remove_queue_item, self);
 
   g_queue_free (mount_queue);
-  //mex_model_index (takes model & content, returns a number);
 }
-
-static void
-_eject_ready_cb (GObject *object,
-                 GAsyncResult *result,
-                 MexDirectorySearchManager *self)
-{
-  GError *error = NULL;
-
-  g_volume_eject_with_operation_finish (G_VOLUME (object), result, &error);
-
-  if (error)
-    {
-      g_warning ("Problem ejecting: %s", error->message);
-      g_error_free (error);
-    }
-}
-
-static void
-_eject_disc (MxAction *action, MexDirectorySearchManager *self)
-{
-  MexDirectorySearchManagerPrivate *priv = MEX_DIRECTORY_SEARCH_MANAGER (self)->priv;
-
-  /*g_volume_eject_with_operation (priv->volume,
-    0,
-    NULL,
-    NULL,
-    (GAsyncReadyCallback)_eject_ready_cb,
-    self);
-    */
-}
-
 
 static void
 mex_directory_search_manager_init (MexDirectorySearchManager *self)
