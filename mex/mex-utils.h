@@ -28,6 +28,8 @@
 
 G_BEGIN_DECLS
 
+#define mex_script_get_actor(x, y) ((ClutterActor *) clutter_script_get_object (x, y))
+
 typedef enum
 {
   MEX_TEXTURE_FRAME_EMPTY        = 0,

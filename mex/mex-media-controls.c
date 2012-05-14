@@ -841,9 +841,8 @@ mex_media_controls_notify_progress_cb (ClutterMedia     *media,
   MexMediaControlsPrivate *priv = self->priv;
   MxLabel *label;
   gchar *text;
-  gdouble length, progress_s;
+  gdouble length;
   gfloat progress;
-  gint len_h, len_m, len_s, pos_h, pos_m, pos_s;
 
   if (priv->show_description)
     return;
@@ -851,27 +850,12 @@ mex_media_controls_notify_progress_cb (ClutterMedia     *media,
   progress = clutter_media_get_progress (media);
   length = clutter_media_get_duration (media);
 
-  len_h = length / 3600;
-  len_m = (length - (len_h * 3600)) / 60;
-  len_s = (length - (len_h * 3600) - (len_m * 60));
-
-  progress_s = length * progress;
-
-  pos_h = progress_s / 3600;
-  pos_m = (progress_s - (pos_h * 3600)) / 60;
-  pos_s = (progress_s - (pos_h * 3600) - (pos_m * 60));
-
   g_signal_handlers_block_by_func (priv->slider, slider_value_changed_cb, self);
   mx_slider_set_value (MX_SLIDER (priv->slider), progress);
   g_signal_handlers_unblock_by_func (priv->slider, slider_value_changed_cb,
                                      self);
 
-  if (len_h > 0)
-    text = g_strdup_printf ("%02d:%02d:%02d / %02d:%02d:%02d",
-                            pos_h, pos_m, pos_s, len_h, len_m, len_s);
-  else
-    text = g_strdup_printf ("%02d:%02d / %02d:%02d",
-                            pos_m, pos_s, len_m, len_s);
+  text = mex_metadata_utils_create_progress_string (progress, length);
 
   label = (MxLabel*) clutter_script_get_object (priv->script, "progress-label");
   mx_label_set_text (label, text);

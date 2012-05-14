@@ -1,0 +1,135 @@
+[
+  {
+    "type" : "MxBoxLayout",
+    "name" : "box",
+    "id" : "box",
+    "orientation" : 1,
+    "width" : 980,
+    "children" : [
+      {
+        "type" : "MxBoxLayout",
+        "style-class" : "MexMediaControlsTitle",
+        "spacing" : 12,
+        "children" : [
+          {
+            "type" : "MxLabel",
+            "name" : "title-label",
+            "id" : "title-label",
+            "text" : "Title",
+            "use-markup" : true
+          },
+          {
+            "type" : "MxLabel",
+            "name" : "subtitle-label",
+            "id" : "subtitle-label",
+            "text" : "Album, Artist",
+            "child::expand" : true
+          },
+          {
+            "type" : "MxIcon",
+            "name" : "info-icon-dark",
+            "id" : "info-icon-dark",
+            "child::x-align" : 0
+          }
+        ]
+      },
+      {
+        "type" : "MxBoxLayout",
+        "style-class" : "MexMediaControlsTitle",
+        "orientation" : 1,
+        "spacing" : 12,
+        "children" : [
+          {
+            "type" : "MxBoxLayout",
+            "spacing" : 12,
+            "children" : [
+              {
+                "type" : "MxButton",
+                "style-class" : "MediaPrevious",
+                "name" : "previous-button",
+                "id" : "previous-button",
+                "icon-size" : 48,
+                "label-visible" : false
+              },
+              {
+                "type" : "MxButton",
+                "style-class" : "MediaPlay",
+                "name" : "play-button",
+                "id" : "play-button",
+                "icon-size" : 48,
+                "label-visible" : false
+              },
+              {
+                "type" : "MxButton",
+                "style-class" : "MediaStop",
+                "name" : "stop-button",
+                "id" : "stop-button",
+                "icon-size" : 48,
+                "label-visible" : false
+              },
+              {
+                "type" : "MxButton",
+                "style-class" : "MediaNext",
+                "name" : "next-button",
+                "id" : "next-button",
+                "icon-size" : 48,
+                "label-visible" : false
+              },
+              {
+                "type" : "MxLabel",
+                "name" : "progress-label",
+                "id" : "progress-label",
+                "text" : "--:-- / --:--",
+                "x-align" : 2,
+                "child::expand" : true
+              },
+              {
+                "type" : "MxButton",
+                "style-class" : "MediaRepeat",
+                "name" : "repeat-button",
+                "id" : "repeat-button",
+                "icon-size" : 48,
+                "is-toggle" : true,
+                "label-visible" : false
+              },
+              {
+                "type" : "MxButton",
+                "style-class" : "MediaShuffle",
+                "name" : "shuffle-button",
+                "id" : "shuffle-button",
+                "icon-size" : 48,
+                "is-toggle" : true,
+                "label-visible" : false
+              }
+            ]
+          },
+          {
+            "type" : "MxBoxLayout",
+            "children" : [
+              {
+                "type" : "MxSlider",
+                "name" : "progress-slider",
+                "id" : "progress-slider",
+                "child::expand" : true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type" : "MxScrollView",
+        "name" : "tracks-scrollview",
+        "id" : "tracks-scrollview",
+        "scroll-visibility" : 0,
+        "height" : 255,
+        "visible" : false,
+        "child" : {
+          "type" : "MxBoxLayout",
+          "name" : "tracks",
+          "id" : "tracks",
+          "orientation" : 1
+        }
+      }
+    ]
+  }
+]

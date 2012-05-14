@@ -32,6 +32,7 @@ dist_style_DATA = \
 
 EXTRA_DIST = \
 	media-explorer.gresource.xml \
+	json/music-player.json \
 	style/bg-gradient.png \
 	style/call-window-border.png \
 	style/controls-bg.png \
@@ -165,7 +166,9 @@ dist_icon_26x26_DATA = \
 		 icons/icon-panelheader-usb-highlight.png \
 		 icons/icon-panelheader-usb.png \
 		 icons/icon-panelheader-videos.png \
-		 icons/icon-panelheader-videos-highlight.png
+		 icons/icon-panelheader-videos-highlight.png \
+		 icons/x-mex-playing.png \
+		 icons/x-mex-playing-highlight.png
 
 applicationsdir = $(datadir)/applications
 dist_applications_DATA =			\

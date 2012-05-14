@@ -92,6 +92,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-model-provider.h			\
 	$(top_srcdir)/mex/mex-model.h				\
 	$(top_srcdir)/mex/mex-music-grid-view.h			\
+	$(top_srcdir)/mex/mex-music-player.h			\
 	$(top_srcdir)/mex/mex-network-notification-source.h 	\
 	$(top_srcdir)/mex/mex-notification-area.h		\
 	$(top_srcdir)/mex/mex-notification-source.h		\
@@ -196,6 +197,7 @@ mex_sources =					\
 	mex-model-manager.c			\
 	mex-model-provider.c			\
 	mex-music-grid-view.c			\
+	mex-music-player.c			\
 	mex-network-notification-source.c	\
 	mex-notification-area.c			\
 	mex-notification-source.c		\

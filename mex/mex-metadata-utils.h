@@ -66,6 +66,7 @@ void mex_metadata_info_free (MexMetadataInfo *info);
 
 gboolean mex_metadata_info_get_visible (MexMetadataInfo *info,
                                         const gchar *value);
+gchar * mex_metadata_utils_create_progress_string (gdouble progress, gdouble duration);
 
 G_END_DECLS
 

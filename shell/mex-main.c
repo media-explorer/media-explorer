@@ -69,8 +69,10 @@ typedef struct
   ClutterActor *info_bar;
   ClutterActor *volume_control;
 
-  ClutterActor *player;
+  ClutterActor *video_player;
   ClutterMedia *media;
+
+  ClutterActor *music_player;
 
   ClutterActor *current_actor;
 
@@ -320,13 +322,14 @@ mex_play_from_last_cb (MxAction *action, MexData *data)
     }
 
   g_object_set (content, "last-position-start", TRUE, NULL);
-  mex_content_view_set_context (MEX_CONTENT_VIEW (data->player), model);
+  mex_content_view_set_context (MEX_CONTENT_VIEW (data->video_player), model);
 
   /* hide other actors */
   mex_hide_actor (data, data->slide_show);
+  mex_hide_actor (data, data->music_player);
 
   /* show the video player */
-  run_play_transition (data, content, data->player, TRUE);
+  run_play_transition (data, content, data->video_player, TRUE);
 }
 
 static void
@@ -343,13 +346,31 @@ mex_play_from_begin_cb (MxAction *action, MexData *data)
     }
 
   g_object_set (content, "last-position-start", FALSE, NULL);
-  mex_content_view_set_context (MEX_CONTENT_VIEW (data->player), model);
+  mex_content_view_set_context (MEX_CONTENT_VIEW (data->video_player), model);
 
   /* hide other actors */
   mex_hide_actor (data, data->slide_show);
+  mex_hide_actor (data, data->music_player);
 
   /* show the video player */
-  run_play_transition (data, content, data->player, TRUE);
+  run_play_transition (data, content, data->video_player, TRUE);
+}
+
+static void
+mex_play_music_cb (MxAction *action,
+                   MexData  *data)
+{
+  MexContent *content = mex_action_get_content (action);
+  MexModel *model = mex_action_get_context (action);
+
+  g_assert (content);
+
+  g_object_set (content, "last-position-start", FALSE, NULL);
+
+  mex_content_view_set_context (MEX_CONTENT_VIEW (data->music_player), model);
+
+  /* show the music player */
+  run_play_transition (data, content, data->music_player, TRUE);
 }
 
 static void
@@ -358,9 +379,10 @@ mex_player_content_set_externally_cb (MexData *data)
   /* hide other actors */
   mex_hide_actor (data, data->explorer);
   mex_hide_actor (data, data->slide_show);
+  mex_hide_actor (data, data->music_player);
 
   /* show the video player */
-  mex_show_actor (data, data->player);
+  mex_show_actor (data, data->video_player);
 }
 
 static void
@@ -380,10 +402,11 @@ mex_show_cb (MxAction *action, MexData *data)
   mex_content_view_set_context (MEX_CONTENT_VIEW (data->slide_show), model);
 
   /* hide other actors */
-  mex_hide_actor (data, data->player);
+  mex_hide_actor (data, data->video_player);
+  mex_hide_actor (data, data->music_player);
 
   /* stop any playing video, even in idle mode */
-  clutter_actor_hide (data->player);
+  clutter_actor_hide (data->video_player);
 
   /* show the slide show */
   run_play_transition (data, content, data->slide_show, FALSE);
@@ -639,8 +662,8 @@ mex_show_actor (MexData      *data,
     mx_widget_set_disabled (MX_WIDGET (actor), FALSE);
 
   /* make sure the player is disabled if it is not the current widget */
-  if (actor != data->player)
-      mx_widget_set_disabled (MX_WIDGET (data->player), TRUE);
+  if (actor != data->video_player)
+      mx_widget_set_disabled (MX_WIDGET (data->video_player), TRUE);
 
   if (actor == data->explorer)
     {
@@ -649,7 +672,7 @@ mex_show_actor (MexData      *data,
       clutter_actor_set_opacity (data->layout, 0xff);
       clutter_actor_show (data->explorer);
     }
-  else if (actor == data->player)
+  else if (actor == data->video_player)
     {
     }
   else
@@ -693,9 +716,9 @@ mex_hide_actor (MexData      *data,
       clutter_actor_set_opacity (data->layout, 0);
       clutter_actor_hide (data->explorer);
     }
-  else if (actor == data->player)
+  else if (actor == data->video_player)
     {
-      mex_player_stop (MEX_PLAYER (data->player));
+      mex_player_stop (MEX_PLAYER (data->video_player));
       clutter_actor_hide (actor);
     }
   else
@@ -710,7 +733,7 @@ mex_show_home_screen (MexData *data)
   mex_hide_actor (data, data->slide_show);
 
   /* hide the video player */
-  mex_hide_actor (data, data->player);
+  mex_hide_actor (data, data->video_player);
 
   /* hide current tool */
   if (data->current_tool)
@@ -772,7 +795,10 @@ mex_go_back_transition_first_stage (ClutterAnimation *animation,
   mex_hide_actor (data, data->slide_show);
 
   /* hide the video player */
-  mex_hide_actor (data, data->player);
+  mex_hide_actor (data, data->video_player);
+
+  /* hide the music player */
+  mex_hide_actor (data, data->music_player);
 
   /* hide any tools */
   if (data->current_tool)
@@ -850,8 +876,8 @@ mex_go_back (MexData *data)
       /* move explorer to current content */
       if (data->current_actor == data->slide_show)
         content = mex_content_view_get_content (MEX_CONTENT_VIEW (data->slide_show));
-      else if (data->current_actor == data->player)
-        content = mex_content_view_get_content (MEX_CONTENT_VIEW (data->player));
+      else if (data->current_actor == data->video_player)
+        content = mex_content_view_get_content (MEX_CONTENT_VIEW (data->video_player));
       else
         content = NULL;
 
@@ -1037,33 +1063,33 @@ mex_captured_event_cb (ClutterActor *actor,
        */
     case CLUTTER_KEY_AudioPlay:
       if (clutter_media_get_playing (data->media))
-        mex_player_pause (MEX_PLAYER (data->player));
+        mex_player_pause (MEX_PLAYER (data->video_player));
       else
-        mex_player_play (MEX_PLAYER (data->player));
+        mex_player_play (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioPause:
-      mex_player_pause (MEX_PLAYER (data->player));
+      mex_player_pause (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioStop:
-      mex_player_quit (MEX_PLAYER (data->player));
+      mex_player_quit (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioRewind:
-      mex_player_rewind (MEX_PLAYER (data->player));
+      mex_player_rewind (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioForward:
-      mex_player_forward (MEX_PLAYER (data->player));
+      mex_player_forward (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioNext:
-      mex_player_next (MEX_PLAYER (data->player));
+      mex_player_next (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioPrev:
-      mex_player_previous (MEX_PLAYER (data->player));
+      mex_player_previous (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_F11 :
@@ -1439,7 +1465,8 @@ mex_tool_present_actor_cb (MexToolProvider *provider,
       /* hide other actors */
       mex_hide_actor (data, data->explorer);
       mex_hide_actor (data, data->slide_show);
-      mex_hide_actor (data, data->player);
+      mex_hide_actor (data, data->video_player);
+      mex_hide_actor (data, data->music_player);
     }
 }
 
@@ -1927,15 +1954,14 @@ mex_open_group_cb (MxAction *action,
         }
 
       g_object_set (content, "last-position-start", FALSE, NULL);
-      mex_content_view_set_context (MEX_CONTENT_VIEW (data->player), model);
+      mex_content_view_set_context (MEX_CONTENT_VIEW (data->music_player),
+                                    model);
       if (content)
-        mex_content_view_set_content (MEX_CONTENT_VIEW (data->player), content);
+        mex_content_view_set_content (MEX_CONTENT_VIEW (data->music_player),
+                                      content);
 
-      /* hide other actors */
-      mex_hide_actor (data, data->slide_show);
-
-      /* show the video player */
-      run_play_transition (data, content, data->player, TRUE);
+      /* show the music player */
+      run_play_transition (data, content, data->music_player, TRUE);
     }
   else
     mex_explorer_push_model (MEX_EXPLORER (data->explorer), model);
@@ -2027,9 +2053,9 @@ mex_open_files_action (MxAction *action,
         }
     }
 
-  mex_content_view_set_context (MEX_CONTENT_VIEW (data->player),
+  mex_content_view_set_context (MEX_CONTENT_VIEW (data->video_player),
                                 queue_model);
-  mex_content_view_set_content (MEX_CONTENT_VIEW (data->player),
+  mex_content_view_set_content (MEX_CONTENT_VIEW (data->video_player),
                                 first_content);
 
   mex_player_content_set_externally_cb (data);
@@ -2122,7 +2148,7 @@ mex_init_default_actions (MexData *data)
   /* Listen action (for audio) */
   listen.action =
     mx_action_new_full ("listen", _("Listen"),
-                        G_CALLBACK (mex_play_from_begin_cb), data);
+                        G_CALLBACK (mex_play_music_cb), data);
   mx_action_set_icon (listen.action, "media-watch-mex");
   listen.mime_types = (gchar **)listen_action_mimetypes;
   listen.priority = G_MAXINT;
@@ -2285,23 +2311,32 @@ mex_startup (MxApplication *app,
   /* It's possible that MexPlayer does not provide an actor that will display
    * the video. This happens on STB hardware when the video is displayed in
    * another frame buffer. */
-  data->player = (ClutterActor *) mex_player_get_default ();
-  g_signal_connect_swapped (data->player, "close-request",
+  data->video_player = (ClutterActor *) mex_player_get_default ();
+  g_signal_connect_swapped (data->video_player, "close-request",
                             G_CALLBACK (mex_go_back), data);
-  g_signal_connect_swapped (data->player, "open-request",
+  g_signal_connect_swapped (data->video_player, "open-request",
                             G_CALLBACK (mex_player_content_set_externally_cb),
                             data);
 
-  clutter_actor_hide (data->player);
-  clutter_actor_add_child (data->stack, data->player);
+  clutter_actor_hide (data->video_player);
+  clutter_actor_add_child (data->stack, data->video_player);
 
-  data->media = mex_player_get_clutter_media (MEX_PLAYER (data->player));
+  data->media = mex_player_get_clutter_media (MEX_PLAYER (data->video_player));
   g_signal_connect (data->media, "error",
                     G_CALLBACK (mex_player_media_error_cb), data);
   g_signal_connect (data->media, "notify::buffer-fill",
                     G_CALLBACK (mex_player_media_notify_buffer_fill_cb), data);
 
   clutter_actor_add_child (data->stack, data->layout);
+
+
+  /* create music player */
+  data->music_player = mex_music_player_new ();
+  g_signal_connect_swapped (data->music_player, "close-request",
+                            G_CALLBACK (mex_go_back), data);
+  clutter_actor_hide (data->music_player);
+  clutter_actor_add_child (data->stack, data->music_player);
+
 
   /* Pack spinner into stack */
   clutter_actor_add_child (data->stack, data->spinner);
@@ -2531,9 +2566,9 @@ mex_open_files (GApplication *app,
   if (!first_content)
     return;
 
-  mex_content_view_set_context (MEX_CONTENT_VIEW (data->player),
+  mex_content_view_set_context (MEX_CONTENT_VIEW (data->video_player),
                                 queue_model);
-  mex_content_view_set_content (MEX_CONTENT_VIEW (data->player),
+  mex_content_view_set_content (MEX_CONTENT_VIEW (data->video_player),
                                 first_content);
 
   mex_player_content_set_externally_cb (data);

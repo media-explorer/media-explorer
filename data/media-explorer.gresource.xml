@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/org/media-explorer/MediaExplorer">
+   <file>json/music-player.json</file>
    <file>style/bg-gradient.png</file>
    <file>style/call-window-border.png</file>
    <file>style/controls-bg.png</file>
@@ -18,12 +19,22 @@
    <file>style/icon-fullscreen.png</file>
    <file>style/icon-info-dark.png</file>
    <file>style/icon-info.png</file>
+   <file>style/icon-repeat-active.png</file>
+   <file>style/icon-repeat-highlight.png</file>
+   <file>style/icon-repeat.png</file>
+   <file>style/icon-next-highlight.png</file>
+   <file>style/icon-next.png</file>
    <file>style/icon-pause-highlight.png</file>
    <file>style/icon-pause.png</file>
    <file>style/icon-play-highlight.png</file>
    <file>style/icon-play.png</file>
+   <file>style/icon-prev-highlight.png</file>
+   <file>style/icon-prev.png</file>
    <file>style/icon-rotate-highlight.png</file>
    <file>style/icon-rotate.png</file>
+   <file>style/icon-shuffle-active.png</file>
+   <file>style/icon-shuffle-highlight.png</file>
+   <file>style/icon-shuffle.png</file>
    <file>style/icon-stop-highlight.png</file>
    <file>style/icon-stop.png</file>
    <file>style/pip-border.png</file>

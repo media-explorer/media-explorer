@@ -269,6 +269,29 @@ MexColumnView > .placeholder-label
   border-image: url('thumb-no-content.png') 0;
 }
 
+/* Music */
+MexMusicPlayer
+{
+  padding: 38;
+}
+
+MexMusicPlayer MxButton.Track{
+  -mx-icon-name: "";
+  -mx-icon-size: 1;
+  background-color: #cdcec8;
+}
+
+MexMusicPlayer MxButton.Track:checked {
+  background-color: white;
+  -mx-icon-name: "x-mex-playing";
+  -mx-icon-size: 28;
+}
+
+MexMusicPlayer MxButton.Track:focus:checked {
+  -mx-icon-name: "x-mex-playing-highlight";
+  -mx-icon-size: 28;
+}
+
 /* Media Buttons */
 MxButton.MediaPlay
 {
@@ -288,6 +311,49 @@ MxButton.MediaPause
 MxButton.MediaPause:focus
 {
   -mx-content-image: url("icon-pause-highlight.png");
+}
+
+MxButton.MediaNext {
+  -mx-content-image: url("icon-next.png");
+}
+
+MxButton.MediaNext:focus {
+  -mx-content-image: url("icon-next-highlight.png");
+}
+
+MxButton.MediaPrevious {
+  -mx-content-image: url("icon-prev.png");
+}
+
+MxButton.MediaPrevious:focus {
+  -mx-content-image: url("icon-prev-highlight.png");
+}
+
+MxButton.MediaRepeat {
+  -mx-content-image: url("icon-repeat.png");
+}
+
+MxButton.MediaRepeat:focus,
+MxButton.MediaRepeat:focus:checked {
+  -mx-content-image: url("icon-repeat-highlight.png");
+}
+
+MxButton.MediaRepeat:checked {
+  -mx-content-image: url("icon-repeat-active.png");
+}
+
+
+MxButton.MediaShuffle {
+  -mx-content-image: url("icon-shuffle.png");
+}
+
+MxButton.MediaShuffle:focus,
+MxButton.MediaShuffle:focus:checked {
+  -mx-content-image: url("icon-shuffle-highlight.png");
+}
+
+MxButton.MediaShuffle:checked {
+  -mx-content-image: url("icon-shuffle-active.png");
 }
 
 MxButton.EndCall
@@ -389,7 +455,8 @@ MxButton.Watch:hover, MxButton.Watch:focus
 }
 
 /* Slider */
-MexMediaControls MxSlider
+MexMediaControls MxSlider,
+MexMusicPlayer MxSlider
 {
   -mx-trough-height: 10;
   -mx-handle-height: 28;
