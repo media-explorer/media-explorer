@@ -30,6 +30,7 @@
 #include "mex-player.h"
 #include "mex-content-proxy.h"
 #include "mex-aggregate-model.h"
+#include "mex-metadata-utils.h"
 #ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
 #include <clutter-gst/clutter-gst-player.h>
