@@ -144,15 +144,49 @@ _root_property_cb (GDBusConnection  *connection,
   return NULL;
 }
 
+static gboolean
+_set_player_property_cb (GDBusConnection  *connection,
+                         const gchar      *sender,
+                         const gchar      *object_path,
+                         const gchar      *interface_name,
+                         const gchar      *property_name,
+                         GVariant         *value,
+                         GError           **error,
+                         gpointer          user_data)
+{
+  MexMprisPluginPrivate *priv = MEX_MPRIS_PLUGIN (user_data)->priv;
+
+  /* Currently unsupported properties */
+  if (g_strcmp0 (property_name, "LoopStatus") == 0 ||
+      g_strcmp0 (property_name, "Rate") == 0 ||
+      g_strcmp0 (property_name, "Shuffle") == 0)
+    return FALSE;
+
+  if (g_strcmp0 (property_name, "Volume") == 0)
+    {
+      clutter_media_set_audio_volume (priv->media, g_variant_get_double (value));
+      return TRUE;
+    }
+
+  g_set_error (error,
+               G_DBUS_ERROR,
+               G_DBUS_ERROR_NOT_SUPPORTED,
+               "Property %s.%s not supported",
+               interface_name,
+               property_name);
+
+  return FALSE;
+}
+
 
 static GVariant *
-_player_property_cb (GDBusConnection  *connection,
-                     const gchar      *sender,
-                     const gchar      *object_path,
-                     const gchar      *interface_name,
-                     const gchar      *property_name,
-                     GError          **error,
-                     gpointer          user_data)
+_get_player_property_cb (GDBusConnection  *connection,
+                         const gchar      *sender,
+                         const gchar      *object_path,
+                         const gchar      *interface_name,
+                         const gchar      *property_name,
+                         GError          **error,
+                         gpointer          user_data)
 {
   MexMprisPluginPrivate *priv = MEX_MPRIS_PLUGIN (user_data)->priv;
   ClutterMedia *media;
@@ -160,7 +194,7 @@ _player_property_cb (GDBusConnection  *connection,
 
   media = priv->media;
 
-  if (0 == g_strcmp0 ("PlaybackStatus", property_name))
+  if (g_strcmp0 ("PlaybackStatus", property_name) == 0)
     {
       /* Doesn't map to ClutterMedia straight away so try to emulate.
        * Playback could theoretically be paused at progress 0.0 but well ...*/
@@ -175,21 +209,21 @@ _player_property_cb (GDBusConnection  *connection,
           v = g_variant_new_string ("Stopped");
     }
 
-  else if (0 == g_strcmp0 ("LoopStatus", property_name))
+  else if (g_strcmp0 ("LoopStatus", property_name) == 0)
     v = g_variant_new_string ("None");
 
-  else if (0 == g_strcmp0 ("Rate", property_name) ||
-           0 == g_strcmp0 ("MinimumRate", property_name) ||
-           (0 == g_strcmp0 ("MinimumRate", property_name)))
+  else if (g_strcmp0 ("Rate", property_name) == 0 ||
+           g_strcmp0 ("MinimumRate", property_name)  == 0 ||
+           g_strcmp0 ("MinimumRate", property_name) == 0 )
     v = g_variant_new_double (1.0);
 
-  else if (0 == g_strcmp0 ("Shuffle", property_name))
+  else if (g_strcmp0 ("Shuffle", property_name) == 0)
     v = g_variant_new_boolean (FALSE);
 
-  else if (0 == g_strcmp0 ("Volume", property_name)) 
+  else if (g_strcmp0 ("Volume", property_name) == 0)
     v = g_variant_new_double (clutter_media_get_audio_volume (media));
 
-  else if (0 == g_strcmp0 ("Position", property_name))
+  else if (g_strcmp0 ("Position", property_name) == 0)
     {
       gdouble duration_s = clutter_media_get_duration (media);
       gdouble progress_rel = clutter_media_get_progress (media);
@@ -197,14 +231,14 @@ _player_property_cb (GDBusConnection  *connection,
       v = g_variant_new_int64 (position_ms);
     }
 
-  else if (0 == g_strcmp0 ("CanGoNext", property_name) ||
-           0 == g_strcmp0 ("CanGoPrevious", property_name) ||
-           0 == g_strcmp0 ("CanPlay", property_name) ||
-           0 == g_strcmp0 ("CanControl", property_name) ||
-           0 == g_strcmp0 ("CanPause", property_name))
+  else if (g_strcmp0 ("CanGoNext", property_name) == 0 ||
+           g_strcmp0 ("CanGoPrevious", property_name) == 0 ||
+           g_strcmp0 ("CanPlay", property_name) == 0 ||
+           g_strcmp0 ("CanControl", property_name) == 0 ||
+           g_strcmp0 ("CanPause", property_name) == 0)
     v = g_variant_new_boolean (TRUE);
 
-  else if (0 == g_strcmp0 ("CanSeek", property_name))
+  else if (g_strcmp0 ("CanSeek", property_name) == 0)
     v = g_variant_new_boolean (clutter_media_get_can_seek (media));
 
   if (v)
@@ -249,7 +283,7 @@ _player_method_cb (GDBusConnection       *connection,
    mex_player_play (priv->player);
 
  else if (g_strcmp0 (method_name, "PlayPause") == 0)
-   mex_player_pause (priv->player);
+     mex_player_playpause (priv->player);
 
  else if (g_strcmp0 (method_name, "Previous") == 0)
    mex_player_previous (priv->player);
@@ -271,8 +305,8 @@ _player_method_cb (GDBusConnection       *connection,
 static const GDBusInterfaceVTable player_interface_table =
 {
   (GDBusInterfaceMethodCallFunc) _player_method_cb,
-  (GDBusInterfaceGetPropertyFunc) _player_property_cb,
-  NULL
+  (GDBusInterfaceGetPropertyFunc) _get_player_property_cb,
+  (GDBusInterfaceSetPropertyFunc) _set_player_property_cb
 };
 
 static const GDBusInterfaceVTable root_interface_table =
@@ -356,6 +390,8 @@ mex_mpris_plugin_init (MexMprisPlugin *self)
 
 
   g_bus_get (G_BUS_TYPE_SESSION, NULL, on_bus_acquired, self);
+
+  priv->mimes_supported = g_strsplit (MEX_MIME_TYPES, ";", -1);
 }
 
 static GType
