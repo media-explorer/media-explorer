@@ -913,6 +913,18 @@ mex_player_play (MexPlayer *player)
   clutter_media_set_playing (priv->media, TRUE);
 }
 
+void
+mex_player_playpause (MexPlayer *player)
+{
+  MexPlayerPrivate *priv = player->priv;
+
+  MEX_DEBUG ("playpause");
+  if (clutter_media_get_playing (priv->media))
+    clutter_media_set_playing (priv->media, FALSE);
+  else
+    clutter_media_set_playing (priv->media, TRUE);
+}
+
 static void
 player_forward_rewind (MexPlayer *player, gboolean increment)
 {

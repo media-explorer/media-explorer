@@ -74,6 +74,7 @@ void mex_player_quit (MexPlayer *player);
 void mex_player_stop (MexPlayer *player);
 void mex_player_play (MexPlayer *player);
 void mex_player_pause (MexPlayer *player);
+void mex_player_playpause (MexPlayer *player);
 void mex_player_forward (MexPlayer *player);
 void mex_player_rewind (MexPlayer *player);
 void mex_player_next (MexPlayer *player);
