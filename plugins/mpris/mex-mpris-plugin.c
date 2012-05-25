@@ -45,6 +45,7 @@ struct _MexMprisPluginPrivate
 
   GDBusConnection *connection;
   GDBusNodeInfo *introspection_data;
+  gchar **mimes_supported;
 };
 
 static void
@@ -56,6 +57,9 @@ mex_mpris_plugin_finalize (GObject *object)
     g_object_unref (priv->connection);
 
   g_dbus_node_info_unref (priv->introspection_data);
+
+  if (priv->mimes_supported)
+    g_strfreev (priv->mimes_supported);
 
   G_OBJECT_CLASS (mex_mpris_plugin_parent_class)->finalize (object);
 }
@@ -104,8 +108,21 @@ _root_property_cb (GDBusConnection  *connection,
                    const gchar      *interface_name,
                    const gchar      *property_name,
                    GError          **error,
-                   gpointer          user_data)
+                   MexMprisPlugin   *self)
 {
+  MexMprisPluginPrivate *priv = MEX_MPRIS_PLUGIN (self)->priv;
+
+  if (g_strcmp0 (property_name, "SupportedUriSchemes") == 0)
+    {
+      const char *supported_schemes[] = {
+          "file", "http", "cdda", "smb", "sftp", "ftp", NULL
+      };
+      return g_variant_new_strv (supported_schemes, -1);
+    }
+
+  if (g_strcmp0 (property_name, "SupportedMimeTypes") == 0)
+    return g_variant_new_strv ((const gchar**)priv->mimes_supported, -1);
+
   if (g_strcmp0 (property_name, "CanQuit") == 0 ||
       g_strcmp0 (property_name, "CanRaise") == 0 ||
       g_strcmp0 (property_name, "HasTrackList") == 0)

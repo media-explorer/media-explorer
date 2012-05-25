@@ -149,6 +149,9 @@ endif
 if USE_PLUGIN_MPRIS
 plugins_LTLIBRARIES += mex-mpris.la
 
+#Here so if we don't have a .desktop file installed we can't use it at run time
+mex_mime_types = $(shell sed -n -e 's/^MimeType=//p' $(top_builddir)/data/media-explorer.desktop)
+
 mex_mprisdir = $(plugin_datadir)/mpris
 dist_mex_mpris_DATA =
 
@@ -159,7 +162,8 @@ mex_mpris_la_SOURCES =			\
 	$(NULL)
 mex_mpris_la_CFLAGS  = 			\
 	-DG_LOG_DOMAIN=\"Mex-Mpris\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_mprisdir)\"
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_mprisdir)\" \
+	-DMEX_MIME_TYPES="\"$(mex_mime_types)\""
 mex_mpris_la_LIBADD  = $(_libadd)
 endif
 
