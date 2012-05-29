@@ -74,8 +74,6 @@ mex_mpris_plugin_class_init (MexMprisPluginClass *klass)
   object_class->finalize = mex_mpris_plugin_finalize;
 }
 
-/* clutter gst >= 1.5.4 */
-#if 0
 static void
 _check_if_seeked (ClutterMedia   *media,
                   GParamSpec     *pspec,
@@ -85,10 +83,11 @@ _check_if_seeked (ClutterMedia   *media,
 
   if (clutter_gst_player_get_in_seek (CLUTTER_GST_PLAYER (priv->media)))
     {
-      gdobule progress, duration;
+      gdouble progress, duration;
       gint64 newposition;
 
       duration = clutter_media_get_duration (priv->media);
+      /* progress is in a range of 0.0 1.0 so convert to position in uS */
       progress = clutter_media_get_progress (priv->media);
 
       newposition = duration * progress * 1000000;
@@ -96,10 +95,10 @@ _check_if_seeked (ClutterMedia   *media,
       g_dbus_connection_emit_signal (priv->connection,
                                      NULL, MPRIS_OBJECT_NAME,
                                      MPRIS_PLAYER_INTERFACE, "Seeked",
-                                     paramters, NULL);
+                                     g_variant_new ("(x)", newposition),
+                                     NULL);
     }
 }
-#endif
 
 static GVariant *
 _root_property_cb (GDBusConnection  *connection,
@@ -368,13 +367,10 @@ mex_mpris_plugin_init (MexMprisPlugin *self)
   priv->player = mex_player_get_default ();
   priv->media = mex_player_get_clutter_media (priv->player);
 
-  /* clutter gst >= 1.5.4 */
-#if 0
   g_signal_connect (priv->media,
                     "notify::in-seek",
                     G_CALLBACK (_check_if_seeked),
                     self);
-#endif
 
   g_bus_own_name (G_BUS_TYPE_SESSION,
                   MPRIS_BUS_NAME_PREFIX ".media-explorer",
