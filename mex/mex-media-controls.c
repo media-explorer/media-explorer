@@ -521,9 +521,6 @@ mex_media_controls_replace_content (MexMediaControls *self,
 
   MexMediaControlsPrivate *priv = self->priv;
 
-  if (priv->content == content)
-    return;
-
   player = mex_player_get_default ();
 
   mex_content_view_set_content (MEX_CONTENT_VIEW (player), content);
