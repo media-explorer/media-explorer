@@ -703,7 +703,6 @@ mex_get_data_dir (void)
 
 /**
 * mex_actor_has_focus:
-* @manager: The current MxFocusManager
 * @actor: The actor that you wish query if it is focused
 *
 * Evaluates whether the actor has focus or not.
