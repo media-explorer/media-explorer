@@ -23,6 +23,7 @@
 #include "mex-program.h"
 
 #include "mex-utils.h"
+#include "mex-player.h"
 #include <string.h>
 
 #include <clutter-gst/clutter-gst.h>
@@ -115,6 +116,13 @@ _start_video_preview (MexContentTile *self)
   gint gst_flags;
 
   const gchar *mimetype, *uri;
+
+  /* Don't play if the main player is still playing..
+   * too many videos spoil the broth.
+   */
+  if (clutter_media_get_playing (mex_player_get_clutter_media (mex_player_get_default ())))
+    return FALSE;
+
   mimetype = mex_content_get_metadata (priv->content,
                                        MEX_CONTENT_METADATA_MIMETYPE);
 
