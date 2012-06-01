@@ -76,8 +76,6 @@ typedef struct
   gboolean          display_item_count;
   gboolean          always_visible;
 
-  gboolean          show_length;
-
   MexModelSortFunc  sort_func;
   gpointer          userdata;
 } MexModelCategoryInfo;

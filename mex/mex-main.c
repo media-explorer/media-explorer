@@ -36,29 +36,31 @@
 #include "mex-grilo.h"
 
 /* Default Categories */
+/* See mex/mex-model-manager.h */
+
 static const MexModelCategoryInfo videos = {
     "videos", N_("Videos"), "icon-panelheader-videos", 20,
     N_("Connect an external drive or update your network settings to see Videos"
        " here."), MEX_CONTENT_METADATA_SERIES_NAME,
-    MEX_CONTENT_METADATA_SEASON
+    MEX_CONTENT_METADATA_SEASON, TRUE
 };
 static const MexModelCategoryInfo live = {
-    "live", N_("Live TV"), "icon-panelheader-tv", 25, ""
+    "live", N_("Live TV"), "icon-panelheader-tv", 25, "", 0, 0, TRUE
 };
 static const MexModelCategoryInfo pictures = {
     "pictures", N_("Photos"), "icon-panelheader-photos", 30,
     N_("Connect an external drive or update your network settings to see Photos"
-      " here.")
+      " here."), 0, 0, TRUE
 };
 static const MexModelCategoryInfo music = {
     "music", N_("Music"), "icon-panelheader-music", 40,
     N_("Connect an external drive or update your network settings to see Music"
-       " here."), MEX_CONTENT_METADATA_ALBUM
+       " here."), MEX_CONTENT_METADATA_ALBUM, 0, TRUE
 };
 static const MexModelCategoryInfo queue = {
     "queue", N_("Queue"), "icon-panelheader-queue", 50,
     N_("This is your custom playlist. Select Add to queue from the info menu on"
-      " any video file to add it here.")
+      " any video file to add it here."), 0, 0, TRUE
 };
 
 /**
