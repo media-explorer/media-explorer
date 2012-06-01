@@ -488,13 +488,9 @@ mex_slide_show_move (MexSlideShow *slideshow,
   if (content)
     {
       ClutterActor *scrollview;
-      container = CLUTTER_CONTAINER (clutter_script_get_object (priv->script,
-                                                                "photo-strip"));
+      container = clutter_script_get_object (priv->script, "photo-strip");
 
       scrollview = clutter_actor_get_parent (CLUTTER_ACTOR (container));
-
-      mex_content_view_set_content (MEX_CONTENT_VIEW (priv->info_panel),
-                                    content);
 
       list = clutter_container_get_children (container);
 
