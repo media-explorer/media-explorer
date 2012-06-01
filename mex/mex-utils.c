@@ -711,11 +711,15 @@ mex_get_data_dir (void)
 * Return value: True if the @actor is focused
 */
 gboolean
-mex_actor_has_focus (MxFocusManager *manager,
-                     ClutterActor   *actor)
+mex_actor_has_focus (ClutterActor   *actor)
 {
-  ClutterActor *parent;
-  ClutterActor *focus = (ClutterActor *)mx_focus_manager_get_focused (manager);
+  ClutterActor *parent, *focus;
+  ClutterStage *stage;
+  MxFocusManager *manager;
+
+  stage = clutter_actor_get_stage (actor);
+  manager = mx_focus_manager_get_for_stage (stage);
+  focus = (ClutterActor *)mx_focus_manager_get_focused (manager);
 
   while (focus)
     {

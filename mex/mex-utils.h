@@ -115,8 +115,7 @@ void mex_replace_border_image (CoglHandle     *texture_p,
 
 const char* mex_get_data_dir (void);
 
-gboolean mex_actor_has_focus (MxFocusManager *manager,
-                              ClutterActor   *actor);
+gboolean mex_actor_has_focus (ClutterActor   *actor);
 
 MexContent *mex_content_from_uri (const gchar *uri);
 
