@@ -117,6 +117,10 @@ _start_video_preview (MexContentTile *self)
 
   const gchar *mimetype, *uri;
 
+  /* Check we're still focused */
+  if (!mex_actor_has_focus (self))
+    return FALSE;
+
   /* Don't play if the main player is still playing..
    * too many videos spoil the broth.
    */
