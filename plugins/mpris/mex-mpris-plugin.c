@@ -297,6 +297,8 @@ _player_method_cb (GDBusConnection       *connection,
  else if (g_strcmp0 (method_name, "Stop") == 0)
    mex_player_quit (priv->player);
 
+ else
+     g_message ("Unhandled MPRIS Player method %s", method_name);
 
   g_dbus_method_invocation_return_value (invocation, NULL);
 }
