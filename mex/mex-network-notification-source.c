@@ -21,8 +21,8 @@
 #endif
 
 #include "mex-network-notification-source.h"
-#include "mex-online.h"
 
+#include <gio/gio.h>
 #include <glib/gi18n-lib.h>
 
 G_DEFINE_TYPE (MexNetworkNotificationSource, mex_network_notification_source, MEX_TYPE_NOTIFICATION_SOURCE)
@@ -32,18 +32,29 @@ G_DEFINE_TYPE (MexNetworkNotificationSource, mex_network_notification_source, ME
 
 struct _MexNetworkNotificationSourcePrivate
 {
+  GNetworkMonitor *monitor;
   MexNotification *offline_notification;
 };
 
-static void _online_notify_cb (gboolean online,
-                               gpointer userdata);
+static void _online_notify_cb (GNetworkMonitor *monitor,
+                               gboolean available,
+                               gpointer user_data);
 
 static void
-mex_network_notification_source_finalize (GObject *object)
+mex_network_notification_source_dispose (GObject *object)
 {
-  mex_online_remove_notify (_online_notify_cb, object);
+  MexNotificationSource *source = MEX_NOTIFICATION_SOURCE (object);
+  MexNetworkNotificationSourcePrivate *priv;
 
-  G_OBJECT_CLASS (mex_network_notification_source_parent_class)->finalize (object);
+  priv = MEX_NETWORK_NOTIFICATION_SOURCE (source)->priv;
+
+  if (priv->monitor) {
+    g_signal_handlers_disconnect_by_func (priv->monitor, _online_notify_cb, source);
+    /* Don't unref as we don't own the monitor */
+    priv->monitor = NULL;
+  }
+
+  G_OBJECT_CLASS (mex_network_notification_source_parent_class)->dispose (object);
 }
 
 static void
@@ -53,15 +64,15 @@ mex_network_notification_source_class_init (MexNetworkNotificationSourceClass *k
 
   g_type_class_add_private (klass, sizeof (MexNetworkNotificationSourcePrivate));
 
-  object_class->finalize = mex_network_notification_source_finalize;
+  object_class->dispose = mex_network_notification_source_dispose;
 }
 
 static gboolean
 _idle_cb (MexNetworkNotificationSource *source)
 {
   /* only emit an initial notification if offline */
-  if (!mex_is_online ())
-    _online_notify_cb (FALSE, source);
+  if (!g_network_monitor_get_network_available (source->priv->monitor))
+    _online_notify_cb (source->priv->monitor, FALSE, source);
 
   return FALSE;
 }
@@ -71,7 +82,9 @@ mex_network_notification_source_init (MexNetworkNotificationSource *self)
 {
   self->priv = NETWORK_NOTIFICATION_SOURCE_PRIVATE (self);
 
-  mex_online_add_notify (_online_notify_cb, self);
+  self->priv->monitor = g_network_monitor_get_default ();
+
+  g_signal_connect (self->priv->monitor, "network-changed", G_CALLBACK (_online_notify_cb), self);
 
   /*
    * Must do this in high priority idle because the signal won't be connected
@@ -84,10 +97,11 @@ mex_network_notification_source_init (MexNetworkNotificationSource *self)
 }
 
 static void
-_online_notify_cb (gboolean online,
-                   gpointer userdata)
+_online_notify_cb (GNetworkMonitor *monitor,
+                   gboolean online,
+                   gpointer user_data)
 {
-  MexNotificationSource *source = MEX_NOTIFICATION_SOURCE (userdata);
+  MexNotificationSource *source = MEX_NOTIFICATION_SOURCE (user_data);
   MexNetworkNotificationSourcePrivate *priv;
   MexNotification *n;
 
