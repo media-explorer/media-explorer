@@ -284,37 +284,6 @@ AS_CASE([$enable_debug],
 
 AC_SUBST(MEX_DEBUG_CFLAGS)
 
-AC_MSG_CHECKING([how to detect we are online])
-AC_ARG_WITH([online],
-            [AS_HELP_STRING([--with-online],
-                            [how to check if we are online (always, connman, networkmanager, test)])],
-                            [],
-                            [with_online=always])
-
-AS_CASE(["$with_online"],
-
-        ["always"],
-        [
-        AC_MSG_RESULT([always])
-        AC_DEFINE([WITH_ONLINE_ALWAYS], 1, [No online detection])
-        ],
-
-        ["connman"],
-        [
-        AC_MSG_RESULT([Connection Manager])
-        AC_DEFINE([WITH_ONLINE_CONNMAN], 1, [ConnMan online detection])
-        ],
-
-        ["networkmanager"],
-        [
-        AC_MSG_RESULT([Network Manager])
-        PKG_CHECK_MODULES(NM, libnm-glib >= 0.7)
-        AC_DEFINE([WITH_ONLINE_NM], 1, [NM online detection])
-        ],
-
-        [AC_MSG_ERROR([Unknown argument "$with_online" to --with-online])]
-)
-
 # enable idle video
 AC_ARG_ENABLE([idle-video],
               [AC_HELP_STRING([--enable-idle-video=@<:@no/yes@:>@],
