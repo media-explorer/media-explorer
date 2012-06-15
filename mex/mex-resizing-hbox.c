@@ -747,7 +747,8 @@ mex_resizing_hbox_start_animation (MexResizingHBox *self)
 
   if (!priv->children)
     {
-      clutter_timeline_stop (priv->timeline);
+      if (priv->timeline)
+        clutter_timeline_stop (priv->timeline);
       return;
     }
 
