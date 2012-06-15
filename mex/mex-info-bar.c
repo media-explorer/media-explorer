@@ -81,22 +81,8 @@ mex_info_bar_accept_focus (MxFocusable *focusable,
 {
   MexInfoBarPrivate *priv = MEX_INFO_BAR (focusable)->priv;
 
-  MxFocusable *result;
-
-  ClutterActor *buttons_area;
-
- buttons_area =
-    CLUTTER_ACTOR (clutter_script_get_object (priv->script, "buttons-area"));
-
-  /* try the previous focusable first */
-  result = mx_focusable_accept_focus (MX_FOCUSABLE (buttons_area),
-                                      MX_FOCUS_HINT_PRIOR);
-
-  if (!result)
-    result = mx_focusable_accept_focus (MX_FOCUSABLE (buttons_area),
-                                        MX_FOCUS_HINT_FIRST);
-
-  return result;
+  return mx_focusable_accept_focus (MX_FOCUSABLE (priv->group),
+                                    MX_FOCUS_HINT_FIRST);
 }
 
 static void
@@ -315,16 +301,14 @@ mex_info_bar_show_buttons (MexInfoBar *self, gboolean visible)
 {
   MexInfoBarPrivate *priv = self->priv;
 
-  if (!visible)
-    {
-      clutter_actor_hide (priv->settings_button);
-      clutter_actor_show (priv->back_button);
-    }
-  else
-    {
-      clutter_actor_show (priv->settings_button);
-      clutter_actor_hide (priv->back_button);
-    }
+  /* use opacity to show and hide the buttons to ensure the correct amount of
+   * space is always allocated for them */
+
+  clutter_actor_set_opacity (priv->settings_button, 0xff * visible);
+  clutter_actor_set_opacity (priv->back_button, 0xff * !visible);
+
+  mx_widget_set_disabled (MX_WIDGET (priv->settings_button), !visible);
+  mx_widget_set_disabled (MX_WIDGET (priv->back_button), visible);
 }
 
 void

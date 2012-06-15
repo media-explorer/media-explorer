@@ -1,48 +1,49 @@
 [
   {
-    "type" : "MxStack",
+    "type" : "MxBoxLayout",
     "id" : "main-group",
     "child::expand" : false,
     "children" : [
       {
-        "type" : "MxBoxLayout",
-        "id" : "buttons-area",
-        "orientation" : "horizontal",
-        "child::x-align" : "start",
-        "child::x-fill" : false,
+        "type" : "MxButton",
+        "id" : "settings-button",
+        "icon-size" : 26,
+        "style-class" : "Settings",
+        "label-visible" : false,
+        "child::y-fill" : false,
+        "child::expand" : false
+      },
+      {
+        "type" : "MxButton",
+        "id" : "back-button",
+        "icon-size" : 26,
+        "style-class" : "Back",
+        "label-visible" : false,
+        "child::y-fill" : false,
+        "child::expand" : false
+      }
+      {
+        "type" : "MxStack",
         "children" : [
           {
-            "type" : "MxButton",
-            "id" : "settings-button",
-            "icon-size" : 26,
-            "style-class" : "Settings",
-            "label-visible" : false,
+            "type" : "MexNotificationArea",
+            "id" : "notification-area",
             "child::x-fill" : false,
-            "child::y-fill" : false
+            "child::y-fill" : false,
+            "child::x-align" : "middle"
           },
           {
-            "type" : "MxButton",
-            "id" : "back-button",
-            "icon-size" : 26,
-            "style-class" : "Back",
-            "label-visible" : false,
+            "type" : "MexClockBin",
+            "id" : "clock",
             "child::x-fill" : false,
-            "child::y-fill" : false
+            "child::y-fill" : false,
+            "child::x-align" : "middle"
           }
-        ]
-      },
-      {
-        "type" : "MexNotificationArea",
-        "id" : "notification-area",
-        "child::x-align" : "middle",
-        "child::y-align" : "middle"
-      },
-      {
-        "type" : "MexClockBin",
-        "id" : "clock",
+        ],
         "child::x-fill" : false,
         "child::y-fill" : false,
-        "child::x-align" : "middle"
+        "child::x-align" : "middle",
+        "child::expand" : true
       },
       {
         "type" : "MxButton",
@@ -50,9 +51,8 @@
         "icon-size" : 26,
         "style-class" : "Power",
         "label-visible" : false,
-        "child::x-fill" : false,
         "child::y-fill" : false,
-        "child::x-align" : "end"
+        "child::expand" : false
       }
     ]
   }
