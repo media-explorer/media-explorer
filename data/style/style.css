@@ -431,7 +431,7 @@ MxButton#rotate-button:focus
 MexActionButton, MexActionButton:hover
 {
   font-size: 18;
-  border-image: url("details-actions-separator.png") 0 0 1 0;
+  border-image: url("details-actions-separator.png") 0 0 2 0;
 }
 
 MexActionButton:focus:hover
@@ -684,7 +684,7 @@ MexScrollView.Grid
 /* Grid Menu Buttons */
 MexMenu MxButton
 {
-  border-image: url("details-actions-separator.png") 0 0 1 0;
+  border-image: url("details-actions-separator.png") 0 0 2 0;
 }
 
 .Menu > MxButton:focus
