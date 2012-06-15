@@ -518,6 +518,7 @@ mex_info_bar_init (MexInfoBar *self)
   ClutterActor *notification_area;
   GError *err = NULL;
   gchar *tmp;
+  GSettings *settings;
 
   MexInfoBarPrivate *priv = self->priv = INFO_BAR_PRIVATE (self);
 
@@ -571,6 +572,11 @@ mex_info_bar_init (MexInfoBar *self)
                     G_CALLBACK (_back_button_cb), self);
 
   _create_settings_dialog (MEX_INFO_BAR (self));
+
+  settings = g_settings_new ("org.media-explorer.Shell");
+  if (!g_settings_get_boolean (settings, "close-button-visible"))
+    clutter_actor_hide (priv->power_button);
+  g_clear_object (&settings);
 }
 
 ClutterActor *

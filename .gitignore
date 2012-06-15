@@ -47,3 +47,5 @@ thumbnailer/mex-thumbnailer
 core.*
 *.rej
 *.orig
+
+data/org.media-explorer.gschema.valid

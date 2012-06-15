@@ -1,5 +1,8 @@
 SUBDIRS = appicons
 
+gsettings_SCHEMAS = org.media-explorer.gschema.xml
+@GSETTINGS_RULES@
+
 jsondir = $(pkgdatadir)/json
 dist_json_DATA = \
 	json/info-bar.json		\

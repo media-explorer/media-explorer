@@ -1,0 +1,7 @@
+<schemalist>
+  <schema id="org.media-explorer.Shell" path="/org/media-explorer/Shell/">
+    <key name="close-button-visible" type="b">
+      <default>true</default>
+    </key>
+  </schema>
+</schemalist>
