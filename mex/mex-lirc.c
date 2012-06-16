@@ -24,7 +24,6 @@
 #include <lirc/lirc_client.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <clutter/x11/clutter-x11.h>
 
 #include "mex-log.h"
 #include "mex-utils.h"
@@ -63,7 +62,7 @@ mex_lirc_create_key_event (ClutterKeyEvent *event, guint keyval)
 
   /* Event synthesis inspired/copied from Clutter X11 backend */
   event->flags = CLUTTER_EVENT_FLAG_SYNTHETIC;
-  event->time = CurrentTime;
+  event->time = 0L; /* Matches X11 CurrentTime */
   event->keyval = keyval;
   event->unicode_value = clutter_keysym_to_unicode (event->keyval);
   event->device =
