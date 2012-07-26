@@ -1,7 +1,5 @@
 SUBDIRS = glib-controller
 
--include $(INTROSPECTION_MAKEFILE)
-
 lib_LTLIBRARIES = libmex-@MEX_API_VERSION@.la
 
 CLEANFILES = $(BUILT_SOURCES)
@@ -318,52 +316,3 @@ dist_check_SCRIPTS =			\
 TESTS = $(dist_check_SCRIPTS)
 
 endif # ENABLE_TESTS
-
-#
-# Introspection
-#
-
-if HAVE_INTROSPECTION
-GIRS =
-TYPELIBS = $(GIRS:.gir=.typelib)
-INTROSPECTION_GIRS = $(GIRS)
-
-INTROSPECTION_COMPILER_ARGS = --includedir=$(builddir)/glib-controller
-
-Mex-@MEX_API_VERSION@.gir: libmex-@MEX_API_VERSION@.la
-Mex_0_2_gir_PACKAGES = 	\
-	gobject-2.0		\
-	clutter-1.0		\
-	mx-@mx_version@		\
-	libsoup-gnome-2.4	\
-	grilo-0.1		\
-	$(NULL)
-
-Mex_0_2_gir_LIBS = libmex-@MEX_API_VERSION@.la
-Mex_0_2_gir_FILES = $(mex_headers) $(mex_sources) $(mex_built_sources)
-Mex_0_2_gir_SCANNERFLAGS = 				\
-	--warn-all					\
-	--identifier-prefix=Mex 			\
-	--symbol-prefix=mex				\
-	--add-include-path=$(builddir)/glib-controller	\
-	$(NULL)
-Mex_0_2_gir_CFLAGS = $(common_includes) $(MEX_CFLAGS) -I$(top_srcdir)/mex
-Mex_0_2_gir_INCLUDES =	\
-	GObject-2.0	\
-	Clutter-1.0	\
-	Mx-@mx_version@	\
-	Grl-0.1		\
-	GController-1.0	\
-	$(NULL)
-
-GIRS += Mex-@MEX_API_VERSION@.gir
-
-endif
-
-girdir = $(datadir)/gir-1.0
-gir_DATA = $(INTROSPECTION_GIRS)
-
-typelibsdir = $(libdir)/girepository-1.0
-typelibs_DATA = $(TYPELIBS)
-
-CLEANFILES += $(gir_DATA) $(typelibs_DATA)

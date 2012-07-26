@@ -1,5 +1,4 @@
 *.m4
-!introspection.m4
 !as-compiler-flag.m4
 !as-am-really-silent.m4
 !as-plugins.m4

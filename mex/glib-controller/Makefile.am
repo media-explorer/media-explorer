@@ -61,29 +61,3 @@ libglib_controller_1_0_la_LDFLAGS =	\
 	$(NULL)
 libglib_controller_1_0_la_LIBADD = $(GCONTROLLER_LIBS) $(GCOV_LIBS)
 libglib_controller_1_0_la_SOURCES = $(BUILT_SOURCES) $(source_c) $(source_h)
-
-# introspection
-if HAVE_INTROSPECTION
--include $(INTROSPECTION_MAKEFILE)
-INTROSPECTION_GIRS =
-INTROSPECTION_SCANNER_ARGS = --add-include-path=$(top_srcdir)/mex/glib-controller
-INTROSPECTION_COMPILER_ARGS = --includedir=$(top_srcdir) --includedir=$(top_builddir)
-
-GController-1.0.gir: $(INTROSPECTION_SCANNER) libglib-controller-1.0.la
-
-GController_1_0_gir_SCANNERFLAGS = --identifier-prefix=G --warn-all
-GController_1_0_gir_INCLUDES = GObject-2.0
-GController_1_0_gir_CFLAGS = $(GCONTROLLER_CFLAGS) -I$(top_srcdir)/mex -I$(top_srcdir)/mex/glib-controller -I$(top_builddir) -DGLIB_CONTROLLER_COMPILATION
-GController_1_0_gir_LIBS = libglib-controller-1.0.la
-GController_1_0_gir_FILES = $(source_h) $(source_c)
-
-INTROSPECTION_GIRS += GController-1.0.gir
-endif
-
-girdir = $(datadir)/gir-1.0
-gir_DATA = $(INTROSPECTION_GIRS)
-
-typelibsdir = $(libdir)/girepository-1.0
-typelibs_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
-
-CLEANFILES += $(gir_DATA) $(typelibs_DATA)

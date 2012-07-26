@@ -251,8 +251,6 @@ AM_CONDITIONAL([HAVE_LIRC], [test "x$enable_lirc" = "xyes"])
 # marshals
 AC_PATH_PROG([GLIB_GENMARSHAL], [glib-genmarshal])
 
-GOBJECT_INTROSPECTION_CHECK([0.9.5])
-
 # enable debug level
 m4_define([debug_default],
           [m4_if(m4_eval(mex_micro % 2), [1], [yes], [minimum])])
@@ -474,7 +472,6 @@ echo "        Mx Version        : ${mx_version}"
 echo "        Debugging flags   : ${enable_debug}"
 echo "        Maintainer flags  : ${enable_warning_flags}"
 echo "        Unit tests        : ${enable_tests}"
-echo "        Introspection data: ${enable_introspection}"
 echo ""
 echo " • Backends:"
 echo "        Online detection : ${with_online}"

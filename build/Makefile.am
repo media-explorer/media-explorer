@@ -1,5 +1,4 @@
 EXTRA_DIST =			\
-	introspection.m4	\
 	Makefile.am.enums	\
 	Makefile.am.gtester	\
 	Makefile.am.marshal	\
