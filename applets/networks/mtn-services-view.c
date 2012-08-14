@@ -1,6 +1,7 @@
 /*
- * mex-networks - Connection Manager UI for Media Explorer 
+ * mex-networks - Connection Manager UI for Media Explorer
  * Copyright © 2010-2011, Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -91,7 +92,7 @@ _row_added (MtnServiceModel  *model,
                             MTN_SERVICE_MODEL_COL_WIDGET, &actor,
                             -1);
 
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (view), actor, index);
+    clutter_actor_insert_child_at_index (CLUTTER_ACTOR (view), actor, index);
     g_signal_connect (actor, "clicked",
                       G_CALLBACK (_tile_clicked), view);
 }
@@ -111,7 +112,7 @@ _row_changed (MtnServiceModel  *model,
                             -1);
 
     children = clutter_container_get_children (CLUTTER_CONTAINER (view));
-    sibling = CLUTTER_ACTOR (g_list_nth_data (children, index)); 
+    sibling = CLUTTER_ACTOR (g_list_nth_data (children, index));
     g_list_free (children);
 
     clutter_container_raise_child (CLUTTER_CONTAINER (view),
@@ -129,7 +130,7 @@ _row_removed (MtnServiceModel  *model,
     clutter_model_iter_get (iter,
                             MTN_SERVICE_MODEL_COL_WIDGET, &actor,
                             -1);
-    
+
     clutter_container_remove_actor (CLUTTER_CONTAINER (view), actor);
 }
 

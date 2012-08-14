@@ -1,6 +1,7 @@
 /*
  * mex-networks - Connection Manager UI for Media Explorer 
  * Copyright © 2010-2011, Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -122,7 +123,8 @@ mtn_service_tile_init (MtnServiceTile *tile)
     tile->priv = GET_PRIVATE (tile);
 
     box = mx_box_layout_new ();
-    clutter_container_add_actor (CLUTTER_CONTAINER (tile), box);
+    mx_bin_set_child (MX_BIN (tile), box);
+
     mx_bin_set_alignment (MX_BIN (tile),
                           MX_ALIGN_START,
                           MX_ALIGN_MIDDLE);
@@ -133,9 +135,7 @@ mtn_service_tile_init (MtnServiceTile *tile)
                             MTN_ICON_SIZE, MTN_ICON_SIZE);
     mx_icon_set_icon_size (MX_ICON (tile->priv->connection_icon),
                            MTN_ICON_SIZE);
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
-                                tile->priv->connection_icon,
-                                -1);
+    clutter_actor_insert_child_at_index (box, tile->priv->connection_icon, -1);
 
     tile->priv->title = mx_label_new ();
     mx_label_set_y_align (MX_LABEL (tile->priv->title),
@@ -153,18 +153,14 @@ mtn_service_tile_init (MtnServiceTile *tile)
                             MTN_ICON_SIZE, MTN_ICON_SIZE);
     mx_icon_set_icon_size (MX_ICON (tile->priv->security_icon),
                            MTN_ICON_SIZE);
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
-                                tile->priv->security_icon,
-                                -1);
+    clutter_actor_insert_child_at_index (box, tile->priv->security_icon, -1);
 
     tile->priv->type_icon = mx_icon_new ();
     clutter_actor_set_size (CLUTTER_ACTOR (tile->priv->type_icon),
                             MTN_ICON_SIZE, MTN_ICON_SIZE);
     mx_icon_set_icon_size (MX_ICON (tile->priv->type_icon),
                            MTN_ICON_SIZE);
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
-                                tile->priv->type_icon,
-                                -1);
+    clutter_actor_insert_child_at_index (box, tile->priv->type_icon, -1);
 }
 
 static void
