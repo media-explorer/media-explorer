@@ -1,6 +1,7 @@
 /*
- * mex-networks - Connection Manager UI for Media Explorer 
+ * mex-networks - Connection Manager UI for Media Explorer
  * Copyright © 2010-2011, Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -15,32 +16,32 @@
  * along with this program; if not, see <http://www.gnu.org/licenses>
  */
 
-#include "mtn-app.h" 
+#include "mtn-app.h"
 
 static char *back_command = "";
 static gboolean first_boot = FALSE;
-    
+
 static GOptionEntry entries[] =
 {
-    { 
+    {
         "back-command",
         'b',
         G_OPTION_FLAG_OPTIONAL_ARG,
         G_OPTION_ARG_STRING,
-        &back_command, 
+        &back_command,
         "Command line to run as 'Back' action",
-        "command" 
+        "command"
     },
-    { 
+    {
         "first-boot",
         'f',
         G_OPTION_FLAG_OPTIONAL_ARG,
         G_OPTION_ARG_NONE,
-        &first_boot, 
+        &first_boot,
         "Enable first-boot mode",
-        NULL 
+        NULL
     },
-    { 
+    {
         NULL
     }
 };
@@ -62,7 +63,7 @@ main (int     argc,
     if (!app)
         return 1;
 
-    mx_application_run (MX_APPLICATION (app));
+    g_application_run (G_APPLICATION (app), argc, argv);
     g_object_unref (app);
     return 0;
 }

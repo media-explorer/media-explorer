@@ -1,6 +1,7 @@
 /*
- * mex-networks - Connection Manager UI for Media Explorer 
+ * mex-networks - Connection Manager UI for Media Explorer
  * Copyright © 2010-2011, Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -21,10 +22,10 @@
 
 #include "mtn-app.h"
 
-#include "mtn-button-box.h" 
-#include "mtn-connman.h" 
-#include "mtn-connman-service.h" 
-#include "mtn-services-view.h" 
+#include "mtn-button-box.h"
+#include "mtn-connman.h"
+#include "mtn-connman-service.h"
+#include "mtn-services-view.h"
 
 #define MTN_APP_NAME "Media Explorer Networks"
 #define MTN_APP_CONTENT_WIDTH 740.0
@@ -95,7 +96,7 @@ struct _MtnAppPrivate {
     ClutterActor *none_button;
     ClutterActor *wep_button;
     ClutterActor *wpa_button;
-  
+
     /* in passphrase_page */
     ClutterActor *service_label;
     ClutterActor *passphrase_entry;
@@ -263,12 +264,12 @@ mtn_app_update_forward_back_buttons (MtnApp *app)
     const char *text, *fwd_do_later;
     gboolean visible;
 
-    /* TRANSLATORS: Button label, clicking skips this step in the 
+    /* TRANSLATORS: Button label, clicking skips this step in the
        first-boot process. */
     fwd_do_later = _("Do later");
 
 
-    /* TRANSLATORS: Button label. If user is on some other page, 
+    /* TRANSLATORS: Button label. If user is on some other page,
         clicking will return back to first page. If user is in
         the first page, will return the user to previous setup
         app (in first boot mode), or to Settings */
@@ -277,7 +278,7 @@ mtn_app_update_forward_back_buttons (MtnApp *app)
 
     switch (app->priv->state) {
     case MTN_APP_STATE_CONNECT_FAILED:
-        /* TRANSLATORS: Back-button label when connection failed. 
+        /* TRANSLATORS: Back-button label when connection failed.
            Will take user back to first page. */
         text = _("Try again...");
         break;
@@ -302,13 +303,13 @@ mtn_app_update_forward_back_buttons (MtnApp *app)
         text = fwd_do_later;
         break;
     case MTN_APP_STATE_CONNECT_FAILED:
-        /* TRANSLATORS: Button label, clicking skips this step in the 
+        /* TRANSLATORS: Button label, clicking skips this step in the
            first-boot process. */
         text = fwd_do_later;
         break;
     case MTN_APP_STATE_REQUEST_PASSPHRASE:
     case MTN_APP_STATE_REQUEST_PASSPHRASE_FOR_HIDDEN:
-        /* TRANSLATORS: Button label, clicking starts the connection 
+        /* TRANSLATORS: Button label, clicking starts the connection
            attempt to the network */
         text = _("Join");
         break;
@@ -427,7 +428,7 @@ mtn_app_execute_back_command (MtnApp *app)
         g_error_free (error);
     }
 
-    mx_application_quit (MX_APPLICATION (app));
+    g_application_quit (G_APPLICATION (app));
 }
 
 static void
@@ -469,7 +470,7 @@ _is_connman_error (GError *error, char *name)
     }
 
     return FALSE;
-} 
+}
 
 static void
 _connman_connect_cb (GObject      *object,
@@ -583,15 +584,15 @@ mtn_app_connect (MtnApp *app)
         GVariant *var;
         const char *pw;
 
-        /* cant use mtn_connman_service_set_property() because it is 
-         * fire-and-forget and property-changed won't get emitted for 
+        /* cant use mtn_connman_service_set_property() because it is
+         * fire-and-forget and property-changed won't get emitted for
          * passphrase in some cases */
 
         pw = mx_entry_get_text (MX_ENTRY (app->priv->passphrase_entry));
         var = g_variant_new ("(sv)",
                              "Passphrase",
                              g_variant_new_string (pw));
-    
+
         g_dbus_proxy_call (G_DBUS_PROXY (app->priv->service),
                            "SetProperty",
                            var,
@@ -693,7 +694,7 @@ mtn_app_set_state (MtnApp *app, MtnAppState state)
                                       priv->connected_page);
         mx_focus_manager_push_focus (priv->fm,
                                      MX_FOCUSABLE (priv->forward_button));
-        break;    
+        break;
     }
 }
 
@@ -743,7 +744,7 @@ mtn_app_dispose (GObject *object)
         g_object_unref (app->priv->connman);
         app->priv->connman = NULL;
     }
- 
+
   G_OBJECT_CLASS (mtn_app_parent_class)->dispose (object);
 }
 
@@ -780,7 +781,7 @@ mtn_app_forward (MtnApp *app)
     case MTN_APP_STATE_DEFAULT:
     case MTN_APP_STATE_CONNECT_FAILED:
     case MTN_APP_STATE_CONNECT_OK:
-        mx_application_quit (MX_APPLICATION (app));
+        g_application_quit (G_APPLICATION (app));
         break;
     }
 }
@@ -984,7 +985,7 @@ _connman_new_cb (GObject *object,
 
     if (priv->first_boot && g_strcmp0 (state, "online") == 0) {
         g_debug ("Exiting on first boot: already connected");
-        mx_application_quit (MX_APPLICATION (user_data));
+        g_application_quit (G_APPLICATION (user_data));
         return;
     }
 
@@ -1026,9 +1027,9 @@ _connman_service_new (GObject *object,
         g_warning ("Failed to create Connman service proxy: %s",
                    error->message);
         g_error_free (error);
- 
+
         /* show error */
- 
+
         return;
     }
 
@@ -1219,7 +1220,7 @@ mtn_app_get_passphrase_page (MtnApp *self)
                                            NULL);
 
 
-    /* TRANSLATORS: label to the left of a password entry. Max length 
+    /* TRANSLATORS: label to the left of a password entry. Max length
        is around 28 characters */
     label = mx_label_new_with_text (_("Password:"));
     mx_table_insert_actor_with_properties (MX_TABLE (table),
@@ -1232,7 +1233,7 @@ mtn_app_get_passphrase_page (MtnApp *self)
                                            NULL);
 
     priv->passphrase_entry = mx_entry_new ();
-    clutter_actor_set_size (priv->passphrase_entry, 
+    clutter_actor_set_size (priv->passphrase_entry,
                             MTN_APP_ENTRY_WIDTH,
                             -1);
     g_signal_connect (priv->passphrase_entry, "key-release-event",
@@ -1270,16 +1271,14 @@ mtn_app_get_security_page (MtnApp *self)
                                                 "x-fill", TRUE,
                                                 NULL);
 
-    /* TRANSLATORS: label above the buttons for selecting security 
+    /* TRANSLATORS: label above the buttons for selecting security
        method ('None', 'WEP', 'WPA'). */
     label = mx_label_new_with_text (_("Choose a security option:"));
     txt = mx_label_get_clutter_text (MX_LABEL (label));
     clutter_text_set_ellipsize (CLUTTER_TEXT (txt),
                                 PANGO_ELLIPSIZE_NONE);
     clutter_text_set_line_wrap (CLUTTER_TEXT (txt), TRUE);
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
-                                label,
-                                -1);
+    clutter_actor_insert_child_at_index (box, label, -1);
 
     /* TRANSLATORS: Button for selecting the security method
        for hidden network. 'None' means no security. */
@@ -1291,9 +1290,7 @@ mtn_app_get_security_page (MtnApp *self)
                           MX_ALIGN_MIDDLE);
     g_signal_connect (priv->none_button, "clicked",
                       G_CALLBACK (_connect_security_clicked), self);
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
-                                priv->none_button,
-                                -1);
+    clutter_actor_insert_child_at_index (box, priv->none_button, -1);
 
     /* TRANSLATORS: Button for selecting the security method
        for hidden network. 'WEP' probably needs no translation. */
@@ -1304,9 +1301,7 @@ mtn_app_get_security_page (MtnApp *self)
                           MX_ALIGN_MIDDLE);
     g_signal_connect (priv->wep_button, "clicked",
                       G_CALLBACK (_connect_security_clicked), self);
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
-                                priv->wep_button,
-                                -1);
+    clutter_actor_insert_child_at_index (box, priv->wep_button, -1);
 
     /* TRANSLATORS: Button for selecting the security method
        for hidden network. 'WPA' probably needs no translation. */
@@ -1317,9 +1312,7 @@ mtn_app_get_security_page (MtnApp *self)
                           MX_ALIGN_MIDDLE);
     g_signal_connect (priv->wpa_button, "clicked",
                       G_CALLBACK (_connect_security_clicked), self);
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box),
-                                priv->wpa_button,
-                                -1);
+    clutter_actor_insert_child_at_index (box, priv->wpa_button, -1);
 
     return page;
 }
@@ -1328,7 +1321,7 @@ static ClutterActor*
 mtn_app_get_ssid_page (MtnApp *self)
 {
     MtnAppPrivate *priv;
-    ClutterActor *page, *table, *label; 
+    ClutterActor *page, *table, *label;
 
     priv = self->priv;
 
@@ -1414,8 +1407,7 @@ mtn_app_get_main_page (MtnApp *self)
     priv->services_view = mtn_services_view_new ();
     g_signal_connect (priv->services_view, "connection-requested",
                       G_CALLBACK (_view_connection_requested), self);
-    clutter_container_add_actor (CLUTTER_CONTAINER (scroll),
-                                 priv->services_view);
+    mx_bin_set_child (MX_BIN (scroll), priv->services_view);
 
     priv->error_frame = mx_frame_new ();
     clutter_actor_hide (priv->error_frame);
@@ -1459,13 +1451,13 @@ mtn_app_get_main_page (MtnApp *self)
                                                 "y-align", MX_ALIGN_MIDDLE,
                                                 NULL);
 
-   /* TRANSLATORS: Button on main page. Opens the input page for 
+   /* TRANSLATORS: Button on main page. Opens the input page for
       hidden connection details input.*/
     str = _("Join other network...");
     priv->connect_hidden_button = mx_button_new_with_label (str);
     g_signal_connect (priv->connect_hidden_button, "clicked",
                       G_CALLBACK (_connect_hidden_clicked), self);
-    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (box), 
+    mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (box),
                                                 priv->connect_hidden_button,
                                                 -1,
                                                 "expand", FALSE,
@@ -1480,6 +1472,7 @@ static void
 mtn_app_init (MtnApp *self)
 {
     ClutterActor *stage, *stage_box, *box, *book_box, *hbox;
+    GError *error = NULL;
     MtnAppPrivate *priv;
 
     priv = self->priv = GET_PRIVATE (self);
@@ -1488,7 +1481,13 @@ mtn_app_init (MtnApp *self)
 
     priv->security = "none";
 
-    priv->win = mx_application_create_window (MX_APPLICATION (self));
+    g_application_register (G_APPLICATION (self), NULL, &error);
+
+    if (error)
+      g_error ("Failed to register GApplication: %s", error->message);
+
+    priv->win = mx_application_create_window (MX_APPLICATION (self),
+                                              MTN_APP_NAME);
     mx_window_set_has_toolbar (priv->win, FALSE);
 
     stage = CLUTTER_ACTOR (mx_window_get_clutter_stage (priv->win));
@@ -1524,7 +1523,7 @@ mtn_app_init (MtnApp *self)
 
     priv->title = mx_label_new ();
     clutter_actor_set_name (priv->title, "mtn-app-title");
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box), priv->title, -1);
+    clutter_actor_insert_child_at_index (box, priv->title, -1);
 
     book_box = mx_box_layout_new ();
     clutter_actor_set_name (book_box, "mtn-notebook-box");
@@ -1562,7 +1561,7 @@ mtn_app_init (MtnApp *self)
 
     /* button area at the bottom */
     hbox = mtn_button_box_new ();
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (box), hbox, -1);
+    clutter_actor_insert_child_at_index (box, hbox, -1);
 
     self->priv->back_button = mx_button_new ();
     clutter_actor_set_size (self->priv->back_button,
@@ -1570,9 +1569,7 @@ mtn_app_init (MtnApp *self)
                             -1);
     g_signal_connect (self->priv->back_button, "clicked",
                       G_CALLBACK (_back_clicked), self);
-    mx_box_layout_insert_actor (MX_BOX_LAYOUT (hbox), 
-                                self->priv->back_button,
-                                -1);
+    clutter_actor_insert_child_at_index (hbox, self->priv->back_button, -1);
 
     priv->forward_button = mx_button_new ();
     clutter_actor_set_size (priv->forward_button,
@@ -1610,8 +1607,6 @@ mtn_app_new (gint         *argc,
     mex_style_load_default ();
 
     app = g_object_new (MTN_TYPE_APP,
-                        "flags", MX_APPLICATION_SINGLE_INSTANCE,
-                        "application-name", MTN_APP_NAME,
                         "back-command", back_command,
                         "first-boot", first_boot,
                         NULL);
