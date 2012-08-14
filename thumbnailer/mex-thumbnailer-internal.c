@@ -361,7 +361,7 @@ get_shot (const char *uri)
 
           gst_element_seek_simple (playbin, GST_FORMAT_TIME,
                                    GST_SEEK_FLAG_FLUSH |
-                                   GST_SEEK_FLAG_ACCURATE, seekpos);
+                                   GST_SEEK_FLAG_KEY_UNIT, seekpos);
 
           /* Wait for seek to complete */
           count = 0;
