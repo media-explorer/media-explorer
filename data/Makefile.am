@@ -173,10 +173,39 @@ dist_icon_26x26_DATA = \
 		 icons/x-mex-playing.png \
 		 icons/x-mex-playing-highlight.png
 
+if ENABLE_NETWORKS
+networksdir = $(pkgdatadir)/networks
+dist_networks_DATA =				\
+	networks/background.png			\
+	networks/content-box.png		\
+	networks/service-list.png		\
+	networks/icon-tick.png			\
+	networks/icon-tick-focus.png		\
+	networks/icon-info.png			\
+	networks/icon-lock.png			\
+	networks/icon-lock-focus.png		\
+	networks/icon-wifi-0.png		\
+	networks/icon-wifi-0-focus.png		\
+	networks/icon-wifi-1.png		\
+	networks/icon-wifi-1-focus.png		\
+	networks/icon-wifi-2.png		\
+	networks/icon-wifi-2-focus.png		\
+	networks/icon-wifi-3.png		\
+	networks/icon-wifi-3-focus.png		\
+	networks/icon-wired.png			\
+	networks/icon-wired-focus.png		\
+	networks/mex-networks.css		\
+	$(NULL)
+endif
+
 applicationsdir = $(datadir)/applications
 dist_applications_DATA =			\
 	media-explorer.desktop			\
 	$(NULL)
+
+if ENABLE_NETWORKS
+dist_applications_DATA += mex-networks.desktop
+endif
 
 griloconfdir = $(pkgdatadir)
 dist_griloconf_DATA = grilo-system.conf
