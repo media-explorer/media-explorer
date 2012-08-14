@@ -30,11 +30,15 @@ MEX_MAJOR_VERSION=mex_major
 MEX_MINOR_VERSION=mex_minor
 MEX_MICRO_VERSION=mex_micro
 MEX_VERSION=mex_version
+MEX_API_MAJOR=mex_api_major
+MEX_API_MINOR=mex_api_minor
 MEX_API_VERSION=mex_api_version
 AC_SUBST(MEX_MAJOR_VERSION)
 AC_SUBST(MEX_MINOR_VERSION)
 AC_SUBST(MEX_MICRO_VERSION)
 AC_SUBST(MEX_VERSION)
+AC_SUBST(MEX_API_MAJOR)
+AC_SUBST(MEX_API_MINOR)
 AC_SUBST(MEX_API_VERSION)
 
 AC_DEFINE([MEX_API_MAJOR], [mex_api_major], ["major number of the API version"])
@@ -219,6 +223,9 @@ AM_CONDITIONAL(ENABLE_EXTERNAL_PLAYER, [test x"$with_player" = x"d-bus"])
 PKG_CHECK_MODULES(MEX, "$modules")
 
 PKG_CHECK_MODULES(GCONTROLLER, [gobject-2.0 >= 2.20])
+
+MEX_REQUIRES="$modules  gobject-2.0 >= 2.20"
+AC_SUBST(MEX_REQUIRES)
 
 AC_ARG_ENABLE([lirc],
               [AC_HELP_STRING([--enable-lirc],
@@ -435,11 +442,15 @@ AS_IF([test "x$mex_use_debug_buddy_plugin" = "xyes"],
                        [],
                        [AC_MSG_ERROR([The debug plugin needs libunwind])])])
 
+MEX_PLUGINS_DIR="$libdir/$PACKAGE/plugins"
+AC_SUBST(MEX_PLUGINS_DIR)
+
 AC_CONFIG_FILES([
   Makefile
   build/Makefile
   mex/Makefile
   mex/glib-controller/Makefile
+  mex/mex-$MEX_API_VERSION.pc:mex/mex.pc.in
   player/Makefile
   data/Makefile
   data/appicons/Makefile

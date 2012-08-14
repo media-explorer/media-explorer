@@ -1,4 +1,4 @@
-BUILT_SOURCES = 
+BUILT_SOURCES =
 
 CLEANFILES =
 DISTCLEANFILES =
@@ -40,6 +40,16 @@ glib_enum_h = gcontrollerenumtypes.h
 glib_enum_c = gcontrollerenumtypes.c
 glib_enum_headers = $(source_public_h)
 include $(top_srcdir)/build/Makefile.am.enums
+
+# the base include path for headers
+mex_base_includedir = $(includedir)/mex-$(MEX_API_VERSION)
+mex_includedir = $(mex_base_includedir)/mex
+gcontroller_includedir = $(mex_includedir)/glib-controller
+
+gcontroller_include_HEADERS = \
+		$(source_h) \
+		$(glib_enum_h) \
+		$(NULL)
 
 libglib_controller_1_0_la_CPPFLAGS =	\
 	-I$(top_srcdir)			\
