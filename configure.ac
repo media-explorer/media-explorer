@@ -131,6 +131,7 @@ AS_CASE([$with_profile],
         [gnome],
         [
           mex_default_with_player=clutter-gst
+          mex_default_enable_networks=no
           mex_default_enable_lirc=yes
 
           PROFILE_PLUGINS="gnome-dvb"
@@ -139,6 +140,7 @@ AS_CASE([$with_profile],
         [intelce],
         [
           mex_default_with_player=d-bus
+          mex_default_enable_networks=yes
           mex_default_enable_lirc=no
 
           PROFILE_PLUGINS=""
@@ -147,6 +149,7 @@ AS_CASE([$with_profile],
         [windows],
         [
           mex_default_with_player=clutter-gst
+          mex_default_enable_networks=no
           mex_default_enable_lirc=no
 
           PROFILE_PLUGINS=""
@@ -348,6 +351,18 @@ AM_CONDITIONAL([BUILD_GTK_DOC], [test "x$enable_gtk_doc" = "xyes"])
 # Configuration applets
 #
 
+# Check the dependencies of network configuration ui
+AC_ARG_ENABLE([networks],
+              [AC_HELP_STRING([--enable-networks=@<:@yes/no@:>@],
+                              [Enable the network configuration UI @<:@default=no@:>@])],
+              [],
+              [enable_networks=$mex_default_enable_networks])
+
+AS_IF([test "x$enable_networks" = "xyes"],
+      [PKG_CHECK_MODULES(NETWORKS, [glib-2.0 mx-$mx_version])],
+      [])
+AM_CONDITIONAL(ENABLE_NETWORKS, test "x$enable_networks" = "xyes")
+
 # Check the dependencies of webremote daemon
 AC_ARG_ENABLE([webremote],
               [AC_HELP_STRING([--enable-webremote=@<:@yes/no@:>@],
@@ -448,6 +463,7 @@ AC_CONFIG_FILES([
   doc/reference/mex/Makefile
   doc/reference/mex/mex-docs.xml
   applets/Makefile
+  applets/networks/Makefile
   applets/webremote/Makefile
   plugins/Makefile
   po/Makefile.in
@@ -483,6 +499,7 @@ echo ""
 echo " • Plugins: ${MEX_PLUGINS_SELECTED}"
 echo ""
 echo " • Applets:"
+echo "        Networks    : ${enable_networks}"
 echo "        Webremote   : ${enable_webremote}"
 echo ""
 echo " • Extra:"
