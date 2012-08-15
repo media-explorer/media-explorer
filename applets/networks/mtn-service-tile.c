@@ -1,5 +1,5 @@
 /*
- * mex-networks - Connection Manager UI for Media Explorer 
+ * mex-networks - Connection Manager UI for Media Explorer
  * Copyright © 2010-2011, Intel Corporation.
  * Copyright © 2012, sleep(5) ltd.
  *
@@ -71,7 +71,7 @@ mtn_service_tile_set_property (GObject *object, guint property_id,
     switch (property_id) {
     case PROP_PATH:
         mtn_service_tile_set_object_path (tile,
-                                          g_value_get_string (value));        
+                                          g_value_get_string (value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -171,7 +171,8 @@ _service_name_changed (MtnConnmanService *service,
     const char *name;
 
     name = value ? g_variant_get_string (value, NULL) : "";
-    mx_label_set_text (MX_LABEL (tile->priv->title), name);    
+
+    mx_label_set_text (MX_LABEL (tile->priv->title), name);
 }
 
 static void

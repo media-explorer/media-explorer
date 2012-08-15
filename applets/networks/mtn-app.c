@@ -438,10 +438,22 @@ _services_changed (MtnConnman      *connman,
 {
     static gboolean prev_have_services = TRUE;
     gboolean have_services;
+    GVariantIter *it_a, *it_r;
+
+    /*
+     * The variant is (a(oa{sv})ao) where:
+     *
+     * The first array represents services changed/added,
+     * The second array represents services removed
+     */
+    g_variant_get (var, "(a(oa{sv})ao)", &it_a, &it_r);
 
     have_services = FALSE;
     if (var)
-        have_services = (g_variant_n_children (var) > 0);
+        have_services = (g_variant_iter_n_children (it_a) > 0);
+
+    g_variant_iter_free (it_a);
+    g_variant_iter_free (it_r);
 
     if (have_services == prev_have_services)
         return;
@@ -989,11 +1001,25 @@ _connman_new_cb (GObject *object,
         return;
     }
 
+    if ((var = mtn_connman_get_services (priv->connman)))
+      {
+        GVariantIter *iter;
+        gboolean have_services;
+
+        g_variant_get (var, "(a(oa{sv}))", &iter);
+
+        have_services = (g_variant_iter_n_children (iter) > 0);
+
+        g_variant_iter_free (iter);
+
+        g_object_set (priv->error_frame,
+                      "visible", !have_services,
+                      NULL);
+      }
+
     /* keep an eye on Services for the "no networks" info */
-    g_signal_connect (priv->connman, "property-changed::Services",
+    g_signal_connect (priv->connman, "services-changed",
                       G_CALLBACK (_services_changed), user_data);
-    var = mtn_connman_get_property (priv->connman, "Services");
-    _services_changed (priv->connman, var, user_data);
 
     /* hide "hidden network" UI if we do not have wifi */
     var = mtn_connman_get_property (priv->connman,

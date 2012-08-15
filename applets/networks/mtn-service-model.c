@@ -1,6 +1,7 @@
 /*
- * mex-networks - Connection Manager UI for Media Explorer 
+ * mex-networks - Connection Manager UI for Media Explorer
  * Copyright © 2010-2011, Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -167,7 +168,6 @@ mtn_service_model_add_or_update (MtnServiceModel *model,
 
     model_iter = mtn_service_model_lookup (model, path);
     if (!model_iter) {
-g_debug ("add service %d: %s", index, path);
         clutter_model_insert (CLUTTER_MODEL (model), index,
                               MTN_SERVICE_MODEL_COL_INDEX, index,
                               MTN_SERVICE_MODEL_COL_PRESENT, TRUE,
@@ -176,7 +176,6 @@ g_debug ("add service %d: %s", index, path);
                               MTN_SERVICE_MODEL_COL_WIDGET, mtn_service_tile_new (path),
                               -1);
     } else {
-g_debug ("update service %d: %s", index, path);
         clutter_model_iter_set (model_iter,
                                 MTN_SERVICE_MODEL_COL_INDEX, index,
                                 MTN_SERVICE_MODEL_COL_PRESENT, TRUE,
@@ -186,20 +185,17 @@ g_debug ("update service %d: %s", index, path);
 }
 
 static void
-mtn_service_model_update (MtnServiceModel *model, GVariant *services)
+mtn_service_model_update (MtnServiceModel *model, GVariantIter *services)
 {
     ClutterModelIter *model_iter;
-    GVariantIter *iter;
+    GVariantIter *iter, *iter2;
     char *path;
     guint index;
 
-    if (services) {
-        index = 0;
-        g_variant_get (services, "ao", &iter);
-        while (g_variant_iter_next (iter, "&o", &path)) {
-            mtn_service_model_add_or_update (model, path, index);
-            index++;
-        }
+    index = 0;
+    while (g_variant_iter_next (services, "(&oa{sv})", &path, &iter2)) {
+      mtn_service_model_add_or_update (model, path, index);
+      index++;
     }
 
     /* remove the rows that were not present in the Services list */
@@ -217,7 +213,7 @@ mtn_service_model_update (MtnServiceModel *model, GVariant *services)
             if (!hidden) {
                 clutter_model_iter_set (model_iter,
                                         MTN_SERVICE_MODEL_COL_PRESENT, FALSE,
-                                        -1);              
+                                        -1);
             }
             index++;
         } else {
@@ -233,20 +229,30 @@ _connman_services_changed_cb (MtnConnman      *connman,
                               GVariant        *var,
                               MtnServiceModel *model)
 {
-    mtn_service_model_update (model, var);
+    GVariantIter *it_a, *it_r;
+
+    g_variant_get (var, "(a(oa{sv})ao)", &it_a, &it_r);
+
+    mtn_service_model_update (model, it_a);
+
+    g_variant_iter_free (it_a);
+    g_variant_iter_free (it_r);
 }
 
 static void
 mtn_service_model_init_connman (MtnServiceModel *model)
 {
-    GVariant *var;
+    GVariant *services;
+    GVariantIter *iter;
 
     if (!model->priv->connman)
         return;
 
-    var = mtn_connman_get_property (model->priv->connman,
-                                    "Services");
-    mtn_service_model_update (model, var);
+    services = mtn_connman_get_services (model->priv->connman);
+
+    g_variant_get (services, "(a(oa{sv}))", &iter);
+    mtn_service_model_update (model, iter);
+    g_variant_iter_free (iter);
 }
 
 static void
@@ -272,8 +278,7 @@ mtn_service_model_set_connman (MtnServiceModel *model,
         model->priv->connman =  NULL;
     } else {
         model->priv->connman = g_object_ref (connman);
-        g_signal_connect (connman,
-                          "property-changed::Services",
+        g_signal_connect (connman, "services-changed",
                           G_CALLBACK (_connman_services_changed_cb),
                           model);
         g_signal_connect (connman, "notify::g-name-owner",
@@ -290,6 +295,6 @@ mtn_service_model_new (MtnConnman *connman)
 
     model = g_object_new (MTN_TYPE_SERVICE_MODEL,
                           "connman", connman,
-                          NULL);        
+                          NULL);
     return model;
 }

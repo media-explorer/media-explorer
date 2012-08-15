@@ -1,6 +1,7 @@
 /*
- * mex-networks - Connection Manager UI for Media Explorer 
+ * mex-networks - Connection Manager UI for Media Explorer
  * Copyright © 2010-2011, Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -20,6 +21,7 @@
 
 struct _MtnConnmanPrivate {
     GHashTable *properties;
+    GVariant   *services;
 };
 
 static void mtn_connman_initable_init       (GInitableIface *initable_iface);
@@ -35,6 +37,7 @@ G_DEFINE_TYPE_WITH_CODE (MtnConnman, mtn_connman, G_TYPE_DBUS_PROXY,
 enum
 {
     PROPERTY_CHANGED_SIGNAL,
+    SERVICES_CHANGED_SIGNAL,
     LAST_SIGNAL,
 };
 
@@ -43,6 +46,8 @@ static guint signals[LAST_SIGNAL] = {0};
 typedef struct {
     GSimpleAsyncResult *res;
     GCancellable *cancellable;
+    guint done_props : 1;
+    guint done_services : 1;
 } InitData;
 
 static void
@@ -62,13 +67,6 @@ _name_owner_notify_cb (MtnConnman *connman,
     } else {
         /* TODO: get_properties and notify each */
     }
-}
-
-static void
-init_data_free (InitData *data)
-{
-    g_object_unref (data->res);
-    g_free (data);
 }
 
 static void
@@ -94,7 +92,7 @@ _get_properties_cb (GObject      *obj,
         GVariant *value;
         char *key;
         GVariantIter *iter;
-        
+
         g_variant_get (var, "(a{sv})", &iter);
         while (g_variant_iter_next (iter, "{sv}", &key, &value)) {
             g_hash_table_insert (connman->priv->properties,
@@ -104,8 +102,45 @@ _get_properties_cb (GObject      *obj,
         g_variant_unref (var);
     }
 
-    g_simple_async_result_complete_in_idle (data->res);
-    init_data_free (data);
+    if (data->done_services) {
+        g_simple_async_result_complete_in_idle (data->res);
+        g_object_unref (data->res);
+        g_free (data);
+    } else {
+      data->done_props = TRUE;
+    }
+}
+
+static void
+_get_services_cb (GObject      *obj,
+                  GAsyncResult *res,
+                  gpointer      user_data)
+{
+    MtnConnman *connman;
+    GError *error;
+    GVariant *var;
+    InitData *data;
+
+    connman = MTN_CONNMAN (obj);
+    data = (InitData*)user_data;
+
+    error = NULL;
+    var = g_dbus_proxy_call_finish (G_DBUS_PROXY (obj), res, &error);
+    if (!var) {
+        g_warning ("Initial GetServices() failed: %s\n",
+                   error->message);
+        g_error_free (error);
+    } else {
+      connman->priv->services = var;
+    }
+
+    if (data->done_props) {
+        g_simple_async_result_complete_in_idle (data->res);
+        g_object_unref (data->res);
+        g_free (data);
+    } else {
+      data->done_services = TRUE;
+    }
 }
 
 static void
@@ -125,6 +160,15 @@ _parent_init_async_cb (GObject      *obj,
                        -1,
                        data->cancellable,
                        _get_properties_cb,
+                       data);
+
+    g_dbus_proxy_call (G_DBUS_PROXY (obj),
+                       "GetServices",
+                       NULL,
+                       G_DBUS_CALL_FLAGS_NONE,
+                       -1,
+                       data->cancellable,
+                       _get_services_cb,
                        data);
 
     g_signal_connect (obj, "notify::g-name-owner",
@@ -151,7 +195,7 @@ mtn_connman_initable_init_async (GAsyncInitable      *initable,
     /* Chain up the parent method */
     iface_class = G_ASYNC_INITABLE_GET_IFACE (initable);
     parent_iface_class = g_type_interface_peek_parent (iface_class);
-    parent_iface_class->init_async (initable, 
+    parent_iface_class->init_async (initable,
                                     io_priority,
                                     cancellable,
                                     _parent_init_async_cb,
@@ -168,7 +212,7 @@ mtn_connman_initable_init_finish (GAsyncInitable      *initable,
     /* Chain up the parent method */
     iface_class = G_ASYNC_INITABLE_GET_IFACE (initable);
     parent_iface_class = g_type_interface_peek_parent (iface_class);
-    return parent_iface_class->init_finish (initable, res, error); 
+    return parent_iface_class->init_finish (initable, res, error);
 }
 
 static void
@@ -220,7 +264,20 @@ mtn_connman_initable_init_sync (GInitable     *initable,
     g_variant_iter_free (iter);
     g_variant_unref (var);
 
-    return TRUE;  
+    var = g_dbus_proxy_call_sync (G_DBUS_PROXY (connman),
+                                  "GetServices",
+                                  NULL,
+                                  G_DBUS_CALL_FLAGS_NONE,
+                                  -1,
+                                  NULL,
+                                  error);
+    if (!var) {
+        return FALSE;
+    }
+
+    connman->priv->services = var;
+
+    return TRUE;
 }
 
 static void
@@ -284,6 +341,16 @@ mtn_connman_g_signal (GDBusProxy   *proxy,
         g_variant_get (parameters, "(sv)", &key, &value);
         mtn_connman_handle_new_property (connman, key, value);
     }
+    else if (g_strcmp0 (signal_name, "ServicesChanged") == 0) {
+        if (connman->priv->services)
+          g_variant_unref (connman->priv->services);
+
+        /* get the first child from the (a(oa{sv})ao) tupple */
+        connman->priv->services = g_variant_get_child_value (parameters, 0);
+
+        g_signal_emit (connman, signals[SERVICES_CHANGED_SIGNAL], 0,
+                       parameters);
+    }
 }
 
 static void
@@ -297,6 +364,9 @@ mtn_connman_dispose (GObject *object)
         g_hash_table_unref (connman->priv->properties);
         connman->priv->properties = NULL;
     }
+
+    if (connman->priv->services)
+      g_variant_unref (connman->priv->services);
 
     G_OBJECT_CLASS (mtn_connman_parent_class)->dispose (object);
 }
@@ -326,6 +396,17 @@ mtn_connman_class_init (MtnConnmanClass *klass)
                           G_TYPE_NONE,
                           1,
                           G_TYPE_VARIANT);
+    signals[SERVICES_CHANGED_SIGNAL] =
+            g_signal_new ("services-changed",
+                          MTN_TYPE_CONNMAN,
+                          G_SIGNAL_DETAILED|G_SIGNAL_RUN_LAST,
+                          G_STRUCT_OFFSET (MtnConnmanClass, services_changed),
+                          NULL,
+                          NULL,
+                          g_cclosure_marshal_VOID__VARIANT,
+                          G_TYPE_NONE,
+                          1,
+                          G_TYPE_VARIANT);
 }
 
 static void
@@ -338,6 +419,14 @@ mtn_connman_init (MtnConnman *self)
                                    g_str_equal,
                                    g_free,
                                    NULL);
+}
+
+GVariant *
+mtn_connman_get_services (MtnConnman *connman)
+{
+    g_return_val_if_fail (MTN_IS_CONNMAN (connman), NULL);
+
+    return connman->priv->services;
 }
 
 GVariant*
@@ -391,7 +480,7 @@ mtn_connman_set_property (MtnConnman          *connman,
     g_return_if_fail (value);
 
     params = g_variant_new ("(sv)", key, value);
-    
+
     g_dbus_proxy_call (G_DBUS_PROXY (connman),
                        "SetProperty",
                        params,

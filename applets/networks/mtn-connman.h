@@ -1,6 +1,7 @@
 /*
- * mex-networks - Connection Manager UI for Media Explorer 
+ * mex-networks - Connection Manager UI for Media Explorer
  * Copyright © 2010-2011, Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -52,12 +53,15 @@ typedef struct {
 
     void (*property_changed) (MtnConnman *proxy,
                               GVariant   *property);
+    void (*services_changed) (MtnConnman *proxy,
+                              GVariant   *value);
 } MtnConnmanClass;
 
 GType       mtn_connman_get_type     (void);
 
 GVariant*   mtn_connman_get_property (MtnConnman *connman, const char *key);
 void        mtn_connman_set_property (MtnConnman *connman, const char *key, GVariant *value);
+GVariant   *mtn_connman_get_services (MtnConnman *connman);
 
 MtnConnman* mtn_connman_new_finish   (GAsyncResult *res, GError **error);
 void        mtn_connman_new          (GCancellable *cancellable, GAsyncReadyCallback callback, gpointer user_data);
