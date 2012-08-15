@@ -45,6 +45,9 @@ enum
 
     PROP_BACK_COMMAND,
     PROP_FIRST_BOOT,
+    PROP_FORCED_WIDTH,
+    PROP_FORCED_HEIGHT,
+    PROP_FORCED_FULLSCREEN
 };
 
 typedef enum {
@@ -110,6 +113,11 @@ struct _MtnAppPrivate {
 
     ClutterActor *back_button;
     ClutterActor *forward_button;
+
+    int forced_width;
+    int forced_height;
+
+    guint forced_fullscreen : 1;
 };
 
 static void mtn_app_set_state (MtnApp *app, MtnAppState state);
@@ -724,14 +732,23 @@ static void
 mtn_app_set_property (GObject *object, guint property_id,
                               const GValue *value, GParamSpec *pspec)
 {
+    MtnApp *app = MTN_APP (object);
+
     switch (property_id) {
     case PROP_BACK_COMMAND:
-        mtn_app_set_back_command (MTN_APP (object),
-                                  g_value_get_string (value));
+        mtn_app_set_back_command (app, g_value_get_string (value));
         break;
     case PROP_FIRST_BOOT:
-        mtn_app_set_first_boot (MTN_APP (object),
-                                g_value_get_boolean (value));
+        mtn_app_set_first_boot (app, g_value_get_boolean (value));
+        break;
+    case PROP_FORCED_WIDTH:
+        app->priv->forced_width = g_value_get_int (value);
+        break;
+    case PROP_FORCED_HEIGHT:
+        app->priv->forced_height = g_value_get_int (value);
+        break;
+    case PROP_FORCED_FULLSCREEN:
+        app->priv->forced_fullscreen = g_value_get_boolean (value);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -1092,6 +1109,27 @@ _connect_hidden_clicked (MxButton *btn, MtnApp *app)
 }
 
 static void
+mtn_app_constructed (GObject *object)
+{
+    MtnApp        *app = MTN_APP (object);
+    MtnAppPrivate *priv = app->priv;
+    ClutterActor  *stage;
+
+    stage = CLUTTER_ACTOR (mx_window_get_clutter_stage (priv->win));
+
+    if (priv->forced_width > 0 && priv->forced_height > 0)
+      clutter_actor_set_size (stage, priv->forced_width, priv->forced_height);
+
+    if (priv->forced_fullscreen)
+      {
+        /* Make it fullscreen, this avoids problems with focus */
+        mx_window_set_fullscreen  (priv->win, TRUE);
+        clutter_stage_set_fullscreen (CLUTTER_STAGE (stage), TRUE);
+      }
+}
+
+
+static void
 mtn_app_class_init (MtnAppClass *klass)
 {
     GParamSpec *pspec;
@@ -1101,7 +1139,8 @@ mtn_app_class_init (MtnAppClass *klass)
 
     object_class->get_property = mtn_app_get_property;
     object_class->set_property = mtn_app_set_property;
-    object_class->dispose = mtn_app_dispose;
+    object_class->constructed  = mtn_app_constructed;
+    object_class->dispose      = mtn_app_dispose;
 
     pspec = g_param_spec_string ("back-command",
                                  "Back command",
@@ -1119,6 +1158,35 @@ mtn_app_class_init (MtnAppClass *klass)
                                   G_PARAM_CONSTRUCT_ONLY|G_PARAM_WRITABLE);
     g_object_class_install_property (object_class,
                                      PROP_FIRST_BOOT,
+                                     pspec);
+
+    pspec = g_param_spec_boolean ("forced-fullscreen",
+                                  "Forced fullscreen mode",
+                                  "Forced fullscreen mode",
+                                  FALSE,
+                                  G_PARAM_CONSTRUCT_ONLY|G_PARAM_WRITABLE);
+    g_object_class_install_property (object_class,
+                                     PROP_FORCED_FULLSCREEN,
+                                     pspec);
+    pspec = g_param_spec_int ("forced-width",
+                              "Forced width",
+                              "Forced width",
+                              G_MININT32,
+                              G_MAXINT32,
+                              -1,
+                              G_PARAM_CONSTRUCT_ONLY|G_PARAM_WRITABLE);
+    g_object_class_install_property (object_class,
+                                     PROP_FORCED_WIDTH,
+                                     pspec);
+    pspec = g_param_spec_int ("forced-height",
+                              "Forced height",
+                              "Forced height",
+                              G_MININT32,
+                              G_MAXINT32,
+                              -1,
+                              G_PARAM_CONSTRUCT_ONLY|G_PARAM_WRITABLE);
+    g_object_class_install_property (object_class,
+                                     PROP_FORCED_HEIGHT,
                                      pspec);
 }
 
@@ -1506,6 +1574,8 @@ mtn_app_init (MtnApp *self)
     mtn_connman_new (NULL, _connman_new_cb, self);
 
     priv->security = "none";
+    priv->forced_width = -1;
+    priv->forced_height = -1;
 
     g_application_register (G_APPLICATION (self), NULL, &error);
 
@@ -1517,8 +1587,6 @@ mtn_app_init (MtnApp *self)
     mx_window_set_has_toolbar (priv->win, FALSE);
 
     stage = CLUTTER_ACTOR (mx_window_get_clutter_stage (priv->win));
-    clutter_stage_hide_cursor (CLUTTER_STAGE (stage));
-    clutter_stage_set_title (CLUTTER_STAGE (stage), MTN_APP_NAME);
     g_signal_connect (stage, "key-release-event",
                       G_CALLBACK (_stage_key_release), self);
 
@@ -1619,6 +1687,9 @@ mtn_app_new (gint *argc, gchar ***argv)
     GError         *error = NULL;
     char           *back_command = "";
     gboolean        first_boot = FALSE;
+    int             forced_width = -1;
+    int             forced_height = -1;
+    gboolean        forced_fullscreen = FALSE;
     GOptionContext *context;
     GOptionEntry    entries[] =
       {
@@ -1629,6 +1700,19 @@ mtn_app_new (gint *argc, gchar ***argv)
         {
           "first-boot", 'f', 0, G_OPTION_ARG_NONE, &first_boot,
           "Enable first-boot mode", NULL
+        },
+        {
+          "width", 'w', 0, G_OPTION_ARG_INT, &forced_width,
+          "Force width", NULL
+        },
+        {
+          "height", 'h', 0, G_OPTION_ARG_INT, &forced_height,
+          "Force height", NULL
+        },
+        {
+          "fullscreen", 0, 0, G_OPTION_ARG_NONE, &forced_fullscreen,
+          "Force fullscreen",
+          NULL
         },
         {
           NULL
@@ -1653,8 +1737,11 @@ mtn_app_new (gint *argc, gchar ***argv)
     mex_style_load_default ();
 
     app = g_object_new (MTN_TYPE_APP,
-                        "back-command", back_command,
-                        "first-boot", first_boot,
+                        "back-command",      back_command,
+                        "first-boot",        first_boot,
+                        "forced-width",      forced_width,
+                        "forced-height",     forced_height,
+                        "forced-fullscreen", forced_fullscreen,
                         NULL);
 
     return app;
