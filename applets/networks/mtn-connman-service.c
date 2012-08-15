@@ -1,6 +1,7 @@
 /*
- * mex-networks - Connection Manager UI for Media Explorer 
+ * mex-networks - Connection Manager UI for Media Explorer
  * Copyright © 2010-2011, Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -94,7 +95,7 @@ _get_properties_cb (GObject      *obj,
         GVariant *value;
         char *key;
         GVariantIter *iter;
-        
+
         g_variant_get (var, "(a{sv})", &iter);
         while (g_variant_iter_next (iter, "{sv}", &key, &value)) {
             g_hash_table_insert (service->priv->properties,
@@ -151,7 +152,7 @@ mtn_connman_service_initable_init_async (GAsyncInitable      *initable,
     /* Chain up the parent method */
     iface_class = G_ASYNC_INITABLE_GET_IFACE (initable);
     parent_iface_class = g_type_interface_peek_parent (iface_class);
-    parent_iface_class->init_async (initable, 
+    parent_iface_class->init_async (initable,
                                     io_priority,
                                     cancellable,
                                     _parent_init_async_cb,
@@ -168,7 +169,7 @@ mtn_connman_service_initable_init_finish (GAsyncInitable  *initable,
     /* Chain up the parent method */
     iface_class = G_ASYNC_INITABLE_GET_IFACE (initable);
     parent_iface_class = g_type_interface_peek_parent (iface_class);
-    return parent_iface_class->init_finish (initable, res, error); 
+    return parent_iface_class->init_finish (initable, res, error);
 }
 
 static void
@@ -209,19 +210,20 @@ mtn_connman_service_initable_init_sync (GInitable     *initable,
                                   NULL,
                                   error);
     if (!var) {
+        g_debug ("Service has no properties?!");
         return FALSE;
     }
 
     g_variant_get (var, "(a{sv})", &iter);
     while (g_variant_iter_next (iter, "{sv}", &key, &value)) {
+        g_debug ("Got Service property %s", key);
         g_hash_table_insert (service->priv->properties,
                              key, value);
     }
     g_variant_iter_free (iter);
-
     g_variant_unref (var);
 
-    return TRUE;  
+    return TRUE;
 }
 
 static void
@@ -280,14 +282,14 @@ _get_properties_for_passphrase_cb (GObject      *obj,
     error = NULL;
     var = g_dbus_proxy_call_finish (G_DBUS_PROXY (obj), res, &error);
     if (!var) {
-        g_warning ("Connman Service.GetProperties failed: %s", 
+        g_warning ("Connman Service.GetProperties failed: %s",
                    error->message);
         g_error_free (error);
     } else {
         GVariant *value;
         char *key;
         GVariantIter *iter;
-        
+
         g_variant_get (var, "(a{sv})", &iter);
         while (g_variant_iter_next (iter, "{sv}", &key, &value)) {
             if (g_strcmp0 (key, "Passphrase") == 0 ||
@@ -316,6 +318,7 @@ mtn_connman_service_g_signal (GDBusProxy   *proxy,
         char *key;
         GVariant *value;
 
+        /* FIXME -- leaking value? */
         g_variant_get (parameters, "(sv)", &key, &value);
         if (g_strcmp0 (key, "PassphraseRequested") == 0) {
             /* get the new Passphrase value before emitting signal
@@ -440,7 +443,7 @@ mtn_connman_service_set_property (MtnConnmanService *service,
     g_return_if_fail (value);
 
     params = g_variant_new ("(sv)", key, value);
-    
+
     g_dbus_proxy_call (G_DBUS_PROXY (service),
                        "SetProperty",
                        params,
