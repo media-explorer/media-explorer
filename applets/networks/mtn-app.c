@@ -1613,13 +1613,33 @@ mtn_app_init (MtnApp *self)
 }
 
 MtnApp*
-mtn_app_new (gint         *argc,
-             gchar      ***argv,
-             const char   *back_command,
-             gboolean      first_boot)
+mtn_app_new (gint *argc, gchar ***argv)
 {
-    MtnApp *app;
-    GError *error = NULL;
+    MtnApp         *app;
+    GError         *error = NULL;
+    char           *back_command = "";
+    gboolean        first_boot = FALSE;
+    GOptionContext *context;
+    GOptionEntry    entries[] =
+      {
+        {
+          "back-command", 'b', 0, G_OPTION_ARG_STRING, &back_command,
+          "Command line to run as 'Back' action", "command"
+        },
+        {
+          "first-boot", 'f', 0, G_OPTION_ARG_NONE, &first_boot,
+          "Enable first-boot mode", NULL
+        },
+        {
+          NULL
+        }
+      };
+
+    context = g_option_context_new ("- Configuration UI for network settings");
+    g_option_context_add_main_entries (context, entries, NULL);
+
+    if (!g_option_context_parse (context, argc, argv, &error))
+        g_warning ("Option parsing failed: %s\n", error->message);
 
     if (clutter_init_with_args (argc, argv,
                                MTN_APP_NAME, NULL, NULL,

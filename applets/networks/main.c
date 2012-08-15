@@ -18,49 +18,14 @@
 
 #include "mtn-app.h"
 
-static char *back_command = "";
-static gboolean first_boot = FALSE;
-
-static GOptionEntry entries[] =
-{
-    {
-        "back-command",
-        'b',
-        G_OPTION_FLAG_OPTIONAL_ARG,
-        G_OPTION_ARG_STRING,
-        &back_command,
-        "Command line to run as 'Back' action",
-        "command"
-    },
-    {
-        "first-boot",
-        'f',
-        G_OPTION_FLAG_OPTIONAL_ARG,
-        G_OPTION_ARG_NONE,
-        &first_boot,
-        "Enable first-boot mode",
-        NULL
-    },
-    {
-        NULL
-    }
-};
-
 int
 main (int     argc,
       char  **argv)
 {
     MtnApp *app;
     GError *error = NULL;
-    GOptionContext *context;
 
-    context = g_option_context_new ("- Configuration UI for network settings");
-    g_option_context_add_main_entries (context, entries, NULL);
-    if (!g_option_context_parse (context, &argc, &argv, &error))
-        g_warning ("Option parsing failed: %s\n", error->message);
-
-    app = mtn_app_new (&argc, &argv, back_command, first_boot);
-    if (!app)
+    if (!(app = mtn_app_new (&argc, &argv)))
         return 1;
 
     g_application_run (G_APPLICATION (app), argc, argv);

@@ -1,5 +1,5 @@
 /*
- * mex-networks - Connection Manager UI for Media Explorer 
+ * mex-networks - Connection Manager UI for Media Explorer
  * Copyright © 2010-2011, Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ typedef struct {
 
 GType mtn_app_get_type (void);
 
-MtnApp* mtn_app_new (gint *argc, gchar ***argv, const char *back_command, gboolean first_boot);
+MtnApp* mtn_app_new (gint *argc, gchar ***argv);
 
 G_END_DECLS
 
