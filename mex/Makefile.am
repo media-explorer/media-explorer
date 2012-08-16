@@ -80,6 +80,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-grilo-program.h			\
 	$(top_srcdir)/mex/mex-group-item.h			\
 	$(top_srcdir)/mex/mex-info-bar.h			\
+	$(top_srcdir)/mex/mex-info-bar-component.h		\
 	$(top_srcdir)/mex/mex-info-panel.h			\
 	$(top_srcdir)/mex/mex-lirc.h				\
 	$(top_srcdir)/mex/mex-log.h				\
@@ -189,6 +190,7 @@ mex_sources =					\
 	mex-grilo-program.c			\
 	mex-group-item.c			\
 	mex-info-bar.c				\
+	mex-info-bar-component.c		\
 	mex-info-panel.c			\
 	mex-lirc.c				\
 	mex-log.c				\
