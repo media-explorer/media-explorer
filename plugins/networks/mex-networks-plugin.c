@@ -22,7 +22,7 @@
 #endif
 
 #include "mex-networks-plugin.h"
-#include "mtn-app.h"
+#include "mtn-dialog.h"
 
 #include <glib/gi18n-lib.h>
 #include <gmodule.h>
@@ -42,7 +42,6 @@ G_DEFINE_TYPE_WITH_CODE (MexNetworksPlugin, mex_networks_plugin, G_TYPE_OBJECT,
 
 struct _MexNetworksPluginPrivate
 {
-  MtnApp       *app;
   ClutterActor *button;
   ClutterActor *transient_for;
 
@@ -77,12 +76,6 @@ mex_networks_plugin_dispose (GObject *object)
 
   priv->disposed = TRUE;
 
-  if (priv->app)
-    {
-      g_object_unref (priv->app);
-      priv->app = NULL;
-    }
-
   G_OBJECT_CLASS (mex_networks_plugin_parent_class)->dispose (object);
 }
 
@@ -105,16 +98,13 @@ mex_networks_plugin_get_location_index (MexInfoBarComponent *comp)
 }
 
 static void
-mex_networks_plugin_close_cb (MtnApp *app, MexNetworksPlugin *self)
+mex_networks_plugin_close_cb (MtnDialog *dialog, MexNetworksPlugin *self)
 {
   MexNetworksPluginPrivate *priv = self->priv;
 
   g_print ("%s:%d\n", __FUNCTION__, __LINE__);
 
   mex_push_focus (MX_FOCUSABLE (priv->button));
-
-  priv->app = NULL;
-  g_object_unref (app);
 }
 
 static void
@@ -123,17 +113,9 @@ mex_networks_plugin_activated_cb (MxAction *action, MexNetworksPlugin *self)
   MexNetworksPluginPrivate *priv = self->priv;
   ClutterActor             *dialog;
 
-  if (priv->app)
-    g_object_unref (priv->app);
-
-  priv->app = mtn_app_new ();
-  g_signal_connect (priv->app, "close",
+  dialog = mtn_dialog_new (priv->transient_for);
+  g_signal_connect (dialog, "close",
                     G_CALLBACK (mex_networks_plugin_close_cb), self);
-
-  dialog = mtn_app_get_dialog (priv->app);
-
-  if (priv->transient_for)
-    mx_dialog_set_transient_parent (MX_DIALOG (dialog), priv->transient_for);
 
   clutter_actor_show (dialog);
 }
