@@ -377,8 +377,8 @@ mex_networks_la_SOURCES =			\
 	$(NETWORKS_BUILT_SOURCES)		\
 	networks/mex-networks-plugin.c		\
 	networks/mex-networks-plugin.h		\
-        networks/mtn-app.c 			\
-	networks/mtn-app.h 			\
+        networks/mtn-dialog.c 			\
+	networks/mtn-dialog.h 			\
         networks/mtn-services-view.c 		\
 	networks/mtn-services-view.h		\
 	networks/mtn-service-tile.c		\
