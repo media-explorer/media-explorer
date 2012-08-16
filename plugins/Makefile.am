@@ -353,3 +353,20 @@ mex_apps_la_CFLAGS  = 		\
 	-DMEX_DATA_PLUGIN_DIR=\"$(mex_appsdir)\" $(PLUGIN_APPS_CFLAGS)
 mex_apps_la_LIBADD = $(_libadd) $(PLUGIN_APPS_LIBS)
 endif
+
+if USE_PLUGIN_NETWORKS
+plugins_LTLIBRARIES += mex-networks.la
+
+mex_networksdir = $(plugin_datadir)/networks
+dist_mex_networks_DATA =
+
+mex_networks_la_SOURCES =			\
+	networks/mex-networks-plugin.c		\
+	networks/mex-networks-plugin.h		\
+	$(NULL)
+
+mex_networks_la_CFLAGS  = 			\
+	-DG_LOG_DOMAIN=\"Mex-Networks\"	\
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_networks)\"
+mex_networks_la_LIBADD  = $(_libadd)
+endif
