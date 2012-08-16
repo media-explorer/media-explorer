@@ -2,6 +2,7 @@ plugin_datadir = $(pkgdatadir)/plugins
 pluginsdir = $(pkglibdir)/plugins
 plugins_LTLIBRARIES =
 
+BUILT_SOURCES =
 EXTRA_DIST =
 CLEANFILES =
 
@@ -354,19 +355,51 @@ mex_apps_la_CFLAGS  = 		\
 mex_apps_la_LIBADD = $(_libadd) $(PLUGIN_APPS_LIBS)
 endif
 
+networks/connman-manager-introspection.h: $(srcdir)/networks/introspection/connman-manager.xml
+	/bin/sh $(top_srcdir)/build/stringify.sh $< $@ > $@
+networks/connman-service-introspection.h: $(srcdir)/networks/introspection/connman-service.xml
+	/bin/sh $(top_srcdir)/build/stringify.sh $< $@ > $@
+
 if USE_PLUGIN_NETWORKS
 plugins_LTLIBRARIES += mex-networks.la
+
+NETWORKS_BUILT_SOURCES = networks/connman-manager-introspection.h \
+			 networks/connman-service-introspection.h
+BUILT_SOURCES += $(NETWORKS_BUILT_SOURCES)
+
+EXTRA_DIST += networks/introspection/connman-manager.xml \
+              networks/introspection/connman-service.xml
 
 mex_networksdir = $(plugin_datadir)/networks
 dist_mex_networks_DATA =
 
 mex_networks_la_SOURCES =			\
+	$(NETWORKS_BUILT_SOURCES)		\
 	networks/mex-networks-plugin.c		\
 	networks/mex-networks-plugin.h		\
+        networks/mtn-app.c 			\
+	networks/mtn-app.h 			\
+        networks/mtn-services-view.c 		\
+	networks/mtn-services-view.h		\
+	networks/mtn-service-tile.c		\
+	networks/mtn-service-tile.h		\
+	networks/mtn-service-model.c		\
+	networks/mtn-service-model.h		\
+	networks/mtn-button-box.c		\
+	networks/mtn-button-box.h		\
+	networks/mtn-connman-service.c		\
+	networks/mtn-connman-service.h		\
+	networks/mtn-connman.c			\
+	networks/mtn-connman.h			\
 	$(NULL)
 
 mex_networks_la_CFLAGS  = 			\
-	-DG_LOG_DOMAIN=\"Mex-Networks\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_networks)\"
+	-I./networks				\
+	-DG_LOG_DOMAIN=\"Mex-Networks\"		\
+	-DMEX_DATA_PLUGIN_DIR=\"$(mex_networks)\" \
+	-DTHEMEDIR=\"$(pkgdatadir)/networks\"
+
 mex_networks_la_LIBADD  = $(_libadd)
 endif
+
+DISTCLEANFILES = $(BUILT_SOURCES)

@@ -188,7 +188,7 @@ static void
 mtn_service_model_update (MtnServiceModel *model, GVariantIter *services)
 {
     ClutterModelIter *model_iter;
-    GVariantIter *iter, *iter2;
+    GVariantIter *iter2;
     char *path;
     guint index;
 

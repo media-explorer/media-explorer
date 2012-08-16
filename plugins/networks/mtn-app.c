@@ -34,7 +34,7 @@
 #define MTN_APP_ENTRY_WIDTH 240.0
 #define MTN_APP_COL_SPACE 30.0
 
-G_DEFINE_TYPE (MtnApp, mtn_app, MX_TYPE_APPLICATION)
+G_DEFINE_TYPE (MtnApp, mtn_app, G_TYPE_OBJECT)
 
 #define GET_PRIVATE(o) \
     (G_TYPE_INSTANCE_GET_PRIVATE ((o), MTN_TYPE_APP, MtnAppPrivate))
@@ -49,6 +49,15 @@ enum
     PROP_FORCED_HEIGHT,
     PROP_FORCED_FULLSCREEN
 };
+
+enum
+{
+  CLOSE,
+
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0, };
 
 typedef enum {
     MTN_APP_STATE_DEFAULT,
@@ -74,7 +83,7 @@ struct _MtnAppPrivate {
 
     const char *security;
 
-    MxWindow *win;
+    ClutterActor *dialog;
     MxFocusManager *fm;
 
     ClutterActor *title;
@@ -436,7 +445,7 @@ mtn_app_execute_back_command (MtnApp *app)
         g_error_free (error);
     }
 
-    g_application_quit (G_APPLICATION (app));
+    g_signal_emit (app, signals[CLOSE], 0);
 }
 
 static void
@@ -774,7 +783,9 @@ mtn_app_dispose (GObject *object)
         app->priv->connman = NULL;
     }
 
-  G_OBJECT_CLASS (mtn_app_parent_class)->dispose (object);
+    clutter_actor_destroy (app->priv->dialog);
+
+    G_OBJECT_CLASS (mtn_app_parent_class)->dispose (object);
 }
 
 static void
@@ -810,7 +821,7 @@ mtn_app_forward (MtnApp *app)
     case MTN_APP_STATE_DEFAULT:
     case MTN_APP_STATE_CONNECT_FAILED:
     case MTN_APP_STATE_CONNECT_OK:
-        g_application_quit (G_APPLICATION (app));
+        g_signal_emit (app, signals[CLOSE], 0);
         break;
     }
 }
@@ -875,7 +886,7 @@ mtn_app_forward_key_release (MtnApp *app)
          * but if a security button is focused, we can proceed */
 
         o = NULL;
-        stage = mx_window_get_clutter_stage (app->priv->win);
+        stage = CLUTTER_STAGE (clutter_actor_get_stage (app->priv->dialog));
         focus = clutter_stage_get_key_focus (stage);
         if (focus == app->priv->none_button)
             o = G_OBJECT (app->priv->none_button);
@@ -1014,7 +1025,7 @@ _connman_new_cb (GObject *object,
 
     if (priv->first_boot && g_strcmp0 (state, "online") == 0) {
         g_debug ("Exiting on first boot: already connected");
-        g_application_quit (G_APPLICATION (user_data));
+        g_signal_emit (user_data, signals[CLOSE], 0);
         return;
     }
 
@@ -1049,7 +1060,7 @@ _connman_new_cb (GObject *object,
 
     mtn_app_set_state (MTN_APP (user_data), MTN_APP_STATE_DEFAULT);
 
-    stage = CLUTTER_ACTOR (mx_window_get_clutter_stage (priv->win));
+    stage = clutter_actor_get_stage (priv->dialog);
     clutter_actor_show (stage);
     clutter_stage_set_fullscreen (CLUTTER_STAGE (stage), TRUE);
 }
@@ -1115,17 +1126,10 @@ mtn_app_constructed (GObject *object)
     MtnAppPrivate *priv = app->priv;
     ClutterActor  *stage;
 
-    stage = CLUTTER_ACTOR (mx_window_get_clutter_stage (priv->win));
+    stage = clutter_actor_get_stage (priv->dialog);
 
     if (priv->forced_width > 0 && priv->forced_height > 0)
       clutter_actor_set_size (stage, priv->forced_width, priv->forced_height);
-
-    if (priv->forced_fullscreen)
-      {
-        /* Make it fullscreen, this avoids problems with focus */
-        mx_window_set_fullscreen  (priv->win, TRUE);
-        clutter_stage_set_fullscreen (CLUTTER_STAGE (stage), TRUE);
-      }
 }
 
 
@@ -1188,6 +1192,13 @@ mtn_app_class_init (MtnAppClass *klass)
     g_object_class_install_property (object_class,
                                      PROP_FORCED_HEIGHT,
                                      pspec);
+
+    signals[CLOSE] = g_signal_new ("close",
+                                   G_TYPE_FROM_CLASS (klass),
+                                   G_SIGNAL_RUN_LAST,
+                                   0, NULL, NULL,
+                                   g_cclosure_marshal_VOID__VOID,
+                                   G_TYPE_NONE, 0);
 }
 
 static ClutterActor*
@@ -1566,7 +1577,6 @@ static void
 mtn_app_init (MtnApp *self)
 {
     ClutterActor *stage, *stage_box, *box, *book_box, *hbox;
-    GError *error = NULL;
     MtnAppPrivate *priv;
 
     priv = self->priv = GET_PRIVATE (self);
@@ -1577,16 +1587,10 @@ mtn_app_init (MtnApp *self)
     priv->forced_width = -1;
     priv->forced_height = -1;
 
-    g_application_register (G_APPLICATION (self), NULL, &error);
+    priv->dialog = mx_dialog_new ();
+    clutter_actor_hide (priv->dialog);
 
-    if (error)
-      g_error ("Failed to register GApplication: %s", error->message);
-
-    priv->win = mx_application_create_window (MX_APPLICATION (self),
-                                              MTN_APP_NAME);
-    mx_window_set_has_toolbar (priv->win, FALSE);
-
-    stage = CLUTTER_ACTOR (mx_window_get_clutter_stage (priv->win));
+    stage = clutter_actor_get_stage (priv->dialog);
     g_signal_connect (stage, "key-release-event",
                       G_CALLBACK (_stage_key_release), self);
 
@@ -1598,7 +1602,7 @@ mtn_app_init (MtnApp *self)
 
     stage_box = mx_box_layout_new ();
     clutter_actor_set_name (CLUTTER_ACTOR (stage_box), "mtn-background");
-    mx_window_set_child (priv->win, stage_box);
+    mx_bin_set_child (MX_BIN (priv->dialog), stage_box);
 
     box = mx_box_layout_new ();
     clutter_actor_set_name (CLUTTER_ACTOR (box), "mtn-content-box");
@@ -1681,60 +1685,14 @@ mtn_app_init (MtnApp *self)
 }
 
 MtnApp*
-mtn_app_new (gint *argc, gchar ***argv)
+mtn_app_new (void)
 {
     MtnApp         *app;
-    GError         *error = NULL;
     char           *back_command = "";
     gboolean        first_boot = FALSE;
     int             forced_width = -1;
     int             forced_height = -1;
     gboolean        forced_fullscreen = FALSE;
-    GOptionContext *context;
-    GOptionEntry    entries[] =
-      {
-        {
-          "back-command", 'b', 0, G_OPTION_ARG_STRING, &back_command,
-          "Command line to run as 'Back' action", "command"
-        },
-        {
-          "first-boot", 'f', 0, G_OPTION_ARG_NONE, &first_boot,
-          "Enable first-boot mode", NULL
-        },
-        {
-          "width", 'w', 0, G_OPTION_ARG_INT, &forced_width,
-          "Force width", NULL
-        },
-        {
-          "height", 'h', 0, G_OPTION_ARG_INT, &forced_height,
-          "Force height", NULL
-        },
-        {
-          "fullscreen", 0, 0, G_OPTION_ARG_NONE, &forced_fullscreen,
-          "Force fullscreen",
-          NULL
-        },
-        {
-          NULL
-        }
-      };
-
-    context = g_option_context_new ("- Configuration UI for network settings");
-    g_option_context_add_main_entries (context, entries, NULL);
-
-    if (!g_option_context_parse (context, argc, argv, &error))
-        g_warning ("Option parsing failed: %s\n", error->message);
-
-    if (clutter_init_with_args (argc, argv,
-                               MTN_APP_NAME, NULL, NULL,
-                               &error) != CLUTTER_INIT_SUCCESS) {
-        g_warning ("Falied to init clutter: %s", error->message);
-        g_error_free (error);
-        return NULL;
-    }
-
-    mx_set_locale ();
-    mex_style_load_default ();
 
     app = g_object_new (MTN_TYPE_APP,
                         "back-command",      back_command,
@@ -1746,3 +1704,12 @@ mtn_app_new (gint *argc, gchar ***argv)
 
     return app;
 }
+
+ClutterActor*
+mtn_app_get_dialog (MtnApp *self)
+{
+  g_return_val_if_fail (MTN_IS_APP (self), NULL);
+
+  return self->priv->dialog;
+}
+

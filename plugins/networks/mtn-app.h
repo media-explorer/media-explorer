@@ -42,18 +42,19 @@ G_BEGIN_DECLS
 typedef struct _MtnAppPrivate MtnAppPrivate;
 
 typedef struct {
-    MxApplication parent;
+    GObject parent;
 
     MtnAppPrivate *priv;
 } MtnApp;
 
 typedef struct {
-    MxApplicationClass parent_class;
+    GObjectClass parent_class;
 } MtnAppClass;
 
 GType mtn_app_get_type (void);
 
-MtnApp* mtn_app_new (gint *argc, gchar ***argv);
+MtnApp*       mtn_app_new (void);
+ClutterActor* mtn_app_get_dialog (MtnApp *self);
 
 G_END_DECLS
 

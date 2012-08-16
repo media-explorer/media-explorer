@@ -22,6 +22,7 @@
 #endif
 
 #include "mex-networks-plugin.h"
+#include "mtn-app.h"
 
 #include <glib/gi18n-lib.h>
 #include <gmodule.h>
@@ -41,7 +42,8 @@ G_DEFINE_TYPE_WITH_CODE (MexNetworksPlugin, mex_networks_plugin, G_TYPE_OBJECT,
 
 struct _MexNetworksPluginPrivate
 {
-  ClutterActor *dialog;
+  MtnApp       *app;
+  ClutterActor *button;
   ClutterActor *transient_for;
 
   guint disposed : 1;
@@ -75,10 +77,10 @@ mex_networks_plugin_dispose (GObject *object)
 
   priv->disposed = TRUE;
 
-  if (priv->dialog)
+  if (priv->app)
     {
-      clutter_actor_destroy (priv->dialog);
-      priv->dialog = NULL;
+      g_object_unref (priv->app);
+      priv->app = NULL;
     }
 
   G_OBJECT_CLASS (mex_networks_plugin_parent_class)->dispose (object);
@@ -87,9 +89,6 @@ mex_networks_plugin_dispose (GObject *object)
 static void
 mex_networks_plugin_finalize (GObject *object)
 {
-  MexNetworksPlugin        *self = (MexNetworksPlugin*) object;
-  MexNetworksPluginPrivate *priv = self->priv;
-
   G_OBJECT_CLASS (mex_networks_plugin_parent_class)->finalize (object);
 }
 
@@ -106,20 +105,37 @@ mex_networks_plugin_get_location_index (MexInfoBarComponent *comp)
 }
 
 static void
-mex_networks_plugin_activated_cb (MxAction *action, MexNetworksPlugin *self)
+mex_networks_plugin_close_cb (MtnApp *app, MexNetworksPlugin *self)
 {
   MexNetworksPluginPrivate *priv = self->priv;
 
-  if (priv->dialog)
-    clutter_actor_destroy (priv->dialog);
+  g_print ("%s:%d\n", __FUNCTION__, __LINE__);
 
-  priv->dialog = mx_dialog_new ();
+  mex_push_focus (MX_FOCUSABLE (priv->button));
+
+  priv->app = NULL;
+  g_object_unref (app);
+}
+
+static void
+mex_networks_plugin_activated_cb (MxAction *action, MexNetworksPlugin *self)
+{
+  MexNetworksPluginPrivate *priv = self->priv;
+  ClutterActor             *dialog;
+
+  if (priv->app)
+    g_object_unref (priv->app);
+
+  priv->app = mtn_app_new ();
+  g_signal_connect (priv->app, "close",
+                    G_CALLBACK (mex_networks_plugin_close_cb), self);
+
+  dialog = mtn_app_get_dialog (priv->app);
 
   if (priv->transient_for)
-    mx_dialog_set_transient_parent (MX_DIALOG (priv->dialog),
-                                    priv->transient_for);
+    mx_dialog_set_transient_parent (MX_DIALOG (dialog), priv->transient_for);
 
-  clutter_actor_show (priv->dialog);
+  clutter_actor_show (dialog);
 }
 
 static ClutterActor *
@@ -169,6 +185,8 @@ mex_networks_plugin_create_ui (MexInfoBarComponent *comp,
 
   mx_bin_set_child (MX_BIN (network_tile), network_button);
   mx_bin_set_child (MX_BIN (network_button), network_graphic);
+
+  self->priv->button = network_tile;
 
   return network_tile;
 }
