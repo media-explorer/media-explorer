@@ -48,10 +48,6 @@ static void
 mtn_service_tile_get_property (GObject *object, guint property_id,
                                GValue *value, GParamSpec *pspec)
 {
-    MtnServiceTile *tile;
-
-    tile = MTN_SERVICE_TILE (object);
-
     switch (property_id) {
     case PROP_PATH:
         break;
@@ -81,10 +77,6 @@ mtn_service_tile_set_property (GObject *object, guint property_id,
 static void
 mtn_service_tile_dispose (GObject *object)
 {
-    MtnServiceTile *tile;
-
-    tile = MTN_SERVICE_TILE (object);
-
     G_OBJECT_CLASS (mtn_service_tile_parent_class)->dispose (object);
 }
 

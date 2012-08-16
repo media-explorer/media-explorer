@@ -173,7 +173,7 @@ dist_icon_26x26_DATA = \
 		 icons/x-mex-playing.png \
 		 icons/x-mex-playing-highlight.png
 
-if ENABLE_NETWORKS
+if USE_PLUGIN_NETWORKS
 networksdir = $(pkgdatadir)/networks
 dist_networks_DATA =				\
 	networks/background.png			\
@@ -202,10 +202,6 @@ applicationsdir = $(datadir)/applications
 dist_applications_DATA =			\
 	media-explorer.desktop			\
 	$(NULL)
-
-if ENABLE_NETWORKS
-dist_applications_DATA += mex-networks.desktop
-endif
 
 griloconfdir = $(pkgdatadir)
 dist_griloconf_DATA = grilo-system.conf
