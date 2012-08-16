@@ -2428,6 +2428,7 @@ mex_startup (MxApplication *app,
   pmanager = mex_plugin_manager_get_default ();
   g_signal_connect (pmanager, "plugin-loaded",
                     G_CALLBACK (mex_plugin_loaded_cb), data);
+  mex_info_bar_set_plugin_manager (MEX_INFO_BAR (data->info_bar), pmanager);
   mex_plugin_manager_refresh (pmanager);
 
 

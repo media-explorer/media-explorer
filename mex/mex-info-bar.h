@@ -2,6 +2,7 @@
  * Mex - a media explorer
  *
  * Copyright © 2010, 2011 Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -24,6 +25,7 @@
 #include <mex/mex-notification-area.h>
 #include <mex/mex-clock-bin.h>
 #include <mex/mex-utils.h>
+#include <mex/mex-plugin-manager.h>
 
 G_BEGIN_DECLS
 
@@ -75,6 +77,7 @@ gboolean mex_info_bar_dialog_visible (MexInfoBar *self);
 void mex_info_bar_new_notification (MexInfoBar *self,
                                     const gchar *message,
                                     gint timeout);
+void mex_info_bar_set_plugin_manager (MexInfoBar *self, MexPluginManager *mgr);
 
 GType mex_info_bar_get_type (void) G_GNUC_CONST;
 
