@@ -2,6 +2,7 @@
  * Mex - a media explorer
  *
  * Copyright © 2010, 2011 Intel Corporation.
+ * Copyright © 2012, sleep(5) ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -24,6 +25,7 @@
 #include "mex-tile.h"
 #include "mex-generic-notification-source.h"
 #include "mex-action-manager.h"
+#include "mex-info-bar-component.h"
 
 #include <glib/gi18n-lib.h>
 
@@ -51,7 +53,9 @@ struct _MexInfoBarPrivate
 
   ClutterScript *script;
 
-  gboolean settings_dialog_parented;
+  guint settings_dialog_parented : 1;
+  guint plugin_manager_set       : 1;
+  guint no_settings_helpers      : 1;
 
   MexGenericNotificationSource *notification_source;
 };
@@ -390,18 +394,15 @@ _create_settings_dialog (MexInfoBar *self)
   ClutterActor *dialog, *network_graphic;
   ClutterActor *network_tile, *dialog_layout, *dialog_label;
   ClutterActor *network_button;
+  ClutterActor *no_settings;
 
-  MxAction *close_dialog, *network_settings;
+  MxAction *close_dialog;
 
   dialog = mx_dialog_new ();
   mx_stylable_set_style_class (MX_STYLABLE (dialog), "MexInfoBarDialog");
 
   dialog_label = mx_label_new_with_text (_("Settings"));
   mx_stylable_set_style_class (MX_STYLABLE (dialog_label), "DialogHeader");
-
-  /* Create actions for settings dialog */
-  network_settings =
-    _action_new_from_desktop_file ("mex-networks.desktop");
 
   close_dialog = mx_action_new_full ("close", _("Close"),
                                      G_CALLBACK (_close_dialog_cb), self);
@@ -413,44 +414,14 @@ _create_settings_dialog (MexInfoBar *self)
   mx_table_insert_actor (MX_TABLE (dialog_layout),
                          CLUTTER_ACTOR (dialog_label), 0, 0);
 
-  if (network_settings)
-    {
-      gchar *tmp;
-      network_graphic = mx_image_new ();
-      mx_stylable_set_style_class (MX_STYLABLE (network_graphic),
-                                   "NetworkGraphic");
+  no_settings = mx_label_new_with_text (_("No settings helpers installed"));
 
-      tmp = g_build_filename (mex_get_data_dir (), "style",
-                              "graphic-network.png", NULL);
-      mx_image_set_from_file (MX_IMAGE (network_graphic), tmp, NULL);
-      g_free (tmp);
+  clutter_actor_hide (priv->settings_button);
 
-      network_tile = mex_tile_new ();
-      mex_tile_set_label (MEX_TILE (network_tile), _("Network"));
-      mex_tile_set_important (MEX_TILE (network_tile), TRUE);
+  mx_table_insert_actor (MX_TABLE (dialog_layout),
+                         CLUTTER_ACTOR (no_settings), 1, 0);
 
-      network_button = mx_button_new ();
-
-      mx_button_set_action (MX_BUTTON (network_button), network_settings);
-
-      mx_bin_set_child (MX_BIN (network_tile), network_button);
-      mx_bin_set_child (MX_BIN (network_button), network_graphic);
-
-      mx_table_insert_actor (MX_TABLE (dialog_layout),
-                             CLUTTER_ACTOR (network_tile), 1, 1);
-    }
-
-  if (!network_settings)
-    {
-      ClutterActor *no_settings;
-      no_settings = mx_label_new_with_text (_("No settings helpers installed"));
-
-      clutter_actor_destroy (priv->settings_button);
-
-      mx_table_insert_actor (MX_TABLE (dialog_layout),
-                             CLUTTER_ACTOR (no_settings), 1, 0);
-    }
-
+  priv->no_settings_helpers = TRUE;
 
   mx_bin_set_child (MX_BIN (dialog), dialog_layout);
   mx_dialog_add_action (MX_DIALOG (dialog), close_dialog);
@@ -497,6 +468,48 @@ _back_button_cb (ClutterActor *actor,
     }
 
   g_list_free (actions);
+}
+
+static void
+mex_info_bar_add_settings_item (MexInfoBar   *self,
+                                ClutterActor *item,
+                                gint          idx)
+{
+  MexInfoBarPrivate *priv = self->priv;
+  ClutterActor      *dialog_layout;
+  int                rows;
+  ClutterActorIter   iter;
+  ClutterActor      *child;
+
+  g_return_if_fail (priv->settings_dialog);
+
+  /* TODO -- handle the index, at least 0 for prepend and <0 for append. */
+  dialog_layout = mx_bin_get_child (MX_BIN (priv->settings_dialog));
+  rows = mx_table_get_row_count (MX_TABLE (dialog_layout));
+
+  mx_table_insert_actor (MX_TABLE (dialog_layout), item, rows + 1, 1);
+
+  if (priv->no_settings_helpers)
+    {
+      clutter_actor_show (priv->settings_button);
+      /*
+       * Remove the 'No settings helpers installed' notice.
+       */
+      clutter_actor_iter_init (&iter, dialog_layout);
+
+      while (clutter_actor_iter_next (&iter, &child))
+        {
+          int row = mx_table_child_get_row (MX_TABLE (dialog_layout), child);
+          int col = mx_table_child_get_column (MX_TABLE (dialog_layout), child);
+
+          if (row == 1 && col == 0)
+            {
+              clutter_actor_remove_child (dialog_layout, child);
+              priv->no_settings_helpers = FALSE;
+              break;
+            }
+        }
+    }
 }
 
 void
@@ -588,4 +601,58 @@ mex_info_bar_get_default (void)
     return singleton;
 
   return singleton = g_object_new (MEX_TYPE_INFO_BAR, NULL);
+}
+
+static void
+mex_info_bar_plugin_loaded_cb (MexPluginManager *mgr,
+                               GObject          *plugin,
+                               MexInfoBar       *self)
+{
+  MexInfoBarPrivate   *priv = self->priv;
+  MexInfoBarLocation   location;
+  int                  idx;
+  ClutterActor        *actor, *stage;
+  MexInfoBarComponent *comp;
+
+  if (!MEX_IS_INFO_BAR_COMPONENT (plugin))
+    return;
+
+  comp = MEX_INFO_BAR_COMPONENT (plugin);
+
+  location = mex_info_bar_component_get_location (comp);
+  g_return_if_fail (location != MEX_INFO_BAR_LOCATION_UNDEFINED);
+
+  idx = mex_info_bar_component_get_location_index (comp);
+
+  stage = clutter_actor_get_stage (CLUTTER_ACTOR (self));
+
+  switch (location)
+    {
+    default:
+      g_warning ("Unknown info bar location %d", location);
+      break;
+    case MEX_INFO_BAR_LOCATION_BAR:
+      actor = mex_info_bar_component_create_ui (comp, stage);
+      g_return_if_fail (actor);
+      clutter_actor_insert_child_at_index (priv->group, actor, idx);
+      break;
+    case MEX_INFO_BAR_LOCATION_SETTINGS:
+      actor = mex_info_bar_component_create_ui (comp, stage);
+      g_return_if_fail (actor);
+      mex_info_bar_add_settings_item (self, actor, idx);
+      break;
+    }
+}
+
+void
+mex_info_bar_set_plugin_manager (MexInfoBar *self, MexPluginManager *mgr)
+{
+  g_return_if_fail (MEX_IS_INFO_BAR (self) && MEX_IS_PLUGIN_MANAGER (mgr));
+  g_return_if_fail (!self->priv->plugin_manager_set);
+
+  self->priv->plugin_manager_set = TRUE;
+
+  g_signal_connect (mgr, "plugin-loaded",
+                    G_CALLBACK (mex_info_bar_plugin_loaded_cb),
+                    self);
 }
