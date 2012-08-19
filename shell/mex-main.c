@@ -3,6 +3,7 @@
  *
  * Copyright © 2010, 2011 Intel Corporation.
  * Copyright © 2011 Collabora Ltd.
+ * Copyright © 2012 sleep(5) Ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -1062,18 +1063,41 @@ mex_captured_event_cb (ClutterActor *actor,
        * button is a play pause.
        */
     case CLUTTER_KEY_AudioPlay:
-      if (clutter_media_get_playing (data->media))
-        mex_player_pause (MEX_PLAYER (data->video_player));
+      if (CLUTTER_ACTOR_IS_VISIBLE (data->music_player) ||
+          mex_music_player_is_playing (MEX_MUSIC_PLAYER (data->music_player)))
+        {
+          /*
+           * If the music player is currently visible, or is playing, then
+           * treat the Play key as a toggle.
+           */
+          mex_music_player_play_toggle (MEX_MUSIC_PLAYER (data->music_player));
+        }
       else
-        mex_player_play (MEX_PLAYER (data->video_player));
+        {
+          /*
+           * Otherwise, pass the key onto the video player
+           */
+          if (clutter_media_get_playing (data->media))
+            mex_player_pause (MEX_PLAYER (data->video_player));
+          else
+            mex_player_play (MEX_PLAYER (data->video_player));
+        }
       return TRUE;
 
     case CLUTTER_KEY_AudioPause:
-      mex_player_pause (MEX_PLAYER (data->video_player));
+      if (CLUTTER_ACTOR_IS_VISIBLE (data->music_player) ||
+          mex_music_player_is_playing (MEX_MUSIC_PLAYER (data->music_player)))
+        mex_music_player_play_toggle (MEX_MUSIC_PLAYER (data->music_player));
+      else
+        mex_player_pause (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioStop:
-      mex_player_quit (MEX_PLAYER (data->video_player));
+      if (CLUTTER_ACTOR_IS_VISIBLE (data->music_player) ||
+          mex_music_player_is_playing (MEX_MUSIC_PLAYER (data->music_player)))
+        mex_music_player_stop (MEX_MUSIC_PLAYER (data->music_player));
+      else
+        mex_player_quit (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioRewind:
@@ -1081,15 +1105,24 @@ mex_captured_event_cb (ClutterActor *actor,
       return TRUE;
 
     case CLUTTER_KEY_AudioForward:
-      mex_player_forward (MEX_PLAYER (data->video_player));
+      if (CLUTTER_ACTOR_IS_VISIBLE (data->video_player))
+        mex_player_forward (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioNext:
-      mex_player_next (MEX_PLAYER (data->video_player));
+      if (CLUTTER_ACTOR_IS_VISIBLE (data->music_player) ||
+          mex_music_player_is_playing (MEX_MUSIC_PLAYER (data->music_player)))
+        mex_music_player_next (MEX_MUSIC_PLAYER (data->music_player));
+      else
+        mex_player_next (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_AudioPrev:
-      mex_player_previous (MEX_PLAYER (data->video_player));
+      if (CLUTTER_ACTOR_IS_VISIBLE (data->music_player) ||
+          mex_music_player_is_playing (MEX_MUSIC_PLAYER (data->music_player)))
+        mex_music_player_previous (MEX_MUSIC_PLAYER (data->music_player));
+      else
+        mex_player_previous (MEX_PLAYER (data->video_player));
       return TRUE;
 
     case CLUTTER_KEY_F11 :
