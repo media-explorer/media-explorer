@@ -2,6 +2,7 @@
  * Mex - a media explorer
  *
  * Copyright © 2012 Intel Corporation.
+ * Copyright © 2012 sleep(5) Ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -34,17 +35,12 @@ static void mex_music_player_notify_cb (ClutterMedia   *media,
                                         MexMusicPlayer *player);
 static void mex_music_player_eos_cb (ClutterMedia *media,
                                      MexMusicPlayer *player);
-static void mex_music_player_play (MexMusicPlayer *player);
-static void mex_music_player_stop (MexMusicPlayer *player);
 static void mex_music_player_repeat_toggled (MexMusicPlayer *player,
                                              GParamSpec     *spec,
                                              MxButton       *button);
 static void mex_music_player_shuffle_toggled (MexMusicPlayer *player,
                                               GParamSpec     *spec,
                                               MxButton       *button);
-static void mex_music_player_next (MexMusicPlayer *player);
-static void mex_music_player_prev (MexMusicPlayer *player);
-
 static void mex_music_player_slider_notify (MxSlider       *slider,
                                             GParamSpec     *pspec,
                                             MexMusicPlayer *priv);
@@ -413,7 +409,7 @@ mex_music_player_init (MexMusicPlayer *self)
   /* play */
   priv->play_button = mex_script_get_actor (priv->script, "play-button");
   g_signal_connect_swapped (priv->play_button, "clicked",
-                            G_CALLBACK (mex_music_player_play), self);
+                            G_CALLBACK (mex_music_player_play_toggle), self);
 
   /* next */
   button = mex_script_get_actor (priv->script, "next-button");
@@ -423,12 +419,12 @@ mex_music_player_init (MexMusicPlayer *self)
   /* previous */
   button = mex_script_get_actor (priv->script, "previous-button");
   g_signal_connect_swapped (button, "clicked",
-                            G_CALLBACK (mex_music_player_prev), self);
+                            G_CALLBACK (mex_music_player_previous), self);
 
   /* stop */
   button = mex_script_get_actor (priv->script, "stop-button");
   g_signal_connect_swapped (button, "clicked",
-                            G_CALLBACK (mex_music_player_stop), self);
+                            G_CALLBACK (mex_music_player_quit), self);
 
   /* repeat */
   button = mex_script_get_actor (priv->script, "repeat-button");
@@ -503,21 +499,58 @@ mex_music_player_update_playing (MexMusicPlayer *player)
     mx_stylable_set_style_class (MX_STYLABLE (priv->play_button), "MediaPlay");
 }
 
+gboolean
+mex_music_player_is_playing (MexMusicPlayer *player)
+{
+  MexMusicPlayerPrivate *priv;
 
-static void
+  g_return_val_if_fail (MEX_IS_MUSIC_PLAYER (player), FALSE);
+  priv = player->priv;
+
+  return clutter_media_get_playing (priv->player);
+}
+
+void
 mex_music_player_play (MexMusicPlayer *player)
 {
-  MexMusicPlayerPrivate *priv = player->priv;
+  MexMusicPlayerPrivate *priv;
+
+  g_return_if_fail (MEX_IS_MUSIC_PLAYER (player));
+  priv = player->priv;
+
+  clutter_media_set_playing (priv->player, TRUE);
+}
+
+void
+mex_music_player_play_toggle (MexMusicPlayer *player)
+{
+  MexMusicPlayerPrivate *priv;
+
+  g_return_if_fail (MEX_IS_MUSIC_PLAYER (player));
+  priv = player->priv;
 
   clutter_media_set_playing (priv->player,
                              !clutter_media_get_playing (priv->player));
 }
 
-
-static void
+void
 mex_music_player_stop (MexMusicPlayer *player)
 {
-  MexMusicPlayerPrivate *priv = player->priv;
+  MexMusicPlayerPrivate *priv;
+
+  g_return_if_fail (MEX_IS_MUSIC_PLAYER (player));
+  priv = player->priv;
+
+  clutter_media_set_playing (priv->player, FALSE);
+}
+
+void
+mex_music_player_quit (MexMusicPlayer *player)
+{
+  MexMusicPlayerPrivate *priv;
+
+  g_return_if_fail (MEX_IS_MUSIC_PLAYER (player));
+  priv = player->priv;
 
   clutter_media_set_playing (priv->player, FALSE);
 
@@ -561,18 +594,24 @@ mex_music_player_update_index (MexMusicPlayer *player,
   mex_music_player_set_content (MEX_CONTENT_VIEW (player), new_content);
 }
 
-static void
+void
 mex_music_player_next (MexMusicPlayer *player)
 {
-  MexMusicPlayerPrivate *priv = player->priv;
+  MexMusicPlayerPrivate *priv;
+
+  g_return_if_fail (MEX_IS_MUSIC_PLAYER (player));
+  priv = player->priv;
 
   mex_music_player_update_index (player, priv->current_index + 1);
 }
 
-static void
-mex_music_player_prev (MexMusicPlayer *player)
+void
+mex_music_player_previous (MexMusicPlayer *player)
 {
-  MexMusicPlayerPrivate *priv = player->priv;
+  MexMusicPlayerPrivate *priv;
+
+  g_return_if_fail (MEX_IS_MUSIC_PLAYER (player));
+  priv = player->priv;
 
   mex_music_player_update_index (player, priv->current_index - 1);
 }
@@ -655,7 +694,21 @@ mex_music_player_eos_cb (ClutterMedia   *media,
 }
 
 MexMusicPlayer *
-mex_music_player_new (void)
+mex_music_player_get_default (void)
 {
-  return g_object_new (MEX_TYPE_MUSIC_PLAYER, NULL);
+  static MexMusicPlayer *singleton = NULL;
+
+  if (singleton)
+    return singleton;
+
+  singleton = g_object_new (MEX_TYPE_MUSIC_PLAYER, NULL);
+  return singleton;
+}
+
+ClutterMedia *
+mex_music_player_get_clutter_media (MexMusicPlayer *player)
+{
+  g_return_val_if_fail (MEX_IS_MUSIC_PLAYER (player), NULL);
+
+  return player->priv->player;
 }
