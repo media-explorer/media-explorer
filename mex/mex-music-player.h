@@ -64,7 +64,16 @@ struct _MexMusicPlayerClass
 
 GType mex_music_player_get_type (void) G_GNUC_CONST;
 
-MexMusicPlayer *mex_music_player_new (void);
+MexMusicPlayer *mex_music_player_get_default (void);
+
+void mex_music_player_play (MexMusicPlayer *player);
+void mex_music_player_play_toggle (MexMusicPlayer *player);
+void mex_music_player_stop (MexMusicPlayer *player);
+void mex_music_player_next (MexMusicPlayer *player);
+void mex_music_player_previous (MexMusicPlayer *player);
+void mex_music_player_quit (MexMusicPlayer *player);
+gboolean mex_music_player_is_playing (MexMusicPlayer *player);
+ClutterMedia *mex_music_player_get_clutter_media (MexMusicPlayer *player);
 
 G_END_DECLS
 

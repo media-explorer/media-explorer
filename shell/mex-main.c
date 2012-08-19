@@ -2331,7 +2331,7 @@ mex_startup (MxApplication *app,
 
 
   /* create music player */
-  data->music_player = mex_music_player_new ();
+  data->music_player = mex_music_player_get_default ();
   g_signal_connect_swapped (data->music_player, "close-request",
                             G_CALLBACK (mex_go_back), data);
   clutter_actor_hide (data->music_player);
