@@ -2,6 +2,7 @@
  * Mex - a media explorer
  *
  * Copyright © 2010, 2011 Intel Corporation.
+ * Copyright © 2012 sleep(5) Ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -22,6 +23,7 @@
 
 #include "mex-volume-control.h"
 #include "mex-player.h"
+#include "mex-music-player.h"
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <string.h>
@@ -44,6 +46,7 @@ enum
 struct _MexVolumeControlPrivate
 {
   ClutterMedia *media;
+  ClutterMedia *music;
   ClutterActor *volume;
 
   gdouble previous_vol_value;
@@ -68,6 +71,7 @@ update_volume_and_style_class (MexVolumeControl *self)
   MexVolumeControlPrivate *priv = self->priv;
 
   clutter_media_set_audio_volume (priv->media, priv->vol_value);
+  clutter_media_set_audio_volume (priv->music, priv->vol_value);
   update_style_class (self);
 }
 
@@ -204,7 +208,12 @@ on_audio_volume_changed (ClutterMedia *media,
   static gboolean first_notification = TRUE;
   gdouble new_volume;
 
-  new_volume = clutter_media_get_audio_volume (priv->media);
+  if ((clutter_media_get_playing (priv->music) && priv->music == media) ||
+      (clutter_media_get_playing (priv->media) && priv->media == media))
+    new_volume = clutter_media_get_audio_volume (media);
+  else
+    return;
+
   if (fabs (priv->vol_value - new_volume) < 0.01)
     return;
 
@@ -229,9 +238,13 @@ mex_volume_control_init (MexVolumeControl *self)
   MexVolumeControlPrivate *priv = self->priv = VOLUME_CONTROL_PRIVATE (self);
   gchar *new_style_class;
   MexPlayer *player;
+  MexMusicPlayer *music;
 
   player = mex_player_get_default ();
   priv->media = mex_player_get_clutter_media (player);
+
+  music = mex_music_player_get_default ();
+  priv->music = mex_music_player_get_clutter_media (music);
 
   priv->volume = mx_button_new ();
   mx_widget_set_disabled (MX_WIDGET (priv->volume), TRUE);
@@ -241,6 +254,8 @@ mex_volume_control_init (MexVolumeControl *self)
   /* The media sound can also be changed from another process changint the
    * stream audio with pulse audio, adjust the volume on those changes */
   g_signal_connect (priv->media, "notify::audio-volume",
+                    G_CALLBACK (on_audio_volume_changed), self);
+  g_signal_connect (priv->music, "notify::audio-volume",
                     G_CALLBACK (on_audio_volume_changed), self);
 
   new_style_class = g_strdup_printf ("volume-%.0f", priv->vol_value * 10);
