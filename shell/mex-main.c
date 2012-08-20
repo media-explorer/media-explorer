@@ -387,6 +387,13 @@ mex_player_content_set_externally_cb (MexData *data)
 }
 
 static void
+mex_player_show_cb (MexData *data)
+{
+  if (mex_music_player_is_playing (data->music_player))
+    mex_music_player_stop (data->music_player);
+}
+
+static void
 mex_show_cb (MxAction *action, MexData *data)
 {
   MexContent *content = mex_action_get_content (action);
@@ -1095,7 +1102,7 @@ mex_captured_event_cb (ClutterActor *actor,
     case CLUTTER_KEY_AudioStop:
       if (CLUTTER_ACTOR_IS_VISIBLE (data->music_player) ||
           mex_music_player_is_playing (MEX_MUSIC_PLAYER (data->music_player)))
-        mex_music_player_stop (MEX_MUSIC_PLAYER (data->music_player));
+        mex_music_player_quit (MEX_MUSIC_PLAYER (data->music_player));
       else
         mex_player_quit (MEX_PLAYER (data->video_player));
       return TRUE;
@@ -2349,6 +2356,9 @@ mex_startup (MxApplication *app,
                             G_CALLBACK (mex_go_back), data);
   g_signal_connect_swapped (data->video_player, "open-request",
                             G_CALLBACK (mex_player_content_set_externally_cb),
+                            data);
+  g_signal_connect_swapped (data->video_player, "show",
+                            G_CALLBACK (mex_player_show_cb),
                             data);
 
   clutter_actor_hide (data->video_player);
