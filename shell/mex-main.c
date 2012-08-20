@@ -743,9 +743,15 @@ mex_show_home_screen (MexData *data)
   /* hide the video player */
   mex_hide_actor (data, data->video_player);
 
+  /* hide the video player */
+  mex_hide_actor (data, data->music_player);
+
   /* hide current tool */
   if (data->current_tool)
     mex_hide_actor (data, data->current_tool);
+
+  /* reset stack style to normal */
+  clutter_actor_set_name (data->stack, "top-level");
 
   /* show the home screen (explorer) */
   mex_show_actor (data, data->explorer);
