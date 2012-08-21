@@ -387,6 +387,18 @@ mex_player_content_set_externally_cb (MexData *data)
 }
 
 static void
+mex_music_player_content_set_externally_cb (MexData *data)
+{
+  /* hide other actors */
+  mex_hide_actor (data, data->explorer);
+  mex_hide_actor (data, data->slide_show);
+  mex_hide_actor (data, data->video_player);
+
+  /* show the music player */
+  mex_show_actor (data, data->music_player);
+}
+
+static void
 mex_player_show_cb (MexData *data)
 {
   if (mex_music_player_is_playing (data->music_player))
@@ -2400,6 +2412,9 @@ mex_startup (MxApplication *app,
                             G_CALLBACK (mex_go_back), data);
   clutter_actor_hide (data->music_player);
   clutter_actor_add_child (data->stack, data->music_player);
+  g_signal_connect_swapped (data->music_player, "open-request",
+                       G_CALLBACK (mex_music_player_content_set_externally_cb),
+                            data);
 
 
   /* Pack spinner into stack */
