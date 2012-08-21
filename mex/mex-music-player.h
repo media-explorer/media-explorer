@@ -74,6 +74,8 @@ void mex_music_player_previous (MexMusicPlayer *player);
 void mex_music_player_quit (MexMusicPlayer *player);
 gboolean mex_music_player_is_playing (MexMusicPlayer *player);
 ClutterMedia *mex_music_player_get_clutter_media (MexMusicPlayer *player);
+void mex_music_player_seek_us (MexMusicPlayer *player, gint64 seek_offset_us);
+void mex_music_player_set_uri (MexMusicPlayer *player, const gchar *uri);
 
 G_END_DECLS
 
