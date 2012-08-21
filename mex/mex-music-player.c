@@ -79,6 +79,7 @@ struct _MexMusicPlayerPrivate
 enum
 {
   CLOSE_REQUEST,
+  OPEN_REQUEST,
 
   LAST_SIGNAL
 };
@@ -372,6 +373,13 @@ mex_music_player_class_init (MexMusicPlayerClass *klass)
                                          0, NULL, NULL,
                                          g_cclosure_marshal_VOID__VOID,
                                          G_TYPE_NONE, 0);
+
+  signals[OPEN_REQUEST] = g_signal_new ("open-request",
+                                        G_TYPE_FROM_CLASS (klass),
+                                        G_SIGNAL_RUN_LAST,
+                                        0, NULL, NULL,
+                                        g_cclosure_marshal_VOID__VOID,
+                                        G_TYPE_NONE, 0);
 }
 
 static void
@@ -711,4 +719,65 @@ mex_music_player_get_clutter_media (MexMusicPlayer *player)
   g_return_val_if_fail (MEX_IS_MUSIC_PLAYER (player), NULL);
 
   return player->priv->player;
+}
+
+void
+mex_music_player_seek_us (MexMusicPlayer *player, gint64 seek_offset_us)
+{
+  MexMusicPlayerPrivate *priv;
+  gdouble duration_us, progress, new_progress;
+
+  g_return_if_fail (MEX_IS_MUSIC_PLAYER (player));
+
+  priv = player->priv;
+
+  duration_us = clutter_media_get_duration (priv->player) * 1000000;
+  progress = clutter_media_get_progress (priv->player) * duration_us;
+
+  new_progress = (progress + seek_offset_us) / duration_us;
+
+  if (new_progress < 0.0)
+    mex_music_player_previous (player);
+  else if (new_progress > 1.0)
+    mex_music_player_next (player);
+  else
+    clutter_media_set_progress (priv->player, new_progress);
+}
+
+void
+mex_music_player_set_uri (MexMusicPlayer *player, const gchar *uri)
+{
+  MexMusicPlayerPrivate *priv;
+  char *old_uri;
+  gboolean playing;
+  gboolean uri_set = FALSE;
+
+  g_return_if_fail (MEX_IS_MUSIC_PLAYER (player));
+
+  priv = player->priv;
+
+  old_uri = clutter_media_get_uri (priv->player);
+
+  if (!old_uri && !uri)
+    return;
+
+  playing = mex_music_player_is_playing (player);
+
+  if (!old_uri || (uri && strcmp (uri, old_uri)))
+    {
+      uri_set = TRUE;
+      clutter_media_set_uri (priv->player, uri);
+    }
+
+  if (playing && !uri)
+    {
+      /* we are no longer playing, I guess */
+      g_signal_emit (player, signals[CLOSE_REQUEST], 0);
+    }
+  else if (!playing && uri && uri_set)
+    {
+      g_signal_emit (player, signals[OPEN_REQUEST], 0);
+    }
+
+  g_free (old_uri);
 }
