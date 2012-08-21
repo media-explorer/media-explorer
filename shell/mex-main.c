@@ -982,6 +982,14 @@ hide_cursor (gpointer user_data)
   return FALSE;
 }
 
+static void
+mex_raise_music_player (MexData  *data)
+{
+  clutter_actor_set_name (data->stack, "top-level-playing");
+  mex_hide_actor (data, data->explorer);
+  mex_show_actor (data, data->music_player);
+}
+
 static gboolean
 mex_captured_event_cb (ClutterActor *actor,
                        ClutterEvent *event,
@@ -1040,8 +1048,15 @@ mex_captured_event_cb (ClutterActor *actor,
 
   if (MEX_KEY_HOME (key_event->keyval))
     {
-      /* stop all playing content and show the home screen */
-      mex_show_home_screen (data);
+      /*
+       * If the music player is playing in the background, bring it up,
+       * otherwise take us to the home screen.
+       */
+      if (!CLUTTER_ACTOR_IS_VISIBLE (data->music_player) &&
+          mex_music_player_is_playing (MEX_MUSIC_PLAYER (data->music_player)))
+        mex_raise_music_player (data);
+      else
+        mex_show_home_screen (data);
       return TRUE;
     }
 
