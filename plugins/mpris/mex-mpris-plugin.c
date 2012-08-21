@@ -2,6 +2,7 @@
  * Mex - a media explorer
  *
  * Copyright © 2010, 2011 Intel Corporation.
+ * Copyright © 2012 sleep(5) Ltd.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms and conditions of the GNU Lesser General Public License,
@@ -41,7 +42,7 @@ G_DEFINE_TYPE (MexMprisPlugin, mex_mpris_plugin, G_TYPE_OBJECT)
 struct _MexMprisPluginPrivate
 {
   MexPlayer *player;
-  ClutterMedia *media;
+  MexMusicPlayer *music;
 
   GDBusConnection *connection;
   GDBusNodeInfo *introspection_data;
@@ -81,14 +82,14 @@ _check_if_seeked (ClutterMedia   *media,
 {
   MexMprisPluginPrivate *priv = MEX_MPRIS_PLUGIN (self)->priv;
 
-  if (clutter_gst_player_get_in_seek (CLUTTER_GST_PLAYER (priv->media)))
+  if (clutter_gst_player_get_in_seek (CLUTTER_GST_PLAYER (media)))
     {
       gdouble progress, duration;
       gint64 newposition;
 
-      duration = clutter_media_get_duration (priv->media);
+      duration = clutter_media_get_duration (media);
       /* progress is in a range of 0.0 1.0 so convert to position in uS */
-      progress = clutter_media_get_progress (priv->media);
+      progress = clutter_media_get_progress (media);
 
       newposition = duration * progress * 1000000;
 
@@ -163,7 +164,14 @@ _set_player_property_cb (GDBusConnection  *connection,
 
   if (g_strcmp0 (property_name, "Volume") == 0)
     {
-      clutter_media_set_audio_volume (priv->media, g_variant_get_double (value));
+      ClutterMedia *media;
+
+      if (mex_music_player_is_playing (priv->music))
+        media = mex_music_player_get_clutter_media (priv->music);
+      else
+        media = mex_player_get_clutter_media (priv->player);
+
+      clutter_media_set_audio_volume (media, g_variant_get_double (value));
       return TRUE;
     }
 
@@ -191,7 +199,10 @@ _get_player_property_cb (GDBusConnection  *connection,
   ClutterMedia *media;
   GVariant *v = NULL;
 
-  media = priv->media;
+  if (mex_music_player_is_playing (priv->music))
+    media = mex_music_player_get_clutter_media (priv->music);
+  else
+    media = mex_player_get_clutter_media (priv->player);
 
   if (g_strcmp0 ("PlaybackStatus", property_name) == 0)
     {
@@ -200,7 +211,7 @@ _get_player_property_cb (GDBusConnection  *connection,
       gdouble progress = clutter_media_get_progress (media);
       gboolean playing = clutter_media_get_playing (media);
 
-      if (playing) 
+      if (playing)
           v = g_variant_new_string ("Playing");
       else if (progress != 0)
           v = g_variant_new_string ("Paused");
@@ -252,6 +263,36 @@ _get_player_property_cb (GDBusConnection  *connection,
   return NULL;
 }
 
+static char *
+_content_mime_prefix (const gchar *uri)
+{
+  char *pfx = NULL;
+
+  g_return_val_if_fail (uri, NULL);
+
+  if (g_str_has_prefix (uri, "dvd") ||
+      g_str_has_prefix (uri, "vcd"))
+    {
+      pfx = g_strdup ("video");
+      return pfx;
+    }
+  else
+    {
+      gchar *guess;
+
+      if ((guess = g_content_type_guess (uri, NULL, 0, NULL)))
+        {
+          char *p;
+
+          if ((p = strchr (guess, '/')))
+            *p = 0;
+
+          pfx = guess;
+        }
+    }
+
+  return pfx;
+}
 
 static void
 _player_method_cb (GDBusConnection       *connection,
@@ -266,37 +307,83 @@ _player_method_cb (GDBusConnection       *connection,
   MexMprisPluginPrivate *priv = MEX_MPRIS_PLUGIN (self)->priv;
 
  if (g_strcmp0 (method_name, "Next") == 0)
-   mex_player_next (priv->player);
-
+   {
+     if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (priv->music)) ||
+         mex_music_player_is_playing (priv->music))
+       mex_music_player_next (priv->music);
+     else
+       mex_player_next (priv->player);
+   }
  else if (g_strcmp0 (method_name, "OpenUri") == 0)
    {
      const gchar *uri;
+     char *pfx;
+
      g_variant_get (parameters, "(s)", &uri);
-     mex_player_set_uri (priv->player, uri);
+
+     if ((pfx = _content_mime_prefix (uri)))
+       {
+         if (!strcmp (pfx, "audio"))
+           mex_music_player_set_uri (priv->music, uri);
+         else if (!strcmp (pfx, "image"))
+           g_warning ("Mpris image playback is not implemented");
+         else
+           mex_player_set_uri (priv->player, uri);
+       }
+     else
+       mex_player_set_uri (priv->player, uri);
    }
-
  else if (g_strcmp0 (method_name, "Pause") == 0)
-   mex_player_pause (priv->player);
-
+   {
+     if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (priv->music)) ||
+         mex_music_player_is_playing (priv->music))
+       mex_music_player_stop (priv->music);
+     else
+       mex_player_pause (priv->player);
+   }
  else if (g_strcmp0 (method_name, "Play") == 0)
-   mex_player_play (priv->player);
-
+   {
+     if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (priv->music)) ||
+         mex_music_player_is_playing (priv->music))
+       mex_music_player_play (priv->music);
+     else
+       mex_player_play (priv->player);
+   }
  else if (g_strcmp0 (method_name, "PlayPause") == 0)
-     mex_player_playpause (priv->player);
-
+   {
+     if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (priv->music)) ||
+         mex_music_player_is_playing (priv->music))
+       mex_music_player_play_toggle (priv->music);
+     else
+       mex_player_playpause (priv->player);
+   }
  else if (g_strcmp0 (method_name, "Previous") == 0)
-   mex_player_previous (priv->player);
-
+   {
+     if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (priv->music)) ||
+         mex_music_player_is_playing (priv->music))
+       mex_music_player_previous (priv->music);
+     else
+       mex_player_previous (priv->player);
+   }
  else if (g_strcmp0 (method_name, "Seek") == 0)
    {
      gint64 seek_offset;
      g_variant_get (parameters, "(x)", &seek_offset);
-     mex_player_seek_us (priv->player, seek_offset);
+
+     if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (priv->music)) ||
+         mex_music_player_is_playing (priv->music))
+       mex_music_player_seek_us (priv->music, seek_offset);
+     else
+       mex_player_seek_us (priv->player, seek_offset);
    }
-
  else if (g_strcmp0 (method_name, "Stop") == 0)
-   mex_player_quit (priv->player);
-
+   {
+     if (CLUTTER_ACTOR_IS_VISIBLE (CLUTTER_ACTOR (priv->music)) ||
+         mex_music_player_is_playing (priv->music))
+       mex_music_player_quit (priv->music);
+     else
+       mex_player_quit (priv->player);
+   }
  else
      g_message ("Unhandled MPRIS Player method %s", method_name);
 
@@ -366,10 +453,20 @@ mex_mpris_plugin_init (MexMprisPlugin *self)
     MPRIS_PLUGIN_PRIVATE (self);
 
   GError *error=NULL;
-  priv->player = mex_player_get_default ();
-  priv->media = mex_player_get_clutter_media (priv->player);
+  ClutterMedia *media;
 
-  g_signal_connect (priv->media,
+  priv->player = mex_player_get_default ();
+  media = mex_player_get_clutter_media (priv->player);
+
+  g_signal_connect (media,
+                    "notify::in-seek",
+                    G_CALLBACK (_check_if_seeked),
+                    self);
+
+  priv->music = mex_music_player_get_default ();
+  media = mex_music_player_get_clutter_media (priv->music);
+
+  g_signal_connect (media,
                     "notify::in-seek",
                     G_CALLBACK (_check_if_seeked),
                     self);
