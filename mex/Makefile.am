@@ -128,6 +128,7 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-video-grid-view.h			\
 	$(top_srcdir)/mex/mex-view-model.h			\
 	$(top_srcdir)/mex/mex-volume-control.h			\
+	$(top_srcdir)/mex/mex-vt-manager.h			\
 	$(NULL)
 
 mex_built_headers =			\
@@ -237,6 +238,7 @@ mex_sources =					\
 	mex-video-grid-view.c			\
 	mex-view-model.c			\
 	mex-volume-control.c			\
+	mex-vt-manager.c			\
 	$(NULL)
 
 mex_built_sources =			\
