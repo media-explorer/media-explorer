@@ -34,6 +34,7 @@
 #include "mex-log-private.h"
 #include "mex-model-manager.h"
 #include "mex-grilo.h"
+#include "mex-vt-manager.h"
 
 /* Default Categories */
 /* See mex/mex-model-manager.h */
@@ -251,6 +252,8 @@ mex_base_init (int *argc, char ***argv)
       /* initialize debugging infrastructure */
       _mex_log_init_core_domains ();
 
+      mex_vt_manager_init ();
+
       /* initialise Clutter */
       if (!clutter_init (argc, argv))
         g_error ("Failed to initialize clutter");
@@ -314,6 +317,7 @@ void
 mex_deinit (void)
 {
   mex_set_main_window (NULL);
+  mex_vt_manager_deinit ();
 }
 
 /**
