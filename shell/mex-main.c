@@ -2601,6 +2601,8 @@ mex_startup (MxApplication *app,
         }
     }
 #endif
+
+  mex_vt_manager_activate ();
 }
 
 #if MX_CHECK_VERSION(1,99,3)
