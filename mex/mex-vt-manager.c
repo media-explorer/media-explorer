@@ -35,6 +35,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <unistd.h>
+#include <string.h>
 
 static int           vt        = -1;
 static int           ttyX      = -1;
@@ -174,12 +175,8 @@ mex_vt_manager_init (void)
     }
   _XIOCTL_F ("change controlling tty", ttyX, TIOCSCTTY, 0);
 
-  _XIOCTL_F ("activate VT", ttyX, VT_ACTIVATE, vt);
-  _XIOCTL_F ("wait for VT", ttyX, VT_WAITACTIVE, vt);
-
   /*
-   * Now that our VT is the active console install our signal handler and
-   * switch over to process mode
+   * Install our signal handler and switch over to process mode
    */
   sig.sa_handler = signal_handler;
   sig.sa_flags   = 0;
@@ -200,11 +197,6 @@ mex_vt_manager_init (void)
   mode.relsig = SIGUSR2;
   mode.acqsig = SIGUSR1;
   _XIOCTL_F ("set vt mode", ttyX, VT_SETMODE, &mode);
-
-  /*
-   * Finally, switch our VT to graphics mode.
-   */
-  _XIOCTL_F ("set graphics mode", ttyX, KDSETMODE, KD_GRAPHICS);
 
   goto done;
 
@@ -265,4 +257,17 @@ mex_vt_manager_deinit ()
       _XIOCTL_W ("disallocate", tty0, VT_GETMODE, vt);
       close (tty0);
     }
+}
+
+void
+mex_vt_manager_activate (void)
+{
+  if (vt < 0 || ttyX < 0)
+    return;
+
+  _XIOCTL_F ("activate VT", ttyX, VT_ACTIVATE, vt);
+  _XIOCTL_F ("wait for VT", ttyX, VT_WAITACTIVE, vt);
+  _XIOCTL_F ("set graphics mode", ttyX, KDSETMODE, KD_GRAPHICS);
+
+ fail:;
 }

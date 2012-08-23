@@ -21,7 +21,8 @@
 
 #include <glib.h>
 
-gboolean  mex_vt_manager_init   (void);
-void      mex_vt_manager_deinit (void);
+gboolean  mex_vt_manager_init     (void);
+void      mex_vt_manager_deinit   (void);
+void      mex_vt_manager_activate (void);
 
 #endif
