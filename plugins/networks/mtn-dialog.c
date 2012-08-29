@@ -128,10 +128,30 @@ enum
 static guint signals[N_SIGNALS] = {0};
 
 static void
+mtn_dialog_mapped_cb (ClutterActor *dialog,
+                      GParamSpec   *pspec,
+                      MtnDialog    *self)
+{
+  ClutterActor *parent;
+
+  parent = clutter_actor_get_parent (dialog);
+  clutter_actor_remove_child (parent, dialog);
+}
+
+static void
 mtn_dialog_close (MtnDialog *self)
 {
-  ClutterActor *parent = clutter_actor_get_parent ((ClutterActor*)self);
-  clutter_actor_remove_child (parent, (ClutterActor *)self);
+  /*
+   * Hide the dialog, this will trigger the default transition; once it is
+   * no longer visible, destroy it.
+   *
+   * We have to use the mapped property here; MxDialog runs custom animation
+   * using a timeline and the 'visible' property is set well before the
+   * animation finishes.
+   */
+  g_signal_connect (self, "notify::mapped",
+                    G_CALLBACK (mtn_dialog_mapped_cb), self);
+  clutter_actor_hide (CLUTTER_ACTOR (self));
 }
 
 static void
