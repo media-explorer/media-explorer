@@ -392,7 +392,7 @@ AS_CASE([$profile],
 )
 
 # Default list of plugins to compile
-WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,opticaldisc,bg-video,mpris,networks"
+WITH_PLUGINS="search,queue,tracker,dbusinput,bliptv,justintv,opticaldisc,bg-video,mpris"
 
 # the debug plugin is enabled in debug mode
 AS_IF([test "x$enable_debug" = "xyes"],
