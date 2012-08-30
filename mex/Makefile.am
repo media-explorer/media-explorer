@@ -30,6 +30,10 @@ include $(top_srcdir)/build/Makefile.am.enums
 
 BUILT_SOURCES += $(MARSHAL_SOURCES) mex-resource.c mex-resource.h
 
+# the base include path for headers
+mex_base_includedir = $(includedir)/mex-$(MEX_API_VERSION)
+mex_includedir = $(mex_base_includedir)/mex
+
 mex_headers =							\
 	$(top_srcdir)/mex/mex.h					\
 	$(top_srcdir)/mex/mex-action-button.h			\
@@ -135,6 +139,11 @@ mex_built_headers =			\
 mex_private_headers =			\
 	mex-log-private.h		\
 	mex-private.h			\
+	$(NULL)
+
+mex_include_HEADERS =		\
+	$(mex_headers)		\
+	$(mex_built_headers)	\
 	$(NULL)
 
 mex_sources =					\
@@ -281,6 +290,11 @@ libmex_@MEX_API_VERSION@_la_LIBADD =					\
 	$(NULL)
 
 libmex_@MEX_API_VERSION@_la_LDFLAGS = -no-undefined
+
+pc_files = mex-$(MEX_API_VERSION).pc
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = $(pc_files)
+DISTCLEANFILES += $(pc_files)
 
 #
 # Internal unit tests
