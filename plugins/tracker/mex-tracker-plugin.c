@@ -143,7 +143,7 @@ mex_tracker_plugin_class_init (MexTrackerPluginClass *klass)
 
 static void
 add_model (MexTrackerPlugin *self,
-           GrlMediaPlugin *plugin,
+           GrlSource *source,
            MexTrackerCategory category)
 {
   GList *metadata_keys, *query_keys;
@@ -151,7 +151,7 @@ add_model (MexTrackerPlugin *self,
   GrlMedia *box;
   gchar *query, *cat_name;
   GHashTable *models;
-  const gchar *source_name = grl_metadata_source_get_name (GRL_METADATA_SOURCE (plugin));
+  const gchar *source_name = grl_source_get_name (source);
   gint priority;
 
   switch (category)
@@ -193,7 +193,7 @@ add_model (MexTrackerPlugin *self,
     }
 
   grl_media_set_id (GRL_MEDIA (box), NULL);
-  feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (plugin),
+  feed = mex_grilo_tracker_feed_new (source,
                                      query_keys,
                                      metadata_keys,
                                      NULL, box);
@@ -202,7 +202,7 @@ add_model (MexTrackerPlugin *self,
                            GINT_TO_POINTER (TRUE));
   mex_grilo_feed_query (MEX_GRILO_FEED (feed), query, 0, MAX_TRACKER_RESULTS);
 
-  g_hash_table_insert (models, plugin, feed);
+  g_hash_table_insert (models, source, feed);
 
   /* set the local files source to appear first */
   if (!g_strcmp0 (source_name, "Local files"))
@@ -210,7 +210,7 @@ add_model (MexTrackerPlugin *self,
   else
     priority = 0;
 
-  dir_feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (plugin),
+  dir_feed = mex_grilo_tracker_feed_new (source,
                                          query_keys,
                                          metadata_keys,
                                          query, NULL);
@@ -230,51 +230,50 @@ add_model (MexTrackerPlugin *self,
 }
 
 static void
-handle_new_source_plugin (MexTrackerPlugin *self, GrlMediaPlugin *plugin)
+handle_new_source (MexTrackerPlugin *self, GrlSource *source)
 {
   GrlSupportedOps ops;
-  GrlMetadataSource *meta = GRL_METADATA_SOURCE (plugin);
   const char *id;
 
-  id = grl_media_plugin_get_id (plugin);
+  id = grl_source_get_id (source);
   if (g_strcmp0 (id, "grl-tracker") != 0)
     return;
 
-  ops = grl_metadata_source_supported_operations (meta);
+  ops = grl_source_supported_operations (source);
   if ((ops & GRL_OP_QUERY) == 0)
     return;
 
-  grl_media_source_notify_change_start (GRL_MEDIA_SOURCE (plugin), NULL);
+  grl_source_notify_change_start (source, NULL);
 
-  add_model (self, plugin, MEX_TRACKER_CATEGORY_VIDEO);
-  add_model (self, plugin, MEX_TRACKER_CATEGORY_IMAGE);
-  add_model (self, plugin, MEX_TRACKER_CATEGORY_MUSIC);
+  add_model (self, source, MEX_TRACKER_CATEGORY_VIDEO);
+  add_model (self, source, MEX_TRACKER_CATEGORY_IMAGE);
+  add_model (self, source, MEX_TRACKER_CATEGORY_MUSIC);
 }
 
 static void
-registry_source_added_cb (GrlPluginRegistry *registry,
-                          GrlMediaPlugin *source,
+registry_source_added_cb (GrlRegistry *registry,
+                          GrlSource *source,
                           MexTrackerPlugin *plugin)
 {
-  handle_new_source_plugin (plugin, source);
+  handle_new_source (plugin, source);
 }
 
 /*static int
 source_compare (gconstpointer listdata, gconstpointer userdata)
 {
-  GrlMediaSource *user_source, *list_source;
+  GrlSource *user_source, *list_source;
 
   g_object_get (MEX_GRILO_FEED (listdata),
                 "grilo-source", &list_source,
                 NULL);
-  user_source = GRL_MEDIA_SOURCE (userdata);
+  user_source = GRL_SOURCE (userdata);
 
   return (user_source == list_source) ? 0 : -1;
 }*/
 
 static void
-registry_source_removed_cb (GrlPluginRegistry *registry,
-                            GrlMediaPlugin *source,
+registry_source_removed_cb (GrlRegistry *registry,
+                            GrlSource *source,
                             MexTrackerPlugin *self)
 {
   MexTrackerPluginPrivate *priv = self->priv;
@@ -306,8 +305,8 @@ static void
 mex_tracker_plugin_init (MexTrackerPlugin  *self)
 {
   MexTrackerPluginPrivate *priv;
-  GrlPluginRegistry *registry;
-  GList *plugins, *iter;
+  GrlRegistry *registry;
+  GList *sources, *iter;
 
   priv = self->priv = GET_PRIVATE (self);
 
@@ -322,7 +321,7 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                       GRL_METADATA_KEY_TITLE,
                                                       GRL_METADATA_KEY_MIME,
                                                       GRL_METADATA_KEY_URL,
-                                                      GRL_METADATA_KEY_DATE,
+                                                      GRL_METADATA_KEY_PUBLICATION_DATE,
                                                       GRL_METADATA_KEY_THUMBNAIL,
                                                       GRL_METADATA_KEY_PLAY_COUNT,
                                                       NULL);
@@ -331,7 +330,7 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                       GRL_METADATA_KEY_TITLE,
                                                       GRL_METADATA_KEY_MIME,
                                                       GRL_METADATA_KEY_URL,
-                                                      GRL_METADATA_KEY_DATE,
+                                                      GRL_METADATA_KEY_PUBLICATION_DATE,
                                                       GRL_METADATA_KEY_THUMBNAIL,
                                                       GRL_METADATA_KEY_PLAY_COUNT,
                                                       NULL);
@@ -340,7 +339,7 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
                                                       GRL_METADATA_KEY_TITLE,
                                                       GRL_METADATA_KEY_MIME,
                                                       GRL_METADATA_KEY_URL,
-                                                      GRL_METADATA_KEY_DATE,
+                                                      GRL_METADATA_KEY_PUBLICATION_DATE,
                                                       GRL_METADATA_KEY_THUMBNAIL,
                                                       GRL_METADATA_KEY_PLAY_COUNT,
                                                       GRL_METADATA_KEY_ALBUM,
@@ -383,11 +382,11 @@ mex_tracker_plugin_init (MexTrackerPlugin  *self)
   /* log domain */
   MEX_LOG_DOMAIN_INIT (tracker_log_domain, "tracker");
 
-  registry = grl_plugin_registry_get_default ();
-  plugins = grl_plugin_registry_get_sources (registry, FALSE);
-  for (iter = plugins; iter != NULL; iter = iter->next)
-    handle_new_source_plugin (self, GRL_MEDIA_PLUGIN (iter->data));
-  g_list_free (plugins);
+  registry = grl_registry_get_default ();
+  sources = grl_registry_get_sources (registry, FALSE);
+  for (iter = sources; iter != NULL; iter = iter->next)
+    handle_new_source (self, GRL_SOURCE (iter->data));
+  g_list_free (sources);
 
   g_signal_connect (registry, "source-added",
                     G_CALLBACK (registry_source_added_cb), self);

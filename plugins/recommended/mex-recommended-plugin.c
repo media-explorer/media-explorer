@@ -150,18 +150,18 @@ mex_recommended_plugin_model_changed_cb (GController          *controller,
 static void
 mex_recommended_plugin_init (MexRecommendedPlugin *self)
 {
-  GrlMediaPlugin *plugin;
-  GrlPluginRegistry *registry;
+  GrlPlugin *source;
+  GrlRegistry *registry;
 
   MexRecommendedPluginPrivate *priv = self->priv =
     RECOMMENDED_PLUGIN_PRIVATE (self);
 
-  registry = grl_plugin_registry_get_default ();
+  registry = grl_registry_get_default ();
 
-  plugin = grl_plugin_registry_lookup_source (registry, "grl-apple-trailers");
-  if (plugin)
+  source = grl_registry_lookup_source (registry, "grl-apple-trailers");
+  if (source)
     {
-      MexFeed *feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin), NULL, NULL, NULL);
+      MexFeed *feed = mex_grilo_feed_new (source, NULL, NULL, NULL);
       GController *controller = mex_model_get_controller (MEX_MODEL (feed));
       g_object_set (feed, "icon-name", "icon-recommended", "category",
                     "Recommended", NULL);

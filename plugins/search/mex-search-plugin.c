@@ -357,20 +357,20 @@ mex_search_plugin_search (MexSearchPlugin *self,
   mex_aggregate_model_clear (MEX_AGGREGATE_MODEL (priv->search_model));
 
   /* Iterate over searchable Grilo sources */
-  list = grl_plugin_registry_get_sources (grl_plugin_registry_get_default (),
+  list = grl_registry_get_sources (grl_registry_get_default (),
                                              FALSE);
 
   /* find the local files source and place it first */
   for (l = list; l; l = l->next)
     {
-      GrlMetadataSource *meta_src = l->data;
-      const gchar *name = grl_metadata_source_get_name (meta_src);
+      GrlSource *meta_src = l->data;
+      const gchar *name = grl_source_get_name (meta_src);
       const gchar *source_id;
 
-      if (!GRL_IS_METADATA_SOURCE (meta_src))
+      if (!GRL_IS_SOURCE (meta_src))
         continue;
 
-      source_id = grl_media_plugin_get_id (GRL_MEDIA_PLUGIN (meta_src));
+      source_id = grl_source_get_id (meta_src);
 
       if (source_id && g_str_equal (source_id, "grl-tracker"))
         have_tracker = TRUE;
@@ -389,13 +389,13 @@ mex_search_plugin_search (MexSearchPlugin *self,
     {
       for (l = list; l; l = l->next)
         {
-          GrlMetadataSource *meta_src = l->data;
+          GrlSource *meta_src = l->data;
           const gchar *source_id;
 
-          if (!GRL_IS_METADATA_SOURCE (meta_src))
+          if (!GRL_IS_SOURCE (meta_src))
             continue;
 
-          source_id = grl_media_plugin_get_id (GRL_MEDIA_PLUGIN (meta_src));
+          source_id = grl_source_get_id (meta_src);
 
           if (source_id && g_str_equal (source_id, "grl-filesystem"))
             {
@@ -410,26 +410,26 @@ mex_search_plugin_search (MexSearchPlugin *self,
     {
       const gchar *source_id;
       GrlSupportedOps supported;
-      GrlMetadataSource *meta_src = l->data;
+      GrlSource *meta_src = l->data;
 
-      if (!GRL_IS_METADATA_SOURCE (meta_src))
+      if (!GRL_IS_SOURCE (meta_src))
         continue;
 
       /* only search upnp and tracker sources */
-      source_id = grl_media_plugin_get_id (GRL_MEDIA_PLUGIN (meta_src));
+      source_id = grl_source_get_id (meta_src);
 
-      supported = grl_metadata_source_supported_operations (meta_src);
+      supported = grl_source_supported_operations (meta_src);
       if ((supported & GRL_OP_SEARCH) || (supported & GRL_OP_QUERY))
         {
           MexFeed *feed;
           GController *controller;
 
           if (g_str_equal (source_id, "grl-tracker"))
-            feed = mex_grilo_tracker_feed_new (GRL_MEDIA_SOURCE (meta_src),
+            feed = mex_grilo_tracker_feed_new (meta_src,
                                                NULL, NULL, NULL, NULL);
           else
             feed =
-              mex_grilo_feed_new (GRL_MEDIA_SOURCE (meta_src), NULL, NULL, NULL);
+              mex_grilo_feed_new (meta_src, NULL, NULL, NULL);
           mex_model_set_sort_func (MEX_MODEL (feed),
                                    mex_model_sort_time_cb,
                                    GINT_TO_POINTER (TRUE));

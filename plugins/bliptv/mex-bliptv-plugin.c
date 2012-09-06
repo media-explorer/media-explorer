@@ -89,7 +89,7 @@ mex_bliptv_plugin_class_init (MexBliptvPluginClass *klass)
 
 static void
 add_model (MexBliptvPlugin *self,
-           GrlMediaPlugin *plugin)
+           GrlSource *source)
 {
   MexFeed *feed;
   GrlMedia *box;
@@ -97,7 +97,7 @@ add_model (MexBliptvPlugin *self,
   box = grl_media_video_new ();
 
   grl_media_set_id (GRL_MEDIA (box), NULL);
-  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+  feed = mex_grilo_feed_new (source,
                              self->priv->query_keys,
                              self->priv->video_keys, box);
   g_object_set (feed, "icon-name", "icon-panelheader-computer",
@@ -106,34 +106,34 @@ add_model (MexBliptvPlugin *self,
                 NULL);
   mex_grilo_feed_browse (MEX_GRILO_FEED (feed), 0, 100);
 
-  g_hash_table_insert (self->priv->video_models, plugin, feed);
+  g_hash_table_insert (self->priv->video_models, source, feed);
 
   mex_model_manager_add_model (self->priv->manager, MEX_MODEL (feed));
 }
 
 static void
-handle_new_source_plugin (MexBliptvPlugin *self, GrlMediaPlugin *plugin)
+handle_new_source (MexBliptvPlugin *self, GrlSource *source)
 {
   const char *id;
 
-  id = grl_media_plugin_get_id (plugin);
+  id = grl_source_get_id (source);
   if (g_strcmp0 (id,"grl-bliptv") != 0)
     return;
 
-  add_model (self, plugin);
+  add_model (self, source);
 }
 
 static void
-registry_source_added_cb (GrlPluginRegistry *registry,
-                          GrlMediaPlugin *source,
+registry_source_added_cb (GrlRegistry *registry,
+                          GrlSource *source,
                           MexBliptvPlugin *plugin)
 {
-  handle_new_source_plugin (plugin, source);
+  handle_new_source (plugin, source);
 }
 
 static void
-registry_source_removed_cb (GrlPluginRegistry *registry,
-                            GrlMediaPlugin *source,
+registry_source_removed_cb (GrlRegistry *registry,
+                            GrlSource *source,
                             MexBliptvPlugin *self)
 {
   MexBliptvPluginPrivate *priv = self->priv;
@@ -151,8 +151,8 @@ static void
 mex_bliptv_plugin_init (MexBliptvPlugin  *self)
 {
   MexBliptvPluginPrivate *priv;
-  GrlPluginRegistry *registry;
-  GList *plugins, *iter;
+  GrlRegistry *registry;
+  GList *sources, *iter;
 
   priv = self->priv = GET_PRIVATE (self);
 
@@ -163,7 +163,7 @@ mex_bliptv_plugin_init (MexBliptvPlugin  *self)
                                                 GRL_METADATA_KEY_TITLE,
                                                 GRL_METADATA_KEY_MIME,
                                                 GRL_METADATA_KEY_URL,
-                                                GRL_METADATA_KEY_DATE,
+                                                GRL_METADATA_KEY_PUBLICATION_DATE,
                                                 NULL);
 
   priv->video_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
@@ -176,11 +176,11 @@ mex_bliptv_plugin_init (MexBliptvPlugin  *self)
 
   priv->manager = mex_model_manager_get_default ();
 
-  registry = grl_plugin_registry_get_default ();
-  plugins = grl_plugin_registry_get_sources (registry, FALSE);
-  for (iter = plugins; iter != NULL; iter = iter->next)
-    handle_new_source_plugin (self, GRL_MEDIA_PLUGIN (iter->data));
-  g_list_free (plugins);
+  registry = grl_registry_get_default ();
+  sources = grl_registry_get_sources (registry, FALSE);
+  for (iter = sources; iter != NULL; iter = iter->next)
+    handle_new_source (self, GRL_SOURCE (iter->data));
+  g_list_free (sources);
 
   g_signal_connect (registry, "source-added",
                     G_CALLBACK (registry_source_added_cb), self);
