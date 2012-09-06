@@ -87,34 +87,34 @@ struct _MexGriloFeedClass
 {
   MexFeedClass parent_class;
 
-  guint (*browse) (MexGriloFeed           *feed,
-                   int                     offset,
-                   int                     limit,
-                   GrlMediaSourceResultCb  callback);
-  guint (*query) (MexGriloFeed            *feed,
-                  const char              *query,
-                  int                      offset,
-                  int                      limit,
-                  GrlMediaSourceResultCb   callback);
-  guint (*search) (MexGriloFeed           *feed,
-                   const char             *search_text,
-                   int                     offset,
-                   int                     limit,
-                   GrlMediaSourceResultCb  callback);
+  guint (*browse) (MexGriloFeed      *feed,
+                   int                offset,
+                   int                limit,
+                   GrlSourceResultCb  callback);
+  guint (*query) (MexGriloFeed      *feed,
+                  const char        *query,
+                  int                offset,
+                  int                limit,
+                  GrlSourceResultCb  callback);
+  guint (*search) (MexGriloFeed      *feed,
+                   const char        *search_text,
+                   int                offset,
+                   int                limit,
+                   GrlSourceResultCb  callback);
 
-  void (*content_updated) (GrlMediaSource           *source,
-                           GPtrArray                *changed_medias,
-                           GrlMediaSourceChangeType  change_type,
-                           gboolean                  known_location,
-                           MexGriloFeed             *feed);
+  void (*content_updated) (GrlSource           *source,
+                           GPtrArray           *changed_medias,
+                           GrlSourceChangeType  change_type,
+                           gboolean             known_location,
+                           MexGriloFeed        *feed);
 };
 
 GType mex_grilo_feed_get_type (void) G_GNUC_CONST;
 
-MexFeed *mex_grilo_feed_new (GrlMediaSource *source,
-                             const GList    *query_keys,
-                             const GList    *metadata_keys,
-                             GrlMedia       *root);
+MexFeed *mex_grilo_feed_new (GrlSource   *source,
+                             const GList *query_keys,
+                             const GList *metadata_keys,
+                             GrlMedia    *root);
 
 void mex_grilo_feed_browse (MexGriloFeed *feed,
                             int            offset,

@@ -123,16 +123,16 @@ mex_library_plugin_get_box_for_path (GrlMediaSource *source,
 static void
 mex_library_plugin_init (MexLibraryPlugin *self)
 {
-  GrlMediaPlugin *plugin;
-  GrlPluginRegistry *registry;
+  GrlSource *source;
+  GrlRegistry *registry;
 
   MexLibraryPluginPrivate *priv = self->priv =
     LIBRARY_PLUGIN_PRIVATE (self);
 
-  registry = grl_plugin_registry_get_default ();
+  registry = grl_registry_get_default ();
 
-  plugin = grl_plugin_registry_lookup_source (registry, "grl-filesystem");
-  if (plugin)
+  source = grl_registry_lookup_source (registry, "grl-filesystem");
+  if (source)
     {
       GList *query_keys;
       MexFeed *feed;
@@ -147,7 +147,7 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                               GRL_METADATA_KEY_TITLE,
                                               GRL_METADATA_KEY_MIME,
                                               GRL_METADATA_KEY_URL,
-                                              GRL_METADATA_KEY_DATE,
+                                              GRL_METADATA_KEY_PUBLICATION_DATE,
                                               NULL);
 
       /* Add the videos model */
@@ -185,11 +185,11 @@ mex_library_plugin_init (MexLibraryPlugin *self)
           for (i = 0; i < paths_len; i++)
             {
               box =
-                mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
+                mex_library_plugin_get_box_for_path (source,
                                                      query_keys, paths[i]);
               if (box)
                 {
-                  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                  feed = mex_grilo_feed_new (source,
                                              query_keys, metadata_keys, box);
 
                   g_object_set (feed, "icon-name", "icon-library",
@@ -241,11 +241,11 @@ mex_library_plugin_init (MexLibraryPlugin *self)
           for (i = 0; i < paths_len; i++)
             {
               box =
-                mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
+                mex_library_plugin_get_box_for_path (source,
                                                      query_keys, paths[i]);
               if (box)
                 {
-                  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                  feed = mex_grilo_feed_new (source,
                                              query_keys, metadata_keys, box);
                   g_object_set (feed, "icon-name", "icon-library",
                                 "placeholder-text", "No pictures found",
@@ -297,11 +297,11 @@ mex_library_plugin_init (MexLibraryPlugin *self)
           for (i = 0; i < paths_len; i++)
             {
               box =
-                mex_library_plugin_get_box_for_path (GRL_MEDIA_SOURCE (plugin),
+                mex_library_plugin_get_box_for_path (source,
                                                      query_keys, paths[i]);
               if (box)
                 {
-                  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+                  feed = mex_grilo_feed_new (source,
                                              query_keys, metadata_keys, box);
                   g_object_set (feed, "icon-name", "icon-library",
                                 "placeholder-text", "No Music found",

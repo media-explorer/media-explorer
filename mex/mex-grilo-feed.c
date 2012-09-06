@@ -34,7 +34,7 @@ enum {
 };
 
 struct _MexGriloFeedPrivate {
-  GrlMediaSource *source;
+  GrlSource *source;
   GrlMedia *root;
 
   MexGriloOperation *op;
@@ -57,33 +57,33 @@ struct _MexGriloFeedPrivate {
 
 G_DEFINE_TYPE (MexGriloFeed, mex_grilo_feed, MEX_TYPE_FEED)
 
-static void update_source (MexGriloFeed *feed, GrlMediaSource *new_source);
+static void update_source (MexGriloFeed *feed, GrlSource *new_source);
 
 static void mex_grilo_feed_stop_op (MexGriloFeed *feed);
 static void mex_grilo_feed_start_op (MexGriloFeed *feed);
 static void mex_grilo_feed_free_op (MexGriloFeed *feed);
 static void mex_grilo_feed_init_op (MexGriloFeed *feed);
 
-static guint _mex_grilo_feed_browse (MexGriloFeed           *feed,
-                                     int                     offset,
-                                     int                     limit,
-                                     GrlMediaSourceResultCb  callback);
-static guint _mex_grilo_feed_query (MexGriloFeed           *feed,
-                                    const char             *query,
-                                    int                     offset,
-                                    int                     limit,
-                                    GrlMediaSourceResultCb  callback);
-static guint _mex_grilo_feed_search (MexGriloFeed           *feed,
-                                     const char             *search_text,
-                                     int                     offset,
-                                     int                     limit,
-                                     GrlMediaSourceResultCb  callback);
+static guint _mex_grilo_feed_browse (MexGriloFeed      *feed,
+                                     int                offset,
+                                     int                limit,
+                                     GrlSourceResultCb  callback);
+static guint _mex_grilo_feed_query (MexGriloFeed      *feed,
+                                    const char        *query,
+                                    int                offset,
+                                    int                limit,
+                                    GrlSourceResultCb  callback);
+static guint _mex_grilo_feed_search (MexGriloFeed      *feed,
+                                     const char        *search_text,
+                                     int                offset,
+                                     int                limit,
+                                     GrlSourceResultCb  callback);
 
-static void _mex_grilo_feed_content_updated (GrlMediaSource           *source,
-                                             GPtrArray                *changed_medias,
-                                             GrlMediaSourceChangeType  change_type,
-                                             gboolean                  known_location,
-                                             MexGriloFeed             *feed);
+static void _mex_grilo_feed_content_updated (GrlSource           *source,
+                                             GPtrArray           *changed_medias,
+                                             GrlSourceChangeType  change_type,
+                                             gboolean             known_location,
+                                             MexGriloFeed        *feed);
 
 static void mex_grilo_feed_open_default (MexGriloProgram *program,
                                          MexGriloFeed    *feed);
@@ -226,8 +226,8 @@ mex_grilo_feed_constructed (GObject *object)
   title = NULL;
   if (priv->root)
     title = grl_media_get_title (priv->root);
-  if (!title && GRL_IS_MEDIA_PLUGIN (priv->source))
-    title = grl_metadata_source_get_name (GRL_METADATA_SOURCE (priv->source));
+  if (!title && GRL_IS_SOURCE (priv->source))
+    title = grl_source_get_name (GRL_SOURCE (priv->source));
   if (title)
     g_object_set (object, "title", title, NULL);
 
@@ -263,7 +263,7 @@ mex_grilo_feed_class_init (MexGriloFeedClass *klass)
 
   pspec = g_param_spec_object ("grilo-source", "Grilo source",
                                "Grilo source for this feed",
-                               GRL_TYPE_MEDIA_SOURCE,
+                               GRL_TYPE_SOURCE,
                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
                                G_PARAM_CONSTRUCT_ONLY);
   g_object_class_install_property (o_class, PROP_SOURCE, pspec);
@@ -307,10 +307,10 @@ mex_grilo_feed_init (MexGriloFeed *self)
 }
 
 MexFeed *
-mex_grilo_feed_new (GrlMediaSource *source,
-                    const GList    *query_keys,
-                    const GList    *metadata_keys,
-                    GrlMedia       *root)
+mex_grilo_feed_new (GrlSource   *source,
+                    const GList *query_keys,
+                    const GList *metadata_keys,
+                    GrlMedia    *root)
 {
   return g_object_new (MEX_TYPE_GRILO_FEED,
                        "grilo-source", source,
@@ -349,12 +349,12 @@ emit_media_added (MexGriloFeed *feed, GrlMedia *media)
 }
 
 static void
-browse_cb (GrlMediaSource *source,
-           guint           browse_id,
-           GrlMedia       *media,
-           guint           remaining,
-           gpointer        userdata,
-           const GError   *error)
+browse_cb (GrlSource    *source,
+           guint         browse_id,
+           GrlMedia     *media,
+           guint         remaining,
+           gpointer      userdata,
+           const GError *error)
 {
   MexGriloFeed *feed = (MexGriloFeed *) userdata;
   MexGriloFeedPrivate *priv = feed->priv;
@@ -384,7 +384,7 @@ browse_cb (GrlMediaSource *source,
       const gchar *source_name;
 
       source_name =
-        grl_metadata_source_get_name (GRL_METADATA_SOURCE (priv->source));
+        grl_source_get_name (GRL_SOURCE (priv->source));
       g_warning ("FIXME: oh no, a grilo bug! (on the '%s' source)",
                  source_name);
       return;
@@ -515,53 +515,81 @@ mex_grilo_feed_init_op (MexGriloFeed *feed)
 }
 
 static guint
-_mex_grilo_feed_browse (MexGriloFeed           *feed,
-                        int                     offset,
-                        int                     limit,
-                        GrlMediaSourceResultCb  callback)
+_mex_grilo_feed_browse (MexGriloFeed      *feed,
+                        int                offset,
+                        int                limit,
+                        GrlSourceResultCb  callback)
 {
   MexGriloFeedPrivate *priv = feed->priv;
+  GrlOperationOptions *options;
+	int op_id;
 
-  return grl_media_source_browse (priv->source, priv->root,
-                                  priv->query_keys,
-                                  priv->op->offset,
-                                  priv->op->limit,
-                                  BROWSE_FLAGS,
-                                  callback, feed);
+  options = grl_operation_options_new (NULL);
+  grl_operation_options_set_flags (options, BROWSE_FLAGS);
+  grl_operation_options_set_skip (options, priv->op->offset);
+  grl_operation_options_set_count (options, priv->op->limit);
+
+
+  op_id = grl_source_browse (priv->source, priv->root,
+                             priv->query_keys,
+                             options,
+                             callback, feed);
+
+	g_object_unref (options);
+
+	return op_id;
 }
 
 static guint
-_mex_grilo_feed_query (MexGriloFeed           *feed,
-                       const char             *query,
-                       int                     offset,
-                       int                     limit,
-                       GrlMediaSourceResultCb  callback)
+_mex_grilo_feed_query (MexGriloFeed      *feed,
+                       const char        *query,
+                       int                offset,
+                       int                limit,
+                       GrlSourceResultCb  callback)
 {
   MexGriloFeedPrivate *priv = feed->priv;
+  GrlOperationOptions *options;
+	int op_id;
 
-  return grl_media_source_query (priv->source, priv->op->text,
-                                 priv->query_keys,
-                                 priv->op->offset,
-                                 priv->op->limit,
-                                 BROWSE_FLAGS,
-                                 callback, feed);
+  options = grl_operation_options_new (NULL);
+  grl_operation_options_set_flags (options, BROWSE_FLAGS);
+  grl_operation_options_set_skip (options, priv->op->offset);
+  grl_operation_options_set_count (options, priv->op->limit);
+
+  op_id = grl_source_query (priv->source, priv->op->text,
+                            priv->query_keys,
+                            options,
+                            callback, feed);
+
+	g_object_unref (options);
+
+	return op_id;
 }
 
 static guint
-_mex_grilo_feed_search (MexGriloFeed           *feed,
-                        const char             *search_text,
-                        int                     offset,
-                        int                     limit,
-                        GrlMediaSourceResultCb  callback)
+_mex_grilo_feed_search (MexGriloFeed      *feed,
+                        const char        *search_text,
+                        int                offset,
+                        int                limit,
+                        GrlSourceResultCb  callback)
 {
   MexGriloFeedPrivate *priv = feed->priv;
+  GrlOperationOptions *options;
+	int op_id;
 
-  return grl_media_source_search (priv->source, priv->op->text,
-                                  priv->query_keys,
-                                  priv->op->offset,
-                                  priv->op->limit,
-                                  BROWSE_FLAGS,
-                                  callback, feed);
+  options = grl_operation_options_new (NULL);
+  grl_operation_options_set_flags (options, BROWSE_FLAGS);
+  grl_operation_options_set_skip (options, priv->op->offset);
+  grl_operation_options_set_count (options, priv->op->limit);
+
+  op_id = grl_source_search (priv->source, priv->op->text,
+                             priv->query_keys,
+                             options,
+                             callback, feed);
+
+	g_object_unref (options);
+
+	return op_id;
 }
 
 void
@@ -654,9 +682,9 @@ mex_grilo_feed_get_completed (MexGriloFeed *feed)
 }
 
 static void
-_mex_grilo_feed_content_updated (GrlMediaSource *source,
+_mex_grilo_feed_content_updated (GrlSource *source,
                                  GPtrArray *changed_medias,
-                                 GrlMediaSourceChangeType change_type,
+                                 GrlSourceChangeType change_type,
                                  gboolean known_location,
                                  MexGriloFeed *feed)
 {
@@ -699,7 +727,7 @@ _mex_grilo_feed_content_updated (GrlMediaSource *source,
 }
 
 static void
-update_source (MexGriloFeed *feed, GrlMediaSource *new_source)
+update_source (MexGriloFeed *feed, GrlSource *new_source)
 {
   MexGriloFeedPrivate *priv = feed->priv;
   MexGriloFeedClass *klass = MEX_GRILO_FEED_GET_CLASS (feed);
@@ -715,7 +743,7 @@ update_source (MexGriloFeed *feed, GrlMediaSource *new_source)
   if (new_source) {
     gchar *lower;
     const gchar *source_name =
-      grl_metadata_source_get_name (GRL_METADATA_SOURCE (new_source));
+      grl_source_get_name (GRL_SOURCE (new_source));
 
     priv->source = g_object_ref (new_source);
     g_signal_connect (priv->source,
