@@ -123,11 +123,11 @@ typedef struct
 } MexGriloProgramClosure;
 
 static void
-mex_grilo_program_get_stream_cb (GrlMediaSource *source,
-                                 guint           operation_id,
-                                 GrlMedia       *media,
-                                 gpointer        userdata,
-                                 const GError   *error)
+mex_grilo_program_get_stream_cb (GrlSource    *source,
+                                 guint         operation_id,
+                                 GrlMedia     *media,
+                                 gpointer      userdata,
+                                 const GError *error)
 {
   MexGriloProgramClosure *closure = userdata;
   MexContent *content = MEX_CONTENT (closure->self);
@@ -165,7 +165,7 @@ mex_grilo_program_get_stream (MexProgram        *program,
                               gpointer           userdata)
 {
   GList *keys;
-  GrlMediaSource *source;
+  GrlSource *source;
   MexGriloProgramClosure *closure;
   MexGriloProgram *self = MEX_GRILO_PROGRAM (program);
   MexGriloProgramPrivate *priv = self->priv;
@@ -184,15 +184,19 @@ mex_grilo_program_get_stream (MexProgram        *program,
   g_object_get (G_OBJECT (mex_program_get_feed (program)),
                 "grilo-source", &source,
                 NULL);
-  if (GRL_IS_METADATA_SOURCE (source) &&
-      grl_metadata_source_supported_operations (
-                                                GRL_METADATA_SOURCE (source)) & GRL_OP_METADATA) {
+  if (GRL_IS_SOURCE (source) &&
+      grl_source_supported_operations (GRL_SOURCE (source)) & GRL_OP_RESOLVE) {
+    GrlOperationOptions *options;
+
+    options = grl_operation_options_new (NULL);
+    grl_operation_options_set_flags (options, GRL_RESOLVE_IDLE_RELAY | GRL_RESOLVE_FULL);
+
     keys = grl_metadata_key_list_new (GRL_METADATA_KEY_URL, NULL);
-    grl_media_source_metadata (source,
-                               priv->media,
-                               keys,
-                               GRL_RESOLVE_IDLE_RELAY | GRL_RESOLVE_FULL,
-                               mex_grilo_program_get_stream_cb,
+    grl_source_resolve (source,
+                        priv->media,
+                        keys,
+                        options,
+                              mex_grilo_program_get_stream_cb,
                                closure);
     g_list_free (keys);
   }
@@ -305,7 +309,7 @@ static void
 mex_grilo_program_complete (MexProgram *program)
 {
   GList *keys = NULL;
-  GrlMediaSource *source = NULL;
+  GrlSource *source = NULL;
 
   MexGriloProgram *self = MEX_GRILO_PROGRAM (program);
   MexGriloProgramPrivate *priv = self->priv;
@@ -323,11 +327,11 @@ mex_grilo_program_complete (MexProgram *program)
   if (!source)
     return;
 
-  if (!GRL_IS_METADATA_SOURCE (source))
+  if (!GRL_IS_SOURCE (source))
     return;
 
-  if (!(grl_metadata_source_supported_operations (GRL_METADATA_SOURCE (source))
-        & GRL_OP_METADATA))
+  if (!(grl_source_supported_operations (GRL_SOURCE (source))
+        & GRL_OP_RESOLVE))
     return;
 
   priv->in_update = TRUE;
@@ -364,7 +368,7 @@ mex_grilo_program_save_metadata (MexContent *content)
 {
   MexGriloProgram        *program = MEX_GRILO_PROGRAM (content);
   MexGriloProgramPrivate *priv    = program->priv;
-  GrlMediaSource         *source;
+  GrlSource              *source;
   const GList *ckeys;
   GList *keys;
 
@@ -372,18 +376,18 @@ mex_grilo_program_save_metadata (MexContent *content)
                 "grilo-source", &source,
                 NULL);
 
-  if (!(grl_metadata_source_supported_operations (GRL_METADATA_SOURCE (source))
-        & GRL_OP_SET_METADATA))
+  if (!(grl_source_supported_operations (GRL_SOURCE (source))
+        & GRL_OP_STORE_METADATA))
     goto goout;
 
-  ckeys = grl_metadata_source_writable_keys (GRL_METADATA_SOURCE (source));
+  ckeys = grl_source_writable_keys (GRL_SOURCE (source));
   keys = g_list_copy ((GList *) ckeys);
 
-  grl_metadata_source_set_metadata (GRL_METADATA_SOURCE (source),
-                                    priv->media,
-                                    keys,
-                                    GRL_WRITE_NORMAL,
-                                    NULL, NULL);
+  grl_source_store_metadata (GRL_SOURCE (source),
+                             priv->media,
+                             keys,
+                             GRL_WRITE_NORMAL,
+                             NULL, NULL);
 
   g_list_free (keys);
 
@@ -499,7 +503,7 @@ mex_grilo_program_get_default_keys (void)
                                     GRL_METADATA_KEY_MIME,
                                     GRL_METADATA_KEY_URL,
                                     GRL_METADATA_KEY_THUMBNAIL,
-                                    GRL_METADATA_KEY_DATE,
+                                    GRL_METADATA_KEY_PUBLICATION_DATE,
                                     GRL_METADATA_KEY_DURATION,
                                     GRL_METADATA_KEY_WIDTH,
                                     GRL_METADATA_KEY_HEIGHT,

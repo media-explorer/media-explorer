@@ -85,7 +85,7 @@ AC_HEADER_STDC
 
 GLIB_REQ_VERSION=2.32
 MX_REQ_VERSION=1.3.2
-GRILO_REQ_VERSION=0.1.16
+GRILO_REQ_VERSION=0.2.0
 CLUTTER_REQ_VERSION=1.10.0
 CLUTTER_GST_REQ_VERSION=1.4.0
 GSTREAMER_REQ_VERSION=0.10.26
@@ -166,7 +166,7 @@ modules="glib-2.0 >= $GLIB_REQ_VERSION                  \
          libsoup-2.4                                    \
          clutter-1.0 >= $CLUTTER_REQ_VERSION            \
          mx-$mx_version >= $MX_REQ_VERSION              \
-         grilo-0.1 >= $GRILO_REQ_VERSION                \
+         grilo-0.2 >= $GRILO_REQ_VERSION                \
          gstreamer-0.10 >= $GSTREAMER_REQ_VERSION       \
          gstreamer-tag-0.10 >= $GSTREAMER_REQ_VERSION   \
          clutter-gst-1.0 >= $CLUTTER_GST_REQ_VERSION"

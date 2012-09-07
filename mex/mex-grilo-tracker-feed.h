@@ -64,11 +64,11 @@ struct _MexGriloTrackerFeedClass
 
 GType mex_grilo_tracker_feed_get_type (void) G_GNUC_CONST;
 
-MexFeed *mex_grilo_tracker_feed_new (GrlMediaSource *source,
-                                     const GList    *query_keys,
-                                     const GList    *metadata_keys,
-                                     const gchar    *filter,
-                                     GrlMedia       *root);
+MexFeed *mex_grilo_tracker_feed_new (GrlSource   *source,
+                                     const GList *query_keys,
+                                     const GList *metadata_keys,
+                                     const gchar *filter,
+                                     GrlMedia    *root);
 
 G_END_DECLS
 
