@@ -85,14 +85,14 @@ mex_init_default_categories (void)
 
 
 static void
-grilo_load_default_plugins (GrlPluginRegistry *registry)
+grilo_load_default_plugins (GrlRegistry *registry)
 {
-  grl_plugin_registry_load_by_id (registry, "grl-tracker", NULL);
+  grl_registry_load_plugin_by_id (registry, "grl-tracker", NULL);
 
-  grl_plugin_registry_load_by_id (registry, "grl-upnp", NULL);
-  grl_plugin_registry_load_by_id (registry, "grl-filesystem", NULL);
+  grl_registry_load_plugin_by_id (registry, "grl-upnp", NULL);
+  grl_registry_load_plugin_by_id (registry, "grl-filesystem", NULL);
 
-  grl_plugin_registry_load_by_id (registry, "grl-lastfm-albumart", NULL);
+  grl_registry_load_plugin_by_id (registry, "grl-lastfm-albumart", NULL);
 }
 
 /**
@@ -103,16 +103,16 @@ grilo_load_default_plugins (GrlPluginRegistry *registry)
 static void
 mex_init_load_grilo_plugins (void)
 {
-  GrlPluginRegistry *registry;
+  GrlRegistry *registry;
   GError *error = NULL;
   gchar *settings;
 
-  registry = grl_plugin_registry_get_default ();
+  registry = grl_registry_get_default ();
 
   settings = mex_settings_find_config_file (mex_settings_get_default (),
                                             "grilo-system.conf");
   if (settings)
-    grl_plugin_registry_add_config_from_file (registry, settings, NULL);
+    grl_registry_add_config_from_file (registry, settings, NULL);
   g_free (settings);
 
 
@@ -145,7 +145,7 @@ mex_init_load_grilo_plugins (void)
 
           for (i=0; enabled_plugins[i]; i++)
             {
-              if (!grl_plugin_registry_load_by_id (registry,
+              if (!grl_registry_load_plugin_by_id (registry,
                                                    enabled_plugins[i],
                                                    &error))
                 {

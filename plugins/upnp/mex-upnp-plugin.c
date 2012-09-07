@@ -106,7 +106,7 @@ mex_upnp_plugin_class_init (MexUpnpPluginClass *klass)
 
 static void
 add_model (MexUpnpPlugin *self,
-           GrlMediaPlugin *plugin,
+           GrlSource *source,
            MexUpnpCategory category)
 {
   GList *metadata_keys;
@@ -136,7 +136,7 @@ add_model (MexUpnpPlugin *self,
     }
 
   grl_media_set_id (GRL_MEDIA (box), NULL);
-  feed = mex_grilo_feed_new (GRL_MEDIA_SOURCE (plugin),
+  feed = mex_grilo_feed_new (source,
                              self->priv->query_keys,
                              metadata_keys, box);
   mex_model_set_sort_func (MEX_MODEL (feed),
@@ -148,44 +148,43 @@ add_model (MexUpnpPlugin *self,
                 NULL);
   mex_grilo_feed_query (MEX_GRILO_FEED (feed), query, 0, G_MAXINT);
 
-  g_hash_table_insert (models, plugin, feed);
+  g_hash_table_insert (models, source, feed);
 
   mex_model_manager_add_model (self->priv->manager, MEX_MODEL (feed));
 }
 
 static void
-handle_new_source_plugin (MexUpnpPlugin *self, GrlMediaPlugin *plugin)
+handle_new_source (MexUpnpPlugin *self, GrlSource *source)
 {
   GrlSupportedOps ops;
-  GrlMetadataSource *meta = GRL_METADATA_SOURCE (plugin);
   const char *id;
 
-  id = grl_media_plugin_get_id (plugin);
+  id = grl_source_get_id (source);
   if (g_strcmp0 (id,"grl-upnp") != 0)
     return;
 
-  ops = grl_metadata_source_supported_operations (meta);
+  ops = grl_source_supported_operations (source);
   if ((ops & GRL_OP_QUERY) == 0)
     {
       g_warning ("UPnP source does not support Query, skipping for now");
       return;
     }
 
-  add_model (self, plugin, MEX_UPNP_CATEGORY_VIDEO);
-  add_model (self, plugin, MEX_UPNP_CATEGORY_IMAGE);
+  add_model (self, source, MEX_UPNP_CATEGORY_VIDEO);
+  add_model (self, source, MEX_UPNP_CATEGORY_IMAGE);
 }
 
 static void
-registry_source_added_cb (GrlPluginRegistry *registry,
-                          GrlMediaPlugin *source,
+registry_source_added_cb (GrlRegistry *registry,
+                          GrlSource *source,
                           MexUpnpPlugin *plugin)
 {
-  handle_new_source_plugin (plugin, source);
+  handle_new_source (plugin, source);
 }
 
 static void
-registry_source_removed_cb (GrlPluginRegistry *registry,
-                            GrlMediaPlugin *source,
+registry_source_removed_cb (GrlRegistry *registry,
+                            GrlSource *source,
                             MexUpnpPlugin *self)
 {
   MexUpnpPluginPrivate *priv = self->priv;
@@ -210,8 +209,8 @@ static void
 mex_upnp_plugin_init (MexUpnpPlugin  *self)
 {
   MexUpnpPluginPrivate *priv;
-  GrlPluginRegistry *registry;
-  GList *plugins, *iter;
+  GrlRegistry *registry;
+  GList *sources, *iter;
 
   priv = self->priv = GET_PRIVATE (self);
 
@@ -224,7 +223,7 @@ mex_upnp_plugin_init (MexUpnpPlugin  *self)
                                                 GRL_METADATA_KEY_TITLE,
                                                 GRL_METADATA_KEY_MIME,
                                                 GRL_METADATA_KEY_URL,
-                                                GRL_METADATA_KEY_DATE,
+                                                GRL_METADATA_KEY_PUBLICATION_DATE,
                                                 NULL);
 
   priv->image_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
@@ -244,10 +243,10 @@ mex_upnp_plugin_init (MexUpnpPlugin  *self)
 
   priv->manager = mex_model_manager_get_default ();
 
-  registry = grl_plugin_registry_get_default ();
-  plugins = grl_plugin_registry_get_sources (registry, FALSE);
-  for (iter = plugins; iter != NULL; iter = iter->next)
-    handle_new_source_plugin (self, GRL_MEDIA_PLUGIN (iter->data));
+  registry = grl_registry_get_default ();
+  sources = grl_registry_get_sources (registry, FALSE);
+  for (iter = sources; iter != NULL; iter = iter->next)
+    handle_new_source (self, GRL_SOURCE (iter->data));
   g_list_free (plugins);
 
   g_signal_connect (registry, "source-added",

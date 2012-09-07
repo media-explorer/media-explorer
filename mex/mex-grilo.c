@@ -44,8 +44,10 @@ mex_grilo_init (int *p_argc, char **p_argv[])
                         MEX_CONTENT_METADATA_DURATION);
   _insert_grl_mex_link (GRL_METADATA_KEY_URL,
                         MEX_CONTENT_METADATA_STREAM);
-  _insert_grl_mex_link (GRL_METADATA_KEY_DATE,
+  _insert_grl_mex_link (GRL_METADATA_KEY_PUBLICATION_DATE,
                         MEX_CONTENT_METADATA_DATE);
+  _insert_grl_mex_link (GRL_METADATA_KEY_CREATION_DATE,
+                        MEX_CONTENT_METADATA_CREATION_DATE);
   _insert_grl_mex_link (GRL_METADATA_KEY_MIME,
                         MEX_CONTENT_METADATA_MIMETYPE);
   _insert_grl_mex_link (GRL_METADATA_KEY_THUMBNAIL,
@@ -106,7 +108,7 @@ set_metadata_from_media (MexContent          *content,
   if (!grl_key)
     return;
 
-  switch (G_PARAM_SPEC (grl_key)->value_type) {
+  switch (grl_metadata_key_get_type (grl_key)) {
   case G_TYPE_STRING:
     cstring = grl_data_get_string (GRL_DATA (media), grl_key);
 
@@ -208,7 +210,7 @@ mex_grilo_set_media_content_metadata (GrlMedia           *media,
     return;
   }
 
-  switch (G_PARAM_SPEC (grl_key)->value_type) {
+  switch (grl_metadata_key_get_type (grl_key)) {
   case G_TYPE_STRING:
     grl_data_set_string (GRL_DATA (media), grl_key, value);
     break;

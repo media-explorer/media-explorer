@@ -25,10 +25,10 @@ enum {
 };
 
 struct _MexGriloTrackerFeedPrivate {
-  GrlMedia       *root;
-  GrlMediaSource *source;
-  gchar          *filter;
-  GList          *keys;
+  GrlMedia  *root;
+  GrlSource *source;
+  gchar     *filter;
+  GList     *keys;
 };
 
 #define BROWSE_FLAGS (GRL_RESOLVE_IDLE_RELAY | GRL_RESOLVE_FULL)
@@ -40,25 +40,25 @@ struct _MexGriloTrackerFeedPrivate {
 
 G_DEFINE_TYPE (MexGriloTrackerFeed, mex_grilo_tracker_feed, MEX_TYPE_GRILO_FEED)
 
-static guint _mex_grilo_tracker_feed_browse (MexGriloFeed           *feed,
-                                             int                     offset,
-                                             int                     limit,
-                                             GrlMediaSourceResultCb  callback);
-static guint _mex_grilo_tracker_feed_query (MexGriloFeed           *feed,
-                                            const char             *query,
-                                            int                     offset,
-                                            int                     limit,
-                                            GrlMediaSourceResultCb  callback);
-static guint _mex_grilo_tracker_feed_search (MexGriloFeed           *feed,
-                                             const char             *search_text,
-                                             int                     offset,
-                                             int                     limit,
-                                             GrlMediaSourceResultCb  callback);
-static void _mex_grilo_tracker_feed_content_updated (GrlMediaSource           *source,
-                                                     GPtrArray                *changed_medias,
-                                                     GrlMediaSourceChangeType  change_type,
-                                                     gboolean                  known_location,
-                                                     MexGriloFeed             *feed);
+static guint _mex_grilo_tracker_feed_browse (MexGriloFeed      *feed,
+                                             int                offset,
+                                             int                limit,
+                                             GrlSourceResultCb  callback);
+static guint _mex_grilo_tracker_feed_query (MexGriloFeed      *feed,
+                                            const char        *query,
+                                            int                offset,
+                                            int                limit,
+                                            GrlSourceResultCb  callback);
+static guint _mex_grilo_tracker_feed_search (MexGriloFeed     *feed,
+                                             const char        *search_text,
+                                             int                offset,
+                                             int                limit,
+                                             GrlSourceResultCb  callback);
+static void _mex_grilo_tracker_feed_content_updated (GrlSource           *source,
+                                                     GPtrArray           *changed_medias,
+                                                     GrlSourceChangeType  change_type,
+                                                     gboolean             known_location,
+                                                     MexGriloFeed        *feed);
 
 static void
 mex_grilo_tracker_feed_finalize (GObject *object)
@@ -179,11 +179,11 @@ mex_grilo_tracker_feed_init (MexGriloTrackerFeed *self)
 }
 
 MexFeed *
-mex_grilo_tracker_feed_new (GrlMediaSource *source,
-                            const GList    *query_keys,
-                            const GList    *metadata_keys,
-                            const gchar    *filter,
-                            GrlMedia       *root)
+mex_grilo_tracker_feed_new (GrlSource   *source,
+                            const GList *query_keys,
+                            const GList *metadata_keys,
+                            const gchar *filter,
+                            GrlMedia    *root)
 {
   return g_object_new (MEX_TYPE_GRILO_TRACKER_FEED,
                        "grilo-source", source,
@@ -195,12 +195,12 @@ mex_grilo_tracker_feed_new (GrlMediaSource *source,
 }
 
 static void
-item_cb (GrlMediaSource *source,
-         guint           id,
-         GrlMedia       *media,
-         guint           remaining,
-         gpointer        userdata,
-         const GError   *error)
+item_cb (GrlSource    *source,
+         guint         id,
+         GrlMedia     *media,
+         guint         remaining,
+         gpointer      userdata,
+         const GError *error)
 {
   MexGriloTrackerFeed *feed = (MexGriloTrackerFeed *) userdata;
   MexGriloTrackerFeedPrivate *priv = feed->priv;
@@ -222,7 +222,7 @@ item_cb (GrlMediaSource *source,
       const gchar *source_name;
 
       source_name =
-        grl_metadata_source_get_name (GRL_METADATA_SOURCE (priv->source));
+        grl_source_get_name (GRL_SOURCE (priv->source));
       g_warning ("FIXME: oh no, a grilo bug! (on the '%s' source)",
                  source_name);
       return;
@@ -313,6 +313,7 @@ filter_media (MexGriloTrackerFeed *feed, GrlMedia *media)
   const MexGriloOperation *op;
   gchar *query_text = NULL, *query_final = NULL;
   const gchar *str_id = grl_media_get_id (media);
+  GrlOperationOptions *options;
 
   if (!str_id) {
     g_warning ("Cannot filter media without id");
@@ -328,12 +329,17 @@ filter_media (MexGriloTrackerFeed *feed, GrlMedia *media)
   query_final = g_strdup_printf ("%s . FILTER(tracker:id(?urn) = %s)",
                                  query_text, str_id);
 
-  grl_media_source_query (priv->source, query_final,
+  options = grl_operation_options_new (NULL);
+  grl_operation_options_set_flags (options, BROWSE_FLAGS);
+  grl_operation_options_set_skip (options, 0);
+  grl_operation_options_set_count (options, 1);
+
+  grl_source_query (priv->source, query_final,
                           priv->keys,
-                          0, 1,
-                          BROWSE_FLAGS,
+                          options,
                           item_cb, feed);
 
+	g_object_unref (options);
   g_free (query_final);
   g_free (query_text);
 }
@@ -342,10 +348,11 @@ static guint
 _mex_grilo_tracker_feed_browse (MexGriloFeed           *feed,
                                 int                     offset,
                                 int                     limit,
-                                GrlMediaSourceResultCb  callback)
+                                GrlSourceResultCb  callback)
 {
   MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (feed);
   MexGriloTrackerFeedPrivate *priv = self->priv;
+  GrlOperationOptions *options;
   gchar *text;
   guint id;
 
@@ -353,10 +360,16 @@ _mex_grilo_tracker_feed_browse (MexGriloFeed           *feed,
                                     NULL,
                                     MEX_GRILO_FEED_OPERATION_BROWSE);
 
-  id = grl_media_source_query (priv->source, text, priv->keys,
-                               offset, limit,
-                               BROWSE_FLAGS, callback, feed);
+  options = grl_operation_options_new (NULL);
+  grl_operation_options_set_flags (options, BROWSE_FLAGS);
+  grl_operation_options_set_skip (options, offset);
+  grl_operation_options_set_count (options, limit);
 
+  id = grl_source_query (priv->source, text, priv->keys,
+  			                 options,
+                         callback, feed);
+
+	g_object_unref (options);
   g_free (text);
 
   return id;
@@ -367,10 +380,11 @@ _mex_grilo_tracker_feed_query (MexGriloFeed           *feed,
                                const char             *query,
                                int                     offset,
                                int                     limit,
-                               GrlMediaSourceResultCb  callback)
+                               GrlSourceResultCb  callback)
 {
   MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (feed);
   MexGriloTrackerFeedPrivate *priv = self->priv;
+  GrlOperationOptions *options;
   gchar *text;
   guint id;
 
@@ -378,10 +392,16 @@ _mex_grilo_tracker_feed_query (MexGriloFeed           *feed,
                                     query,
                                     MEX_GRILO_FEED_OPERATION_QUERY);
 
-  id = grl_media_source_query (priv->source, text,  priv->keys,
-                               offset, limit,
-                               BROWSE_FLAGS, callback, feed);
+  options = grl_operation_options_new (NULL);
+  grl_operation_options_set_flags (options, BROWSE_FLAGS);
+  grl_operation_options_set_skip (options, offset);
+  grl_operation_options_set_count (options, limit);
 
+  id = grl_source_query (priv->source, text,  priv->keys,
+  			                 options,
+                         callback, feed);
+
+	g_object_unref (options);
   g_free (text);
 
   return id;
@@ -392,10 +412,11 @@ _mex_grilo_tracker_feed_search (MexGriloFeed           *feed,
                                 const char             *search_text,
                                 int                     offset,
                                 int                     limit,
-                                GrlMediaSourceResultCb  callback)
+                                GrlSourceResultCb  callback)
 {
   MexGriloTrackerFeed *self = MEX_GRILO_TRACKER_FEED (feed);
   MexGriloTrackerFeedPrivate *priv = self->priv;
+  GrlOperationOptions *options;
   gchar *text;
   guint id;
 
@@ -403,21 +424,27 @@ _mex_grilo_tracker_feed_search (MexGriloFeed           *feed,
                                     search_text,
                                     MEX_GRILO_FEED_OPERATION_SEARCH);
 
-  id = grl_media_source_query (priv->source, text, priv->keys,
-                               offset, limit,
-                               BROWSE_FLAGS, callback, feed);
+  options = grl_operation_options_new (NULL);
+  grl_operation_options_set_flags (options, BROWSE_FLAGS);
+  grl_operation_options_set_skip (options, offset);
+  grl_operation_options_set_count (options, limit);
 
+  id = grl_source_query (priv->source, text, priv->keys,
+  			                 options,
+                         callback, feed);
+
+	g_object_unref (options);
   g_free (text);
 
   return id;
 }
 
 static void
-_mex_grilo_tracker_feed_content_updated (GrlMediaSource           *source,
-                                         GPtrArray                *changed_medias,
-                                         GrlMediaSourceChangeType  change_type,
-                                         gboolean                  known_location,
-                                         MexGriloFeed             *feed)
+_mex_grilo_tracker_feed_content_updated (GrlSource           *source,
+                                         GPtrArray           *changed_medias,
+                                         GrlSourceChangeType  change_type,
+                                         gboolean             known_location,
+                                         MexGriloFeed        *feed)
 {
   gint i;
   const gchar *id;

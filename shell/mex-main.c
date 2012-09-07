@@ -448,7 +448,7 @@ mex_grilo_open_folder_cb (MxAction *action,
 {
   GrlMedia *media;
   MexFeed *feed;
-  GrlMediaSource *source = NULL;
+  GrlSource *source = NULL;
   gchar *filter = NULL;
   MexModel *parent_model;
   MexModel *parent_alt_model;

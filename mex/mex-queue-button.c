@@ -182,7 +182,7 @@ _add_from_directory (MexQueueButton *q_button, gboolean add)
 {
   MexQueueButtonPrivate *priv = q_button->priv;
   MexFeed *feed;
-  GrlMediaSource *source;
+  GrlSource *source;
   GList *metadata_keys;
   GList *query_keys;
 
