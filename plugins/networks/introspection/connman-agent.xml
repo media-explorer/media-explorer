@@ -1,0 +1,14 @@
+<node>
+  <interface name='net.connman.Agent'>
+    <method name='ReportError'>
+      <arg name='service' direction='in' type='o'/>
+      <arg name='error' direction='in' type='s'/>
+    </method>
+
+    <method name='RequestInput'>
+      <arg name='service' direction='in' type='o'/>
+      <arg name='fields' direction='in' type='a{sv}'/>
+      <arg name='input' direction='out' type='a{sv}'/>
+    </method>
+  </interface>
+</node>

@@ -25,6 +25,7 @@
 #include "mtn-connman.h"
 #include "mtn-connman-service.h"
 #include "mtn-services-view.h"
+#include "connman-agent-introspection.h"
 
 #define MTN_DIALOG_ENTRY_WIDTH 240.0
 #define MTN_DIALOG_COL_SPACE 30.0
@@ -57,10 +58,22 @@ typedef enum {
 
     MTN_DIALOG_STATE_REQUEST_PASSPHRASE,
 
-    MTN_DIALOG_STATE_CONNECTING,
+    MTN_DIALOG_STATE_CONNECTING, /* connecting, before passphrase request*/
+    MTN_DIALOG_STATE_CONNECTING_WITH_PASSPHRASE, /* connecting, after pass. */
     MTN_DIALOG_STATE_CONNECT_FAILED,
     MTN_DIALOG_STATE_CONNECT_OK,
 } MtnDialogState;
+
+typedef enum
+{
+  MTN_CONNMAN_FIELD_IDENTITY      = 0x00000001,
+  MTN_CONNMAN_FIELD_USERNAME      = 0x00000010,
+  MTN_CONNMAN_FIELD_USERNAME_MASK = 0x00001111,
+
+  MTN_CONNMAN_FIELD_PASSWORD      = 0x00010000,
+  MTN_CONNMAN_FIELD_PASSPHRASE    = 0x00100000,
+  MTN_CONNMAN_FIELD_PASSWORD_MASK = 0x11110000,
+}MtnConnmanFields;
 
 struct _MtnDialogPrivate
 {
@@ -69,6 +82,12 @@ struct _MtnDialogPrivate
 
   MtnConnman        *connman;
   MtnConnmanService *service;
+
+  /* Agent stuff */
+  GDBusConnection       *connection;
+  GDBusNodeInfo         *agent_gir;
+  MtnConnmanFields       agent_field_mask;
+  GDBusMethodInvocation *agent_input_invocation;
 
   const char        *security;
 
@@ -96,6 +115,9 @@ struct _MtnDialogPrivate
 
   /* in passphrase_page */
   ClutterActor      *service_label;
+  ClutterActor      *username_label;
+  ClutterActor      *username_entry;
+  ClutterActor      *passphrase_label;
   ClutterActor      *passphrase_entry;
 
   /* in connecting_page */
@@ -109,6 +131,7 @@ struct _MtnDialogPrivate
   ClutterActor      *forward_button;
 
   guint disposed : 1;
+  guint agent_registered : 1;
 };
 
 enum
@@ -190,50 +213,148 @@ mtn_dialog_class_init (MtnDialogClass *klass)
 
 static void mtn_dialog_set_state (MtnDialog *self, MtnDialogState state);
 
-static gboolean
-_need_passphrase (MtnConnmanService *service)
+static void
+agent_method_cb (GDBusConnection       *connection,
+                 const gchar           *sender,
+                 const gchar           *object_path,
+                 const gchar           *interface_name,
+                 const gchar           *method_name,
+                 GVariant              *parameters,
+                 GDBusMethodInvocation *invocation,
+                 MtnDialog             *self)
 {
-  gboolean failed, passphrase_req, immutable, secure, need_passphrase;
-  const char **securities, **security;
-  const char *str;
+  MtnDialogPrivate      *priv       = self->priv;
+
+  if (g_strcmp0 (method_name, "ReportError") == 0)
+   {
+     const char *object;
+     const char *msg;
+
+     g_variant_get (parameters, "(os)", &object, &msg);
+     g_warning ("Agent ReportError: '%s'", msg);
+
+     g_dbus_method_invocation_return_value (invocation, NULL);
+   }
+ else if (g_strcmp0 (method_name, "RequestInput") == 0)
+   {
+     /*
+      * Input
+      */
+     const char   *object;
+     GVariantIter *fields;
+
+     /*
+      * Output
+      */
+     const char *field;
+     GVariant   *value;
+
+     MtnConnmanFields mask = 0;
+
+     g_variant_get (parameters, "(oa{sv})", &object, &fields);
+     while (g_variant_iter_next (fields, "{sv}", &field, &value))
+       {
+         g_debug ("Got field '%s'", field);
+
+         if (!g_strcmp0 (field, "Passphrase"))
+           mask |= MTN_CONNMAN_FIELD_PASSPHRASE;
+         else if (!g_strcmp0 (field, "Password"))
+           mask |= MTN_CONNMAN_FIELD_PASSWORD;
+         else if (!g_strcmp0 (field, "Username"))
+           mask |= MTN_CONNMAN_FIELD_USERNAME;
+         else if (!g_strcmp0 (field, "Identity"))
+           mask |= MTN_CONNMAN_FIELD_IDENTITY;
+         else
+           g_warning ("Unhandled field '%s'", field);
+
+       }
+
+     priv->agent_field_mask = mask;
+     g_variant_iter_free (fields);
+
+     if (priv->agent_input_invocation)
+       {
+         g_warning ("RequestInput called while input invocation in progress!");
+         g_object_unref (priv->agent_input_invocation);
+       }
+
+     priv->agent_input_invocation = g_object_ref (invocation);
+
+     mtn_dialog_set_state (self, MTN_DIALOG_STATE_REQUEST_PASSPHRASE);
+   }
+ else
+   {
+     g_warning ("Agent method '%s' is not implemented", method_name);
+     g_dbus_method_invocation_return_value (invocation, NULL);
+   }
+}
+
+static const GDBusInterfaceVTable agent_interface_table =
+{
+  (GDBusInterfaceMethodCallFunc) agent_method_cb,
+  NULL,
+  NULL
+};
+
+static void
+register_agent_cb (GObject *object, GAsyncResult *res, gpointer data)
+{
+  GError   *error = NULL;
   GVariant *var;
 
-  var = mtn_connman_service_get_property (service, "State");
-  str = var ? g_variant_get_string (var, NULL): "failure";
-  failed = (g_strcmp0 (str, "failure") == 0);
+  if ((var = g_dbus_proxy_call_finish (G_DBUS_PROXY (object), res, &error)))
+    g_variant_unref (var);
 
-  var = mtn_connman_service_get_property (service, "PassphraseRequired");
-  passphrase_req = var ? g_variant_get_boolean (var) : FALSE;
-
-  var = mtn_connman_service_get_property (service, "Immutable");
-  immutable = var ? g_variant_get_boolean (var) : FALSE;
-
-  secure = FALSE;
-  var = mtn_connman_service_get_property (service, "Security");
-  if ((securities = g_variant_get_strv (var, NULL)))
+  if (error)
     {
-      security = securities;
-      while (*security)
-        {
-          if (g_strcmp0 (*security, "none") != 0)
-            secure = TRUE;
-          security++;
-        }
+      g_warning ("Could not register Agent: %s.", error->message);
+      g_error_free (error);
+    }
+  else
+    g_debug ("Registered agent.");
+}
 
-      g_free (securities);
-  }
+static void
+agent_bus_acquired (GObject      *source_object,
+                    GAsyncResult *result,
+                    gpointer      data)
+{
+  MtnDialog *self = data;
+  MtnDialogPrivate *priv = self->priv;
+  GError *error = NULL;
 
-  /* Need a password for non-immutable services that
-   * A) ask for a passphrase or
-   * B) failed to connect and have a use for the passphrase
-   */
+  priv->connection = g_bus_get_finish (result, &error);
 
-  need_passphrase = FALSE;
+  if (error)
+    {
+      g_warning ("Could not acquire bus connection: %s", error->message);
+      g_error_free (error);
+      return;
+    }
 
-  if (!immutable)
-    need_passphrase = passphrase_req || (failed && secure);
+  g_dbus_connection_register_object (priv->connection,
+                                     "/org/MediaExplorer/ConnmanAgent",
+                                     priv->agent_gir->interfaces[0],
+                                     &agent_interface_table,
+                                     self,
+                                     NULL,
+                                     &error);
 
-  return need_passphrase;
+  if (error)
+    {
+      g_warning ("Problem registering object: %s", error->message);
+      g_error_free (error);
+    }
+  else if (priv->connman && priv->agent_registered)
+    {
+      GVariant *o =
+        g_variant_new ("(o)", "/org/MediaExplorer/ConnmanAgent");
+
+      g_dbus_proxy_call (G_DBUS_PROXY (priv->connman), "RegisterAgent", o,
+                         G_DBUS_CALL_FLAGS_NONE, 120000, NULL,
+                         register_agent_cb, self);
+      priv->agent_registered = TRUE;
+    }
 }
 
 static void
@@ -274,7 +395,7 @@ static void
 mtn_dialog_update_passphrase_page (MtnDialog *self)
 {
   MtnDialogPrivate *priv = self->priv;
-  const char       *name, *sec, *pw;
+  const char       *name = _("The hidden network");
   char             *str;
   GVariant         *var;
 
@@ -282,44 +403,56 @@ mtn_dialog_update_passphrase_page (MtnDialog *self)
                 "visible", priv->service != NULL,
                 NULL);
 
-  if (priv->service)
+  if (priv->agent_field_mask & MTN_CONNMAN_FIELD_USERNAME_MASK)
     {
-      /* hidden network */
-      mx_entry_set_text (MX_ENTRY (priv->passphrase_entry), "");
-      return;
-    }
-
-  var = mtn_connman_service_get_property (priv->service, "Name");
-  name = var ? g_variant_get_string (var, NULL): "Network";
-
-  var = mtn_connman_service_get_property (priv->service, "Security");
-  sec = var ? g_variant_get_string (var, NULL): "";
-
-  var = mtn_connman_service_get_property (priv->service, "Password");
-  pw = var ? g_variant_get_string (var, NULL) : "";
-
-  if (g_strcmp0 (sec, "rsn") == 0 ||
-      g_strcmp0 (sec, "psk") == 0 ||
-      g_strcmp0 (sec, "wpa") == 0)
-    {
-      /* TRANSLATORS: Info label in the service data input page.
-         Placeholder is the name of the wireless network. */
-      str = g_strdup_printf (_("<b>%s</b> requires a WPA password"), name);
-    }
-  else if (g_strcmp0 (sec, "wep") == 0)
-    {
-      /* TRANSLATORS: Info label in the service data input page.
-         Placeholder is the name of the wireless network. */
-      str = g_strdup_printf (_("<b>%s</b> requires a WEP password"), name);
+      clutter_actor_show (priv->username_label);
+      clutter_actor_show (priv->username_entry);
     }
   else
     {
-      /* TRANSLATORS: Info label in the service data input page.
-         Placeholder is the name of the wireless network. */
-      str = g_strdup_printf (_("<b>%s</b> requires a password"), name);
+      clutter_actor_hide (priv->username_label);
+      clutter_actor_hide (priv->username_entry);
     }
 
-  mx_entry_set_text (MX_ENTRY (priv->passphrase_entry), pw);
+  if (priv->agent_field_mask & MTN_CONNMAN_FIELD_PASSWORD_MASK)
+    {
+      clutter_actor_show (priv->passphrase_label);
+      clutter_actor_show (priv->passphrase_entry);
+    }
+  else
+    {
+      clutter_actor_show (priv->passphrase_label);
+      clutter_actor_hide (priv->passphrase_entry);
+    }
+
+  mx_entry_set_text (MX_ENTRY (priv->passphrase_entry), "");
+
+  if (priv->service)
+    {
+      var = mtn_connman_service_get_property (priv->service, "Name");
+      name = var ? g_variant_get_string (var, NULL): "Network";
+    }
+
+  if ((priv->agent_field_mask & MTN_CONNMAN_FIELD_USERNAME_MASK) &&
+      (priv->agent_field_mask & MTN_CONNMAN_FIELD_PASSWORD_MASK))
+    {
+      str = g_strdup_printf (_("<b>%s</b> requires a user name and a password"),
+                             name);
+    }
+  else if (priv->agent_field_mask & MTN_CONNMAN_FIELD_PASSWORD_MASK)
+    {
+      str = g_strdup_printf (_("<b>%s</b> requires a password"), name);
+    }
+  else if (priv->agent_field_mask & MTN_CONNMAN_FIELD_USERNAME_MASK)
+    {
+      str = g_strdup_printf (_("<b>%s</b> requires a user name"), name);
+    }
+  else
+    {
+      g_warning ("Showing password page with no flags set?!");
+      str = g_strdup ("");
+    }
+
   _mx_label_set_markup (MX_LABEL (priv->service_label), str);
   g_free (str);
 }
@@ -331,6 +464,7 @@ mtn_dialog_clear_service (MtnDialog *self)
 
   if (priv->service)
     {
+      g_signal_handlers_disconnect_by_data (priv->service, self);
       g_object_unref (priv->service);
       priv->service = NULL;
     }
@@ -396,6 +530,7 @@ mtn_dialog_update_forward_back_buttons (MtnDialog *self)
       break;
     case MTN_DIALOG_STATE_REQUEST_SECURITY_FOR_HIDDEN:
     case MTN_DIALOG_STATE_CONNECTING:
+    case MTN_DIALOG_STATE_CONNECTING_WITH_PASSPHRASE:
       visible = FALSE;
       break;
     default:
@@ -537,9 +672,18 @@ _connman_connect_cb (GObject *object, GAsyncResult *res, gpointer data)
 
   if (error)
     {
-      if (!_is_connman_error (error, "AlreadyConnected"))
+      if (_is_connman_error (error, "AlreadyConnected"))
         {
-          g_warning ("Connecting failed: %s", error->message);
+          state = MTN_DIALOG_STATE_DEFAULT;
+        }
+      else if (_is_connman_error (error, "InProgress"))
+        {
+          g_error_free (error);
+          return;
+        }
+      else
+        {
+          g_warning ("Connection attempt failed: %s.", error->message);
           state = MTN_DIALOG_STATE_CONNECT_FAILED;
         }
 
@@ -555,11 +699,10 @@ mtn_dialog_connect_hidden_service (MtnDialog *self)
   MtnDialogPrivate *priv = self->priv;
   GVariantBuilder   builder;
   GVariant         *var;
-  const char       *pw, *ssid, *security;
+  const char       *ssid, *security;
 
   ssid = mx_entry_get_text (MX_ENTRY (priv->ssid_entry));
   security = priv->security;
-  pw = mx_entry_get_text (MX_ENTRY (priv->passphrase_entry));
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("(a{sv})"));
   g_variant_builder_open (&builder , G_VARIANT_TYPE ("a{sv}"));
@@ -568,16 +711,13 @@ mtn_dialog_connect_hidden_service (MtnDialog *self)
   g_variant_builder_add (&builder , "{sv}",
                          "Mode", g_variant_new_string ("managed"));
   g_variant_builder_add (&builder , "{sv}",
-                         "SSID", g_variant_new_string (ssid));
+                         "Name", g_variant_new_string (ssid));
   g_variant_builder_add (&builder , "{sv}",
                          "Security", g_variant_new_string (security));
-  if (g_strcmp0 (security, "none") != 0)
-    g_variant_builder_add (&builder , "{sv}",
-                           "Passphrase", g_variant_new_string (pw));
   g_variant_builder_close (&builder);
   var = g_variant_builder_end (&builder);
 
-  g_dbus_proxy_call (G_DBUS_PROXY (priv->connman), "ConnectService", var,
+  g_dbus_proxy_call (G_DBUS_PROXY (priv->connman), "ConnectProvider", var,
                      G_DBUS_CALL_FLAGS_NONE, 120000, NULL,
                      _connman_connect_cb, self);
 
@@ -585,60 +725,14 @@ mtn_dialog_connect_hidden_service (MtnDialog *self)
 }
 
 static void
-_set_passphrase_cb (GObject *object, GAsyncResult *res, gpointer data)
-{
-  MtnDialog        *self = data;
-  MtnDialogPrivate *priv = self->priv;
-  GVariant         *var;
-  GError           *error = NULL;
-
-  if ((var = g_dbus_proxy_call_finish (G_DBUS_PROXY (object), res, &error)))
-    {
-      g_variant_unref (var);
-
-      /* Passphrase is set, now connect */
-      g_dbus_proxy_call (G_DBUS_PROXY (priv->service), "Connect", NULL,
-                         G_DBUS_CALL_FLAGS_NONE, 120000, NULL,
-                         _connman_connect_cb, self);
-    }
-  else if (error)
-    {
-      g_warning ("Connman Service.SetProperty() for 'Passphrase' failed: %s",
-                 error->message);
-      g_error_free (error);
-
-      mtn_dialog_set_state (self, MTN_DIALOG_STATE_CONNECT_FAILED);
-    }
-}
-
-static void
 mtn_dialog_connect (MtnDialog *self)
 {
   MtnDialogPrivate *priv = self->priv;
 
-  if (_need_passphrase (priv->service))
-    {
-      GVariant *var;
-      const char *pw;
-
-      /* cant use mtn_connman_service_set_property() because it is
-       * fire-and-forget and property-changed won't get emitted for
-       * passphrase in some cases */
-
-      pw = mx_entry_get_text (MX_ENTRY (priv->passphrase_entry));
-      var = g_variant_new ("(sv)", "Passphrase", g_variant_new_string (pw));
-
-      g_dbus_proxy_call (G_DBUS_PROXY (priv->service), "SetProperty", var,
-                         G_DBUS_CALL_FLAGS_NONE, -1, NULL,
-                         _set_passphrase_cb, self);
-      g_variant_unref (var);
-    }
-  else
-    {
-      g_dbus_proxy_call (G_DBUS_PROXY (priv->service), "Connect", NULL,
-                         G_DBUS_CALL_FLAGS_NONE, 120000, NULL,
-                         _connman_connect_cb, self);
-    }
+  g_debug ("Initiating connection");
+  g_dbus_proxy_call (G_DBUS_PROXY (priv->service), "Connect", NULL,
+                     G_DBUS_CALL_FLAGS_NONE, 120000, NULL,
+                     _connman_connect_cb, self);
 }
 
 static void
@@ -689,7 +783,10 @@ mtn_dialog_set_state (MtnDialog *self, MtnDialogState state)
       mtn_dialog_update_passphrase_page (self);
       mx_notebook_set_current_page (MX_NOTEBOOK (priv->book),
                                     priv->passphrase_page);
-      mex_push_focus (MX_FOCUSABLE (priv->passphrase_entry));
+      if (priv->agent_field_mask & MTN_CONNMAN_FIELD_USERNAME_MASK)
+        mex_push_focus (MX_FOCUSABLE (priv->username_entry));
+      else
+        mex_push_focus (MX_FOCUSABLE (priv->passphrase_entry));
       break;
 
     case MTN_DIALOG_STATE_CONNECTING:
@@ -702,7 +799,13 @@ mtn_dialog_set_state (MtnDialog *self, MtnDialogState state)
         mtn_dialog_connect (self);
       else
         mtn_dialog_connect_hidden_service (self);
+      break;
 
+    case MTN_DIALOG_STATE_CONNECTING_WITH_PASSPHRASE:
+      mtn_dialog_update_connecting_page (self);
+      mx_notebook_set_current_page (MX_NOTEBOOK (priv->book),
+                                    priv->connecting_page);
+      mex_push_focus (MX_FOCUSABLE (priv->back_button));
       break;
 
     case MTN_DIALOG_STATE_CONNECT_FAILED:
@@ -776,6 +879,7 @@ static void
 mtn_dialog_init (MtnDialog *self)
 {
   MtnDialogPrivate *priv = self->priv;
+  GError           *error = NULL;
 
   priv = self->priv = MTN_DIALOG_GET_PRIVATE (self);
 
@@ -784,6 +888,24 @@ mtn_dialog_init (MtnDialog *self)
                            NULL);
 
   priv->security = "none";
+
+  g_bus_own_name (G_BUS_TYPE_SYSTEM,
+                  "org.media-explorer.ConnmanAgent",
+                  G_BUS_NAME_OWNER_FLAGS_NONE,
+                  NULL,
+                  NULL,
+                  NULL,
+                  NULL,
+                  NULL);
+
+  if (!(priv->agent_gir =
+        g_dbus_node_info_new_for_xml (connman_agent_introspection, &error)))
+    {
+      g_warning ("Error %s", error->message);
+      g_clear_error (&error);
+    }
+
+  g_bus_get (G_BUS_TYPE_SYSTEM, NULL, agent_bus_acquired, self);
 
   clutter_actor_hide (CLUTTER_ACTOR (self));
 }
@@ -813,7 +935,89 @@ mtn_dialog_dispose (GObject *object)
 static void
 mtn_dialog_finalize (GObject *object)
 {
+  MtnDialog        *self = (MtnDialog*) object;
+  MtnDialogPrivate *priv = self->priv;
+
+  if (priv->connection)
+    g_object_unref (priv->connection);
+
+  if (priv->agent_gir)
+    g_dbus_node_info_unref (priv->agent_gir);
+
   G_OBJECT_CLASS (mtn_dialog_parent_class)->finalize (object);
+}
+
+/*
+ * Returns next state
+ */
+static MtnDialogState
+mtn_dialog_submit_passphrase (MtnDialog *self)
+{
+  MtnDialogPrivate      *priv = self->priv;
+  GVariant              *input;
+  GVariant              *tup;
+  GVariantBuilder        builder;
+  const char            *pass;
+  const char            *name;
+  GDBusMethodInvocation *invocation = priv->agent_input_invocation;
+
+  if (!invocation)
+    {
+      g_warning ("Can't submit passpharse without invocation object!");
+      return MTN_DIALOG_STATE_CONNECT_FAILED;
+    }
+
+  g_debug ("Constructing RequestInput reply");
+
+  priv->agent_input_invocation = NULL;
+
+  name = mx_entry_get_text (MX_ENTRY (priv->username_entry));
+  pass = mx_entry_get_text (MX_ENTRY (priv->passphrase_entry));
+
+  if (((priv->agent_field_mask & MTN_CONNMAN_FIELD_PASSWORD_MASK) &&
+       (!pass || !*pass)) ||
+      ((priv->agent_field_mask & MTN_CONNMAN_FIELD_USERNAME_MASK) &&
+       (!name || !*name)))
+    {
+      /* One of the required fields is missing */
+      g_warning ("Missing required credentials value!");
+      g_dbus_method_invocation_return_value (invocation, NULL);
+      g_object_unref (invocation);
+      return MTN_DIALOG_STATE_CONNECT_FAILED;
+    }
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(a{sv})"));
+  g_variant_builder_open (&builder , G_VARIANT_TYPE ("a{sv}"));
+
+  if (priv->agent_field_mask & MTN_CONNMAN_FIELD_PASSWORD)
+    {
+      g_variant_builder_add (&builder , "{sv}", "Password",
+                             g_variant_new_string (pass));
+    }
+  else if (priv->agent_field_mask & MTN_CONNMAN_FIELD_PASSPHRASE)
+    {
+      g_variant_builder_add (&builder , "{sv}", "Passphrase",
+                             g_variant_new_string (pass));
+    }
+  else if (priv->agent_field_mask & MTN_CONNMAN_FIELD_USERNAME)
+    {
+      g_variant_builder_add (&builder , "{sv}", "Username",
+                             g_variant_new_string (name));
+    }
+  else if (priv->agent_field_mask & MTN_CONNMAN_FIELD_IDENTITY)
+    {
+      g_variant_builder_add (&builder , "{sv}", "Identity",
+                             g_variant_new_string (name));
+    }
+
+  input = g_variant_builder_end (&builder);
+  tup = g_variant_new_tuple (&input, 1);
+
+  g_debug ("Submitting RequestInput reply.");
+  g_dbus_method_invocation_return_value (invocation, tup);
+  g_object_unref (invocation);
+
+  return MTN_DIALOG_STATE_CONNECTING_WITH_PASSPHRASE;
 }
 
 static void
@@ -833,19 +1037,16 @@ mtn_dialog_forward (MtnDialog *self)
         mtn_dialog_set_state (self,
                               MTN_DIALOG_STATE_CONNECTING);
       else
-        mtn_dialog_set_state (self,
-                              MTN_DIALOG_STATE_REQUEST_PASSPHRASE_FOR_HIDDEN);
+        mtn_dialog_set_state (self, MTN_DIALOG_STATE_CONNECTING);
       break;
 
     case MTN_DIALOG_STATE_REQUEST_PASSPHRASE_FOR_HIDDEN:
-      mtn_dialog_set_state (self, MTN_DIALOG_STATE_CONNECTING);
-      break;
-
     case MTN_DIALOG_STATE_REQUEST_PASSPHRASE:
-      mtn_dialog_set_state (self, MTN_DIALOG_STATE_CONNECTING);
+      mtn_dialog_set_state (self, mtn_dialog_submit_passphrase (self));
       break;
 
     case MTN_DIALOG_STATE_CONNECTING:
+    case MTN_DIALOG_STATE_CONNECTING_WITH_PASSPHRASE:
       g_warn_if_reached ();
       break;
 
@@ -869,22 +1070,25 @@ mtn_dialog_back (MtnDialog *self)
       break;
 
     case MTN_DIALOG_STATE_REQUEST_PASSPHRASE:
+    case MTN_DIALOG_STATE_REQUEST_PASSPHRASE_FOR_HIDDEN:
+     if (priv->agent_input_invocation)
+       {
+         g_dbus_method_invocation_return_value (priv->agent_input_invocation,
+                                                NULL);
+         g_object_unref (priv->agent_input_invocation);
+         priv->agent_input_invocation = NULL;
+       }
+      mtn_dialog_set_state (self, MTN_DIALOG_STATE_DEFAULT);
+      break;
     case MTN_DIALOG_STATE_REQUEST_SSID_FOR_HIDDEN:
     case MTN_DIALOG_STATE_CONNECT_FAILED:
+    case MTN_DIALOG_STATE_CONNECTING:
+    case MTN_DIALOG_STATE_CONNECTING_WITH_PASSPHRASE:
       mtn_dialog_set_state (self, MTN_DIALOG_STATE_DEFAULT);
       break;
 
     case MTN_DIALOG_STATE_REQUEST_SECURITY_FOR_HIDDEN:
       mtn_dialog_set_state (self, MTN_DIALOG_STATE_REQUEST_SSID_FOR_HIDDEN);
-      break;
-
-    case MTN_DIALOG_STATE_REQUEST_PASSPHRASE_FOR_HIDDEN:
-      mtn_dialog_set_state (self,
-                            MTN_DIALOG_STATE_REQUEST_SECURITY_FOR_HIDDEN);
-      break;
-
-    case MTN_DIALOG_STATE_CONNECTING:
-      mtn_dialog_set_state (self, MTN_DIALOG_STATE_DEFAULT);
       break;
 
     case MTN_DIALOG_STATE_CONNECT_OK:
@@ -1059,6 +1263,17 @@ _connman_new_cb (GObject *object, GAsyncResult *res, gpointer data)
       return;
     }
 
+  if (!priv->agent_registered)
+    {
+      GVariant *o =
+        g_variant_new ("(o)", "/org/MediaExplorer/ConnmanAgent");
+
+      g_dbus_proxy_call (G_DBUS_PROXY (priv->connman), "RegisterAgent", o,
+                         G_DBUS_CALL_FLAGS_NONE, 120000, NULL,
+                         register_agent_cb, self);
+      priv->agent_registered = TRUE;
+    }
+
   if ((var = mtn_connman_get_services (priv->connman)))
     {
       GVariantIter *iter;
@@ -1086,6 +1301,37 @@ _connman_new_cb (GObject *object, GAsyncResult *res, gpointer data)
 }
 
 static void
+mtd_dialog_service_state_changed_cb (MtnConnmanService *service,
+                                     GVariant          *state,
+                                     MtnDialog         *self)
+{
+  const char *val;
+
+  g_return_if_fail (state);
+
+  val = g_variant_get_string (state, NULL);
+
+  g_debug ("Service state has changed: %s", val);
+
+  if (!g_strcmp0 (val, "online"))
+    {
+      mtn_dialog_set_state (self, MTN_DIALOG_STATE_CONNECT_OK);
+    }
+  else if (!g_strcmp0 (val, "ready"))
+    {
+      mtn_dialog_set_state (self, MTN_DIALOG_STATE_CONNECT_OK);
+    }
+  else if (!g_strcmp0 (val, "failure"))
+    {
+      mtn_dialog_set_state (self, MTN_DIALOG_STATE_CONNECT_FAILED);
+    }
+  else if (!g_strcmp0 (val, "disconnect"))
+    {
+        mtn_dialog_set_state (self, MTN_DIALOG_STATE_DEFAULT);
+    }
+}
+
+static void
 _connman_service_new (GObject *object, GAsyncResult *res, gpointer data)
 {
   MtnDialog        *self = data;
@@ -1101,10 +1347,11 @@ _connman_service_new (GObject *object, GAsyncResult *res, gpointer data)
       return;
     }
 
-  if (_need_passphrase (priv->service))
-    mtn_dialog_set_state (self, MTN_DIALOG_STATE_REQUEST_PASSPHRASE);
-  else
-    mtn_dialog_set_state (self, MTN_DIALOG_STATE_CONNECTING);
+  g_signal_connect (priv->service, "property-changed::State",
+                    G_CALLBACK (mtd_dialog_service_state_changed_cb),
+                    self);
+
+  mtn_dialog_set_state (self, MTN_DIALOG_STATE_CONNECTING);
 }
 
 static void
@@ -1251,12 +1498,39 @@ mtn_dialog_get_passphrase_page (MtnDialog *self)
                                          NULL);
 
 
-  /* TRANSLATORS: label to the left of a password entry. Max length
+  /* TRANSLATORS: label to the left of a username entry. Max length
      is around 28 characters */
-  label = mx_label_new_with_text (_("Password:"));
+  priv->username_label = label = mx_label_new_with_text (_("User:"));
   mx_table_insert_actor_with_properties (MX_TABLE (table),
                                          label,
                                          1, 0,
+                                         "y-expand", FALSE,
+                                         "y-fill", FALSE,
+                                         "y-align", MX_ALIGN_MIDDLE,
+                                         "x-expand", FALSE,
+                                         NULL);
+
+  priv->username_entry = mx_entry_new ();
+  clutter_actor_set_size (priv->username_entry,
+                          MTN_DIALOG_ENTRY_WIDTH,
+                          -1);
+  g_signal_connect (priv->username_entry, "key-release-event",
+                    G_CALLBACK (_entry_key_release), self);
+  mx_table_insert_actor_with_properties (MX_TABLE (table),
+                                         priv->username_entry,
+                                         1, 1,
+                                         "x-fill", FALSE,
+                                         "x-align", MX_ALIGN_START,
+                                         "y-expand", FALSE,
+                                         "y-fill", FALSE,
+                                         NULL);
+
+  /* TRANSLATORS: label to the left of a password entry. Max length
+     is around 28 characters */
+  priv->passphrase_label = label = mx_label_new_with_text (_("Password:"));
+  mx_table_insert_actor_with_properties (MX_TABLE (table),
+                                         label,
+                                         2, 0,
                                          "y-expand", FALSE,
                                          "y-fill", FALSE,
                                          "y-align", MX_ALIGN_MIDDLE,
@@ -1271,7 +1545,7 @@ mtn_dialog_get_passphrase_page (MtnDialog *self)
                     G_CALLBACK (_entry_key_release), self);
   mx_table_insert_actor_with_properties (MX_TABLE (table),
                                          priv->passphrase_entry,
-                                         1, 1,
+                                         2, 1,
                                          "x-fill", FALSE,
                                          "x-align", MX_ALIGN_START,
                                          "y-expand", FALSE,

@@ -258,8 +258,9 @@ mtn_connman_service_handle_new_property (MtnConnmanService *service,
     if (!old_value || !g_variant_equal (value, old_value)) {
         char *name;
 
-        g_hash_table_insert (service->priv->properties,
-                             key, value);
+        /* must use _replace here, since we need the key around afterwards */
+        g_hash_table_replace (service->priv->properties,
+                              key, value);
 
         /* emit changed signal*/
         name = g_strdup_printf ("property-changed::%s", key);

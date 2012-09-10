@@ -359,12 +359,15 @@ networks/connman-manager-introspection.h: $(srcdir)/networks/introspection/connm
 	/bin/sh $(top_srcdir)/build/stringify.sh $< $@ > $@
 networks/connman-service-introspection.h: $(srcdir)/networks/introspection/connman-service.xml
 	/bin/sh $(top_srcdir)/build/stringify.sh $< $@ > $@
+networks/connman-agent-introspection.h: $(srcdir)/networks/introspection/connman-agent.xml
+	/bin/sh $(top_srcdir)/build/stringify.sh $< $@ > $@
 
 if USE_PLUGIN_NETWORKS
 plugins_LTLIBRARIES += mex-networks.la
 
 NETWORKS_BUILT_SOURCES = networks/connman-manager-introspection.h \
-			 networks/connman-service-introspection.h
+			 networks/connman-service-introspection.h \
+			 networks/connman-agent-introspection.h
 BUILT_SOURCES += $(NETWORKS_BUILT_SOURCES)
 
 EXTRA_DIST += networks/introspection/connman-manager.xml \
