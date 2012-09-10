@@ -86,12 +86,13 @@ mex_model_provider_iface_init (MexModelProviderInterface *iface)
 }
 
 static GrlMedia *
-mex_library_plugin_get_box_for_path (GrlMediaSource *source,
-                                     const GList    *keys,
-                                     const gchar    *path)
+mex_library_plugin_get_box_for_path (GrlSource   *source,
+                                     const GList *keys,
+                                     const gchar *path)
 {
   gchar *uri;
   GrlMedia *box;
+  GrlOperationOptions *options;
 
   GError *error = NULL;
 
@@ -105,10 +106,12 @@ mex_library_plugin_get_box_for_path (GrlMediaSource *source,
       return NULL;
     }
 
-  box = grl_media_source_get_media_from_uri_sync (source, uri, keys,
-                                                  GRL_RESOLVE_FAST_ONLY,
-                                                  &error);
+  options = grl_operation_options_new (NULL);
+  box = grl_source_get_media_from_uri_sync (source, uri, keys,
+                                            options,
+                                            &error);
   g_free (uri);
+  g_object_unref (options);
 
   if (!box)
     {
