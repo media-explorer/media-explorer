@@ -236,7 +236,7 @@ handle_new_source (MexTrackerPlugin *self, GrlSource *source)
   const char *id;
 
   id = grl_source_get_id (source);
-  if (g_strcmp0 (id, "grl-tracker") != 0)
+  if (g_strcmp0 (id, "grl-tracker-source") != 0)
     return;
 
   ops = grl_source_supported_operations (source);
