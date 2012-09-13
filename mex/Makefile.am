@@ -348,7 +348,7 @@ Mex_0_2_gir_INCLUDES =	\
 	GObject-2.0	\
 	Clutter-1.0	\
 	Mx-@mx_version@	\
-	Grl-0.1		\
+	Grl-0.2		\
 	GController-1.0	\
 	$(NULL)
 
