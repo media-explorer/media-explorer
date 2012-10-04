@@ -55,7 +55,7 @@ The core of Media Explorer depends on:
   • clutter-1.0 ≥ 1.8.0
   • clutter-gst-1.0 ≥ 1.4.0
   • rest-0.7
-  • grilo-0.1 ≥ 0.1.16
+  • grilo-0.2
   • gstreamer-0.10 ≥ 0.10.26
   • LIRC (optional but recommended)
 

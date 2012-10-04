@@ -332,7 +332,7 @@ Mex_0_2_gir_PACKAGES = 	\
 	clutter-1.0		\
 	mx-@mx_version@		\
 	libsoup-gnome-2.4	\
-	grilo-0.1		\
+	grilo-0.2		\
 	$(NULL)
 
 Mex_0_2_gir_LIBS = libmex-@MEX_API_VERSION@.la
