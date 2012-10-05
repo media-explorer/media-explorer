@@ -226,7 +226,7 @@ mex_player_media_error_cb (ClutterMedia *media,
                                    "MexErrorDialog");
       clutter_actor_set_name (data->error_dialog, "mex-player-error-dialog");
       mx_dialog_set_transient_parent (MX_DIALOG (data->error_dialog),
-                                      data->stack);
+                                      CLUTTER_ACTOR (data->stage));
       mx_dialog_add_action (MX_DIALOG (data->error_dialog), action);
     }
 
