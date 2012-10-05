@@ -33,15 +33,18 @@ struct _MexUpnpPluginPrivate {
   MexModelManager *manager;
   GHashTable *video_models;
   GHashTable *image_models;
+  GHashTable *music_models;
 
   GList *query_keys;
   GList *video_keys;
   GList *image_keys;
+  GList *music_keys;
 };
 
 typedef enum {
   MEX_UPNP_CATEGORY_IMAGE,
   MEX_UPNP_CATEGORY_VIDEO,
+  MEX_UPNP_CATEGORY_MUSIC,
 } MexUpnpCategory;
 
 static void
@@ -77,6 +80,12 @@ mex_upnp_plugin_finalize (GObject *gobject)
       priv->image_keys = NULL;
     }
 
+  if (priv->music_keys)
+    {
+      g_list_free (priv->music_keys);
+      priv->music_keys = NULL;
+    }
+
   if (priv->video_models)
     {
       g_hash_table_foreach (priv->video_models, remove_model, self);
@@ -89,6 +98,13 @@ mex_upnp_plugin_finalize (GObject *gobject)
       g_hash_table_foreach (priv->image_models, remove_model, self);
       g_hash_table_destroy (priv->image_models);
       priv->image_models = NULL;
+    }
+
+  if (priv->music_models)
+    {
+      g_hash_table_foreach (priv->music_models, remove_model, self);
+      g_hash_table_destroy (priv->music_models);
+      priv->music_models = NULL;
     }
 
   G_OBJECT_CLASS (mex_upnp_plugin_parent_class)->finalize (gobject);
@@ -125,6 +141,7 @@ add_model (MexUpnpPlugin *self,
       metadata_keys = self->priv->image_keys;
       box = grl_media_image_new ();
       break;
+
     case MEX_UPNP_CATEGORY_VIDEO:
       cat_name = "videos";
       query = "(upnp:class derivedfrom \"object.item.videoItem\")";
@@ -132,6 +149,15 @@ add_model (MexUpnpPlugin *self,
       placeholder = "No videos found";
       metadata_keys = self->priv->video_keys;
       box = grl_media_video_new ();
+      break;
+
+    case MEX_UPNP_CATEGORY_MUSIC:
+      cat_name = "music";
+      query = "(upnp:class derivedfrom \"object.item.audioItem\")";
+      models = self->priv->music_models;
+      placeholder = "No music found";
+      metadata_keys = self->priv->music_keys;
+      box = grl_media_audio_new ();
       break;
     }
 
@@ -175,6 +201,7 @@ handle_new_source (MexUpnpPlugin *self, GrlSource *source)
 
   add_model (self, source, MEX_UPNP_CATEGORY_VIDEO);
   add_model (self, source, MEX_UPNP_CATEGORY_IMAGE);
+  add_model (self, source, MEX_UPNP_CATEGORY_MUSIC);
 }
 
 static void
@@ -206,6 +233,13 @@ registry_source_removed_cb (GrlRegistry *registry,
       mex_model_manager_remove_model (priv->manager, model);
       g_hash_table_remove (priv->image_models, source);
     }
+
+  model = g_hash_table_lookup (priv->music_models, source);
+  if (model)
+    {
+      mex_model_manager_remove_model (priv->manager, model);
+      g_hash_table_remove (priv->music_models, source);
+    }
 }
 
 static void
@@ -217,10 +251,9 @@ mex_upnp_plugin_init (MexUpnpPlugin  *self)
 
   priv = self->priv = GET_PRIVATE (self);
 
-  priv->image_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                                   NULL, NULL);
-  priv->video_models = g_hash_table_new_full (g_direct_hash, g_direct_equal,
-                                                   NULL, NULL);
+  priv->image_models = g_hash_table_new (g_direct_hash, g_direct_equal);
+  priv->video_models = g_hash_table_new (g_direct_hash, g_direct_equal);
+  priv->music_models = g_hash_table_new (g_direct_hash, g_direct_equal);
 
   priv->query_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
                                                 GRL_METADATA_KEY_TITLE,
@@ -241,6 +274,13 @@ mex_upnp_plugin_init (MexUpnpPlugin  *self)
                                                 GRL_METADATA_KEY_THUMBNAIL,
                                                 GRL_METADATA_KEY_WIDTH,
                                                 GRL_METADATA_KEY_HEIGHT,
+                                                NULL);
+
+  priv->music_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
+                                                GRL_METADATA_KEY_THUMBNAIL,
+                                                GRL_METADATA_KEY_PLAY_COUNT,
+                                                GRL_METADATA_KEY_ALBUM,
+                                                GRL_METADATA_KEY_ARTIST,
                                                 NULL);
 
   priv->manager = mex_model_manager_get_default ();
