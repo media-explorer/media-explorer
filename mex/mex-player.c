@@ -992,7 +992,8 @@ mex_player_stop (MexPlayer *player)
   MEX_DEBUG ("stop");
   save_old_content (player);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), NULL);
-  clutter_media_set_playing (priv->media, FALSE);
+  if (clutter_media_get_playing (priv->media))
+      clutter_media_set_playing (priv->media, FALSE);
 }
 
 void

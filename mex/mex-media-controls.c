@@ -391,7 +391,7 @@ mex_media_controls_stop_cb (MxButton         *toggle,
 {
   MexMediaControlsPrivate *priv = self->priv;
 
-  if (priv->media)
+  if (priv->media && clutter_media_get_playing (priv->media))
     clutter_media_set_playing (priv->media, FALSE);
 
   g_signal_emit (self, signals[STOPPED], 0);
