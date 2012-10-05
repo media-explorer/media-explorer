@@ -1,4 +1,22 @@
 ===============================================================================
+Mex 0.4.4                                                            2012-10-05
+===============================================================================
+
+  • List of changes since media-explorer 0.4.2
+
+    » Fix various issues with the upnp plugin
+
+    » Add support for audio items in the upnp plugin
+
+    » Fix issues with error dialogs
+
+
+Contributors to this release:
+
+  Thomas Wood
+
+
+===============================================================================
 Mex 0.4.2                                                            2012-09-14
 ===============================================================================
 
