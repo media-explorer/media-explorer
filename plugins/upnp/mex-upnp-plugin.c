@@ -158,8 +158,11 @@ handle_new_source (MexUpnpPlugin *self, GrlSource *source)
 {
   GrlSupportedOps ops;
   const char *id;
+  GrlPlugin *plugin;
 
-  id = grl_source_get_id (source);
+  plugin = grl_source_get_plugin (source);
+
+  id = grl_plugin_get_id (plugin);
   if (g_strcmp0 (id,"grl-upnp") != 0)
     return;
 
@@ -223,7 +226,6 @@ mex_upnp_plugin_init (MexUpnpPlugin  *self)
                                                 GRL_METADATA_KEY_TITLE,
                                                 GRL_METADATA_KEY_MIME,
                                                 GRL_METADATA_KEY_URL,
-                                                GRL_METADATA_KEY_PUBLICATION_DATE,
                                                 NULL);
 
   priv->image_keys = grl_metadata_key_list_new (GRL_METADATA_KEY_ID,
@@ -247,7 +249,6 @@ mex_upnp_plugin_init (MexUpnpPlugin  *self)
   sources = grl_registry_get_sources (registry, FALSE);
   for (iter = sources; iter != NULL; iter = iter->next)
     handle_new_source (self, GRL_SOURCE (iter->data));
-  g_list_free (plugins);
 
   g_signal_connect (registry, "source-added",
                     G_CALLBACK (registry_source_added_cb), self);
