@@ -88,7 +88,7 @@ MX_REQ_VERSION=1.3.2
 GRILO_REQ_VERSION=0.2.0
 CLUTTER_REQ_VERSION=1.10.0
 CLUTTER_GST_REQ_VERSION=1.4.0
-GSTREAMER_REQ_VERSION=0.10.26
+GSTREAMER_REQ_VERSION=1.0
 
 AC_SUBST(GLIB_REQ_VERSION)
 AC_SUBST(MX_REQ_VERSION)
@@ -167,9 +167,9 @@ modules="glib-2.0 >= $GLIB_REQ_VERSION                  \
          clutter-1.0 >= $CLUTTER_REQ_VERSION            \
          mx-$mx_version >= $MX_REQ_VERSION              \
          grilo-0.2 >= $GRILO_REQ_VERSION                \
-         gstreamer-0.10 >= $GSTREAMER_REQ_VERSION       \
-         gstreamer-tag-0.10 >= $GSTREAMER_REQ_VERSION   \
-         clutter-gst-1.0 >= $CLUTTER_GST_REQ_VERSION"
+         gstreamer-1.0 >= $GSTREAMER_REQ_VERSION       \
+         gstreamer-tag-1.0 >= $GSTREAMER_REQ_VERSION   \
+         clutter-gst-2.0 >= $CLUTTER_GST_REQ_VERSION"
 
 PKG_CHECK_EXISTS([gio-unix-2.0],
                  [
@@ -433,7 +433,7 @@ AS_MEX_PLUGIN(opticaldisc)
 AS_MEX_PLUGIN(twitter-send, [libsocialweb-client])
 AS_MEX_PLUGIN(apps, [webkit-clutter-mx])
 AS_MEX_PLUGIN(mpris,
-              [clutter-gst-1.0 >= 1.5.6])
+              [clutter-gst-2.0])
 AS_MEX_PLUGIN(networks, [glib-2.0 mx-$mx_version])
 
 # The debug plugin needs libunwind that does not provide a pkg-config file
