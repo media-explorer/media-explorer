@@ -476,9 +476,9 @@ AS_MEX_PLUGIN(bliptv)
 AS_MEX_PLUGIN(justintv)
 AS_MEX_PLUGIN(telepathy,
               [telepathy-glib >= $TELEPATHY_GLIB_REQ_VERSION  \
-               gstreamer-0.10                                 \
+               gstreamer-1.0                                  \
                telepathy-farstream                            \
-               farstream-0.1])
+               farstream-0.2])
 AS_MEX_PLUGIN(debug-buddy)
 AS_MEX_PLUGIN(gnome-dvb)
 AS_MEX_PLUGIN(opticaldisc)
