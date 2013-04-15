@@ -76,7 +76,7 @@ release-message: $(sha256_file)
 	@echo "  • clutter-gst-1.0 ≥ $(CLUTTER_GST_REQ_VERSION)"
 	@echo "  • rest-0.7"
 	@echo "  • grilo-0.2"
-	@echo "  • gstreamer-0.10 ≥ $(GSTREAMER_REQ_VERSION)"
+	@echo "  • gstreamer-1.0 ≥ $(GSTREAMER_REQ_VERSION)"
 	@echo "  • LIRC (optional but recommended)"
 	@echo ""
 	@echo "The webremote applet (used by the android application) is enabled by default"

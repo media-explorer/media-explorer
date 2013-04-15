@@ -272,6 +272,7 @@ libmex_@MEX_API_VERSION@_la_LIBADD =					\
 	$(MEX_LIBS)							\
 	$(TRACKER_LIBS)							\
 	$(NM_LIBS)							\
+    -lm \
 	$(NULL)
 
 libmex_@MEX_API_VERSION@_la_LDFLAGS = -no-undefined

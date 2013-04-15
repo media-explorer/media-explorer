@@ -803,7 +803,7 @@ mex_telepathy_channel_on_src_pad_added (TfContent *content,
     {
       MEX_WARNING ("Failed to add sink element to pipeline");
     }
-  sinkpad = gst_element_get_pad (element, "sink");
+  sinkpad = gst_element_get_static_pad (element, "sink");
   ret = gst_element_set_state (element, GST_STATE_PLAYING);
   if (ret == GST_STATE_CHANGE_FAILURE)
     {
@@ -915,12 +915,18 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
 
   result = gst_bin_new ("video_input");
   input = gst_element_factory_make ("autovideosrc", NULL);
-  rate = gst_element_factory_make ("videomaxrate", NULL);
+  g_assert (input);
+  rate = gst_element_factory_make ("videorate", NULL);
+  g_assert (rate);
+  g_object_set (G_OBJECT (rate), "drop-only", TRUE, NULL);
+  g_object_set (G_OBJECT (rate), "average-period", (guint64) GST_SECOND, NULL);
   scaler = gst_element_factory_make ("videoscale", NULL);
-  colorspace = gst_element_factory_make ("ffmpegcolorspace", NULL);
+  g_assert (scaler);
+  colorspace = gst_element_factory_make ("videoconvert", NULL);
+  g_assert (colorspace);
   capsfilter = gst_element_factory_make ("capsfilter", NULL);
+  g_assert (capsfilter);
 
-  g_assert (input && rate && scaler && colorspace && capsfilter);
   g_object_get (content,
                 "framerate", &framerate,
                 "width", &width,
@@ -940,7 +946,7 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
   priv->width = width;
   priv->height = height;
 
-  caps = gst_caps_new_simple ("video/x-raw-yuv",
+  caps = gst_caps_new_simple ("video/x-raw",
                               "width", G_TYPE_INT, width,
                               "height", G_TYPE_INT, height,
                               "framerate", GST_TYPE_FRACTION, framerate, 1,
@@ -963,7 +969,7 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
       return NULL;
     }
 
-  teesink = gst_element_get_pad(tee, "sink");
+  teesink = gst_element_get_static_pad(tee, "sink");
   gst_bin_add (GST_BIN (result), tee);
 
   if (GST_PAD_LINK_FAILED (gst_pad_link (pad, teesink)))
@@ -971,11 +977,12 @@ mex_telepathy_channel_setup_video_source (MexTelepathyChannel *self,
       MEX_WARNING ("Couldn't link source pipeline to tee !?");
       return NULL;
     }
-  pad = gst_element_get_request_pad (tee, "src%d");
+  pad = gst_element_get_request_pad (tee, "src_%u");
+  g_assert (pad != NULL);
 
   // Link the tee to the preview widget.
-  teesrc = gst_element_get_request_pad(tee, "src%d");
-  outsink = gst_element_get_pad (self->priv->outgoing_sink, "sink");
+  teesrc = gst_element_get_request_pad(tee, "src_%u");
+  outsink = gst_element_get_static_pad (self->priv->outgoing_sink, "sink");
   gst_bin_add (GST_BIN(result), self->priv->outgoing_sink);
   gst_pad_link (teesrc, outsink);
 
@@ -1042,7 +1049,7 @@ mex_telepathy_channel_on_tf_content_added (TfChannel *channel,
                     G_CALLBACK (mex_telepathy_channel_on_src_pad_added), self);
 
   gst_bin_add (GST_BIN (priv->pipeline), element);
-  srcpad = gst_element_get_pad (element, "src");
+  srcpad = gst_element_get_static_pad (element, "src");
 
   if (GST_PAD_LINK_FAILED (gst_pad_link (srcpad, sinkpad)))
     {
