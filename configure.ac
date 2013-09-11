@@ -358,11 +358,14 @@ AC_ARG_ENABLE([webremote],
               [],
               [enable_webremote=yes])
 
-PKG_CHECK_EXISTS([tracker-sparql-0.14],
-		 [tracker_dep="tracker-sparql-0.14"],
-		 [PKG_CHECK_EXISTS([tracker-sparql-0.12],
-			[tracker_dep="tracker-sparql-0.12"],
-			[tracker_dep="tracker-sparql-0.10"])
+PKG_CHECK_EXISTS([tracker-sparql-0.16],
+		 [tracker_dep="tracker-sparql-0.16"],
+		 [PKG_CHECK_EXISTS([tracker-sparql-0.14],
+			[tracker_dep="tracker-sparql-0.14"],
+			[PKG_CHECK_EXISTS([tracker-sparql-0.12],
+				[tracker_dep="tracker-sparql-0.12"],
+				[tracker_dep="tracker-sparql-0.10"])
+			 ])
 		 ])
 
 AS_IF([test "x$enable_webremote" = "xyes"],
