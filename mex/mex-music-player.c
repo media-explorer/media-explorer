@@ -214,7 +214,6 @@ mex_music_player_set_context (MexContentView *player,
       g_signal_connect (button, "clicked",
                         G_CALLBACK (mex_music_player_item_clicked), player);
 
-      mx_bin_set_fill (MX_BIN (button), TRUE, TRUE);
       mx_button_set_icon_position (MX_BUTTON (button), MX_POSITION_RIGHT);
 
       clutter_actor_add_child (box, button);

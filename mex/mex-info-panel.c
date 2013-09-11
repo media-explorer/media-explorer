@@ -454,7 +454,7 @@ mex_info_panel_constructed (GObject *object)
 
   priv->metadata_row1 = GET_LABEL ("row1-metadata");
 
-  mx_bin_set_child (MX_BIN (self), root);
+  clutter_actor_add_child (CLUTTER_ACTOR (self), root);
 
   if (priv->mode == MEX_INFO_PANEL_MODE_FULL)
     {
@@ -474,10 +474,6 @@ mex_info_panel_constructed (GObject *object)
 
       g_signal_connect (priv->subtitle_combo_box, "notify::index",
                         G_CALLBACK (subtitle_combo_box_notify), self);
-    }
-  else
-    {
-      mx_bin_set_fill (MX_BIN (self), TRUE, TRUE);
     }
 }
 

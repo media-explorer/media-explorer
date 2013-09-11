@@ -699,7 +699,6 @@ mex_search_proxy_add_cb (MexProxy     *proxy,
                          ClutterActor *layout)
 {
   clutter_actor_add_child (layout, button);
-  mx_bin_set_alignment (MX_BIN (button), MX_ALIGN_START, MX_ALIGN_MIDDLE);
   g_signal_connect_swapped (button, "clicked",
                             G_CALLBACK (mex_search_activate_content), content);
 }
@@ -824,13 +823,10 @@ mex_search_plugin_init (MexSearchPlugin *self)
   /* Pack the search page */
   priv->search_page = mx_frame_new ();
   clutter_actor_set_name (priv->search_page, "search-page");
-  mx_bin_set_fill (MX_BIN (priv->search_page), FALSE, TRUE);
-  mx_bin_set_alignment (MX_BIN (priv->search_page), MX_ALIGN_START,
-                        MX_ALIGN_START);
   hbox = mex_resizing_hbox_new ();
   mex_resizing_hbox_set_resizing_enabled (MEX_RESIZING_HBOX (hbox), FALSE);
   box = mx_box_layout_new ();
-  mx_bin_set_child (MX_BIN (priv->search_page), hbox);
+  clutter_actor_add_child (CLUTTER_ACTOR (priv->search_page), hbox);
   clutter_actor_add_child (hbox, box);
   mx_box_layout_set_orientation (MX_BOX_LAYOUT (box),
                                  MX_ORIENTATION_VERTICAL);

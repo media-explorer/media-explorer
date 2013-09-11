@@ -22,7 +22,7 @@
 
 static void mx_stylable_iface_init (MxStylableIface *iface);
 
-G_DEFINE_TYPE_WITH_CODE (MexTile, mex_tile, MX_TYPE_BIN,
+G_DEFINE_TYPE_WITH_CODE (MexTile, mex_tile, MX_TYPE_WIDGET,
                          G_IMPLEMENT_INTERFACE (MX_TYPE_STYLABLE,
                                                 mx_stylable_iface_init))
 
@@ -50,6 +50,8 @@ struct _MexTilePrivate
   guint            has_focus : 1;
   guint            header_visible : 1;
   guint            important : 1;
+
+  ClutterActor    *child;
 
   ClutterActor    *icon1;
   ClutterActor    *icon2;
@@ -102,6 +104,31 @@ mx_stylable_iface_init (MxStylableIface *iface)
                                   G_PARAM_READWRITE);
       mx_stylable_iface_install_property (iface, MEX_TYPE_TILE, pspec);
     }
+}
+
+static void
+mex_tile_actor_added (ClutterActor *container,
+                      ClutterActor *actor)
+{
+  MexTilePrivate *priv = MEX_TILE (container)->priv;
+
+  if (MX_IS_TOOLTIP (actor))
+    return;
+
+  if (priv->child)
+    clutter_actor_remove_child (container, priv->child);
+
+  priv->child = actor;
+}
+
+static void
+mex_tile_actor_removed (ClutterActor *container,
+                        ClutterActor *actor)
+{
+  MexTilePrivate *priv = MEX_TILE (container)->priv;
+
+  if (priv->child == actor)
+    priv->child = NULL;
 }
 
 /* Actor implementation */
@@ -313,7 +340,6 @@ mex_tile_allocate (ClutterActor           *actor,
                    ClutterAllocationFlags  flags)
 {
   MxPadding padding;
-  ClutterActor *child;
   ClutterActorBox child_box;
   gfloat available_width, available_height;
   ClutterEffect *fade;
@@ -326,15 +352,11 @@ mex_tile_allocate (ClutterActor           *actor,
   available_width = box->x2 - box->x1 - padding.left - padding.right;
   available_height = box->y2 - box->y1 - padding.top - padding.bottom;
 
-  /* Allocate child */
-  child = mx_bin_get_child (MX_BIN (actor));
-  if (child)
+  if (priv->child)
     {
-      gboolean x_fill, y_fill;
-      MxAlign x_align, y_align;
       gfloat child_width, full_width, full_height;
 
-      clutter_actor_get_preferred_size (child, NULL, NULL,
+      clutter_actor_get_preferred_size (priv->child, NULL, NULL,
                                         &full_width, &full_height);
 
       child_box.y1 = padding.top;
@@ -366,12 +388,9 @@ mex_tile_allocate (ClutterActor           *actor,
       child_box.x2 = box->x2 - box->x1 - padding.right;
       child_box.x1 = child_box.x2 - child_width;
 
-      mx_bin_get_fill (MX_BIN (actor), &x_fill, &y_fill);
-      mx_bin_get_alignment (MX_BIN (actor), &x_align, &y_align);
-
-      mx_allocate_align_fill (child, &child_box,
-                              x_align, y_align, x_fill, y_fill);
-      clutter_actor_allocate (child, &child_box, flags);
+      mx_allocate_align_fill (priv->child, &child_box,
+                              MX_ALIGN_MIDDLE, MX_ALIGN_MIDDLE, FALSE, FALSE);
+      clutter_actor_allocate (priv->child, &child_box, flags);
     }
 
   /* Allocate Header */
@@ -705,9 +724,8 @@ mex_tile_important_new_frame_cb (ClutterTimeline *timeline,
                                  MexTile         *tile)
 {
   MexTilePrivate *priv = tile->priv;
-  ClutterActor *child = mx_bin_get_child (MX_BIN (tile));
 
-  if (child)
+  if (priv->child)
     {
       gdouble opacity = clutter_alpha_get_alpha (priv->important_alpha);
 
@@ -716,7 +734,7 @@ mex_tile_important_new_frame_cb (ClutterTimeline *timeline,
       else
         opacity = (opacity - 0.5) * 2.0;
 
-      clutter_actor_set_opacity (child, opacity * 255);
+      clutter_actor_set_opacity (priv->child, opacity * 255);
     }
 
   clutter_actor_queue_relayout (CLUTTER_ACTOR (tile));
@@ -794,6 +812,11 @@ mex_tile_init (MexTile *self)
 
   g_signal_connect (self, "style-changed",
                     G_CALLBACK (mex_tile_style_changed_cb), NULL);
+
+  g_signal_connect (self, "actor-added",
+                    G_CALLBACK (mex_tile_actor_added), NULL);
+  g_signal_connect (self, "actor-removed",
+                    G_CALLBACK (mex_tile_actor_removed), NULL);
 }
 
 ClutterActor *

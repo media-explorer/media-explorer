@@ -112,6 +112,31 @@ mx_stylable_iface_init (MxStylableIface *iface)
     }
 }
 
+static void
+mex_scroll_view_actor_added (ClutterActor *container,
+                             ClutterActor *actor)
+{
+  MexScrollViewPrivate *priv = MEX_SCROLL_VIEW (container)->priv;
+
+  if (MX_IS_TOOLTIP (actor))
+    return;
+
+  if (priv->child)
+    clutter_actor_remove_child (container, priv->child);
+
+  priv->child = actor;
+}
+
+static void
+mex_scroll_view_actor_removed (ClutterActor *container,
+                               ClutterActor *actor)
+{
+  MexScrollViewPrivate *priv = MEX_SCROLL_VIEW (container)->priv;
+
+  if (priv->child == actor)
+    priv->child = NULL;
+}
+
 /* ClutterContainerIface implementation */
 
 static void
@@ -299,73 +324,6 @@ mex_scroll_view_vadjust_notify_cb (ClutterActor  *child,
 
       mex_scroll_view_adjustment_changed (self);
     }
-}
-
-static void
-mex_scroll_view_notify_child (MexScrollView *self)
-{
-  ClutterActor *child;
-  MexScrollViewPrivate *priv = self->priv;
-
-  child = mx_bin_get_child (MX_BIN (self));
-  if (child == priv->child)
-    return;
-
-  if (priv->child)
-    {
-      if (priv->focus)
-        {
-          g_signal_handler_disconnect (priv->focus, priv->keep_visible_id);
-          g_object_remove_weak_pointer (G_OBJECT (priv->focus),
-                                        (gpointer *)&priv->focus);
-          priv->focus = NULL;
-        }
-
-      g_signal_handlers_disconnect_by_func (priv->child,
-                                            mex_scroll_view_hadjust_notify_cb,
-                                            self);
-      g_signal_handlers_disconnect_by_func (priv->child,
-                                            mex_scroll_view_vadjust_notify_cb,
-                                            self);
-
-      priv->child = NULL;
-
-      if (priv->hscroll)
-        {
-          clutter_actor_animate (CLUTTER_ACTOR (priv->hscroll),
-                                 CLUTTER_EASE_OUT_QUAD, 100,
-                                 "opacity", 0x00,
-                                 NULL);
-          mex_scroll_indicator_set_adjustment (MEX_SCROLL_INDICATOR (
-                                               priv->hscroll), NULL);
-        }
-      if (priv->vscroll)
-        {
-          clutter_actor_animate (CLUTTER_ACTOR (priv->vscroll),
-                                 CLUTTER_EASE_OUT_QUAD, 100,
-                                 "opacity", 0x00,
-                                 NULL);
-          mex_scroll_indicator_set_adjustment (MEX_SCROLL_INDICATOR (
-                                               priv->vscroll), NULL);
-        }
-    }
-
-  if (MX_IS_SCROLLABLE (child))
-    {
-      priv->child = child;
-
-      /* Get adjustments */
-      g_signal_connect (child, "notify::horizontal-adjustment",
-                        G_CALLBACK (mex_scroll_view_hadjust_notify_cb), self);
-      g_signal_connect (child, "notify::vertical-adjustment",
-                        G_CALLBACK (mex_scroll_view_vadjust_notify_cb), self);
-      mex_scroll_view_hadjust_notify_cb (child, NULL, self);
-      mex_scroll_view_vadjust_notify_cb (child, NULL, self);
-    }
-  else if (child)
-    g_warning (G_STRLOC ": An actor of type %s has been added to "
-               "a MexScrollView, but the actor does not implement "
-               "MxScrollable.", g_type_name (G_OBJECT_TYPE (child)));
 }
 
 static void
@@ -647,8 +605,11 @@ mex_scroll_view_allocate (ClutterActor           *actor,
     allocate (actor, box, flags);
 
   /* Allocate child */
-  if (CLUTTER_ACTOR_IS_VISIBLE (actor))
-    mx_bin_allocate_child (MX_BIN (actor), box, flags);
+  if (CLUTTER_ACTOR_IS_VISIBLE (actor) && priv->child)
+    {
+      mx_widget_get_available_area (MX_WIDGET (actor), box, &child_box);
+      clutter_actor_allocate (priv->child, &child_box, flags);
+    }
 
   /* Allocate scroll-bars */
   /* Note, purposefully ignoring padding */
@@ -1063,9 +1024,6 @@ mex_scroll_view_init (MexScrollView *self)
 
   priv->interpolate = TRUE;
 
-  /* Set x-fill and y-fill to true to get the simple allocation */
-  mx_bin_set_fill (MX_BIN (self), TRUE, TRUE);
-
   /* Create the scroll-bars */
   priv->hscroll = mex_scroll_indicator_new ();
   priv->vscroll = mex_scroll_indicator_new ();
@@ -1083,12 +1041,15 @@ mex_scroll_view_init (MexScrollView *self)
 
   g_signal_connect (self, "style-changed",
                     G_CALLBACK (mex_scroll_view_style_changed_cb), NULL);
-  g_signal_connect (self, "notify::child",
-                    G_CALLBACK (mex_scroll_view_notify_child), NULL);
 
   /* Queue a relayout when the scroll-policy changes */
   g_signal_connect (self, "notify::scroll-policy",
                     G_CALLBACK (clutter_actor_queue_relayout), NULL);
+
+  g_signal_connect (self, "actor-added",
+                    G_CALLBACK (mex_scroll_view_actor_added), NULL);
+  g_signal_connect (self, "actor-removed",
+                    G_CALLBACK (mex_scroll_view_actor_removed), NULL);
 
   priv->indicators_hidden = TRUE;
 }
