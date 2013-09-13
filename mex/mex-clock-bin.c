@@ -19,7 +19,7 @@
 
 #include "mex-clock-bin.h"
 
-G_DEFINE_TYPE (MexClockBin, mex_clock_bin, MX_TYPE_BIN)
+G_DEFINE_TYPE (MexClockBin, mex_clock_bin, MX_TYPE_WIDGET)
 
 #define CLOCK_BIN_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), MEX_TYPE_CLOCK_BIN, MexClockBinPrivate))
@@ -33,12 +33,38 @@ enum
 
 struct _MexClockBinPrivate
 {
+  ClutterActor    *child;
+
   ClutterActor    *clock_hbox;
   ClutterActor    *time_label;
   ClutterActor    *icon;
   guint            update_source;
 };
 
+static void
+mex_clock_bin_actor_added (ClutterActor *container,
+                           ClutterActor *actor)
+{
+  MexClockBinPrivate *priv = MEX_CLOCK_BIN (container)->priv;
+
+  if (MX_IS_TOOLTIP (actor))
+    return;
+
+  if (priv->child)
+    clutter_actor_remove_child (container, priv->child);
+
+  priv->child = actor;
+}
+
+static void
+mex_clock_bin_actor_removed (ClutterActor *container,
+                             ClutterActor *actor)
+{
+  MexClockBinPrivate *priv = MEX_CLOCK_BIN (container)->priv;
+
+  if (priv->child == actor)
+    priv->child = NULL;
+}
 
 static void
 mex_clock_bin_get_property (GObject    *object,
@@ -234,16 +260,17 @@ mex_clock_bin_allocate (ClutterActor           *actor,
                         const ClutterActorBox  *box,
                         ClutterAllocationFlags  flags)
 {
-  ClutterActorBox child_box;
+  ClutterActorBox childbox;
   MexClockBinPrivate *priv = MEX_CLOCK_BIN (actor)->priv;
 
   CLUTTER_ACTOR_CLASS (mex_clock_bin_parent_class)->
     allocate (actor, box, flags);
 
-  mx_bin_allocate_child (MX_BIN (actor), box, flags);
-
-  mx_widget_get_available_area (MX_WIDGET (actor), box, &child_box);
-  clutter_actor_allocate (priv->clock_hbox, &child_box, flags);
+  if (priv->child)
+    {
+      mx_widget_get_available_area (MX_WIDGET (actor), box, &childbox);
+      clutter_actor_allocate (priv->child, &childbox, flags);
+    }
 }
 
 static void
@@ -323,16 +350,17 @@ mex_clock_bin_init (MexClockBin *self)
 
   mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (priv->clock_hbox),
                                               priv->time_label, 0,
-                                              "x-fill", FALSE,
-                                              "y-fill", FALSE,
                                               "x-align", MX_ALIGN_START,
                                               "expand", TRUE,
                                               NULL);
   mx_box_layout_insert_actor_with_properties (MX_BOX_LAYOUT (priv->clock_hbox),
                                               priv->icon, 1,
-                                              "x-fill", FALSE,
-                                              "y-fill", FALSE,
                                               NULL);
+
+  g_signal_connect (self, "actor-added",
+                    G_CALLBACK (mex_clock_bin_actor_added), NULL);
+  g_signal_connect (self, "actor-removed",
+                    G_CALLBACK (mex_clock_bin_actor_removed), NULL);
 
   mex_clock_update_cb (self);
 }

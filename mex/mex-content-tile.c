@@ -51,6 +51,8 @@ struct _MexContentTilePrivate
 
   MexModel *model;
 
+  ClutterActor *child;
+
   ClutterActor *image;
   ClutterActor *video_preview;
 
@@ -85,14 +87,14 @@ _stop_video_preview (MexContentTile *self)
     g_source_remove (priv->start_video_preview);
 
   /* video never started */
-  if (mx_bin_get_child (MX_BIN (self)) == priv->image)
+  if (priv->child == priv->image)
     return FALSE;
 
   if (!priv->video_preview)
     return FALSE;
 
   clutter_media_set_playing (CLUTTER_MEDIA (priv->video_preview), FALSE);
-  mx_bin_set_child (MX_BIN (self), priv->image);
+  clutter_actor_add_child (CLUTTER_ACTOR (self), priv->image);
   /* After setting the child the old child is killed off so NULL this to
    *  help with checks
    */
@@ -156,7 +158,7 @@ _start_video_preview (MexContentTile *self)
   clutter_actor_set_opacity (priv->video_preview, 0);
 
   g_object_ref (priv->image);
-  mx_bin_set_child (MX_BIN (self), priv->video_preview);
+  clutter_actor_add_child (CLUTTER_ACTOR (self), priv->video_preview);
 
 
   clutter_actor_animate (priv->video_preview, CLUTTER_LINEAR, 500,
@@ -174,6 +176,31 @@ _start_video_preview (MexContentTile *self)
       g_timeout_add_seconds (180, (GSourceFunc)_stop_video_preview, self);
 
   return FALSE;
+}
+
+static void
+mex_content_tile_actor_added (ClutterActor *container,
+                              ClutterActor *actor)
+{
+  MexContentTilePrivate *priv = MEX_TILE (container)->priv;
+
+  if (MX_IS_TOOLTIP (actor))
+    return;
+
+  if (priv->child)
+    clutter_actor_remove_child (container, priv->child);
+
+  priv->child = actor;
+}
+
+static void
+mex_content_tile_actor_removed (ClutterActor *container,
+                                ClutterActor *actor)
+{
+  MexContentTilePrivate *priv = MEX_TILE (container)->priv;
+
+  if (priv->child == actor)
+    priv->child = NULL;
 }
 
 static MxFocusable*
@@ -758,7 +785,12 @@ mex_content_tile_init (MexContentTile *self)
   mx_image_set_scale_height_threshold (MX_IMAGE (priv->image), 128);
   mx_image_set_scale_mode (MX_IMAGE (priv->image), MX_IMAGE_SCALE_CROP);
 
-  mx_bin_set_child (MX_BIN (self), priv->image);
+  clutter_actor_add_child (CLUTTER_ACTOR (self), priv->image);
+
+  g_signal_connect (self, "actor-added",
+                    G_CALLBACK (mex_content_tile_actor_added), NULL);
+  g_signal_connect (self, "actor-removed",
+                    G_CALLBACK (mex_content_tile_actor_removed), NULL);
 }
 
 ClutterActor *

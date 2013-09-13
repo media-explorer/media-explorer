@@ -396,7 +396,6 @@ mex_action_list_refresh (MexActionList *action_list)
         {
           button = mex_action_button_new (action);
 
-          mx_bin_set_fill (MX_BIN (button), TRUE, FALSE);
           mex_action_set_content (action, priv->content);
           mex_action_set_context (action, priv->model);
         }

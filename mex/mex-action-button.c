@@ -33,8 +33,6 @@ static void
 mex_action_button_init (MexActionButton *self)
 {
   mx_button_set_icon_position (MX_BUTTON (self), MX_POSITION_RIGHT);
-
-  mx_bin_set_fill (MX_BIN (self), TRUE, TRUE);
 }
 
 ClutterActor *
