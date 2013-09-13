@@ -53,14 +53,14 @@ typedef struct _MexClockBinPrivate MexClockBinPrivate;
 
 struct _MexClockBin
 {
-  MxBin parent;
+  MxWidget parent;
 
   MexClockBinPrivate *priv;
 };
 
 struct _MexClockBinClass
 {
-  MxBinClass parent_class;
+  MxWidgetClass parent_class;
 };
 
 GType mex_clock_bin_get_type (void) G_GNUC_CONST;

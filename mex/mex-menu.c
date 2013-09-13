@@ -402,8 +402,7 @@ mex_menu_item_new (MexMenu *self, MxAction *action, MexMenuActionType type)
   mx_stylable_set_style_class (MX_STYLABLE (button), "Item");
 
   layout = mx_box_layout_new ();
-  mx_bin_set_child (MX_BIN (button), layout);
-  mx_bin_set_fill (MX_BIN (button), TRUE, FALSE);
+  clutter_actor_add_child (button, layout);
 
   if (type == MEX_MENU_LEFT)
     {
@@ -502,7 +501,7 @@ mex_menu_create_layout (MexMenu *menu, gboolean lower)
 
   scroll = mex_scroll_view_new ();
   clutter_actor_set_clip_to_allocation (CLUTTER_ACTOR (scroll), TRUE);
-  mx_bin_set_child (MX_BIN (scroll), priv->action_layout);
+  clutter_actor_add_child (CLUTTER_ACTOR (scroll), priv->action_layout);
   clutter_actor_add_child (layout, scroll);
 
   g_object_set_data (G_OBJECT (layout), "action-layout", priv->action_layout);

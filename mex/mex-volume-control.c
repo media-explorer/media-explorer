@@ -263,7 +263,7 @@ mex_volume_control_init (MexVolumeControl *self)
   mx_stylable_set_style_class (MX_STYLABLE (priv->volume), new_style_class);
   g_free (new_style_class);
 
-  mx_bin_set_child (MX_BIN (self), priv->volume);
+  clutter_actor_add_child (CLUTTER_ACTOR (self), priv->volume);
 }
 
 ClutterActor *

@@ -169,7 +169,7 @@ mex_player_media_error_cb (ClutterMedia *media,
     {
       data->error_label = mx_label_new_with_text (error_msg);
       clutter_actor_set_name (data->error_dialog, "mex-player-error-label");
-      mx_bin_set_child (MX_BIN (data->error_dialog), data->error_label);
+      clutter_actor_add_child (CLUTTER_ACTOR (data->error_dialog), data->error_label);
     }
   else
     mx_label_set_text (MX_LABEL (data->error_label), error_msg);
@@ -1307,7 +1307,7 @@ mex_dialog_hidden_cb (ClutterActor *dialog,
 {
   MexApplet *applet = g_object_get_data (G_OBJECT (actor), "mex-applet");
 
-  mx_bin_set_child (MX_BIN (dialog), NULL);
+  clutter_actor_add_child (dialog, NULL);
   clutter_actor_destroy (dialog);
 
   mex_applet_closed (applet, actor);
@@ -1361,7 +1361,7 @@ mex_applet_present_actor_cb (MexApplet                  *applet,
 
       mx_dialog_set_transient_parent (MX_DIALOG (dialog),
                                       data->stack);
-      mx_bin_set_child (MX_BIN (dialog), actor);
+      clutter_actor_add_child (dialog, actor);
 
       clutter_actor_show (dialog);
 
@@ -1428,7 +1428,6 @@ mex_tool_set_mode (ClutterActor *actor,
   if (mode == TOOL_MODE_PIP)
     {
       mx_stylable_set_style_class (MX_STYLABLE(frame), "PipTool");
-      mx_bin_set_fill (MX_BIN (frame), FALSE, FALSE);
       mx_stack_child_set_x_align (MX_STACK (data->stack),
                                   frame,
                                   actor == data->current_tool ? MX_ALIGN_START : MX_ALIGN_END);
@@ -1445,7 +1444,6 @@ mex_tool_set_mode (ClutterActor *actor,
   else if (mode == TOOL_MODE_FULL)
     {
       mx_stylable_set_style_class (MX_STYLABLE(frame), "FullTool");
-      mx_bin_set_fill (MX_BIN (frame), TRUE, TRUE);
       mx_stack_child_set_x_fill (MX_STACK (data->stack),
                                  frame,
                                  TRUE);
@@ -1456,7 +1454,6 @@ mex_tool_set_mode (ClutterActor *actor,
   else if (mode == TOOL_MODE_SBS)
     {
       mx_stylable_set_style_class (MX_STYLABLE(frame), "FullTool");
-      mx_bin_set_fill (MX_BIN (frame), FALSE, FALSE);
       mx_stack_child_set_x_fill (MX_STACK (data->stack),
                                  frame,
                                  FALSE);
@@ -1479,7 +1476,7 @@ mex_tool_setup_frame (ClutterActor *actor,
 {
   ClutterActor *frame = mx_frame_new ();
   mx_stylable_set_style_class (MX_STYLABLE (frame), style_class);
-  mx_bin_set_child (MX_BIN (frame), actor);
+  clutter_actor_add_child (frame, actor);
   clutter_actor_add_child (data->stack, frame);
 }
 
@@ -1844,11 +1841,6 @@ welcome_run (MexData *data)
 
   main_frame = mx_frame_new ();
   clutter_actor_set_name (main_frame, "main-frame");
-  mx_bin_set_alignment (MX_BIN (main_frame),
-                        MX_ALIGN_MIDDLE,
-                        MX_ALIGN_MIDDLE);
-  mx_bin_set_fill (MX_BIN (main_frame), FALSE, FALSE);
-
 
   /* take a reference to the current window child (the stack), to prevent it
    * being destroyed when the new child is set */
@@ -1861,7 +1853,7 @@ welcome_run (MexData *data)
                 "width", 740.0,
                 "min-height", 550.0,
                 NULL);
-  mx_bin_set_child (MX_BIN (main_frame), welcome);
+  clutter_actor_add_child (main_frame, welcome);
   mex_push_focus (MX_FOCUSABLE (welcome));
 
   g_signal_connect (clutter_script_get_object (script, "next"),

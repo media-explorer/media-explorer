@@ -484,7 +484,7 @@ mex_grid_view_init (MexGridView *self)
 
   /* grid */
   priv->grid = mex_grid_new ();
-  mx_bin_set_child (MX_BIN (scroll_view), priv->grid);
+  clutter_actor_add_child (CLUTTER_ACTOR (scroll_view), priv->grid);
   clutter_actor_set_opacity (priv->grid, 0);
 
 

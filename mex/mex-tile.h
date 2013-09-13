@@ -52,14 +52,14 @@ typedef struct _MexTilePrivate MexTilePrivate;
 
 struct _MexTile
 {
-  MxBin parent;
+  MxWidget parent;
 
   MexTilePrivate *priv;
 };
 
 struct _MexTileClass
 {
-  MxBinClass parent_class;
+  MxWidgetClass parent_class;
 };
 
 GType mex_tile_get_type (void) G_GNUC_CONST;

@@ -44,6 +44,8 @@ G_DEFINE_TYPE_WITH_CODE (MexInfoBar, mex_info_bar, MX_TYPE_WIDGET,
 
 struct _MexInfoBarPrivate
 {
+  ClutterActor *child;
+
   ClutterActor *group;
   ClutterActor *settings_dialog;
   ClutterActor *settings_button;
@@ -68,6 +70,31 @@ enum
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
+
+static void
+mex_info_bar_actor_added (ClutterActor *container,
+                          ClutterActor *actor)
+{
+  MexInfoBarPrivate *priv = MEX_INFO_BAR (container)->priv;
+
+  if (MX_IS_TOOLTIP (actor))
+    return;
+
+  if (priv->child)
+    clutter_actor_remove_child (container, priv->child);
+
+  priv->child = actor;
+}
+
+static void
+mex_info_bar_actor_removed (ClutterActor *container,
+                            ClutterActor *actor)
+{
+  MexInfoBarPrivate *priv = MEX_INFO_BAR (container)->priv;
+
+  if (priv->child == actor)
+    priv->child = NULL;
+}
 
 /* MxFocusableIface */
 
@@ -423,7 +450,7 @@ _create_settings_dialog (MexInfoBar *self)
 
   priv->no_settings_helpers = TRUE;
 
-  mx_bin_set_child (MX_BIN (dialog), dialog_layout);
+  clutter_actor_add_child (CLUTTER_ACTOR (dialog), dialog_layout);
   mx_dialog_add_action (MX_DIALOG (dialog), close_dialog);
 
   priv->settings_dialog = g_object_ref (dialog);
@@ -484,7 +511,7 @@ mex_info_bar_add_settings_item (MexInfoBar   *self,
   g_return_if_fail (priv->settings_dialog);
 
   /* TODO -- handle the index, at least 0 for prepend and <0 for append. */
-  dialog_layout = mx_bin_get_child (MX_BIN (priv->settings_dialog));
+  dialog_layout = priv->child;
   rows = mx_table_get_row_count (MX_TABLE (dialog_layout));
 
   mx_table_insert_actor (MX_TABLE (dialog_layout), item, rows + 1, 1);
@@ -583,6 +610,11 @@ mex_info_bar_init (MexInfoBar *self)
   g_signal_connect (priv->back_button,
                     "clicked",
                     G_CALLBACK (_back_button_cb), self);
+
+  g_signal_connect (self, "actor-added",
+                    G_CALLBACK (mex_info_bar_actor_added), NULL);
+  g_signal_connect (self, "actor-removed",
+                    G_CALLBACK (mex_info_bar_actor_removed), NULL);
 
   _create_settings_dialog (MEX_INFO_BAR (self));
 

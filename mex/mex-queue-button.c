@@ -450,8 +450,7 @@ mex_queue_button_init (MexQueueButton *self)
 
   clutter_actor_hide (self->priv->spinner);
 
-  mx_bin_set_child (MX_BIN (self), self->priv->inner_box);
-  mx_bin_set_fill (MX_BIN (self), TRUE, FALSE);
+  clutter_actor_add_child (CLUTTER_ACTOR (self), self->priv->inner_box);
 
   temp_text = mx_label_get_clutter_text (MX_LABEL (self->priv->label));
   clutter_text_set_ellipsize (CLUTTER_TEXT (temp_text), PANGO_ELLIPSIZE_NONE);
