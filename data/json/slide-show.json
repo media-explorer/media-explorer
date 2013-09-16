@@ -13,8 +13,6 @@
     "children" : [
       {
         "type" : "MxFrame",
-        "y-fill" : true,
-        "x-fill" : true,
         "children" : [
           {
             "type" : "MxImage",
