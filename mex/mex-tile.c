@@ -481,6 +481,8 @@ mex_tile_paint (ClutterActor *actor)
 
   CLUTTER_ACTOR_CLASS (mex_tile_parent_class)->paint (actor);
 
+  clutter_actor_paint (priv->child);
+
   mx_widget_get_padding (MX_WIDGET (actor), &padding);
 
   if (priv->header_visible)
