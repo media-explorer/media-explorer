@@ -123,12 +123,14 @@
         "scroll-visibility" : 0,
         "height" : 255,
         "visible" : false,
-        "child" : {
-          "type" : "MxBoxLayout",
-          "name" : "tracks",
-          "id" : "tracks",
-          "orientation" : 1
-        }
+        "children" : [
+          {
+            "type" : "MxBoxLayout",
+            "name" : "tracks",
+            "id" : "tracks",
+            "orientation" : 1
+          }
+        ]
       }
     ]
   }

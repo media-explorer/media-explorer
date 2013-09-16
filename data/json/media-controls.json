@@ -14,7 +14,7 @@
     "scroll-policy" : "vertical",
     "height" : 178,
     "clip-to-allocation" : true,
-    "child" :
+    "children" : [
       {
         "type" : "MxBoxLayout",
         "orientation" : "vertical",
@@ -149,7 +149,7 @@
             "type" : "MexScrollView",
             "indicators-hidden" : true,
             "scroll-policy" : "horizontal",
-            "child" :
+            "children" : [
               {
                 "type" : "MxBoxLayout",
                 "id" : "related-box",
@@ -158,9 +158,11 @@
                 "spacing" : 44,
                 "scroll-to-focused" : false
               }
+            ]
           }
-      ]
-    }
+        ]
+      }
+    ]
   }
 ]
 
