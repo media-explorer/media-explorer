@@ -162,6 +162,7 @@ AC_SUBST(mx_version)
 
 modules="glib-2.0 >= $GLIB_REQ_VERSION                  \
          gio-2.0                                        \
+         gthread-2.0                                    \
          gdk-pixbuf-2.0                                 \
          libsoup-2.4                                    \
          clutter-1.0 >= $CLUTTER_REQ_VERSION            \
