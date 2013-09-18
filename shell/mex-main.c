@@ -1307,7 +1307,7 @@ mex_dialog_hidden_cb (ClutterActor *dialog,
 {
   MexApplet *applet = g_object_get_data (G_OBJECT (actor), "mex-applet");
 
-  clutter_actor_add_child (dialog, NULL);
+  clutter_actor_destroy_all_children (dialog);
   clutter_actor_destroy (dialog);
 
   mex_applet_closed (applet, actor);
