@@ -65,8 +65,6 @@ struct _MexSlideShowPrivate
   MexProxy      *proxy;
   MexContent    *content;
 
-  ClutterActor  *child;
-
   ClutterActor  *image;
   ClutterActor  *controls;
   ClutterActor  *info_panel;
@@ -109,31 +107,6 @@ static void mex_slide_show_set_playing (MexSlideShow *slideshow,
                                         gboolean      playing);
 
 static void mex_slide_show_show (MexSlideShow *self);
-
-static void
-mex_slide_show_actor_added (ClutterActor *container,
-                            ClutterActor *actor)
-{
-  MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (container)->priv;
-
-  if (MX_IS_TOOLTIP (actor))
-    return;
-
-  if (priv->child)
-    clutter_actor_remove_child (container, priv->child);
-
-  priv->child = actor;
-}
-
-static void
-mex_slide_show_actor_removed (ClutterActor *container,
-                              ClutterActor *actor)
-{
-  MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (container)->priv;
-
-  if (priv->child == actor)
-    priv->child = NULL;
-}
 
 /* MxFocusable Implementation */
 static MxFocusable*
@@ -929,11 +902,6 @@ mex_slide_show_init (MexSlideShow *self)
 
   g_signal_connect (self, "hide", G_CALLBACK (mex_slide_show_hide), NULL);
   g_signal_connect (self, "show", G_CALLBACK (mex_slide_show_show), NULL);
-
-  g_signal_connect (self, "actor-added",
-                    G_CALLBACK (mex_slide_show_actor_added), NULL);
-  g_signal_connect (self, "actor-removed",
-                    G_CALLBACK (mex_slide_show_actor_removed), NULL);
 }
 
 ClutterActor *
@@ -1006,22 +974,21 @@ tile_button_press_event_cb (ClutterActor *actor,
 }
 
 static void
-notify_pseudo_class (MxWidget *actor)
+notify_pseudo_class (ClutterActor *actor)
 {
   ClutterEffect *shadow;
   ClutterActor *enable_shadow, *disable_shadow;
-  MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (actor)->priv;
 
   if (mx_stylable_style_pseudo_class_contains (MX_STYLABLE (actor), "active")
       || mx_stylable_style_pseudo_class_contains (MX_STYLABLE (actor), "focus"))
     {
-      enable_shadow = (ClutterActor*) actor;
-      disable_shadow = priv->child;
+      enable_shadow = actor;
+      disable_shadow = clutter_actor_get_first_child (actor);
     }
   else
     {
-      enable_shadow = priv->child;
-      disable_shadow = (ClutterActor*) actor;
+      enable_shadow = clutter_actor_get_first_child (actor);
+      disable_shadow = actor;
     }
 
   shadow = clutter_actor_get_effect (enable_shadow, "shadow");
@@ -1039,7 +1006,6 @@ tile_created_cb (MexProxy *proxy,
 {
   ClutterEffect *shadow;
   ClutterColor color = { 0, 0, 0, 60 };
-  MexSlideShowPrivate *priv = MEX_SLIDE_SHOW (object)->priv;
 
   /* remove any content from the slide show that is not an image */
   if (!allowed_content (MEX_CONTENT (content)))
@@ -1071,13 +1037,13 @@ tile_created_cb (MexProxy *proxy,
                          "radius-y", 15,
                          "color", &color,
                          NULL);
-  clutter_actor_add_effect_with_name (priv->child,
+  clutter_actor_add_effect_with_name (clutter_actor_get_first_child (CLUTTER_ACTOR (object)),
                                       "shadow", CLUTTER_EFFECT (shadow));
 
   g_signal_connect (object, "notify::style-pseudo-class",
                     G_CALLBACK (notify_pseudo_class), NULL);
 
-  notify_pseudo_class (MX_WIDGET (object));
+  notify_pseudo_class (CLUTTER_ACTOR (object));
 
   /* ensure the correct item is highlighted in the photo strip */
   mex_slide_show_move (slideshow, 0);
