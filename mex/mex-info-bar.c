@@ -44,8 +44,6 @@ G_DEFINE_TYPE_WITH_CODE (MexInfoBar, mex_info_bar, MX_TYPE_WIDGET,
 
 struct _MexInfoBarPrivate
 {
-  ClutterActor *child;
-
   ClutterActor *group;
   ClutterActor *settings_dialog;
   ClutterActor *settings_button;
@@ -70,31 +68,6 @@ enum
 };
 
 static guint signals[LAST_SIGNAL] = { 0, };
-
-static void
-mex_info_bar_actor_added (ClutterActor *container,
-                          ClutterActor *actor)
-{
-  MexInfoBarPrivate *priv = MEX_INFO_BAR (container)->priv;
-
-  if (MX_IS_TOOLTIP (actor))
-    return;
-
-  if (priv->child)
-    clutter_actor_remove_child (container, priv->child);
-
-  priv->child = actor;
-}
-
-static void
-mex_info_bar_actor_removed (ClutterActor *container,
-                            ClutterActor *actor)
-{
-  MexInfoBarPrivate *priv = MEX_INFO_BAR (container)->priv;
-
-  if (priv->child == actor)
-    priv->child = NULL;
-}
 
 /* MxFocusableIface */
 
@@ -452,7 +425,7 @@ mex_info_bar_add_settings_item (MexInfoBar   *self,
   g_return_if_fail (priv->settings_dialog);
 
   /* TODO -- handle the index, at least 0 for prepend and <0 for append. */
-  dialog_layout = priv->child;
+  dialog_layout = clutter_actor_get_first_child (CLUTTER_ACTOR (priv->settings_dialog));
   rows = mx_table_get_row_count (MX_TABLE (dialog_layout));
 
   mx_table_insert_actor (MX_TABLE (dialog_layout), item, rows + 1, 1);
@@ -551,11 +524,6 @@ mex_info_bar_init (MexInfoBar *self)
   g_signal_connect (priv->back_button,
                     "clicked",
                     G_CALLBACK (_back_button_cb), self);
-
-  g_signal_connect (self, "actor-added",
-                    G_CALLBACK (mex_info_bar_actor_added), NULL);
-  g_signal_connect (self, "actor-removed",
-                    G_CALLBACK (mex_info_bar_actor_removed), NULL);
 
   _create_settings_dialog (MEX_INFO_BAR (self));
 
