@@ -335,6 +335,27 @@ mex_tile_get_preferred_height (ClutterActor *actor,
 }
 
 static void
+mex_tile_get_preferred_width (ClutterActor *actor,
+                              gfloat        for_height,
+                              gfloat       *min_height_p,
+                              gfloat       *nat_height_p)
+{
+  MexTilePrivate *priv = MEX_TILE (actor)->priv;
+  MxPadding padding;
+
+  mx_widget_get_padding (MX_WIDGET (actor), &padding);
+
+  for_height -= padding.top + padding.bottom;
+  clutter_actor_get_preferred_width (priv->child, for_height, min_height_p,
+                                     nat_height_p);
+  if (min_height_p)
+    *min_height_p += padding.top + padding.bottom;
+
+  if (nat_height_p)
+    *nat_height_p += padding.top + padding.bottom;
+}
+
+static void
 mex_tile_allocate (ClutterActor           *actor,
                    const ClutterActorBox  *box,
                    ClutterAllocationFlags  flags)
@@ -613,6 +634,7 @@ mex_tile_class_init (MexTileClass *klass)
   object_class->finalize = mex_tile_finalize;
 
   actor_class->get_preferred_height = mex_tile_get_preferred_height;
+  actor_class->get_preferred_width = mex_tile_get_preferred_width;
   actor_class->allocate = mex_tile_allocate;
   actor_class->paint = mex_tile_paint;
   actor_class->map = mex_tile_map;
