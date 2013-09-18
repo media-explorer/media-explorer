@@ -182,7 +182,7 @@ static void
 mex_content_tile_actor_added (ClutterActor *container,
                               ClutterActor *actor)
 {
-  MexContentTilePrivate *priv = MEX_TILE (container)->priv;
+  MexContentTilePrivate *priv = MEX_CONTENT_TILE (container)->priv;
 
   if (MX_IS_TOOLTIP (actor))
     return;
@@ -197,7 +197,7 @@ static void
 mex_content_tile_actor_removed (ClutterActor *container,
                                 ClutterActor *actor)
 {
-  MexContentTilePrivate *priv = MEX_TILE (container)->priv;
+  MexContentTilePrivate *priv = MEX_CONTENT_TILE (container)->priv;
 
   if (priv->child == actor)
     priv->child = NULL;
