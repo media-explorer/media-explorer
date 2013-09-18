@@ -401,8 +401,8 @@ mex_music_player_content_set_externally_cb (MexData *data)
 static void
 mex_player_show_cb (MexData *data)
 {
-  if (mex_music_player_is_playing (data->music_player))
-    mex_music_player_stop (data->music_player);
+  if (mex_music_player_is_playing (MEX_MUSIC_PLAYER (data->music_player)))
+    mex_music_player_stop (MEX_MUSIC_PLAYER (data->music_player));
 }
 
 static void
@@ -2399,7 +2399,7 @@ mex_startup (MxApplication *app,
 
 
   /* create music player */
-  data->music_player = mex_music_player_get_default ();
+  data->music_player = (ClutterActor*) mex_music_player_get_default ();
   g_signal_connect_swapped (data->music_player, "close-request",
                             G_CALLBACK (mex_go_back), data);
   clutter_actor_hide (data->music_player);

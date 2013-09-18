@@ -355,72 +355,13 @@ _close_request_cb (gpointer unused, MexInfoBar *self)
   return TRUE;
 }
 
-#ifdef HAVE_GIO_UNIX
-static gboolean
-_app_launcher_cb (ClutterActor *actor, gpointer command)
-{
-  GError *error=NULL;
-
-  if (!g_spawn_command_line_async ((const gchar *)command, &error))
-    {
-      g_warning (G_STRLOC ": Error launching: %s", error->message);
-      g_error_free (error);
-    }
-
-  return TRUE;
-}
-
-static MxAction *
-_action_new_from_desktop_file (const gchar *desktop_file_id)
-{
-  GDesktopAppInfo *dai;
-
-  dai = g_desktop_app_info_new (desktop_file_id);
-
-  if (dai)
-    {
-      MxAction *action;
-      GAppInfo *ai;
-      GIcon *icon;
-
-      ai = G_APP_INFO (dai);
-
-      action = mx_action_new_full (g_app_info_get_name (ai),
-                                   g_app_info_get_display_name (ai),
-                                   G_CALLBACK (_app_launcher_cb),
-                                   (gpointer)g_app_info_get_commandline (ai));
-
-     icon = g_app_info_get_icon (ai);
-     if (icon)
-       {
-         gchar *icon_name;
-         icon_name =  g_icon_to_string (icon);
-
-         mx_action_set_icon (action, icon_name);
-
-         g_free (icon_name);
-       }
-
-      return action;
-    }
-  return NULL;
-}
-#else
-static MxAction *
-_action_new_from_desktop_file (const gchar *desktop_file_id)
-{
-  return NULL;
-}
-#endif
-
 static gboolean
 _create_settings_dialog (MexInfoBar *self)
 {
   MexInfoBarPrivate *priv = self->priv;
 
-  ClutterActor *dialog, *network_graphic;
-  ClutterActor *network_tile, *dialog_layout, *dialog_label;
-  ClutterActor *network_button;
+  ClutterActor *dialog;
+  ClutterActor *dialog_layout, *dialog_label;
   ClutterActor *no_settings;
 
   MxAction *close_dialog;

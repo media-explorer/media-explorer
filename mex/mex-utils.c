@@ -716,7 +716,7 @@ mex_actor_has_focus (ClutterActor   *actor)
   ClutterStage *stage;
   MxFocusManager *manager;
 
-  stage = clutter_actor_get_stage (actor);
+  stage = (ClutterStage*) clutter_actor_get_stage (actor);
   manager = mx_focus_manager_get_for_stage (stage);
   focus = (ClutterActor *)mx_focus_manager_get_focused (manager);
 

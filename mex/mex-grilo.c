@@ -83,8 +83,8 @@ mex_grilo_init (int *p_argc, char **p_argv[])
 static GrlKeyID
 _get_grl_key_from_mex (MexContentMetadata mex_key)
 {
-  return (GrlKeyID) g_hash_table_lookup (mex_to_grl,
-                                         GSIZE_TO_POINTER (mex_key));
+  return (GrlKeyID) GPOINTER_TO_INT (g_hash_table_lookup (mex_to_grl,
+                                                          GSIZE_TO_POINTER (mex_key)));
 }
 
 /* static MexContentMetadata */

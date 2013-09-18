@@ -37,6 +37,8 @@
 #include <clutter-gst/clutter-gst.h>
 #include <clutter-gst/clutter-gst-player.h>
 
+#include <stdlib.h>
+
 static void mex_content_view_iface_init (MexContentViewIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (MexInfoPanel, mex_info_panel, MX_TYPE_FRAME,

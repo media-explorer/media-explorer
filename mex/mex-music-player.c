@@ -28,6 +28,8 @@
 
 #include <clutter-gst/clutter-gst.h>
 
+#include <string.h>
+
 static void mex_music_player_content_view_iface_init (MexContentViewIface *iface);
 static void mex_music_player_focusable_iface_init (MxFocusableIface *iface);
 static void mex_music_player_notify_cb (ClutterMedia   *media,
