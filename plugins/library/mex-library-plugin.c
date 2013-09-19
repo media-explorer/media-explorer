@@ -165,11 +165,14 @@ mex_library_plugin_init (MexLibraryPlugin *self)
 
       mex_settings_key = mex_get_settings_key_file ();
       paths_len = 0;
-      paths = g_key_file_get_string_list (mex_settings_key,
-                                          "library-plugin",
-                                          "video_paths",
-                                          &paths_len,
-                                          NULL);
+      if (mex_settings_key)
+        paths = g_key_file_get_string_list (mex_settings_key,
+                                            "library-plugin",
+                                            "video_paths",
+                                            &paths_len,
+                                            NULL);
+      else
+        paths = NULL;
 
       if (!paths)
         paths = g_new (gchar*, 2);
@@ -221,11 +224,14 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                                  NULL);
 
       paths_len = 0;
-      paths = g_key_file_get_string_list (mex_settings_key,
-                                          "library-plugin",
-                                          "pictures_paths",
-                                          &paths_len,
-                                          NULL);
+      if (mex_settings_key)
+        paths = g_key_file_get_string_list (mex_settings_key,
+                                            "library-plugin",
+                                            "pictures_paths",
+                                            &paths_len,
+                                            NULL);
+      else
+        paths = NULL;
 
       paths = (gchar **)g_realloc ((gpointer)paths,
                                    (paths_len + 2) * sizeof (gchar *));
@@ -277,11 +283,14 @@ mex_library_plugin_init (MexLibraryPlugin *self)
                                                  NULL);
 
       paths_len = 0;
-      paths = g_key_file_get_string_list (mex_settings_key,
-                                          "library-plugin",
-                                          "music_paths",
-                                          &paths_len,
-                                          NULL);
+      if (mex_settings_key)
+        paths = g_key_file_get_string_list (mex_settings_key,
+                                            "library-plugin",
+                                            "music_paths",
+                                            &paths_len,
+                                            NULL);
+      else
+        paths = NULL;
 
       if (!paths)
         paths = g_new (gchar*, 2);
