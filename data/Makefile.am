@@ -87,10 +87,6 @@ EXTRA_DIST = \
 
 
 
-if ENABLE_IDLE_VIDEO
-EXTRA_DIST +=style/background-loop.mkv
-endif
-
 icondir = $(pkgdatadir)/icons/mex
 dist_icon_DATA = \
 		 icons/index.theme

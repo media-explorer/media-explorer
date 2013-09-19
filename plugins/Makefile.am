@@ -280,58 +280,6 @@ mex_gnome_dvb_la_CFLAGS = 			\
 mex_gnome_dvb_la_LIBADD = $(_libadd)
 endif
 
-if USE_PLUGIN_BG_VIDEO
-plugins_LTLIBRARIES += mex-bg-video.la
-
-mex_bg_videodir = $(plugin_datadir)/bg-video
-dist_mex_bg_video_DATA =
-
-mex_bg_video_la_SOURCES = 		\
-	bg-video/mex-bg-video-plugin.c	\
-	bg-video/mex-bg-video-plugin.h	\
-	bg-video/mex-background-video.c	\
-	bg-video/mex-background-video.h
-mex_bg_video_la_CFLAGS = 				\
-	-DG_LOG_DOMAIN=\"Mex-Background-Video\"		\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_bg_videodir)\"
-mex_bg_video_la_LIBADD = $(_libadd)
-endif
-
-if USE_PLUGIN_BG_DBUSVIDEO
-plugins_LTLIBRARIES += mex-bg-dbusvideo.la
-
-mex_bg_dbusvideodir = $(plugin_datadir)/bg-dbusvideo
-dist_mex_bg_dbusvideo_DATA =
-
-mex_bg_dbusvideo_la_SOURCES =		 		\
-	bg-dbusvideo/mex-bg-dbusvideo-plugin.c		\
-	bg-dbusvideo/mex-bg-dbusvideo-plugin.h		\
-	bg-dbusvideo/mex-dbus-background-video.c	\
-	bg-dbusvideo/mex-dbus-background-video.h
-mex_bg_dbusvideo_la_CFLAGS = 				\
-	-DG_LOG_DOMAIN=\"Mex-DBus-Background-Video\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_bg_dbusvideodir)\"
-mex_bg_dbusvideo_la_LIBADD = $(_libadd)
-endif
-
-if USE_PLUGIN_BG_BACKDROP
-plugins_LTLIBRARIES += mex-bg-backdrop.la
-
-mex_bg_backdropdir = $(plugin_datadir)/bg-backdrop
-dist_mex_bg_backdrop_DATA = \
-	bg-backdrop/sprite.png
-
-mex_bg_backdrop_la_SOURCES =		 		\
-	bg-backdrop/mex-bg-backdrop-plugin.c		\
-	bg-backdrop/mex-bg-backdrop-plugin.h		\
-	bg-backdrop/mex-backdrop.c			\
-	bg-backdrop/mex-backdrop.h
-mex_bg_backdrop_la_CFLAGS = 				\
-	-DG_LOG_DOMAIN=\"Mex-Background-Backdrop\"	\
-	-DMEX_DATA_PLUGIN_DIR=\"$(mex_bg_backdropdir)\"
-mex_bg_backdrop_la_LIBADD = $(_libadd)
-endif
-
 if USE_PLUGIN_TWITTER_SEND
 plugins_LTLIBRARIES += 60mex-twitter-send.la
 

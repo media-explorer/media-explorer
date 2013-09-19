@@ -41,7 +41,6 @@
 #include "mex-player.h"
 
 #include "mex-main.h"
-#include "mex-background-manager.h"
 #include "mex-private.h"
 #include "mex-program.h"
 #include "mex-content-view.h"

@@ -42,8 +42,6 @@ mex_headers =							\
 	$(top_srcdir)/mex/mex-applet-manager.h			\
 	$(top_srcdir)/mex/mex-application-category.h		\
 	$(top_srcdir)/mex/mex-application.h			\
-	$(top_srcdir)/mex/mex-background.h			\
-	$(top_srcdir)/mex/mex-background-manager.h		\
 	$(top_srcdir)/mex/mex-channel.h				\
 	$(top_srcdir)/mex/mex-channel-manager.h			\
 	$(top_srcdir)/mex/mex-channel-provider.h		\
@@ -148,8 +146,6 @@ mex_sources =					\
 	mex-applet-manager.c			\
 	mex-application-category.c		\
 	mex-application.c			\
-	mex-background.c			\
-	mex-background-manager.c		\
 	mex-channel.c				\
 	mex-channel-manager.c			\
 	mex-channel-provider.c			\

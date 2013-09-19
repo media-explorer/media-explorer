@@ -201,13 +201,11 @@ AS_CASE([$with_player],
         [
           AC_DEFINE([USE_PLAYER_CLUTTER_GST], 1, [Use "clutter-gst" for
                      playback])
-          PROFILE_PLUGINS+=" bg-video"
         ],
 
         [d-bus],
         [
           AC_DEFINE([USE_PLAYER_DBUS], 1, [Use "d-bus" for playback])
-          PROFILE_PLUGINS+=" bg-dbusvideo"
         ],
 
         [surface],
@@ -286,18 +284,6 @@ AS_CASE([$enable_debug],
 )
 
 AC_SUBST(MEX_DEBUG_CFLAGS)
-
-# enable idle video
-AC_ARG_ENABLE([idle-video],
-              [AC_HELP_STRING([--enable-idle-video=@<:@no/yes@:>@],
-                              [Play the idle video in the background @<:@default=yes@:>@])],
-              [],
-              [enable_idle_video=yes])
-
-AS_IF([test "x$enable_idle_video" = "xyes"],
-      [AC_DEFINE([ENABLE_IDLE_VIDEO], 1,
-                 [Play the idle video in the background])])
-AM_CONDITIONAL([ENABLE_IDLE_VIDEO], [test "x$enable_idle_video" = "xyes"])
 
 # enable strict compiler flags
 AC_ARG_ENABLE([warning-flags],
@@ -396,7 +382,7 @@ AS_CASE([$profile],
 )
 
 # Default list of plugins to compile
-WITH_PLUGINS="search,queue,library,dbusinput,bliptv,justintv,opticaldisc,bg-video,mpris"
+WITH_PLUGINS="search,queue,library,dbusinput,bliptv,justintv,opticaldisc,mpris"
 
 # the debug plugin is enabled in debug mode
 AS_IF([test "x$enable_debug" = "xyes"],
@@ -410,9 +396,6 @@ AS_IF([test -n "$PROFILE_PLUGINS"],
 AS_MEX_ARG_WITH_PLUGINS
 
 # Declare all the plugins we have
-AS_MEX_PLUGIN(bg-video)
-AS_MEX_PLUGIN(bg-dbusvideo)
-AS_MEX_PLUGIN(bg-backdrop)
 AS_MEX_PLUGIN(library)
 AS_MEX_PLUGIN(recommended)
 AS_MEX_PLUGIN(search, [rest-0.7])
@@ -495,5 +478,4 @@ echo "        Webremote   : ${enable_webremote}"
 echo ""
 echo " • Extra:"
 echo "        Enable LIRC support: ${enable_lirc}"
-echo "        Play the idle video: ${enable_idle_video}"
 echo ""
