@@ -31,12 +31,10 @@
 #include "mex-content-proxy.h"
 #include "mex-aggregate-model.h"
 #include "mex-metadata-utils.h"
-#ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
 #include <clutter-gst/clutter-gst-player.h>
 #include <gst/gst.h>
 #include <gst/tag/tag.h>
-#endif
 #include <glib/gi18n-lib.h>
 
 static void mx_focusable_iface_init (MxFocusableIface *iface);
@@ -945,7 +943,6 @@ on_media_subtitle_tracks_changed (ClutterMedia     *media,
                                   GParamSpec       *pspsec,
                                   MexMediaControls *self)
 {
-#ifdef USE_PLAYER_CLUTTER_GST
   ClutterGstPlayer *player = CLUTTER_GST_PLAYER (media);
   MexMediaControlsPrivate *priv = self->priv;
   GList *tracks, *l, *descriptions;
@@ -1006,7 +1003,6 @@ on_media_subtitle_tracks_changed (ClutterMedia     *media,
   free_string_list (descriptions);
 
   clutter_actor_show (subtitle_button);
-#endif
 }
 
 static void
@@ -1259,11 +1255,9 @@ mex_media_controls_set_disabled (MexMediaControls *self,
       g_signal_handlers_disconnect_by_func (priv->media,
                                             mex_media_controls_notify_progress_cb,
                                             self);
-#ifndef USE_PLAYER_DBUS
       g_signal_handlers_disconnect_by_func (priv->media,
                                             mex_media_controls_notify_download_cb,
                                             self);
-#endif /* !USE_PLAYER_DBUS */
       g_signal_handlers_disconnect_by_func (priv->media,
                                             on_media_subtitle_tracks_changed,
                                             self);
@@ -1279,11 +1273,9 @@ mex_media_controls_set_disabled (MexMediaControls *self,
       g_signal_connect (priv->media, "notify::progress",
                         G_CALLBACK (mex_media_controls_notify_progress_cb),
                         self);
-#ifndef USE_PLAYER_DBUS
       g_signal_connect (priv->media, "download-buffering",
                         G_CALLBACK (mex_media_controls_notify_download_cb),
                         self);
-#endif /* !USE_PLAYER_DBUS */
 
       g_signal_connect (priv->media, "notify::subtitle-tracks",
                         G_CALLBACK (on_media_subtitle_tracks_changed), self);

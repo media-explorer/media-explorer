@@ -22,21 +22,8 @@
 
 #include <stdlib.h>
 
-#ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
 #include <mex/mex-media-dbus-bridge.h>
-#else
-#ifdef USE_PLAYER_DBUS
-#include <mex/mex-player-client.h>
-#else
-#ifdef USE_PLAYER_SURFACE
-#include <mex/mex-media-dbus-bridge.h>
-#include <mex/mex-surface-player.h>
-#else
-#error Unexpected player setup
-#endif
-#endif
-#endif
 
 #include "mex-player.h"
 
@@ -72,9 +59,7 @@ G_DEFINE_TYPE_WITH_CODE (MexPlayer, mex_player, MX_TYPE_STACK,
 
 struct _MexPlayerPrivate
 {
-#if defined(USE_PLAYER_CLUTTER_GST) || defined(USE_PLAYER_SURFACE)
   MexMediaDBUSBridge *bridge;
-#endif
   ClutterMedia *media;
   MexContent   *content;
   MexModel     *model;
@@ -361,13 +346,11 @@ mex_player_dispose (GObject *object)
       priv->related_tile = NULL;
     }
 
-#if defined(USE_PLAYER_CLUTTER_GST) || defined(USE_PLAYER_SURFACE)
   if (priv->bridge)
     {
       g_object_unref (priv->bridge);
       priv->bridge = NULL;
     }
-#endif
 
   G_OBJECT_CLASS (mex_player_parent_class)->dispose (object);
 }
@@ -708,12 +691,12 @@ static void
 mex_player_init (MexPlayer *self)
 {
   MexPlayerPrivate *priv;
+  GError *error = NULL;
 
   self->priv = priv = PLAYER_PRIVATE (self);
 
   clutter_actor_set_reactive (CLUTTER_ACTOR (self), TRUE);
 
-#ifdef USE_PLAYER_CLUTTER_GST
   priv->media = (ClutterMedia *) clutter_gst_video_texture_new ();
 
   /* We want to keep a reference to the media here to ensure consistency with
@@ -735,17 +718,6 @@ mex_player_init (MexPlayer *self)
   clutter_gst_video_texture_set_buffering_mode (video_texture,
 						CLUTTER_GST_BUFFERING_MODE_DOWNLOAD);
 #endif
-#else
-#ifdef USE_PLAYER_DBUS
-  priv->media = (ClutterMedia *) mex_player_client_new ();
-#else
-#ifdef USE_PLAYER_SURFACE
-  priv->media = (ClutterMedia *) mex_surface_player_new ();
-#else
-#error Unexpected player setup
-#endif
-#endif
-#endif
 
   g_signal_connect (priv->media, "eos", G_CALLBACK (media_eos_cb), self);
   g_signal_connect (priv->media, "notify::playing",
@@ -756,17 +728,12 @@ mex_player_init (MexPlayer *self)
                     G_CALLBACK (media_uri_changed_cb),
                     self);
 
-#if (defined(USE_PLAYER_SURFACE) || defined (USE_PLAYER_CLUTTER_GST))
-  {
-    GError *error = NULL;
-    priv->bridge = mex_media_dbus_bridge_new (priv->media);
-    if (!mex_media_dbus_bridge_register (priv->bridge, &error))
-      {
-        g_warning (G_STRLOC ": Error registering player on D-BUS");
-        g_clear_error (&error);
-      }
-  }
-#endif
+  priv->bridge = mex_media_dbus_bridge_new (priv->media);
+  if (!mex_media_dbus_bridge_register (priv->bridge, &error))
+    {
+      g_warning (G_STRLOC ": Error registering player on D-BUS");
+      g_clear_error (&error);
+    }
 
   /* add media controls */
   priv->controls = mex_media_controls_new ();
@@ -811,9 +778,7 @@ mex_get_stream_cb (MexProgram   *program,
   MexPlayer *player = user_data;
   MexPlayerPrivate *priv = player->priv;
   MexGenericContent  *generic_content;
-#ifdef USE_PLAYER_CLUTTER_GST
   ClutterGstVideoTexture *video_texture;
-#endif
 
   if (G_UNLIKELY (error))
     {
@@ -825,7 +790,6 @@ mex_get_stream_cb (MexProgram   *program,
   if (priv->content != (MexContent*) program)
     return;
 
-#ifdef USE_PLAYER_CLUTTER_GST
   /* We seek at the precise time when the file is local, but we
    * seek to key frame when streaming */
   video_texture = CLUTTER_GST_VIDEO_TEXTURE (priv->media);
@@ -861,7 +825,6 @@ mex_get_stream_cb (MexProgram   *program,
       if (visual)
         g_object_set (G_OBJECT (gst_element), "vis-plugin", visual, NULL);
     }
-#endif
 
   MEX_DEBUG ("set uri %s", url);
   clutter_media_set_uri (CLUTTER_MEDIA (priv->media), url);

@@ -4,10 +4,6 @@ if ENABLE_TESTS
 SUBDIRS += tests
 endif
 
-if ENABLE_EXTERNAL_PLAYER
-SUBDIRS += player
-endif
-
 SUBDIRS += thumbnailer
 
 SUBDIRS += data doc po

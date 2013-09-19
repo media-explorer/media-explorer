@@ -130,7 +130,6 @@ AS_CASE([$with_profile],
 
         [gnome],
         [
-          mex_default_with_player=clutter-gst
           mex_default_enable_networks=no
           mex_default_enable_lirc=yes
 
@@ -139,7 +138,6 @@ AS_CASE([$with_profile],
 
         [intelce],
         [
-          mex_default_with_player=d-bus
           mex_default_enable_networks=yes
           mex_default_enable_lirc=no
 
@@ -148,7 +146,6 @@ AS_CASE([$with_profile],
 
         [windows],
         [
-          mex_default_with_player=clutter-gst
           mex_default_enable_networks=no
           mex_default_enable_lirc=no
 
@@ -187,36 +184,6 @@ PKG_CHECK_EXISTS(libsoup-gnome-2.4,
                  AC_DEFINE([HAVE_LIBSOUP_GNOME], [1], ["Defined if libsoup-gnome is available"])],
                  modules="$modules libsoup-2.4")
 
-AC_ARG_WITH([player],
-              [AC_HELP_STRING([--with-player=@<:@d-bus/clutter-gst/surface@:>@].
-                              [Set mode for media playback @<:@default=clutter-gst@:>@])],
-              [],
-              [with_player=$mex_default_with_player])
-
-player_deps=""
-
-
-AS_CASE([$with_player],
-        [clutter-gst],
-        [
-          AC_DEFINE([USE_PLAYER_CLUTTER_GST], 1, [Use "clutter-gst" for
-                     playback])
-        ],
-
-        [d-bus],
-        [
-          AC_DEFINE([USE_PLAYER_DBUS], 1, [Use "d-bus" for playback])
-        ],
-
-        [surface],
-        [
-          AC_DEFINE([USE_PLAYER_SURFACE], 1, [Use "surface" for playback])
-        ],
-
-        [AC_MSG_ERROR([Invalid value for --with-player])]
-)
-
-AM_CONDITIONAL(ENABLE_EXTERNAL_PLAYER, [test x"$with_player" = x"d-bus"])
 
 PKG_CHECK_MODULES(MEX, "$modules")
 
@@ -431,7 +398,6 @@ AC_CONFIG_FILES([
   build/Makefile
   mex/Makefile
   mex/glib-controller/Makefile
-  player/Makefile
   data/Makefile
   data/appicons/Makefile
   doc/Makefile
@@ -466,7 +432,6 @@ echo "        Unit tests        : ${enable_tests}"
 echo ""
 echo " • Backends:"
 echo "        Online detection : ${with_online}"
-echo "        Media playback   : ${with_player}"
 echo ""
 echo " • Documentation:"
 echo "        Build API Reference: ${enable_gtk_doc}"

@@ -32,9 +32,7 @@
 
 #include <grilo.h>
 #include <mex/mex.h>
-#ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
-#endif
 
 #include <glib/gi18n.h>
 
@@ -2766,9 +2764,7 @@ main (int argc, char **argv)
 
   g_object_unref (app);
 
-#ifdef USE_PLAYER_CLUTTER_GST
   gst_deinit ();
-#endif
   mex_lirc_deinit ();
   mex_deinit ();
 #endif

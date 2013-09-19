@@ -24,9 +24,7 @@
 #include <clutter/clutter.h>
 #include <glib/gi18n.h>
 
-#ifdef USE_PLAYER_CLUTTER_GST
 #include <clutter-gst/clutter-gst.h>
-#endif
 
 #include "mex-main.h"
 #include "mex-content.h"
@@ -258,9 +256,7 @@ mex_base_init (int *argc, char ***argv)
       if (!clutter_init (argc, argv))
         g_error ("Failed to initialize clutter");
 
-#ifdef USE_PLAYER_CLUTTER_GST
       clutter_gst_init (argc, argv);
-#endif
 
       mex_init_default_categories ();
       mex_init_load_grilo_plugins();
