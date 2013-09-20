@@ -94,6 +94,7 @@ _stop_video_preview (MexContentTile *self)
     return FALSE;
 
   clutter_media_set_playing (CLUTTER_MEDIA (priv->video_preview), FALSE);
+  clutter_actor_remove_child (CLUTTER_ACTOR (self), priv->video_preview);
   clutter_actor_add_child (CLUTTER_ACTOR (self), priv->image);
   /* After setting the child the old child is killed off so NULL this to
    *  help with checks
@@ -158,6 +159,7 @@ _start_video_preview (MexContentTile *self)
   clutter_actor_set_opacity (priv->video_preview, 0);
 
   g_object_ref (priv->image);
+  clutter_actor_remove_child (CLUTTER_ACTOR (self), priv->image);
   clutter_actor_add_child (CLUTTER_ACTOR (self), priv->video_preview);
 
 
