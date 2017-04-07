@@ -673,17 +673,26 @@ const char*
 mex_get_data_dir (void)
 {
   static char* datadir = NULL;
-  gint i;
 
   if (!datadir)
     {
+      GPtrArray* array = g_ptr_array_sized_new (3);
+      gint i;
+
       static const gchar* const * system_data_dirs;
 
       system_data_dirs = g_get_system_data_dirs ();
 
       for (i = 0; system_data_dirs[i]; i++)
+        g_ptr_array_add (array, (gpointer )system_data_dirs[i]);
+
+      g_ptr_array_add (array, (gpointer )g_get_user_data_dir ());
+
+      for (i = 0; i < array->len; i++)
         {
-          datadir = g_build_filename (system_data_dirs[i], PACKAGE_NAME, NULL);
+          datadir = g_build_filename (g_ptr_array_index (array, i),
+                                      PACKAGE_NAME,
+                                      NULL);
 
           if (g_file_test (datadir, G_FILE_TEST_IS_DIR))
             break;
@@ -693,6 +702,8 @@ mex_get_data_dir (void)
               datadir = NULL;
             }
         }
+
+      g_ptr_array_free (array, TRUE);
 
       if (!datadir)
         g_warning ("Could not find application data directory.");
